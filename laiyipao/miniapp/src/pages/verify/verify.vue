@@ -383,6 +383,8 @@ onUnload(() => {
   font-size: 28rpx;
   font-weight: 600;
   margin-top: 12rpx;
+  /* R95 裁定文字加字距，结论更醒目 */
+  letter-spacing: 1rpx;
 }
 
 .verdict.ok {

@@ -328,6 +328,16 @@ onMounted(async () => {
   box-shadow: inset 4rpx 0 0 rgba(255, 123, 114, 0.45);
 }
 
+/* R93 胜负徽章弹入，扫列表时胜负结论更醒目 */
+.result-badge {
+  animation: badge-pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+@keyframes badge-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 .result-badge {
   min-width: 44rpx;
   text-align: center;

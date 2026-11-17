@@ -135,3 +135,8 @@
 | R88 | 11-17 | 全局·链接按下反馈 | .link:active 加下划线 | z_audit_feature.test R88 |
 | R89 | 11-17 | 全局·主按钮高光 | 主按钮一次性高光扫过，强化主行动 | z_audit_feature.test R89 |
 | R90 | 11-17 | 全局·标签描边 | .tag 加浅描边，深底上更立体 | z_audit_feature.test R90 |
+| R91 | 11-17 | 关卡·星级进度光泽 | 章节星级进度条加微光，接近全清的正反馈 | z_audit_feature.test R91 |
+| R92 | 11-17 | 排行榜·奖牌浮动 | 前三名奖牌轻微上下浮动，强化领奖台感 | z_audit_feature.test R92 |
+| R93 | 11-17 | 战报·胜负徽章弹入 | 胜/负徽章小弹入，扫列表结论更醒目 | z_audit_feature.test R93 |
+| R94 | 11-17 | 我的·返回按钮反馈 | 返回按钮按下左移，给「退回」方向感 | z_audit_feature.test R94 |
+| R95 | 11-17 | 验真·裁定字距 | 裁定结论加字距，结论更醒目 | z_audit_feature.test R95 |

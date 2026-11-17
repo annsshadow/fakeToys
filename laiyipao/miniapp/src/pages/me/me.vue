@@ -1433,6 +1433,12 @@ onUnload(() => {
   font-size: var(--fs-sm);
 }
 
+/* R94 返回按钮按下左移，给明确的「退回」方向感 */
+.back-btn:active {
+  transform: translateX(-6rpx);
+  opacity: 0.7;
+}
+
 /* 独立返回行（100 轮打磨 R16）：与头像行分离，按钮不再被昵称挤断 */
 .me-back-row {
   display: flex;

@@ -480,6 +480,8 @@ onMounted(() => {
   border-radius: 999rpx;
   background: var(--warn);
   transition: width 0.3s ease-out;
+  /* R91 星级进度条淡入光泽，强化「接近全清」的正反馈 */
+  box-shadow: 0 0 8rpx rgba(255, 211, 61, 0.4);
 }
 
 .grid {

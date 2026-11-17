@@ -294,6 +294,13 @@ onMounted(async () => {
 .medal {
   font-size: 26rpx;
   margin-right: 8rpx;
+  /* R92 奖牌轻微浮动，前三名更有「领奖台」感 */
+  animation: medal-float 2.4s ease-in-out infinite;
+}
+
+@keyframes medal-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3rpx); }
 }
 
 /* R18 0 分玩家降权：有分/没分一眼可分 */

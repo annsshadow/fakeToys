@@ -66,6 +66,14 @@ describe('Z 批收尾审计守卫', () => {
     expect(css).toContain('R90 tag-outline')
     expect(css).toContain('R88 link-underline-active')
   })
+
+  it('R91–R95 各页最终打磨', () => {
+    expect(readPages('stage')).toContain('R91 星级进度条淡入光泽')
+    expect(readPages('rank')).toContain('@keyframes medal-float')
+    expect(readPages('battles')).toContain('@keyframes badge-pop')
+    expect(readPages('me')).toContain('.back-btn:active')
+    expect(readPages('verify')).toContain('R95 裁定文字加字距')
+  })
 })
 
 function readPages(name: string): string {
