@@ -59,10 +59,17 @@
                  继续写「微信账号」会把口令账号说成微信账号 —— 事实不对，
                  而「我明明是用账号密码登的」这种困惑很难自查。 -->
             <text class="dim">{{ store.isGuest ? '游客账号（未绑定微信）' : '账号登录' }}</text>
-            <!-- 累计星级（2026-11-01 新一轮第 64 轮）：全局进度一眼可见 -->
-            <text class="dim" style="display: block; margin-top: 4rpx">
-              累计星级 {{ totalStars }} / {{ totalStarCap }}
-            </text>
+            <!-- 累计星级：文本 + G79 进度环（比例一眼可见） -->
+            <view class="star-progress-line">
+              <svg class="star-ring" viewBox="0 0 100 100" aria-label="累计星级进度">
+                <circle class="sr-bg" cx="50" cy="50" r="40" />
+                <circle
+                  class="sr-fill" cx="50" cy="50" r="40" transform="rotate(-90 50 50)"
+                  :stroke-dasharray="`${starRing.dash} ${starRing.rest}`"
+                />
+              </svg>
+              <text class="dim">累计星级 {{ totalStars }} / {{ totalStarCap }}（{{ starRing.pct }}%）</text>
+            </view>
           </view>
         </view>
       </view>
@@ -729,6 +736,13 @@ const totalStars = ref(0)
 /** 星级上限 = 关卡总数 × 3。 */
 const totalStarCap = computed(() => (store.config?.levels?.length ?? 0) * 3)
 
+/** G79 累计星级进度环：已获星/总星占比切成 SVG 弧（文本仍保留，环是可视化升级）。 */
+const starRing = computed(() => {
+  const pct = totalStarCap.value > 0 ? Math.min(1, totalStars.value / totalStarCap.value) : 0
+  const C = 2 * Math.PI * 40
+  return { dash: pct * C, rest: C - pct * C, pct: Math.round(pct * 100) }
+})
+
 async function loadStars() {
   try {
     const r = await api.fetchMyStars()
@@ -1376,6 +1390,12 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G79 累计星级进度环 */
+.star-progress-line { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin-top: 4rpx; }
+.star-ring { width: 40rpx; height: 40rpx; }
+.sr-bg { fill: none; stroke: var(--panel-3); stroke-width: 10; }
+.sr-fill { fill: none; stroke: var(--warn); stroke-width: 10; stroke-linecap: round; }
+
 .me-tabs {
   margin-bottom: 4rpx;
 }

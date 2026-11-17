@@ -23,6 +23,17 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ items.length }} 件已拥有。
         </text>
+        <!-- G81 同部位天花板：每部位最强装备，指引刷装方向 -->
+        <view v-if="bestPerSlot.length" class="best-slots">
+          <text class="card-title" style="font-size: 26rpx">各部位最强</text>
+          <view v-for="b in bestPerSlot" :key="b.slot" class="bs-row">
+            <text class="dim bs-label">{{ b.label }}</text>
+            <text class="bs-name">{{ b.name }}</text>
+            <text v-if="b.owned" class="chip hit">已拥有</text>
+            <text class="dim">护甲 {{ b.armor }} · 加成 {{ b.bonus }}‰</text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredItems.length }} / 共 {{ items.length }} 条</text>
         <view v-for="e in filteredItems" :key="e.id" class="rxn equip">
           <view class="rxn-head">
@@ -86,6 +97,32 @@ interface EquipmentDef {
  */
 const items = computed(() => (store.config?.equipment ?? []) as unknown as EquipmentDef[])
 
+/* -------------------------------------------------------------------------- */
+/* G81 同部位最强装备（第七批）                                                 */
+/* 按 slot 分组，每组挑护甲+加成最高的一件 —— 看「每个部位的天花板」，           */
+/* 配合背包已拥有状态决定刷装方向。数据来自 items + ownedIds。                   */
+/* -------------------------------------------------------------------------- */
+const bestPerSlot = computed(() => {
+  const groups = new Map<string, EquipmentDef[]>()
+  for (const e of items.value) {
+    const arr = groups.get(e.slot) ?? []
+    arr.push(e)
+    groups.set(e.slot, arr)
+  }
+  return [...groups.entries()].map(([slot, arr]) => {
+    const best = [...arr].sort((a, b) => (b.base_armor + b.base_bonus_pct) - (a.base_armor + a.base_bonus_pct))[0]!
+    return {
+      slot,
+      label: slotLabel(slot),
+      name: best.name,
+      armor: best.base_armor,
+      bonus: best.base_bonus_pct,
+      owned: ownedIds.value.has(best.id),
+      count: arr.length,
+    }
+  }).sort((a, b) => a.label.localeCompare(b.label))
+})
+
 /** 图鉴搜索（2026-11-01 新一轮第 73 轮）：名称/部位中文/元素过滤。 */
 const keyword = ref('')
 
@@ -132,5 +169,11 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
+/* G81 各部位最强装备 */
+.best-slots { margin: 8rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
+.bs-row { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8rpx; padding: 6rpx 0; }
+.bs-label { width: 100rpx; flex-shrink: 0; }
+.bs-name { color: var(--warn); font-weight: 600; }
+
 /* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
 </style>

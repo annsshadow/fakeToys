@@ -36,6 +36,27 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G79 累计星级进度环', () => {
+    const src = read('../pages/me/me.vue')
+    expect(src).toContain('starRing')
+    expect(src).toContain('sr-fill')
+    expect(src).toContain('累计星级进度')
+  })
+
+  it('G80 宝石词条覆盖统计', () => {
+    const src = read('../pages/gems/gems.vue')
+    expect(src).toContain('affixCoverage')
+    expect(src).toContain('affix-chip')
+    expect(src).toContain('affixName')
+  })
+
+  it('G81 装备各部位最强', () => {
+    const src = read('../pages/equipment/equipment.vue')
+    expect(src).toContain('bestPerSlot')
+    expect(src).toContain('bs-row')
+    expect(src).toContain('各部位最强')
+  })
+
   it('G76 榜单分数分布柱状图', () => {
     const src = read('../pages/rank/rank.vue')
     expect(src).toContain('scoreDistribution')

@@ -22,6 +22,16 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值与描述直接来自服务端 /config。共 {{ ownedCount }} 颗已拥有。
         </text>
+        <!-- G80 词条覆盖统计：已拥有宝石的词条构成，看养成偏向 -->
+        <view v-if="affixCoverage.length" class="affix-coverage">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">已拥有词条（颗数 / 最高值）</text>
+          <view class="affix-chips">
+            <text v-for="a in affixCoverage" :key="a.key" class="affix-chip">
+              {{ a.name }} ×{{ a.count }} · 最高 {{ a.best }}
+            </text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredGems.length }} / 共 {{ gems.length }} 条</text>
         <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
           <view class="rxn-head">
@@ -55,7 +65,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
-import { gemAttrBadge } from '@/utils/labels'
+import { gemAttrBadge, affixName } from '@/utils/labels'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -93,6 +103,23 @@ const filteredGems = computed(() => {
 const ownedGems = ref<OwnedGem[]>([])
 
 const ownedCount = computed(() => ownedGems.value.length)
+
+/* -------------------------------------------------------------------------- */
+/* G80 宝石词条覆盖统计（第七批）                                               */
+/* 聚合已拥有宝石的全部词条：每种词条出现几颗、最高值多少 —— 看「我的词条库偏向」。 */
+/* -------------------------------------------------------------------------- */
+const affixCoverage = computed(() => {
+  const m = new Map<string, { key: string; name: string; count: number; best: number }>()
+  for (const g of ownedGems.value) {
+    for (const a of g.affixes ?? []) {
+      const cur = m.get(a.affix) ?? { key: a.affix, name: affixName(a.affix), count: 0, best: 0 }
+      cur.count++
+      cur.best = Math.max(cur.best, a.value)
+      m.set(a.affix, cur)
+    }
+  }
+  return [...m.values()].sort((a, b) => b.count - a.count)
+})
 
 function ownedCountOf(gemId: number): number {
   return ownedGems.value.filter((g) => g.gem_id === gemId).length
@@ -142,5 +169,16 @@ onShow(() => {
 </script>
 
 <style scoped>
+/* G80 词条覆盖统计 */
+.affix-coverage { margin: 8rpx 0 16rpx; }
+.affix-chips { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.affix-chip {
+  background: var(--panel-2);
+  border: 1rpx solid var(--border-soft);
+  border-radius: 8rpx;
+  padding: 6rpx 12rpx;
+  font-size: 22rpx;
+  color: var(--text-2);
+}
 /* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
 </style>
