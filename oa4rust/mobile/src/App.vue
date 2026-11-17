@@ -14,8 +14,9 @@ page {
   --color-bg-page: #f5f7fa;
   --color-primary: #2d8cf0;
   --color-text-primary: #263238;
-  --color-text-secondary: #90979f;
-  --color-text-muted: #8a94a6;
+  /* WCAG 2.1 AA 1.4.3：正文对比度≥4.5:1（实算对页面底/卡片白分别 secondary 4.80/5.16、muted 4.61/4.95） */
+  --color-text-secondary: #646e7e;
+  --color-text-muted: #67717f;
   --color-error: #c0392b;
   --color-error-bg: #fdecea;
   --color-surface: #ffffff;
