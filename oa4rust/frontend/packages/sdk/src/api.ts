@@ -523,26 +523,37 @@ export class ApiClient {
       const reader = resp.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
+      const emitEvent = (raw: string): void => {
+        let event = 'message'
+        const dataLines: string[] = []
+        for (const line of raw.split(/\r?\n/)) {
+          if (line.startsWith('event:')) event = line.slice(6).trim()
+          else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+        }
+        if (dataLines.length) onEvent(event, dataLines.join('\n'))
+      }
+      // 解析所有以空行分隔的完整事件，返回未闭合的尾部缓冲。
+      const drainEvents = (): string => {
+        for (;;) {
+          const m = buf.match(/(?:\r?\n){2}/)
+          if (!m || m.index === undefined) return buf
+          emitEvent(buf.slice(0, m.index))
+          buf = buf.slice(m.index + m[0].length)
+        }
+      }
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
         armIdle()
         buf += decoder.decode(value, { stream: true })
         // SSE 事件以空行分隔（容忍 \r\n）
-        for (;;) {
-          const m = buf.match(/(?:\r?\n){2}/)
-          if (!m || m.index === undefined) break
-          const raw = buf.slice(0, m.index)
-          buf = buf.slice(m.index + m[0].length)
-          let event = 'message'
-          const dataLines: string[] = []
-          for (const line of raw.split(/\r?\n/)) {
-            if (line.startsWith('event:')) event = line.slice(6).trim()
-            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
-          }
-          if (dataLines.length) onEvent(event, dataLines.join('\n'))
-        }
+        drainEvents()
       }
+      // 流结束时缓冲区可能还留着最后一条事件（服务端未补终止空行），
+      // 且解码器内部可能还有未输出的多字节字符；flush 后一并处理，避免
+      // 丢失结束事件 / 最后一段 token。
+      buf = decoder.decode() + drainEvents()
+      if (buf.trim()) emitEvent(buf)
     } catch (err) {
       // 用户取消优先：切换会话/离开页面时应静默结束，不报「流式响应超时」。
       if (bridge.cancelled()) throw new RequestCancelledError()
