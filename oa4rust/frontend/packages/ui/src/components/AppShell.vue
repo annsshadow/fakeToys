@@ -90,7 +90,7 @@
       </header>
 
       <!-- 内容区 -->
-      <main class="content" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
+      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />

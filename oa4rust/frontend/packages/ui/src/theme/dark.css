@@ -263,3 +263,29 @@ body {
   /* biome-ignore lint/complexity/noImportantStyles: 焦点环与控件之间留出可见间隙 */
   outline-offset: 2px !important;
 }
+
+/* ===== 无障碍：跳转到主要内容（WCAG 2.4.1 Bypass Blocks）=====
+ * 桌面布局有侧栏、顶栏与 20+ 个导航/搜索/用户菜单项，键盘用户若每次路由切换
+ * 都从头 Tab 会非常痛苦。跳转链接始终是 body 第一个可聚焦元素，平时离屏隐藏，
+ * 键盘聚焦时出现在左上角；进入主内容区后 tabindex=-1 只接收程序化焦点，
+ * 并通过 :focus:not(:focus-visible) 去掉永久轮廓（仅键盘聚焦时由全局焦点环接管）。
+ */
+.skip-link {
+  position: fixed;
+  top: -1000px;
+  left: 12px;
+  z-index: 1000;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-active);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+main.content:focus:not(:focus-visible) {
+  outline: none;
+}

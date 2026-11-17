@@ -9,6 +9,7 @@ import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
+import { installSkipLink } from './utils/skipLink'
 import { shouldRetryQuery } from './views/listQuery'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
@@ -557,4 +558,6 @@ app.use(VueQueryPlugin, { queryClient })
 watchSessionCacheReset(queryClient, () => useSession().state.user?.unique ?? null)
 // R162：视图层手写模态统一支持 Escape 关闭、Tab 焦点陷阱与关闭后焦点归还。
 installViewModalManager()
+// R187：全局跳转到主要内容链接（WCAG 2.4.1），卸载时无需清理（应用生命周期内常驻）。
+installSkipLink()
 app.mount('#o2-app-root')
