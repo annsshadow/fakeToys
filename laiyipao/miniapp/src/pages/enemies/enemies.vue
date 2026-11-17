@@ -33,6 +33,31 @@
             @click="categoryFilter = c.key"
           >{{ c.label }}</text>
         </view>
+        <!-- G104 元素克制排行：堆某元素时先打谁 -->
+        <view class="counter-box">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">克制排行（越易伤越靠前）</text>
+          <view class="chip-row" style="margin-bottom: 8rpx">
+            <text
+              v-for="el in ELEMENT_ORDER"
+              :key="'ce' + el"
+              class="chip tap"
+              :class="{ hit: counterElement === el }"
+              :style="counterElement === el ? { background: ELEMENT_COLOR[el], color: '#fff' } : {}"
+              @click="counterElement = el"
+            >{{ ELEMENT_NAME[el] }}</text>
+          </view>
+          <view v-for="(c, i) in counterRanking" :key="c.id" class="counter-row">
+            <text class="dim">{{ i + 1 }}. {{ c.name }}</text>
+            <view class="counter-track">
+              <view
+                class="counter-fill"
+                :style="{ width: Math.min(100, Math.abs(c.resist) / 5) + '%', background: c.resist < 0 ? 'var(--ok)' : 'var(--bad)' }"
+              />
+            </view>
+            <text class="mono">{{ c.resist > 0 ? '+' : '' }}{{ c.resist / 10 }}%</text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
@@ -112,7 +137,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, ELEMENT_ORDER, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -181,6 +206,15 @@ function resistEntries(en: { resist?: Record<string, number> }): [string, number
 /* 五元素抗性 -500..500 → 半径：0 落在中圈，正抗性（减伤）外扩、负抗性（易伤）内缩。 */
 /* 数据全部来自 en.resist，不改 api/store 契约。                                */
 /* -------------------------------------------------------------------------- */
+/** G104 元素克制排行：选一个元素，按该元素抗性升序排（越负越易伤），配装时快速找靶子。 */
+const counterElement = ref<Element>(ELEMENT_ORDER[0]!)
+const counterRanking = computed(() =>
+  enemies.value
+    .map((en) => ({ id: en.id, name: en.name, resist: Number(en.resist?.[counterElement.value] ?? 0) }))
+    .sort((a, b) => a.resist - b.resist)
+    .slice(0, 8),
+)
+
 const expandedEnemy = ref<number | null>(null)
 function toggleEnemy(id: number) {
   expandedEnemy.value = expandedEnemy.value === id ? null : id
@@ -216,6 +250,14 @@ const resistLabels = resistDirs.map((d, i) => ({
 </script>
 
 <style scoped>
+/* G104 元素克制排行 */
+.counter-box { margin: 12rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
+.counter-row { display: flex; flex-direction: row; align-items: center; gap: 8rpx; margin: 6rpx 0; }
+.counter-row .dim { width: 180rpx; flex-shrink: 0; font-size: 22rpx; }
+.counter-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.counter-fill { height: 100%; border-radius: 999rpx; }
+.counter-row .mono { width: 90rpx; text-align: right; font-size: 22rpx; }
+
 /* G73 敌人抗性雷达图 */
 .rxn-name.tap { color: var(--accent); }
 .resist-toggle {

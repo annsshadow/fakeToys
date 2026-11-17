@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G104 元素克制排行 + G105 机制对照表 + G106 分数区间直方图', () => {
+    expect(read('../pages/enemies/enemies.vue')).toContain('counterRanking')
+    expect(read('../pages/reactions/reactions.vue')).toContain('mechanismTable')
+    expect(read('../pages/rank/rank.vue')).toContain('scoreBuckets')
+  })
+
   it('G101 攻方全属性面板 + G102 漏怪率走势 + G103 专精收益汇总', () => {
     expect(read('../pages/index/index.vue')).toContain('attackerRows')
     expect(read('../pages/battles/battles.vue')).toContain('leakRateTrend')

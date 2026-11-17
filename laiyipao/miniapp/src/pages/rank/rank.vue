@@ -29,6 +29,17 @@
         </view>
       </view>
 
+      <!-- G106 分数区间直方图：我在哪个分数段 -->
+      <view v-if="!loading && scoreBuckets.length" class="card bucket-card">
+        <view class="card-title">分数区间</view>
+        <view class="bucket-bars">
+          <view v-for="b in scoreBuckets" :key="b.lo" class="bucket-col" :class="{ mine: b.mine }">
+            <view class="bucket-bar" :style="{ height: b.h + '%' }" />
+            <text class="dim">{{ b.label }}</text>
+          </view>
+        </view>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -118,6 +129,32 @@ const curLabel = computed(() => tabs.find((t) => t.key === curType.value)?.label
 /* G76 榜单分数分布柱状图（第七批）                                             */
 /* 已加载的每名玩家一根柱，最高分归一到满高；我的那根高亮。数据来自 items/myRank。 */
 /* -------------------------------------------------------------------------- */
+/** G106 分数区间直方图：把前 N 名分数分桶，我的分数所在桶高亮。 */
+const scoreBuckets = computed(() => {
+  const scores = items.value.map((it: any) => Number(it.score) || 0)
+  if (!scores.length) return []
+  const max = Math.max(...scores)
+  const bucketSize = Math.max(1, Math.ceil(max / 5))
+  const buckets = Array.from({ length: 5 }, (_, i) => ({
+    label: `${i * bucketSize}`,
+    lo: i * bucketSize,
+    hi: (i + 1) * bucketSize,
+    count: 0,
+    mine: false,
+  }))
+  const myScore = Number(myRank.value?.score ?? -1)
+  for (const s of scores) {
+    const idx = Math.min(4, Math.floor(s / bucketSize))
+    buckets[idx]!.count++
+  }
+  if (myScore >= 0) {
+    const idx = Math.min(4, Math.floor(myScore / bucketSize))
+    buckets[idx]!.mine = true
+  }
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count))
+  return buckets.map((b) => ({ ...b, h: Math.max(4, Math.round(b.count / maxCount * 100)) }))
+})
+
 const scoreDistribution = computed(() => {
   const list = items.value.slice(0, 20)
   const max = Math.max(1, ...list.map((it: any) => Number(it.score) || 0))
@@ -242,6 +279,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G106 分数区间直方图 */
+.bucket-bars { display: flex; flex-direction: row; align-items: flex-end; height: 200rpx; gap: 6rpx; padding-top: 12rpx; }
+.bucket-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4rpx; }
+.bucket-bar { width: 100%; background: var(--ice); opacity: 0.7; border-radius: 4rpx 4rpx 0 0; }
+.bucket-col.mine .bucket-bar { background: var(--fire); opacity: 1; }
+.bucket-col .dim { font-size: 18rpx; }
+
 /* G76 分数分布柱状图 */
 .dist-card .card-title .dim { font-size: 22rpx; font-weight: 400; }
 .dist-bars {

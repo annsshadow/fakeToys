@@ -54,6 +54,19 @@
         </view>
       </view>
 
+      <!-- G105 反应机制对照表：谁驱散/削甲/击退/增幅/持续，一眼扫完 -->
+      <view class="card">
+        <text class="card-title">反应机制对照</text>
+        <view class="mech-row mech-head">
+          <text class="dim mech-name">反应</text>
+          <text v-for="h in ['驱散','削甲','击退','增幅','持续']" :key="h" class="dim mech-cell">{{ h }}</text>
+        </view>
+        <view v-for="m in mechanismTable" :key="m.key" class="mech-row">
+          <text class="mech-name">{{ m.name }}</text>
+          <text v-for="(c, i) in m.cells" :key="i" class="mech-cell" :class="{ on: c.on }">{{ c.on ? '●' : '·' }}</text>
+        </view>
+      </view>
+
       <!-- 反应图鉴（服务端下发的权威表） -->
       <view class="card stagger-in">
         <text class="card-title">反应图鉴</text>
@@ -173,6 +186,21 @@ interface MatrixCell {
   reachable: boolean
   self: boolean
 }
+/** G105 反应机制对照表：7 种反应 × 5 种效果，有则点亮 —— 搭配前的速查表。 */
+const mechanismTable = computed(() =>
+  allReactions.value.map((r) => ({
+    key: r.key,
+    name: r.name,
+    cells: [
+      { on: !!r.dispel_shield, label: '驱散' },
+      { on: Number(r.armor_shred_permille ?? 0) > 0, label: '削甲' },
+      { on: Number(r.knockback ?? 0) > 0, label: '击退' },
+      { on: Number(r.amplify_pct ?? 0) > 0, label: '增幅' },
+      { on: Number(r.status_duration_ms ?? 0) > 0, label: '持续' },
+    ],
+  })),
+)
+
 const reactionMatrix = computed<MatrixCell[][]>(() =>
   ELEMENT_ORDER.map((a) =>
     ELEMENT_ORDER.map((b) => {
@@ -235,6 +263,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* G105 反应机制对照表 */
+.mech-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
+.mech-name { flex: 1.4; font-size: 22rpx; }
+.mech-cell { flex: 1; text-align: center; font-size: 24rpx; }
+.mech-cell.on { color: var(--ok); }
+.mech-head { border-bottom: 1rpx solid var(--border); }
+
 /* G74 元素反应覆盖矩阵 */
 .matrix { display: flex; flex-direction: column; gap: 4rpx; }
 .matrix-row { display: flex; flex-direction: row; gap: 4rpx; }
