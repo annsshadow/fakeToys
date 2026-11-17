@@ -64,4 +64,33 @@ describe('微交互与加载反馈守卫', () => {
       expect(src, p).toContain('stagger-in')
     }
   })
+
+  it('R37 错误消息抖动反馈（key 强制重播）', () => {
+    expect(CSS()).toContain('@keyframes shake')
+    for (const p of ['login', 'verify', 'signin']) {
+      const src = read(`../pages/${p}/${p}.vue`)
+      expect(src, p).toContain('shake')
+      expect(src, p).toContain(':key=')
+    }
+  })
+
+  it('R38 进度完成态脉冲', () => {
+    expect(CSS()).toContain('@keyframes ok-pulse')
+    expect(read('../pages/shop/shop.vue')).toContain("'ok-pulse': soldOut(it)")
+    expect(read('../pages/signin/signin.vue')).toContain("'ok-pulse': t.done")
+  })
+
+  it('R39 加载态转圈 spinner', () => {
+    expect(CSS()).toContain('@keyframes spin')
+    for (const p of ['login', 'shop', 'verify']) {
+      expect(read(`../pages/${p}/${p}.vue`), p).toContain('spinner')
+    }
+  })
+
+  it('R40 签到连续进度条', () => {
+    const src = read('../pages/signin/signin.vue')
+    expect(src).toContain('streak-track')
+    expect(src).toContain('streak-fill')
+    expect(src).toContain('streakPct')
+  })
 })

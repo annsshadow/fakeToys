@@ -39,14 +39,17 @@
                 <view
                   class="limit-fill"
                   :style="{ width: limitPct(it) + '%' }"
-                  :class="{ full: soldOut(it) }"
+                  :class="{ full: soldOut(it), 'ok-pulse': soldOut(it) }"
                 />
               </view>
               <text class="dim limit-text">{{ purchaseProgressText(it) }}</text>
             </view>
           </view>
           <view class="skill-act">
-            <text v-if="buyingId === it.id" class="dim">购买中…</text>
+            <view v-if="buyingId === it.id" class="row" style="gap: 6rpx; align-items: center">
+              <view class="spinner" />
+              <text class="dim">购买中…</text>
+            </view>
             <text
               v-else
               class="link"

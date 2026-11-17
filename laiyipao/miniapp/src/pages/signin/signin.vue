@@ -11,6 +11,10 @@
       <view class="card">
         <text class="card-title">每日签到</text>
         <text class="muted">连续 7 天，第 7 天额外获得体力。</text>
+        <!-- R40 连续进度条：已签天数一眼可见，不必数格子 -->
+        <view class="streak-track">
+          <view class="streak-fill" :style="{ width: streakPct + '%' }" />
+        </view>
         <view class="days">
           <view
             v-for="d in 7"
@@ -39,7 +43,13 @@
         >
           {{ canSign ? '领取今日奖励' : signedToday ? '今日已签到' : '七日签到已完成' }}
         </view>
-        <text v-if="lastResult" class="muted" style="display: block; margin-top: 16rpx">
+        <text
+          v-if="lastResult"
+          :key="lastResult"
+          class="muted"
+          :class="{ shake: lastResult.startsWith('签到失败') }"
+          style="display: block; margin-top: 16rpx"
+        >
           {{ lastResult }}
         </text>
       </view>
@@ -87,7 +97,11 @@
             </text>
             <!-- 任务进度条（2026-11-01 新一轮第 36 轮） -->
             <view class="task-progress" :class="{ done: t.done }">
-              <view class="task-progress-fill" :style="{ width: taskPercent(t) + '%' }" />
+              <view
+                class="task-progress-fill"
+                :class="{ 'ok-pulse': t.done }"
+                :style="{ width: taskPercent(t) + '%' }"
+              />
             </view>
             <text class="task-percent" :class="{ done: t.done }">{{ taskPercent(t) }}%</text>
             <text class="dim" style="display: block">
@@ -117,7 +131,7 @@
           />
           <view class="btn" style="width: 160rpx; height: 72rpx" @click="doRedeem">兑换</view>
         </view>
-        <text v-if="redeemMsg" class="muted" style="display: block; margin-top: 12rpx">
+        <text v-if="redeemMsg" :key="redeemMsg" class="muted shake" style="display: block; margin-top: 12rpx">
           {{ redeemMsg }}
         </text>
       </view>
@@ -127,7 +141,7 @@
 
 <script setup lang="ts">
 import { currencyName } from '@/utils/labels'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 
@@ -201,6 +215,9 @@ function rewardText(reward: Record<string, number>): string {
     .map(([k, v]) => `${currencyName(k)} ${v}`)
     .join(' · ')
 }
+
+/** R40 七日签到的连续进度（0–100%）。 */
+const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / 7) * 100)))
 
 /** 任务完成度百分比（2026-11-01 新一轮第 36 轮）。 */
 function taskPercent(t: { progress: number; target: number }): number {
@@ -308,6 +325,22 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* R40 连续签到进度条 */
+.streak-track {
+  height: 10rpx;
+  background: var(--panel-3);
+  border-radius: 999rpx;
+  overflow: hidden;
+  margin: 12rpx 0;
+}
+
+.streak-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: var(--accent-grad);
+  transition: width 0.35s ease-out;
+}
+
 .days {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

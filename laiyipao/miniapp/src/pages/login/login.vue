@@ -50,9 +50,10 @@
           :class="{ 'btn-dim': submitting || !username || !password }"
           @click="submit"
         >
+          <view v-if="submitting" class="spinner" />
           {{ submitting ? '登录中…' : '登录' }}
         </view>
-        <text v-if="errMsg" class="muted" style="display: block; margin-top: 12rpx; color: var(--bad)">
+        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)">
           {{ errMsg }}
         </text>
         <text class="dim" style="display: block; margin-top: 12rpx">

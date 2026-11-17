@@ -336,4 +336,11 @@ describe('signin.vue 签到页', () => {
     expect(tasks[0]!.classes()).toContain('claim-pop')
     expect(tasks[1]!.classes()).not.toContain('claim-pop')
   })
+
+  it('R40 连续进度条宽度随已签天数变化', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 2, signed_today: false, can_sign: true })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.find('.streak-fill').attributes('style')).toContain('width: 29%')
+  })
 })

@@ -168,4 +168,21 @@ describe('login.vue 登录页', () => {
     expect(toggle.classes()).not.toContain('on')
     expect(pw.attributes('password')).toBe('true')
   })
+
+  // ── R39 加载态转圈（X 批）──────────────────────────────────────────
+  it('R39 登录请求在途时显示转圈', async () => {
+    mockApi.login.mockImplementation(() => new Promise(() => {}))
+    const { wrapper } = mountPage(Login)
+    await flushPromises()
+    await fireOnLoad(wrapper)
+    const inputs = wrapper.findAll('input')
+    await inputs[0].setValue('admin')
+    await inputs[1].setValue('pw')
+
+    expect(wrapper.find('.spinner').exists()).toBe(false)
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.spinner').exists()).toBe(true)
+    expect(wrapper.text()).toContain('登录中…')
+  })
 })

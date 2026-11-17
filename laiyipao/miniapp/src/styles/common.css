@@ -545,6 +545,46 @@ page,
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* R37 错误反馈：消息变化时用 :key 强制重建节点，抖动每次都会重播 */
+.shake {
+  animation: shake 0.36s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8rpx); }
+  40% { transform: translateX(7rpx); }
+  60% { transform: translateX(-5rpx); }
+  80% { transform: translateX(3rpx); }
+}
+
+/* R38 完成态脉冲：买满/任务完成时进度条持续轻微呼吸，强化「已达成」 */
+.ok-pulse {
+  animation: ok-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ok-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(126, 231, 135, 0.45); }
+  50% { box-shadow: 0 0 0 5rpx rgba(126, 231, 135, 0); }
+}
+
+/* R39 加载态转圈：比纯文字「中…」更像在推进 */
+.spinner {
+  display: inline-block;
+  width: 26rpx;
+  height: 26rpx;
+  border: 3rpx solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 8rpx;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .is-disabled {
   opacity: 0.45;
   pointer-events: none;

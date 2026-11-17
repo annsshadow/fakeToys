@@ -45,7 +45,7 @@
             取复现信息
           </view>
         </view>
-        <text v-if="errMsg" class="muted" style="display: block; margin-top: 12rpx; color: var(--bad)">
+        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)">
           {{ errMsg }}
         </text>
       </view>
@@ -78,7 +78,8 @@
           算出哈希后提交比对。
         </text>
 
-        <view v-if="replaying" class="row" style="gap: 12rpx">
+        <view v-if="replaying" class="row" style="gap: 12rpx; align-items: center">
+          <view class="spinner" />
           <text class="muted">重放中…</text>
         </view>
 

@@ -256,4 +256,13 @@ describe('shop.vue 限购进度条（R17）', () => {
     expect(flashed.length).toBe(1)
     expect(flashed[0]!.text()).toContain('随机宝石')
   })
+
+  it('R38 买满商品的进度条带完成态脉冲', async () => {
+    const { wrapper } = mountPage(Shop)
+    await flushPromises()
+    // fixture 第 2 件（id 8）：limit 3 / bought 3 → 买满
+    const full = wrapper.find('.limit-fill.ok-pulse')
+    expect(full.exists()).toBe(true)
+    expect(full.classes()).toContain('full')
+  })
 })
