@@ -77,6 +77,16 @@
         </view>
       </view>
 
+      <!-- G118 关卡交战热度 -->
+      <view v-if="!loading && battleHeat.length" class="card heat-card">
+        <view class="card-title">交战热度<text class="dim">反复挑战的关卡</text></view>
+        <view v-for="h in battleHeat" :key="h.level" class="heat-row">
+          <text class="dim heat-label">第 {{ h.level }} 关</text>
+          <view class="heat-track"><view class="heat-fill" :style="{ width: h.pct + '%' }" /></view>
+          <text class="mono heat-val">{{ h.n }}</text>
+        </view>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -300,6 +310,17 @@ const elementText = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
+/* G118 关卡交战热度：按 level_id 聚合次数 Top8 —— 看出反复卡在哪关。             */
+/* -------------------------------------------------------------------------- */
+const battleHeat = computed(() => {
+  const m = new Map<number, number>()
+  for (const it of items.value) m.set(it.level_id, (m.get(it.level_id) ?? 0) + 1)
+  const arr = [...m.entries()].map(([level, n]) => ({ level, n })).sort((a, b) => b.n - a.n).slice(0, 8)
+  const max = Math.max(1, ...arr.map((a) => a.n))
+  return arr.map((a) => ({ ...a, pct: Math.round(a.n / max * 100) }))
+})
+
+/* -------------------------------------------------------------------------- */
 /* G102 漏怪率走势（第七批）                                                    */
 /* 每局 leaked/(kills+leaked) 的防守质量百分比，序列折线 —— 看出是靠输出硬堆还是守得稳。 */
 /* -------------------------------------------------------------------------- */
@@ -487,6 +508,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G118 交战热度 */
+.heat-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.heat-label { width: 140rpx; flex-shrink: 0; }
+.heat-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.heat-fill { height: 100%; background: var(--accent); border-radius: 999rpx; }
+.heat-val { width: 60rpx; text-align: right; font-size: 22rpx; color: var(--accent); }
+
 /* G96 战绩总账 */
 .total-grid { display: flex; flex-direction: row; }
 .total-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4rpx; }

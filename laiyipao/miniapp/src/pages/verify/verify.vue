@@ -105,6 +105,10 @@
             <text class="muted">本地重放哈希</text>
             <text class="mono hash">{{ pretty(outcome.computedHash) }}</text>
           </view>
+          <!-- G117 哈希逐段对照 -->
+          <view v-if="hashSegments.length" class="hash-segments">
+            <text v-for="s in hashSegments" :key="s.i" class="hs-seg" :class="s.match ? 'ok' : 'bad'">{{ s.part }}</text>
+          </view>
           <view class="verdict">{{ outcome.matched ? '一致 — 分数可复现' : '不一致 — 该分数无法被复现' }}</view>
           <view class="stats">
             <text>击杀 {{ outcome.stats.kills }}</text>
@@ -247,6 +251,17 @@ const buildSnapshotCard = computed(() => {
   ]
 })
 
+/** G117 哈希逐段对照：本地重放哈希 vs 服务端哈希，切 4 段标出哪段不同。 */
+const hashSegments = computed(() => {
+  const a = outcome.value?.computedHash
+  const b = replayInfo.value?.expected_hash ?? result.value?.expected_hash
+  if (!a || !b) return []
+  const seg = (s: string) => (s.match(/.{1,4}/g) ?? []).slice(0, 4)
+  const sa = seg(String(a))
+  const sb = seg(String(b))
+  return sa.map((part, i) => ({ i, part, match: part === sb[i] }))
+})
+
 function pretty(h: string): string {
   return prettyHash(h)
 }
@@ -361,6 +376,12 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G117 哈希逐段对照 */
+.hash-segments { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.hs-seg { font-family: monospace; font-size: 22rpx; padding: 4rpx 8rpx; border-radius: 6rpx; }
+.hs-seg.ok { background: rgba(126,231,135,0.14); color: var(--ok); }
+.hs-seg.bad { background: rgba(255,123,114,0.14); color: var(--bad); }
+
 /* G99 冻结构筑分区快照 */
 .build-snapshot { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
 .bs-item {

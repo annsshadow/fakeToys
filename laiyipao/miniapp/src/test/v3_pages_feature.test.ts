@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G116 输入状态清单 + G117 哈希逐段对照 + G118 交战热度', () => {
+    expect(read('../pages/login/login.vue')).toContain('inputChecks')
+    expect(read('../pages/verify/verify.vue')).toContain('hashSegments')
+    expect(read('../pages/battles/battles.vue')).toContain('battleHeat')
+  })
+
   it('G113 清空成本 + G114 损失排行 + G115 体力预算', () => {
     expect(read('../pages/shop/shop.vue')).toContain('clearCost')
     expect(read('../pages/me/me.vue')).toContain('topLooters')
