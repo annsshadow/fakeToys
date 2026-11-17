@@ -319,7 +319,7 @@ urlencoding = "2"
   openapi = { path = "crates/openapi" }
   futures-util = "0.3"
   lopdf = "0.45.0"
-  x509-parser = "0.16"
+  x509-parser = "0.18"
   p256 = "0.13"
 
 # 开发构建：debuginfo 收敛为行号表。Windows 上完整 debuginfo 的 .pdb
