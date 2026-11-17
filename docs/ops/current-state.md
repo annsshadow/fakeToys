@@ -715,6 +715,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 24.3 交付与边界
 
 - 本轮两提交 4888b346b、c0c5b2480 及本现量文档 §24 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用，并以 git ls-remote 核验远端真实 HEAD（SSH 出口抖动教训：推送失败时绝不能先更新追踪引用）。
+
+## 二十五、第16轮：R166时间轴模拟进度回绕修复 + mine页token化续批 + 效率榜分差恒0（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r166 / lybug-r16）+ 主线程 R161 token 化增量续批，均经独立复跑确认 GREEN 后提交。
+
+### 25.1 oa4rust R166 时间轴模拟进度回绕归零/永不结束（提交 c3a065bdb）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | ProcessDesigner.vue:8326 startSimulation 用 Date.now()%totalDuration 算进度：到 totalDuration 边界从 ~100% 瞬间回绕 0%，进度条来回滚；结束条件 simProgress>=100 因取模几乎不可达（模拟永不结束，靠手动停）；启动前未 clearInterval，重复点「▶运行」叠加多个 interval 抢写进度+重复弹完成。模板 :414 按钮可达 | R165 修的是执行模拟 computeExecutionProgress，本轮是**时间轴**模拟，另一套逻辑，非重复 |
+| 修复 | 新增 utils/simulationProgress.ts computeSimulationProgress(elapsedMs,totalDurationMs)：已运行时长映射 0..100 封顶、异常返回 0；startSimulation 启动前 clearInterval、记 startedAt，interval 内改用 Date.now()-startedAt | 排除项未动：formatDuration/formatNumber 死代码、getSimulationProgress 恒0 stub、R165 computeExecutionProgress |
+| 门禁 | simulationProgress.test.ts 5 例行为测试（起步/中点/到时100/超封顶/单调/异常）；RED 3 failed（到时不结束/超时不封顶/进度倒退）→GREEN | 主代理从 oa4rust 根复跑 5 passed；pnpm test 1296 passed、typecheck 6 包、lint 349 文件 0 error |
+
+### 25.2 oa4rust 移动端 R161 增量续批：mine 页 token 化（提交 3aab77916）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | R161 试点只覆盖 bbs/login 两页，剩余 17 页仍全硬编码色；mine 页 22 处色值；分隔线 #f0f2f5 跨 11 页 15 处高频使用却无 token | 主线程承接续批，与子代理写范围不重叠 |
+| 修复 | App.vue 新增全局 --color-divider(#f0f2f5)；mine 页 22 处硬编码色（bg/surface/primary/text 三阶/error/新 divider）全部归一到语义 token；契约测试新增 mine 页 14 项选择器+属性断言 + divider token | 改后 mine 页硬编码色 0 处，style 仍 scoped 纯 CSS 未引 sass |
+| 门禁 | 契约测试 RED→GREEN（含 mine 全部断言）；pnpm test 249 passed、tsc --noEmit 0、uni build 成功（Compiler 5.26）、改动文件 biome 0 error（5 infos 既有不失败） | 主代理独立核验四门禁 |
+
+### 25.3 laiyipao 效率榜追赶分差恒为 0（提交 55699fb5e）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 economy.go:227-234 leaderboardOrderSQL 只对 efficiency 返回 ASC（分数越低越好），power/stage 为 DESC；前端 rank.vue:138-149 chaseGap 一律按 DESC 算分差（above.score-myScore / myScore-below.score），效率榜上一名分数更小、下一名更大，两侧相减为负被 Math.max(0,..) 夹成 0，用户看到「距上一名还差 0 分」有名次却无差距 | 前端展示与服务端排序契约不一致，行为级缺陷 |
+| 修复 | chaseGap 按 curType 排序方向取差：ascending=(curType==='efficiency')，ASC 时 toAbove=myScore-above.score、toBelow=below.score-myScore，DESC 保持原逻辑 | 最小改动，仅 rank.vue chaseGap |
+| 门禁 | rank.test.ts 组件行为 RED（效率榜期望差20实得0）→GREEN；rank 17/17；全量 pnpm test 1454 passed｜2 skipped；tsc/vue-tsc 双 exit0 | 主代理独立复跑 17 passed；未改 server 无 go test baseline |
+
+### 25.4 交付与边界
+
+- 本轮三提交 c3a065bdb、3aab77916、55699fb5e 及本现量文档 §25 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用（遵循 SSH 抖动教训）。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - 未修面记账：ProcessDesigner enhanced/基础版两套模拟并存、stepForward(:634) 自动模拟中可再触发 simulateNext 造成并发 interval（交互设计问题，非本轮范围）。B3、A1/A2/A5 维持既有记账不擅动。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
