@@ -31,7 +31,10 @@
             </view>
             <text class="rxn-name">{{ s.name }}</text>
             <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
-            <text class="dim">{{ s.kind === 'active' ? '主动' : '被动' }}</text>
+            <!-- R67 主动/被动配色区分：扫列表时不必读字 -->
+            <text class="kind-tag" :class="s.kind === 'active' ? 'kind-active' : 'kind-passive'">
+              {{ s.kind === 'active' ? '主动' : '被动' }}
+            </text>
             <text v-if="isOwned(s.id)" class="chip hit">已拥有</text>
           </view>
           <text class="rxn-descr">{{ s.descr || '（服务端未提供说明）' }}</text>
@@ -115,5 +118,9 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
-/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
+/* 条目分隔线走共享的 .rxn（styles/common.css） */
+/* R67 主动/被动标签配色 */
+.kind-tag { font-size: 22rpx; }
+.kind-active { color: var(--fire); }
+.kind-passive { color: var(--ice); }
 </style>

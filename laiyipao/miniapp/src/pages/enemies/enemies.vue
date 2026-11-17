@@ -49,7 +49,13 @@
           </view>
           <!-- 元素抗性（千分比） -->
           <view v-if="resistEntries(en).length" class="rxn-stats">
-            <text v-for="[el, v] in resistEntries(en)" :key="el" class="stat">
+            <!-- R65 抗性正负色分：正值减伤（红=对我有害），负值易伤（绿） -->
+            <text
+              v-for="[el, v] in resistEntries(en)"
+              :key="el"
+              class="stat"
+              :class="v > 0 ? 'res-up' : 'res-down'"
+            >
               {{ elementName(el as Element) }} {{ v > 0 ? '+' : '' }}{{ (v / 10).toFixed(1) }}%
             </text>
           </view>
@@ -122,5 +128,8 @@ function resistEntries(en: { resist?: Record<string, number> }): [string, number
 </script>
 
 <style scoped>
-/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
+/* 条目分隔线走共享的 .rxn（styles/common.css） */
+/* R65 抗性正负色分 */
+.res-up { color: var(--bad); }
+.res-down { color: var(--ok); }
 </style>

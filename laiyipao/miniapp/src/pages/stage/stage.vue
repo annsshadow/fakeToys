@@ -21,6 +21,8 @@
             @click="switchChapter(ch.id)"
           >
             {{ ch.name }}
+            <!-- R69 章节全清标记：切章节前就知道哪些已经打完 -->
+            <text v-if="chapterAllCleared(ch.id)" class="chapter-clear-dot">★</text>
           </view>
         </view>
       </scroll-view>
@@ -72,6 +74,11 @@
       <!-- 当前关卡详情 -->
       <view v-if="selected" class="card">
         <text class="card-title">第 {{ selected.id }} 关 · {{ selected.name }}</text>
+        <!-- R70 详情卡补历史最佳：重打前能看到自己这关的最好成绩 -->
+        <view v-if="starOf(selected.id) > 0" class="info-row">
+          <text class="muted">历史最佳</text>
+          <text class="stars-inline">{{ '★'.repeat(starOf(selected.id)) }}</text>
+        </view>
         <view class="info-row"><text class="muted">防线血量</text><text class="mono">{{ selected.base_hp }}</text></view>
         <view class="info-row"><text class="muted">波次</text><text class="mono">{{ selected.wave_count }}</text></view>
         <view class="info-row"><text class="muted">难度系数</text><text class="mono">{{ selected.difficulty }}‰</text></view>
@@ -300,6 +307,12 @@ const startLabel = computed(() => {
   return `开始战斗（消耗 ${selected.value.energy_cost} 体力）`
 })
 
+/** R69 本章所有关卡是否都已拿到星。 */
+function chapterAllCleared(id: number): boolean {
+  const levels = (store.config?.levels ?? []).filter((l) => l.chapter === id)
+  return levels.length > 0 && levels.every((l) => starOf(l.id) > 0)
+}
+
 function starOf(id: number): number {
   return stars.value[id] ?? 0
 }
@@ -420,6 +433,13 @@ onMounted(() => {
   background: rgba(255, 107, 53, 0.16);
   border-color: var(--fire);
   color: var(--fire);
+}
+
+/* R69 章节全清星标 */
+.chapter-clear-dot {
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: var(--warn);
 }
 
 /* 章节星级进度（2026-11-01 新一轮第 52 轮） */
@@ -583,6 +603,12 @@ onMounted(() => {
   justify-content: space-between;
   padding: 8rpx 0;
   font-size: 26rpx;
+}
+
+/* R70 历史最佳星数 */
+.stars-inline {
+  color: var(--warn);
+  letter-spacing: 4rpx;
 }
 /* 地形机制说明（2026-10-21 P4-4）：只显示名字不够，玩家要知道它做什么 */
 .terrain-note {

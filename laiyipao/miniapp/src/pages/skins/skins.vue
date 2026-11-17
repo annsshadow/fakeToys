@@ -119,5 +119,14 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
-/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
+/* 条目分隔线走共享的 .rxn（styles/common.css） */
+/* R68 传说稀有度 chip 微光，强化「稀有」价值感 */
+.rarity-chip.rarity-legendary {
+  animation: rarity-shine 2.4s ease-in-out infinite;
+}
+
+@keyframes rarity-shine {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); }
+  50% { box-shadow: 0 0 12rpx rgba(255, 215, 0, 0.5); }
+}
 </style>

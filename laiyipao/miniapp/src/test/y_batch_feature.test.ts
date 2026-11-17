@@ -74,4 +74,19 @@ describe('Y 批结构守卫', () => {
     expect(src).toContain('.grid-item:active .grid-icon')
     expect(src).toContain('ann-toggle')
   })
+
+  it('R65–R68 图鉴页信息分层', () => {
+    expect(read('../pages/enemies/enemies.vue')).toContain("v > 0 ? 'res-up' : 'res-down'")
+    expect(read('../pages/reactions/reactions.vue')).toContain('reachable-pulse')
+    expect(read('../pages/skills/skills.vue')).toContain('kind-active')
+    expect(read('../pages/skins/skins.vue')).toContain('rarity-shine')
+  })
+
+  it('R69/R70 关卡页章节与详情强化', () => {
+    const src = read('../pages/stage/stage.vue')
+    expect(src).toContain('chapterAllCleared')
+    expect(src).toContain('chapter-clear-dot')
+    expect(src).toContain('stars-inline')
+    expect(src).toContain('历史最佳')
+  })
 })

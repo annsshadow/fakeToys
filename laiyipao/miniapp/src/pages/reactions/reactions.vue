@@ -45,7 +45,8 @@
               <DefIcon name="reaction" :size="40" />
             </view>
             <text class="rxn-name">{{ r.name }}</text>
-            <text v-if="reachable.has(r.key as ReactionKey)" class="rxn-hit">可达</text>
+            <!-- R66 可达反应加脉冲，和「不可达」拉开差距 -->
+            <text v-if="reachable.has(r.key as ReactionKey)" class="rxn-hit reachable-pulse">可达</text>
           </view>
           <!-- 触发元素对（本地由 lookupReaction 反查，与服务端反应表同源） -->
           <view v-if="reactionPairs(r.key)" class="rxn-stats">
@@ -171,6 +172,12 @@ onMounted(() => {
 
 <style scoped>
 /* 图鉴样式已下沉到 styles/common.css（跨 6 个图鉴页复用） */
+/* R66 可达反应脉冲 */
+.reachable-pulse { animation: reachable-pulse 2s ease-in-out infinite; }
+@keyframes reachable-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
 /* 触发元素对：两个元素 tag + 加号的小胶囊组 */
 .pair-chip {
   display: inline-flex;
