@@ -843,6 +843,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 28.4 交付与边界
 
 - 本轮三提交 dc1d6b580、74ea65588、4b6bead0b 及本现量文档 §28 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 二十九、第20轮：R170考勤分页夹取 + attendance/index/chat token化 + 防线排行/时间线won语义反转（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r170 / lybug-r20）+ 主线程 R161 token 化增量续批，均经独立复跑确认 GREEN 后提交。
+
+### 29.1 oa4rust R170 考勤分页页码结果缩小后不夹取（提交 769669fde）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | AttendanceApp.vue:10 month input @change=loadData，page=ref(1) 但全文件无 page.value 重置，:127-130 分页UI「第N/总页」，:296 totalPages 按结果算，:305 loadData 只 reload 不改页码。用户停留在第N页切到只剩1页的月份（或删到只剩1页）→空列表+「第N/1页」。兄弟页 BBSForum:427/744/748、QueryStatementDesigner:1083 均显式 page=1，唯独此页遗漏 | 普遍模式不一致，行为可验证 |
+| 修复 | 新增 utils/paging.ts clampPage(page,totalPages) 幂等纯函数（空结果→1/越界→末页/非法归一）；AttendanceApp:297-301 queryFn 内夹取并自纠正（幂等，最多一次重取无死循环） | 其他分页页无同类缺口（IMChat 加载更多模型无末页；BBSForum/QSD 已有重置） |
+| 门禁 | paging.test.ts 5 例行为测试；RED 模块不存在→GREEN | 主代理从 oa4rust 根复跑 5 passed；pnpm test 1316 passed、typecheck 6 包、lint 356 文件 0 error |
+
+### 29.2 oa4rust 移动端 R161 增量续批：attendance + index + chat 页 token 化（提交 398bc82e2）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 承接续批，attendance 21 处、index 21 处、chat 20 处硬编码色仍未归一；状态色 #ff9900(警告)/#67c23a(成功)/#fff4e5(警告背景)/#b26a00(警告文字)跨页复用无 token | 主线程增量，与子代理写范围不重叠 |
+| 修复 | App.vue 新增 4 个语义 token：--color-warning(--success)/--color-warning-bg/--color-warning-text；三页 62 处硬编码色全部归一（chat 离线横幅走警告背景/文字 token，index 全用既有 token 不新增）；契约测试新增三页断言 | 改后三页硬编码色 0 处，style 仍 scoped 纯 CSS |
+| 门禁 | pnpm test 257 passed、tsc --noEmit 0、uni build 成功、改动文件 biome 0 error | 主代理独立核验 |
+
+### 29.3 laiyipao 防线损失排行与时间线 won 语义反转（提交 43ae1a524）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 adminapi.go:561 Won bool 注释=「挑战者是否获胜」，my_defense_challenges_test.go 佐证 won=true 才有 loot，me.vue:350 模板 h.won?'被攻破':'守住' 亦印证。但 :715 topLooters 用 filter(!d.won) 只筛防线守住（loot 空）→「损失排行（防线被破 Top5）」恒失真；子代理修复后主线程附带发现 :730 unifiedTimeline 用 d.won?'防线守住':'防线被破' 同样反语义 | 排行 bug 子代理修复并报附带发现，主线程复核契约属实后同批修时间线 |
+| 修复 | :715 filter(d=>d.won)（子代理）；:730 改 d.won?'防线被破':'防线守住' + 语义注释（主线程），与模板 :350 同口径 | 最小改动，未碰服务端 |
+| 门禁 | me_defense_looters.test.ts 两条组件行为测试（排行断言攻破者入榜/守住者不入、时间线断言 won=true 显示防线被破）排行 RED→GREEN、时间线 RED(实收防线守住)→GREEN，共 2/2 | 主代理独立复跑 2 passed；全量 pnpm test 1461 passed｜2 skipped；tsc/vue-tsc 双 exit0 |
+
+### 29.4 交付与边界
+
+- 本轮三提交 769669fde、398bc82e2、43ae1a524 及本现量文档 §29 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
