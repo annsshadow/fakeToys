@@ -251,10 +251,17 @@
         </view>
       </view>
 
+      <!-- R55 候选为空时给解释，而不是整块消失 -->
+      <view v-else v-show="meTab === 'main'" class="card empty-block">
+        <text class="empty-glyph">🛡️</text>
+        <text class="muted">暂时没有其他玩家的防线</text>
+        <text class="dim">先保存一套自己的防线，等别人设置后就能在这里挑战。</text>
+      </view>
+
       <view
         v-if="lastChallenge"
         v-show="meTab === 'main'"
-        class="card"
+        class="card pop-in"
         :style="{ borderColor: lastChallenge.won ? 'var(--ok)' : 'var(--bad)' }"
       >
         <text class="card-title">挑战结果</text>

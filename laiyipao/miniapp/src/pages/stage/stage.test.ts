@@ -375,4 +375,16 @@ describe('stage.vue 关卡页状态化（100 轮打磨）', () => {
       expect(wrapper.find('.start-btn').classes()).toContain('btn-disabled')
     }
   })
+
+  it('R54 章节星级进度条随星级渲染', async () => {
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    const track = wrapper.find('.chapter-star-track')
+    expect(track.exists()).toBe(true)
+    const fill = wrapper.find('.chapter-star-fill')
+    expect(fill.exists()).toBe(true)
+    expect(fill.attributes('style')).toContain('width:')
+  })
 })

@@ -38,7 +38,7 @@
 | V | 关卡页信息密度与状态化 | R11–R13 ✅ |
 | W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30 ✅ |
 | X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50 ✅ |
-| Y | 第二轮探索收敛（新取证驱动） | R51–R70（进行中，当前 R52） |
+| Y | 第二轮探索收敛（新取证驱动） | R51–R70（进行中，当前 R56） |
 | Z | 收尾审计与回归 | R71–R100 |
 
 ## 三、轮次台账
@@ -97,3 +97,7 @@
 | R50 | 11-17 | X 批收尾审计 | 12 个动效/反馈关键标记全量扫描，删除任一即刻失败 | micro_interaction_feature.test R50 |
 | R51 | 11-17 | 背包·宝石空态 CTA | 「还没有宝石」从死文案改为可点「去商城买一颗 →」直达商城 | bag.test R51（navigateTo 商城） |
 | R52 | 11-17 | 背包·预设空态聚焦 | 「还没有预设」给一键聚焦入口，聚焦后明确提示「已定位到上方输入框」 | bag.test R52 |
+| R53 | 11-17 | 关卡·空章节骨架 | 「本章节还没有关卡」从一行字改为图标 + 换章节引导 | y_batch_feature.test R53 |
+| R54 | 11-17 | 关卡·章节星级进度条 | 星级数字下方加可扫读的进度条（chapterStars/chapterTotal） | stage.test R54 + 源码守卫 |
+| R55 | 11-17 | 我的·防线候选空态 | candidates 为空时整块此前直接消失，现给解释卡 + 先设自己防线的引导 | y_batch_feature.test R55 |
+| R56 | 11-17 | 我的·挑战结果弹入 | 最近一次挑战结果卡 pop-in，胜负结论成看得见的事件 | y_batch_feature.test R56 |

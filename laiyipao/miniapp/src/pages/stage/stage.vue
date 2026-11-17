@@ -5,8 +5,10 @@
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
       </view>
-      <view v-else-if="chapterLevels.length === 0" class="card">
+      <view v-else-if="chapterLevels.length === 0" class="card empty-block">
+        <text class="empty-glyph">🗺️</text>
         <text class="muted">本章节还没有关卡</text>
+        <text class="dim">换一个章节看看，或从下方选择其它章节。</text>
       </view>
       <!-- 章节选择 -->
       <scroll-view scroll-x class="chapter-scroll" :show-scrollbar="false">
@@ -28,6 +30,12 @@
       <view v-if="chapterLevels.length" class="star-progress">
         <text class="muted">本章节星级</text>
         <text class="mono">{{ chapterStars }} / {{ chapterTotal }}</text>
+        <view class="chapter-star-track">
+          <view
+            class="chapter-star-fill"
+            :style="{ width: chapterTotal ? (chapterStars / chapterTotal * 100) + '%' : '0%' }"
+          />
+        </view>
       </view>
 
       <!-- 关卡网格 -->
@@ -431,6 +439,27 @@ onMounted(() => {
 .star-progress .mono {
   color: var(--warn);
   font-weight: 600;
+}
+
+/* R54 章节星级进度条：数字之外给一条可扫读的进度 */
+.star-progress {
+  flex-wrap: wrap;
+  row-gap: 10rpx;
+}
+
+.chapter-star-track {
+  width: 100%;
+  height: 10rpx;
+  border-radius: 999rpx;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+
+.chapter-star-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: var(--warn);
+  transition: width 0.3s ease-out;
 }
 
 .grid {
