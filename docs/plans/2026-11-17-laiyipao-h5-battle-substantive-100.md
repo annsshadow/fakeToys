@@ -167,5 +167,7 @@
 
 | A6 弹体系统 | R26、R31 | R26 弹体按元素改形状（火水滴/冰菱/雷闪电/腐蚀泡/动能箭头，烘焙期零运行期增量）/ R31 有方向的弹体按飞行速度旋转朝向（save/rotate/restore 状态操作，零 draw call） | `canvas.test.ts` + `perf_frame.test.ts` + `v3_battle_substantive.test.ts` 13/13 |
 
+**本批验证汇总**：全量 `1390 passed / 2 skipped`（基线 2 条带理由跳过）；type-check 通过；perf 峰值 L100=120（贴预算）、满载 634/700；6 批提交均在新分支 `feat/h5-battle-substantive-100`。
+
 > 已核对：R27 命中火花、R28 AOE 环、R29 连锁电弧、R48–R52 地形动画在前几批已实现，
 > 本批不重复造轮子（用户明确反对「凑数轮」）。
