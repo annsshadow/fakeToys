@@ -410,3 +410,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - 结论：**远程测试服本会话不可部署**，缺外部凭据——laiyipao/deploy/.local.keys 仅四个业务变量名（值未读未回显），无 SSH 主机/用户/私钥；CD 通路 .github/workflows/ai-platform-cd.yml 依赖 GitHub 服务端 secrets.DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY/DEPLOY_PATH 与 vars.AI_PLATFORM_DEPLOY_ENABLED/AI_PLATFORM_URL，本会话读不到；augmentor/deploy 无自身真值文件。
 - 本地验收服务仍在运行：curl 127.0.0.1:8000/api/health → HTTP200 {status:ok,version:3.0.0}。
 - 访问口径不变：本地 http://127.0.0.1:8000/ 可访问；无传统用户名/密码，写操作走 X-API-Key，口令即 AUGMENTOR_API_KEY（gitignored Temp/aug-key.txt，严禁回显）；远程路径测试域名 /augmentor/ + /augmentor-api/ 待外部凭据条件满足后按 augmentor/deploy/README.md 落地。
+
+---
+
+## 十五、第6轮：R156 CRUD删除重入守卫 + laiyipao趋势胜负色bug + A1/A2取证（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理 + 主线程安全候选取证。成果均已提交推送到当前分支（非 main），远端追踪引用经 SSH 推送后手动同步。
+
+### 15.1 oa4rust R156 桌面 CRUD 删除重入守卫（提交 7dceab7f3）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | backlog B2 全仓普查遗漏的同族面：26 个 CRUD 列表页删除动作为 `if (await confirmMsg(...)) delM.mutate(id)`，无守卫/无 disabled/无复位；confirmMsg 异步，双击发重复非幂等 DELETE。R153 只覆盖 6 页 | 脚本核验 26/26 同模式、0 个已有守卫；CollectApp.vue:170 为同族正确范例 |
+| 修复 | 每页加 `const deletingId = ref('')` 按行守卫，deleteItem 改「守卫→await 确认→占位→onSettled 必复位」，删除按钮加 `:disabled="deletingId === item.id"` + CSS 视觉态；守卫在 await 前、占位在确认后，封死重复且不永久卡死 | 30 个文件现含 deletingId 守卫（26 新 + 4 原有），逻辑逐行核对 |
+| 门禁 | test-first RED 26 failed→GREEN 26 passed；新增 crudDeleteGuards.test.ts 26 例源码契约（多 confirmMsg 页面按 deleteItem 函数体切作用域） | 主代理独立复跑 pnpm test 76 文件/1224 passed、typecheck 6 包全绿、biome 128 文件干净 |
+
+### 15.2 laiyipao 战报趋势胜负色判定错误（提交 05a707788）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | battles.vue:235 trend 用 `it.result === 'win' \|\| it.result === '1' \|\| it.stars > 0` 判胜；但服务端 resultStr 只有 win/lose（game.go:655-660），stars 由 computeStars(score,targets) 按分数门槛独立算、与胜负无关（battle.go:676-685），lose+stars>0 是合法数据。列表徽章/连胜/胜率全认 result==win，唯独趋势图画成绿色胜利点，同一条战报页面自相矛盾 | 契约取证：game.go 落库 result 与 stars 独立写入（:546） |
+| 修复 | 判定改为只认 `it.result === 'win'`（删 result==='1' 历史遗留）+ 2 行注释说明 | RED（lose+2星趋势点期望 trend-lose 实得 trend-win）→GREEN 3 passed |
+| 门禁 | 新增 battles.test.ts 回归（真实挂载 win/3星 + lose/2星两条战报） | 主代理独立复跑 pnpm test 124 文件/1441 passed\|2 skipped exit0（基线 1440+1） |
+
+### 15.3 安全候选 A1/A2 取证（未改代码，以现量为准）
+
+- **A1 第三方回调验签**：oauth.rs:125 verify_wechat_signature / :147 verify_dingtalk_signature 定义后全仓零调用；但全后端 grep 显示第三方回调路由均在 program_center crate（dingding/qiyeweixin/zhengwudingding sync/regist/callback），写回调全部有 `require_admin_opt` 会话鉴权（如 dingding_sync_organization_callback:4810、zhengwudingding_*_callback:9263/9291），读回调（*_get_callback_aes）仅查库无副作用。**无匿名第三方推送可伪造的真实暴露面**，强行接验签会破坏现有 admin 调用流程，故不臆造修复；验签函数视为预留能力。
+- **A2 NUMERIC 丢列**：row_to_json 100+ 调用点（多在 SELECT * 动态 SQL），调用面 ::float8/::text 转写不现实易回归；response.rs:27-29 已标「另一批记账」残留；Cargo.toml postgres-types 无 decimal feature。本轮不动，保留 backlog 记账。
+- **augmentor 部署边界**：上轮 augverify-r5 已核实，本轮复核 health 200、本地服务在跑；远程测试服部署仍缺外部凭据（GitHub secrets.DEPLOY_*，本会话读不到），口径不变。
+
+### 15.4 交付与边界
+
+- 本轮两提交 7dceab7f3、05a707788 已 SSH 推送，refs/remotes/origin/feat/h5-battle-substantive-100 同步至 05a707788，本地与远端追踪引用一致、工作树干净。
+- B3（auth_person id≠uid）按 R152「未复现并行 23505、需先定 id 权威」仍不可确证，继续不动。
