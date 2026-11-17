@@ -811,6 +811,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 27.4 交付与边界
 
 - 本轮四提交 adb8fd9d3、a52739783、c8824cdd5 及本现量文档 §27 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 二十八、第19轮：R169日历页业务日/跨年网格修复 + meeting/calendar token化 + 战报hasMore游标权威（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r169 / lybug-r19）+ 主线程 R161 token 化增量续批，均经独立复跑确认 GREEN 后提交。
+
+### 28.1 oa4rust R169 日历页业务日 UTC+8 与跨年网格键（提交 dc1d6b580）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | CalendarApp.vue 三处缺陷：:163 用 new Date() 本地时区快照（绕过 R167 已统一的 UTC+8 业务日）且跨午夜不刷新；:509/:537 跨年相邻格 month 写成 0/13（1月→0、12月→13）致 cell.month 与 currentMonth 恒不等、点击失效；:507/:522/:535 跨月格 key 不补零致 Vue key 复用风险 | 全 views 仅此一处 const today=new Date() 模式，行为可验证 |
+| 修复 | 新增 utils/calendarGrid.ts 三纯函数：calendarBusinessToday（固定 UTC+8、每次调用读实时时刻）、calendarCellKey（恒定补零）、shiftCalendarMonth（1..12 归一+跨年借进位）；CalendarApp.vue 接线初始月/年、isToday、goToday、跨年相邻格 | UI 与事件过滤格式不变，未引入定时器轮询（跨午夜靠切月/goToday/数据刷新等响应式重算刷新） |
+| 门禁 | calendarGrid.test.ts 6 例行为测试；RED 6 failed→GREEN | 主代理从 oa4rust 根复跑 6 passed；pnpm test 1311 passed、typecheck 6 包、lint 354 文件 0 error |
+
+### 28.2 oa4rust 移动端 R161 增量续批：meeting + calendar 页 token 化（提交 74ea65588）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 承接续批，meeting 页 27 处、calendar 页 25 处硬编码色仍未归一；#dcdfe6（深边框，跨 meeting/recycle 两页）无 token | 主线程增量，与子代理写范围不重叠 |
+| 修复 | App.vue 新增 --color-border-strong(#dcdfe6)；两页 52 处硬编码色全部归一；契约测试新增 meeting/calendar 共 19 项断言 | 错误红变体 #e74c3c（calendar）按同语义归一 --color-error；.btn[disabled] 伪类选择器断言用直接字符串避免 styleValue 正则转义坑（曾 1 failed 后修正） |
+| 门禁 | pnpm test 254 passed、tsc --noEmit 0、uni build 成功、改动文件 biome 0 error | 主代理独立核验四门禁 |
+
+### 28.3 laiyipao 战报 hasMore 改以 next_cursor 为权威（提交 4b6bead0b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 MyBattleHistoryPage(economy.go:1294-1354)多取1行算 hasMore、截断到 limit；routes.go:829-837 仅 hasMore&&len>0 返回 next_cursor 否则 0。但前端 battles.vue:264/:548 用本页条数>=20 推导 hasMore，与同时取的 next_cursor 并存。战报总数正好 20/40/60 整页倍数时服务端 next_cursor=0（无下一页），页面仍挂加载更多、点击重复拉同一页内容不变。既有测试只覆盖趋势色/结果筛选/keyset 去重，未覆盖满页末页 | 前端展示与服务端分页契约不一致，行为可验证 |
+| 修复 | reload() 与 loadMore() 两处 hasMore.value=(res.next_cursor??0)>0，以服务端权威游标为唯一判据，各加一行契约注释 | 子代理顺带清理早先人工探针 gem_cost_probe.test.ts 与废弃 gem_combine_cost_red.test.ts（测试不存在的 mergeGems、无效RED、TS6133 阻塞门禁），属垃圾清理非产品逻辑 |
+| 门禁 | battles.test.ts 新增行为测试（mock 20条+next_cursor=0，断言 .load-more 不存在）RED(expected true to be false)→GREEN 6/6 | 主代理独立复跑 6 passed；全量 pnpm test 1459 passed｜2 skipped；vue-tsc/tsc 双 exit0 |
+
+### 28.4 交付与边界
+
+- 本轮三提交 dc1d6b580、74ea65588、4b6bead0b 及本现量文档 §28 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0（修掉 battles.test.ts 末尾空行）、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
