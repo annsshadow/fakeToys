@@ -77,6 +77,9 @@ describe('rank.vue 排行榜', () => {
     expect(wrapper.text()).toContain('玩家')
     // user_id 与当前用户一致 → 高亮
     expect(rows[1]!.classes()).toContain('me')
+    // R49 我的行给「我」标记，长榜里一眼定位
+    expect(rows[1]!.find('.me-chip').exists()).toBe(true)
+    expect(rows[0]!.find('.me-chip').exists()).toBe(false)
     expect(store.loggedIn).toBe(true)
   })
 

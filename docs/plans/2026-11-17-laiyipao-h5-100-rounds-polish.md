@@ -37,8 +37,8 @@
 | U | 背包可用性重构（用户点名） | R7–R10 ✅ |
 | V | 关卡页信息密度与状态化 | R11–R13 ✅ |
 | W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30 ✅ |
-| X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50（下一批） |
-| Y | 第二轮探索收敛（新取证驱动） | R51–R70 |
+| X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50 ✅ |
+| Y | 第二轮探索收敛（新取证驱动） | R51–R70（下一批） |
 | Z | 收尾审计与回归 | R71–R100 |
 
 ## 三、轮次台账
@@ -89,3 +89,9 @@
 | R42 | 11-17 | 首页·资源变动高亮 | 金币/钻石/体力变动时对应胶囊短促放大（watch 精确区分是哪一项变了） | index.test R42（coin→999 仅金币亮） |
 | R43 | 11-17 | 专精·可选节点脉冲 | 可选未点亮节点加呼吸「+」号，强化可点语义 | mastery 源码守卫 |
 | R44 | 11-17 | 全局·页面进入淡入 | .page-root 加 0.24s 淡入，路由切换不再硬切；减少动效时自动关闭 | micro_interaction_feature.test R44 |
+| R45 | 11-17 | 筛选/页签激活弹性 | 激活 chip/tab 切换时短促回弹，切换动作有手感 | micro_interaction_feature.test R45 |
+| R46 | 11-17 | 列表行按压反馈 | 图鉴/商城/榜单行按压缩放降透明，触屏「点了有反应」 | micro_interaction_feature.test R46 |
+| R47 | 11-17 | 星级评价弹入 | 关卡星级从缩略旋转弹入，通关评价更有仪式感 | micro_interaction_feature.test R47 |
+| R48 | 11-17 | 空态图标浮动 | 空态图标轻微上下浮动，空白页不再死板 | micro_interaction_feature.test R48 |
+| R49 | 11-17 | 排行榜·我的行强调 | 「我」徽章 + 呼吸光，长榜里一眼定位自己在哪 | rank.test R49 + 源码守卫 |
+| R50 | 11-17 | X 批收尾审计 | 12 个动效/反馈关键标记全量扫描，删除任一即刻失败 | micro_interaction_feature.test R50 |

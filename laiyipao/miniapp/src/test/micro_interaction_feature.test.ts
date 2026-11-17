@@ -117,4 +117,36 @@ describe('微交互与加载反馈守卫', () => {
     expect(CSS()).toContain('animation: page-in')
     expect(CSS()).toContain('@keyframes page-in')
   })
+
+  it('R45 筛选 chip 激活弹性', () => {
+    expect(CSS()).toContain('@keyframes chip-pop')
+    expect(CSS()).toContain('.filter-chip.active')
+  })
+
+  it('R46 列表行按压反馈', () => {
+    expect(CSS()).toContain('.rxn:active')
+    expect(CSS()).toContain('.shop-row:active')
+  })
+
+  it('R47 星级弹入 / R48 空态浮动', () => {
+    expect(CSS()).toContain('@keyframes stars-in')
+    expect(CSS()).toContain('@keyframes empty-float')
+  })
+
+  it('R49 排行榜「我」行标记与呼吸', () => {
+    const src = read('../pages/rank/rank.vue')
+    expect(src).toContain('me-chip')
+    expect(src).toContain('@keyframes me-glow')
+  })
+
+  it('R50 X 批收尾审计：关键动效/反馈标记齐全', () => {
+    const css = CSS()
+    for (const marker of [
+      '.btn:active', 'skeleton-shimmer', 'pop-in', 'claim-pop', 'stagger-in',
+      'shake', 'ok-pulse', 'spin', 'page-in', 'chip-pop', 'stars-in', 'empty-float',
+      'prefers-reduced-motion',
+    ]) {
+      expect(css, marker).toContain(marker)
+    }
+  })
 })

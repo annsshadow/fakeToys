@@ -37,6 +37,8 @@
         >
           <text class="rank-no mono" :class="'no-' + (i + 1)">{{ i + 1 }}</text>
           <text class="rank-name flex-1">{{ it.nickname || '玩家' }}</text>
+          <!-- R49 我的行给「我」标记：榜单很长时不用找高亮在哪 -->
+          <text v-if="it.user_id === store.userId" class="me-chip">我</text>
           <!-- R18 前三名奖牌：名次徽章之外再给一枚一眼可辨的贵金属标记 -->
           <text v-if="i < 3" class="medal">{{ MEDALS[i] }}</text>
           <text class="rank-score mono">{{ formatScore(it.score) }}</text>
@@ -241,6 +243,22 @@ onMounted(async () => {
 
 .rank-row.me {
   background: rgba(255, 107, 53, 0.08);
+  animation: me-glow 2s ease-in-out infinite;
+}
+
+@keyframes me-glow {
+  0%, 100% { box-shadow: inset 0 0 0 rgba(255, 107, 53, 0); }
+  50% { box-shadow: inset 0 0 16rpx rgba(255, 107, 53, 0.18); }
+}
+
+.me-chip {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  color: var(--fire);
+  background: var(--fire-soft);
+  margin-right: 8rpx;
 }
 
 /* R18 前三名：底色 + 左侧贵金属描边（inset 阴影不撑破布局） */

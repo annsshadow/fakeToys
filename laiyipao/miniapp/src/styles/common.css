@@ -116,6 +116,52 @@ page,
   to { opacity: 1; }
 }
 
+/* R45 筛选 chip 激活弹性：切换筛选给一个短促回弹 */
+.filter-chip.active,
+.tab.active {
+  animation: chip-pop 0.28s cubic-bezier(0.2, 0.85, 0.3, 1.2);
+}
+
+@keyframes chip-pop {
+  0% { transform: scale(0.9); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* R46 列表行按压反馈（图鉴 / 商城 / 战绩等） */
+.rxn:active,
+.shop-row:active,
+.rank-row:active {
+  opacity: 0.7;
+  transform: scale(0.995);
+}
+
+.rxn,
+.shop-row,
+.rank-row {
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+/* R47 星级评价弹入 */
+.stars {
+  animation: stars-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+
+@keyframes stars-in {
+  0% { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* R48 空态图标轻微浮动，让空白页不那么死 */
+.empty-glyph {
+  animation: empty-float 2.6s ease-in-out infinite;
+}
+
+@keyframes empty-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8rpx); }
+}
+
 /*
  * 安全区（2026-10-21 P6-2）。
  *
