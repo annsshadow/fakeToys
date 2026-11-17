@@ -47,7 +47,8 @@
   /* 文字 */
   --text-primary: #f0f6fc;
   --text-secondary: #8b9dc3;
-  --text-muted: #4a5568;
+  /* WCAG 2.1 AA 1.4.3：正文 token 需在 base/surface/elevated 上均 ≥4.5:1（见 textContrast.contract.test.ts）。 */
+  --text-muted: #7b8aa8;
   --text-inverse: #060913;
 
   /* 阴影 */
@@ -100,7 +101,8 @@
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  /* WCAG 2.1 AA 1.4.3：正文 token 需在 base/surface/elevated 上均 ≥4.5:1（见 textContrast.contract.test.ts）。 */
+  --text-muted: #5c6a7d;
   --text-inverse: #ffffff;
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
