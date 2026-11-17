@@ -107,7 +107,7 @@ onLoad(async () => {
 .form-card {
   padding: 14px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .field {
   margin-bottom: 14px;
@@ -116,25 +116,25 @@ onLoad(async () => {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
-  color: #5a6478;
+  color: var(--color-text-secondary);
 }
 .picker-value {
   height: 36px;
   line-height: 36px;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .picker-value.placeholder {
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 .input {
   height: 36px;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
 }
 .textarea {
@@ -142,7 +142,7 @@ onLoad(async () => {
   min-height: 120px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
   box-sizing: border-box;
 }
@@ -152,8 +152,8 @@ onLoad(async () => {
   line-height: 44px;
   text-align: center;
   border-radius: 22px;
-  background: #2f6bff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 15px;
 }
 .submit.disabled {

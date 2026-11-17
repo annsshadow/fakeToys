@@ -97,12 +97,12 @@ onShow(async () => {
 }
 .tip {
   text-align: center;
-  color: #8a94a6;
+  color: var(--color-text-muted);
   padding: 40px 0;
   font-size: 14px;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -113,14 +113,14 @@ onShow(async () => {
   display: inline-block;
   padding: 4px 14px;
   border-radius: 12px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
 }
 .error-banner {
   padding: 12px 16px;
   text-align: center;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .list {
   display: flex;
@@ -133,7 +133,7 @@ onShow(async () => {
   justify-content: space-between;
   padding: 12px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .item-main {
   flex: 1;
@@ -142,12 +142,12 @@ onShow(async () => {
 .item-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .item-url {
   margin-top: 4px;
   font-size: 12px;
-  color: #8a94a6;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -156,8 +156,8 @@ onShow(async () => {
   margin-left: 10px;
   padding: 4px 10px;
   border-radius: 12px;
-  background: #fdecec;
-  color: #d65050;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 12px;
 }
 .item-del.disabled {

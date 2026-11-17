@@ -20,6 +20,10 @@ const contacts = src('pages/contacts/contacts.vue')
 const attendance = src('pages/attendance/attendance.vue')
 const index = src('pages/index/index.vue')
 const chat = src('pages/chat/chat.vue')
+const recycle = src('pages/recycle/recycle.vue')
+const topic = src('pages/bbs/topic.vue')
+const browse = src('pages/browse/browse.vue')
+const bbsNew = src('pages/bbs/new.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -232,6 +236,20 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(index).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
+  it('recycle 页面：19 处硬编码色全部归一到语义 token（含危险按钮色）', () => {
+    expect(styleValue(recycle, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(recycle, '.card', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(recycle, '.card-title', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(recycle, '.btn', 'color')).toBe('var(--color-text-body)')
+    expect(styleValue(recycle, '.btn.danger', 'color')).toBe('var(--color-error)')
+    expect(styleValue(recycle, '.btn.empty', 'background')).toBe('var(--color-error)')
+    expect(styleValue(recycle, '.retry-btn', 'border')).toBe('1rpx solid var(--color-error)')
+    expect(styleValue(recycle, '.error-banner', 'background')).toBe('var(--color-error-tint)')
+    expect(styleValue(recycle, '.detail-close', 'color')).toBe('var(--color-primary)')
+    expect(styleValue(recycle, '.detail-body', 'color')).toBe('var(--color-text-body)')
+    expect(recycle).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
   it('chat 页面：20 处硬编码色全部归一到语义 token（含离线提示色）', () => {
     expect(styleValue(chat, '.chat', 'background')).toBe('var(--color-bg-page)')
     expect(styleValue(chat, '.new-msg', 'background')).toBe('var(--color-primary)')
@@ -242,6 +260,21 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(styleValue(chat, '.load-older', 'color')).toBe('var(--color-primary)')
     expect(styleValue(chat, '.input', 'border')).toBe('1px solid var(--color-border)')
     expect(chat).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('bbs/topic 页面：18 处硬编码色全部归一到语义 token', () => {
+    expect(topic).toContain('<style scoped>')
+    expect(topic).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('browse 页面：17 处硬编码色全部归一到语义 token', () => {
+    expect(browse).toContain('<style scoped>')
+    expect(browse).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('bbs/new 页面：9 处硬编码色全部归一到语义 token', () => {
+    expect(bbsNew).toContain('<style scoped>')
+    expect(bbsNew).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
   it('两页面 style 仍为 scoped 纯 CSS，未偷偷引入 sass/lang', () => {

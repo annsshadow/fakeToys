@@ -142,7 +142,7 @@ function detailText(): string {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -156,17 +156,17 @@ function detailText(): string {
   text-align: center;
   padding: 16rpx 0;
   font-size: 28rpx;
-  color: #5b6572;
-  background: #fff;
+  color: var(--color-text-body);
+  background: var(--color-surface);
   border-radius: 12rpx;
 }
 .tab.on {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -174,15 +174,15 @@ function detailText(): string {
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .card-desc {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .detail {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-top: 8rpx;
@@ -196,27 +196,27 @@ function detailText(): string {
 .detail-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .detail-close {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .detail-body {
   font-size: 22rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -227,13 +227,13 @@ function detailText(): string {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 </style>
