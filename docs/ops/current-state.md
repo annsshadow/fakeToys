@@ -666,6 +666,33 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 22.4 交付与边界
 
 - 本轮三提交 5ba17ce06、e75b6a990、31668cc49 及本现量文档 §22 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 二十三、第14轮：R164百分比格式化统一 + laiyipao skill_damage词条翻译（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r164 / lybug-r14），均经主线程独立复跑确认 GREEN 后提交。
+
+### 23.1 oa4rust R164 统一百分比格式化并修 NaN%/假100%（提交 5479447f1）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 全仓 views toFixed 50 处/toLocaleString 16 处，百分比精度 0/1/2 位混乱，且三处真实渲染缺陷：ProcessDesigner.vue:7163-7166 方向分布 total=0 渲染 NaN%、QueryStatementDesigner.vue:1208-1212 空执行历史硬编码 return '100%'（无数据误报全部成功）、ProcessDesigner.vue:1915 成功率空数据把 0 显示 0% | 类比 R163 文件大小，选普遍且可行为验证的百分比轴 |
+| 修复 | 新增 utils/formatNumber.ts formatPercent(value,digits=1)：0..1 比例→固定精度带 %，无效值/0-0→—，接受数值串；三页接入（FormDesigner 错误率、ProcessDesigner 成功率+方向分布、QueryStatementDesigner 空历史改占位）；FormDesigner 按既有模式加 noUnusedImports 豁免 | 接入后 0.005→0.50%、零分母→—、无历史→— |
+| 门禁 | formatNumber.test.ts 3 例行为测试（精度/数值串/无效 NaN 占位）；RED 模块不存在→GREEN | 主代理从 oa4rust 根复跑 3 passed；pnpm test 1287 passed、typecheck 6 包、lint 345 文件 0 error（8 infos 既有不失败） |
+
+### 23.2 laiyipao 背包 skill_damage 词条英文原文（提交 ff8d3c998）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 SeedGemAffixes 下发 skill_damage 词条（锋锐石/技艺石各一条，content.go:548 宝石 8 Attr 也是该 key），背包 bag.vue:739 用共享 affixName() 显示；图鉴 gems.vue:222 局部映射有 skill_damage:'技能伤害'，但共享 labels.ts 的 AFFIX_NAME 漏这条 → 背包显示英文原文 skill_damage，与图鉴中文不一致，违背 labels.ts 消灭英文 key 上屏约定 | 非 grep 猜测：RED 用真实函数 affixName('skill_damage') 断言 |
+| 修复 | AFFIX_NAME 补一行 skill_damage:'技能伤害'（与图鉴译名一致） | 最小改动，未碰服务端 |
+| 门禁 | labels.test.ts 新增遍历服务端 8 词条的 RED 行为断言（修复前 FAIL 1/9：skill_damage not translated）→GREEN 9/9 | 主代理独立复跑 9 passed；全量 pnpm test 1450 passed｜2 skipped；vue-tsc/tsc 双 exit0 |
+
+### 23.3 未修面与交付边界
+
+- R164 未修面（如实记账）：ProcessDesigner.vue:1928 进度 toFixed(0)%（getSimulationProgress 恒返回 0）、:8626 局部 formatDuration、:10930 局部 formatNumber(K/M 缩写)、:11265 评分 toFixed(1)、FormDesigner :469/470/472 毫秒/吞吐局部格式化、toLocaleString 16 处（多为时间戳）——均非百分比，留后续单独轮次。
+- 本轮两提交 5479447f1、ff8d3c998 及本现量文档 §23 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
