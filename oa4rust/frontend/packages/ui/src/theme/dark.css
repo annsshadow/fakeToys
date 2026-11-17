@@ -225,3 +225,25 @@ body {
 .neon-button:hover::before {
   transform: translateX(100%);
 }
+
+/* ===== 无障碍：尊重系统「减少动态效果」偏好（WCAG 2.3.3）=====
+ * 桌面存在 130+ 处 transition / animation / shimmer / glass 动效。对前庭功能
+ * 敏感、或在系统里开启「减少动态效果」的用户，这些动画会造成眩晕与不适。
+ * 全局收敛到极短时长而非直接 none —— 保留 transitionend 事件（部分交互逻辑
+ * 依赖它触发收尾），只把视觉感知降到接近瞬时。与 QueryStatementDesigner.vue
+ * 已有的局部守卫同口径，此处提升到全局主题层统一生效，覆盖所有视图。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion 守卫必须覆盖各视图 scoped 样式里的动效 */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上，全局守卫需要最高优先级 */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上，全局守卫需要最高优先级 */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 平滑滚动需被强制关闭 */
+    scroll-behavior: auto !important;
+  }
+}
