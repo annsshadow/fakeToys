@@ -393,7 +393,7 @@
               <view class="kv"><text class="muted">地形</text><text class="mono">{{ (battleDetail.terrain_used || []).join('、') || '无' }}</text></view>
               <view class="kv"><text class="muted">命中</text><text class="mono">{{ battleDetail.hits }}/{{ battleDetail.shots }}</text></view>
               <view class="kv"><text class="muted">峰值热量</text><text class="mono">{{ battleDetail.heat_max }}</text></view>
-              <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ battleDetail.hp_left }}%</text></view>
+              <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ battleDetail.hp_left }}</text></view>
               <view class="kv"><text class="muted">到达波次</text><text class="mono">{{ battleDetail.wave_reached }}</text></view>
               <view class="kv"><text class="muted">时长</text><text class="mono">{{ Math.round(battleDetail.duration_ms / 1000) }}s</text></view>
             </view>
