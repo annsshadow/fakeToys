@@ -1160,9 +1160,9 @@ export class BattleRenderer {
     const key = `enemy:${category}:${bodyColor}:${strokeColor}:${Math.round(rPx)}:${defId}:${mark}:${isBoss ? 1 : 0}:${flyBand}`
     return (
       this.sprite(key, () => {
-        // pad 保持与 drawEnemy 的 size 公式一致，避免缩放/裁切
-        const pad = 3
-        const size = Math.max(2, Math.ceil(rPx * 2 + pad * 2))
+        // A4：精灵外扩到 2.8r 容纳翼/冠/肩甲装饰（r*1.35 不裁切）；
+        // 必须与 drawEnemy 的 size 公式一致，否则 drawImage 会拉伸变形。
+        const size = Math.max(2, Math.ceil(rPx * 2.8 + 6))
         const layer = acquireLayer(size, size)
         if (!layer) return null
         this.paintEnemyBody(layer.ctx, size / 2, size / 2, rPx, category, bodyColor, strokeColor, this.vp.scale, mark, defId, isBoss, flyHeight)
@@ -1248,6 +1248,64 @@ export class BattleRenderer {
     this.paintEnemyMark(ctx, x, y, r, mark)
     // R32–R34 类型专属纹理：霜纹/电弧/装甲板，进一步拉开同类敌的辨识度
     this.paintEnemyTrait(ctx, x, y, r, defId)
+    // R14/R17/R22/R19 体型装饰（翼/冠/肩甲/抗性角标），全部烘进位图，零每帧增量
+    this.paintEnemySilhouette(ctx, x, y, r, category, isBoss)
+  }
+
+  /**
+   * A4 体型装饰（R14 飞翼 / R17 BOSS 冠 / R22 精英肩甲 / R19 抗性角标）。
+   * 全部在烘焙期一次性画进精灵，运行期零 draw call。
+   * ⚠️ 与 paintEnemyMark 同样不调用 closePath（形状用例精确计数 5）。
+   */
+  private paintEnemySilhouette(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    category: string,
+    isBoss: boolean,
+  ): void {
+    // R14 飞行双翼：三角本体两侧各一扇半透明翼，飞行敌一眼可辨「会飞」
+    if (category === 'flying') {
+      ctx.fillStyle = 'rgba(190,215,240,0.28)'
+      ctx.beginPath()
+      ctx.moveTo(x - r * 0.5, y)
+      ctx.lineTo(x - r * 1.35, y - r * 0.55)
+      ctx.lineTo(x - r * 1.2, y + r * 0.4)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(x + r * 0.5, y)
+      ctx.lineTo(x + r * 1.35, y - r * 0.55)
+      ctx.lineTo(x + r * 1.2, y + r * 0.4)
+      ctx.fill()
+    }
+    // R17 BOSS 王冠尖刺：顶部三枚尖角，首领剪影更具压迫感
+    if (isBoss) {
+      ctx.fillStyle = 'rgba(255,211,61,0.7)'
+      ctx.beginPath()
+      for (const dx of [-0.5, 0, 0.5]) {
+        ctx.moveTo(x + r * dx - r * 0.12, y - r * 0.75)
+        ctx.lineTo(x + r * dx, y - r * 1.25)
+        ctx.lineTo(x + r * dx + r * 0.12, y - r * 0.75)
+      }
+      ctx.fill()
+    }
+    // R22 精英肩甲：八边形两侧的金属肩片（普通八边形敌没有，区分精英）
+    if (category === 'elite') {
+      ctx.fillStyle = 'rgba(201,167,255,0.5)'
+      ctx.fillRect(x - r * 1.1, y - r * 0.3, r * 0.35, r * 0.6)
+      ctx.fillRect(x + r * 0.75, y - r * 0.3, r * 0.35, r * 0.6)
+    }
+    // R19 抗性角标：实体右上角的 tiny 盾形，提示「这只有抗性，换元素」
+    // （具体哪种抗性由元素层方块承担，这里只标记「有抗性」这一事实）
+    if (isBoss || category === 'elite' || category === 'special') {
+      ctx.fillStyle = 'rgba(255,123,114,0.8)'
+      ctx.beginPath()
+      ctx.moveTo(x + r * 0.7, y - r * 0.7)
+      ctx.lineTo(x + r * 1.05, y - r * 0.85)
+      ctx.lineTo(x + r * 1.05, y - r * 0.45)
+      ctx.fill()
+    }
   }
 
   /**
@@ -1459,7 +1517,7 @@ export class BattleRenderer {
     // 主体：形状 + 描边 + 高光 + 徽记整副烘焙成位图，多次提交 → 1 次 drawImage
     const body = this.enemySprite(e.category, bodyColor, strokeColor, r, e.defId, style.mark, e.isBoss, e.flyHeight)
     if (body) {
-      const size = Math.max(2, Math.ceil(r * 2 + 6))
+      const size = Math.max(2, Math.ceil(r * 2.8 + 6)) // A4：与精灵烘焙尺寸一致（容纳翼/冠装饰）
       ctx.drawImage(body as never, bx - size / 2, by - size / 2, size, size)
     } else {
       this.paintEnemyBody(ctx, bx, by, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
@@ -1552,7 +1610,11 @@ export class BattleRenderer {
           const sx = x - r + slot * 6 * vp.scale
           const sy = y + r + 3 * vp.scale
           ctx.fillStyle = ELEMENT_COLOR[el]
-          ctx.fillRect(sx, sy, 4 * vp.scale, 4 * vp.scale)
+          // R18 元素层数从方块改为发光圆点：与技能图标的元素语言一致，
+          // 每格仍是同一次 fill（fillRect→arc+fill，零 draw call 增量）。
+          ctx.beginPath()
+          ctx.arc(sx + 2 * vp.scale, sy + 2 * vp.scale, 2.4 * vp.scale, 0, Math.PI * 2)
+          ctx.fill()
           slot++
         }
       }

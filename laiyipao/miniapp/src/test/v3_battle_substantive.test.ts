@@ -42,6 +42,23 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('R9 击杀地面残留')
   })
 
+  it('A4 敌人剪影 R14飞翼/R17BOSS冠/R22精英肩甲/R19抗性角标（全部烘焙，零每帧增量）', () => {
+    const src = canvas()
+    expect(src).toContain('paintEnemySilhouette')
+    expect(src).toContain('R14 飞行双翼')
+    expect(src).toContain('R17 BOSS 王冠尖刺')
+    expect(src).toContain('R22 精英肩甲')
+    expect(src).toContain('R19 抗性角标')
+    // 精灵与 drawImage 尺寸必须一致（装饰外扩到 2.8r 不裁切/不变形）
+    expect(src).toContain('Math.ceil(rPx * 2.8 + 6)')
+    expect(src).toContain('Math.ceil(r * 2.8 + 6)')
+  })
+
+  it('R18 元素层发光圆点（fillRect→arc+fill，零 draw call 增量）', () => {
+    const src = canvas()
+    expect(src).toContain('R18 元素层数从方块改为发光圆点')
+  })
+
   it('R10 波次横幅 + R13 护盾叠加条 + R30 暴击数字放大', () => {
     const src = canvas()
     expect(src).toContain('waveBanner')
