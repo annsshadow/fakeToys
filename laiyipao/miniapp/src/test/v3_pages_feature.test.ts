@@ -36,6 +36,27 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G85 本章难度曲线', () => {
+    const src = read('../pages/stage/stage.vue')
+    expect(src).toContain('difficultyCurve')
+    expect(src).toContain('diff-line')
+    expect(src).toContain('本章难度曲线')
+  })
+
+  it('G86 公告时间筛选', () => {
+    const src = read('../pages/announcements/announcements.vue')
+    expect(src).toContain('annFilters')
+    expect(src).toContain('filteredItems')
+    expect(src).toContain('近 7 天')
+  })
+
+  it('G87 首页闯关进度环', () => {
+    const src = read('../pages/index/index.vue')
+    expect(src).toContain('stageRing')
+    expect(src).toContain('stage-ring-label')
+    expect(src).toContain('闯关进度')
+  })
+
   it('G82 商城今日产出总览', () => {
     const src = read('../pages/shop/shop.vue')
     expect(src).toContain('todaySupply')

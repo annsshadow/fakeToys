@@ -157,6 +157,17 @@
           <!-- R62 已通关进度：让玩家感到「在往前走」 -->
           <text v-if="store.maxStage > 0" class="action-progress">已通关 {{ store.maxStage }} 关</text>
         </view>
+        <!-- G87 闯关进度环：通关比例一眼可见 -->
+        <view class="stage-ring-wrap">
+          <svg class="stage-ring" viewBox="0 0 80 80" aria-label="闯关进度">
+            <circle class="sr-bg" cx="40" cy="40" r="36" />
+            <circle
+              class="sr-fill" cx="40" cy="40" r="36" transform="rotate(-90 40 40)"
+              :stroke-dasharray="`${stageRing.dash} ${stageRing.rest}`"
+            />
+          </svg>
+          <text class="stage-ring-label">{{ stageRing.pct }}%</text>
+        </view>
         <view class="action-go">
           <text>开始</text>
           <Icon name="chevron-right" :size="28" />
@@ -426,6 +437,15 @@ const dims = computed(() => {
 
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
+/** G87 闯关进度环：已解锁关数 / 总关数的 SVG 弧（hero 卡里的文字升级为可视化）。 */
+const stageRing = computed(() => {
+  const cap = store.config?.levels?.length ?? 0
+  const done = Math.max(0, Math.min(cap, store.unlockedLevel ?? 0))
+  const pct = cap > 0 ? done / cap : 0
+  const C = 2 * Math.PI * 36
+  return { done, cap, pct: Math.round(pct * 100), dash: pct * C, rest: C - pct * C }
+})
+
 /* -------------------------------------------------------------------------- */
 /* R61 构筑五维雷达图                                                           */
 /* 五边形：中心 (100,90)，半径 70；从正上方起顺时针五个维度。                    */
@@ -601,6 +621,17 @@ onShareAppMessage(() => indexShare())
   font-size: 48rpx;
   font-weight: 700;
   color: var(--fire);
+}
+
+/* G87 闯关进度环 */
+.stage-ring-wrap { position: relative; width: 96rpx; height: 96rpx; flex-shrink: 0; margin-right: 12rpx; }
+.stage-ring { width: 96rpx; height: 96rpx; }
+.stage-ring .sr-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
+.stage-ring .sr-fill { fill: none; stroke: #fff; stroke-width: 8; stroke-linecap: round; }
+.stage-ring-label {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22rpx; font-weight: 700; color: #fff;
 }
 
 /* R61 构筑五维雷达图 */

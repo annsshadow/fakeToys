@@ -44,6 +44,20 @@
         </view>
       </view>
 
+      <!-- G85 本章难度曲线：折线看章内难度爬升 -->
+      <view v-if="difficultyCurve.pts.length >= 2" class="card diff-curve-card">
+        <view class="card-title">本章难度曲线</view>
+        <svg class="diff-svg" viewBox="0 0 300 92" aria-label="关卡难度曲线">
+          <polyline class="diff-line" :points="difficultyCurve.line" />
+          <circle
+            v-for="p in difficultyCurve.pts"
+            :key="p.id"
+            :cx="p.x" :cy="p.y" r="3"
+            class="diff-dot"
+          />
+        </svg>
+      </view>
+
       <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
       <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
         <view class="card-title">
@@ -243,6 +257,25 @@ const chapterStars = computed(() =>
   chapterLevels.value.reduce((sum, lv) => sum + (starOf(lv.id) ?? 0), 0),
 )
 const chapterTotal = computed(() => chapterLevels.value.length * 3)
+
+/* -------------------------------------------------------------------------- */
+/* G85 本章难度曲线（第七批）                                                   */
+/* 各关 difficulty 折线，直观看到章内难度爬升与陡增点。数据来自 chapterLevels。     */
+/* -------------------------------------------------------------------------- */
+const difficultyCurve = computed(() => {
+  const list = chapterLevels.value
+  const max = Math.max(1, ...list.map((l) => l.difficulty ?? 0))
+  const min = Math.min(...list.map((l) => l.difficulty ?? 0), max)
+  const span = Math.max(1, max - min)
+  const pts = list.map((l, i) => ({
+    id: l.id,
+    x: list.length <= 1 ? 150 : (i / (list.length - 1)) * 300,
+    // 难度越高 y 越小（越靠上）
+    y: 80 - ((l.difficulty ?? 0) - min) / span * 64,
+    diff: l.difficulty ?? 0,
+  }))
+  return { pts, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+})
 
 /* -------------------------------------------------------------------------- */
 /* G63 全章节星级总览（第七批）                                                 */
@@ -516,6 +549,11 @@ onMounted(() => {
   font-size: 20rpx;
   color: var(--warn);
 }
+
+/* G85 本章难度曲线 */
+.diff-svg { width: 100%; height: 184rpx; overflow: visible; }
+.diff-line { fill: none; stroke: var(--fire); stroke-width: 2; stroke-linejoin: round; }
+.diff-dot { fill: var(--warn); }
 
 /* G63 全章节星级总览 */
 .overview-card .card-title .mono { color: var(--warn); }

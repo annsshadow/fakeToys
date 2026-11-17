@@ -36,7 +36,18 @@
       </view>
 
       <view v-else>
-        <view v-for="(a, i) in items" :key="a.id" class="card ann-card">
+        <!-- G86 时间筛选 -->
+        <view class="filter-row">
+          <view
+            v-for="f in annFilters"
+            :key="f.key"
+            class="filter-chip"
+            :class="{ active: annFilter === f.key }"
+            @click="annFilter = f.key"
+          >{{ f.label }}</view>
+        </view>
+        <text v-if="filteredItems.length === 0" class="muted">该时间段没有公告。</text>
+        <view v-for="(a, i) in filteredItems" :key="a.id" class="card ann-card">
           <view class="ann-head">
             <!-- R22 最新一条给「最新」徽章，日期做成统一胶囊，与其它列表页一致 -->
             <text v-if="i === 0" class="ann-new">最新</text>
@@ -51,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import * as api from '@/api/client'
 import type { Announcement } from '@/api/client'
 
@@ -59,6 +70,27 @@ const items = ref<Announcement[]>([])
 const loading = ref(false)
 /** 第六批 R42：区分「拉取失败」与「确实没公告」。 */
 const loadFailed = ref(false)
+
+/* -------------------------------------------------------------------------- */
+/* G86 公告时间筛选（第七批）                                                   */
+/* 按 published_at 过滤最近 7 天 / 30 天 / 全部，帮玩家在长公告里快速定位新内容。   */
+/* -------------------------------------------------------------------------- */
+const annFilters = [
+  { key: 'all', label: '全部' },
+  { key: '7d', label: '近 7 天' },
+  { key: '30d', label: '近 30 天' },
+] as const
+type AnnFilter = (typeof annFilters)[number]['key']
+const annFilter = ref<AnnFilter>('all')
+const filteredItems = computed(() => {
+  if (annFilter.value === 'all') return items.value
+  const days = annFilter.value === '7d' ? 7 : 30
+  const cutoff = Date.now() - days * 86400000
+  return items.value.filter((a) => {
+    const t = a.published_at ? new Date(a.published_at).getTime() : 0
+    return t >= cutoff
+  })
+})
 
 function formatDate(iso: string | null): string {
   if (!iso) return ''
