@@ -204,6 +204,8 @@ const loading = ref(false)
 const loadingMore = ref(false)
 /** 是否还有更早的战报（上次返回满一页 20 条即视为还有更多）。 */
 const hasMore = ref(false)
+/** 服务端提供的 keyset 游标（上一页末行 id）；0 表示没有更多页。 */
+const nextCursor = ref(0)
 const expandedId = ref(0)
 
 /**
@@ -260,6 +262,7 @@ async function reload(): Promise<void> {
     const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)
     items.value = res.items ?? []
     hasMore.value = (res.items?.length ?? 0) >= 20
+    nextCursor.value = res.next_cursor ?? 0
     expandedId.value = 0
     // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
     if (focusBattleId.value > 0) {
@@ -531,17 +534,19 @@ function copyHash(hash: string) {
 
 /**
  * 加载更早的战报（2026-11-01 新一轮第 55 轮）。
- * 服务端按时间倒序分页（limit=20/offset），追加到列表并去重。
+ * 服务端按时间倒序分页，响应给出 next_cursor（上一页末行 id）作 keyset 游标：
+ * 翻页途中新插入的战报不会把旧行挤到下一页造成重复/漏行。
  */
 async function loadMore() {
   if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
   try {
-    const res = await api.myBattleHistory(20, items.value.length, filter.value === 'all' ? '' : filter.value)
+    const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value, nextCursor.value)
     const more = res.items ?? []
     const existing = new Set(items.value.map((it) => it.id))
     items.value = items.value.concat(more.filter((it) => !existing.has(it.id)))
     hasMore.value = more.length >= 20
+    nextCursor.value = res.next_cursor ?? 0
   } catch {
     // 加载更多失败：保留按钮可重试
   } finally {

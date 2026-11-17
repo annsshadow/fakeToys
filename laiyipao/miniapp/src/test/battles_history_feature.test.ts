@@ -56,9 +56,9 @@ describe('我的战报历史页守卫', () => {
     expect(src).toContain('items.value.find((it) => it.id === focusBattleId.value)')
   })
 
-  it('支持分页加载更多（第 55 轮）：按 offset 追加并去重', () => {
+  it('支持分页加载更多（第 55 轮）：按 cursor 追加并去重', () => {
     const src = readFileSync(BATTLES_VUE, 'utf-8')
-    expect(src).toContain("api.myBattleHistory(20, items.value.length, filter.value === 'all' ? '' : filter.value)")
+    expect(src).toContain("api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value, nextCursor.value)")
     expect(src).toContain('existing.has(it.id)')
     expect(src).toContain('load-more')
   })

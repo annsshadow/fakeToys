@@ -1294,9 +1294,9 @@ export interface BattleHistoryItem {
   created_at: string
 }
 
-export function myBattleHistory(limit = 20, offset = 0, result = ''): Promise<{ items: BattleHistoryItem[] }> {
-  const q = `limit=${limit}&offset=${offset}${result ? `&result=${result}` : ''}`
-  return request<{ items: BattleHistoryItem[] }>(`/me/battles?${q}`)
+export function myBattleHistory(limit = 20, offset = 0, result = '', cursor = 0): Promise<{ items: BattleHistoryItem[]; next_cursor: number }> {
+  const q = `limit=${limit}&offset=${offset}${result ? `&result=${result}` : ''}${cursor ? `&cursor=${cursor}` : ''}`
+  return request<{ items: BattleHistoryItem[]; next_cursor: number }>(`/me/battles?${q}`)
 }
 
 /**

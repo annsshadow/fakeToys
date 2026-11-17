@@ -169,12 +169,15 @@ describe('battles.vue 筛选下的加载更多必须沿用服务端 result 过�
 
   it('胜利筛选下加载更多：请求带 result=win，列表不出现失败战报', async () => {
     // 模拟服务端：只有带 result='win' 才过滤；缺失则回混合页（当前 bug 现状）。
-    mockApi.myBattleHistory.mockImplementation((_limit?: number, offset = 0, result?: string) => {
-      const wins = Array.from({ length: 20 }, (_, i) => win(100 + offset + i))
-      if (result === 'win') return Promise.resolve({ items: wins } as any)
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, offset = 0, result?: string, cursor?: number) => {
+      const allWins = Array.from({ length: 40 }, (_, i) => win(100 + i))
+      const start = cursor ? allWins.findIndex((w) => w.id === cursor) + 1 : offset
+      const page = allWins.slice(start, start + (offset || 20))
+      const next = start + (offset || 20) < allWins.length ? page[page.length - 1].id : 0
+      if (result === 'win') return Promise.resolve({ items: page, next_cursor: next } as any)
       // 未过滤的第二页混入一场失败，模拟服务端不过滤的结果
-      const mixed = offset === 0 ? wins : [...wins.slice(0, 19), lose(999)]
-      return Promise.resolve({ items: mixed } as any)
+      const mixed = offset === 0 ? page : [...page.slice(0, 19), lose(999)]
+      return Promise.resolve({ items: mixed, next_cursor: next } as any)
     })
 
     const { wrapper } = mountPage(Battles)
@@ -202,5 +205,46 @@ describe('battles.vue 筛选下的加载更多必须沿用服务端 result 过�
     // 请求契约断言：第二次分页请求必须把筛选条件带给服务端
     const last = mockApi.myBattleHistory.mock.calls.at(-1)!
     expect(last[2]).toBe('win')
+  })
+})
+/**
+ * R17 行为复现：offset 翻页在「翻页途中插入新战报」时会重复/漏行；
+ * 服务端已提供 keyset 游标（next_cursor / ?cursor=），客户端必须用它翻页。
+ * 初始 newest→oldest = [50..1]；第一页加载后插入 id=100；offset 第二页返回 [30..11]，
+ * 与已加载页产生重复并漏掉本来紧接的旧行。
+ */
+describe('battles.vue 翻页途中插入新战报：offset 重复漏行，cursor 不重复不漏', () => {
+  const row = (id: number) => ({
+    id, result: 'win' as const, stars: 3, level_id: 4, score: 100 + id,
+    kills: 10, leaked: 0, created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('加载更多后列表每场唯一、从新到旧连续，不重复也不漏', async () => {
+    let inserted = false
+    mockApi.myBattleHistory.mockImplementation(function (_limit = 20, offset = 0, result = '', cursor?: number) {
+      if (result) return Promise.resolve({ items: [] } as any)
+      const all = Array.from({ length: 50 }, (_, i) => row(50 - i))
+      if (inserted) all.unshift(row(100))
+      const nextCursorOf = (page: any[]) => (page.length >= _limit ? page[page.length - 1].id : 0)
+      if (cursor && cursor > 0) {
+        const idx = all.findIndex((it) => it.id === cursor)
+        const page = all.slice(idx + 1, idx + 1 + _limit)
+        return Promise.resolve({ items: page, next_cursor: nextCursorOf(page) } as any)
+      }
+      const page = all.slice(offset, offset + _limit)
+      return Promise.resolve({ items: page, next_cursor: nextCursorOf(page) } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    inserted = true
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+
+    const ids = wrapper.findAll('.battle-row').map((r) =>
+      Number((r.find('.battle-score').text() || '0').replace(/\D/g, '')) - 100,
+    )
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toEqual(Array.from({ length: 40 }, (_, i) => 50 - i))
   })
 })
