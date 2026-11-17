@@ -766,6 +766,7 @@ async function settle(eng: BattleEngine) {
       res = await api.settleBattle(payload)
     }
     settleResult.value = {
+      battle_id: res.battle_id,
       win: res.win,
       stars: res.stars,
       score: res.score,
