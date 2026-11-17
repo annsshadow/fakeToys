@@ -248,3 +248,42 @@ describe('battles.vue 翻页途中插入新战报：offset 重复漏行，cursor
     expect(ids).toEqual(Array.from({ length: 40 }, (_, i) => 50 - i))
   })
 })
+
+/**
+ * 服务端契约（routes.go myBattleHistory / economy.go MyBattleHistoryPage）：
+ * - `hasMore = len(rows) > limit`（先多取 1 行判断），因此**恰好满一页**（总数正好 20）
+ *   时 hasMore=false，响应 next_cursor=0；
+ * - next_cursor 只有在 hasMore 为真时才是上一页末行 id，否则恒为 0。
+ * 所以「本页是否满载」不等于「是否还有下一页」：满 20 条但 next_cursor=0 时没有更多页。
+ *
+ * 旧实现把 hasMore 写成 items.length >= 20，于是总数恰好 20/40/60… 时，
+ * 明明服务端说没有下一页，页面却一直挂着「加载更多」，点下去只会重复拉同一页。
+ */
+describe('battles.vue 末页恰好满一页时不得再显示加载更多（以 next_cursor 为准）', () => {
+  it('满 20 条但服务端 next_cursor=0：隐藏加载更多，不重复请求', async () => {
+    const rows = Array.from({ length: 20 }, (_, i) => ({
+      id: 40 - i,
+      result: 'win' as const,
+      stars: 3,
+      level_id: 4,
+      score: 1000 + (40 - i),
+      kills: 10,
+      leaked: 0,
+      created_at: '2026-11-17T10:00:00Z',
+    }))
+    // 模拟服务端真实响应：总数正好 20 = 满页但无下一页
+    mockApi.myBattleHistory.mockImplementation(() =>
+      Promise.resolve({ items: rows, next_cursor: 0 } as any),
+    )
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    const callsAfterLoad = mockApi.myBattleHistory.mock.calls.length
+    expect(callsAfterLoad).toBe(1)
+    expect(wrapper.findAll('.battle-row').length).toBe(20)
+
+    // 行为断言：服务端已明确没有下一页，加载更多按钮不应出现
+    expect(wrapper.find('.load-more').exists()).toBe(false)
+  })
+})

@@ -261,7 +261,9 @@ async function reload(): Promise<void> {
   try {
     const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)
     items.value = res.items ?? []
-    hasMore.value = (res.items?.length ?? 0) >= 20
+    // 服务端 MyBattleHistoryPage 先多取 1 行判断 hasMore：总数恰好满一页时
+    // hasMore=false → next_cursor=0。以 next_cursor 为准，避免满页时按钮无效常驻。
+    hasMore.value = (res.next_cursor ?? 0) > 0
     nextCursor.value = res.next_cursor ?? 0
     expandedId.value = 0
     // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
@@ -545,7 +547,8 @@ async function loadMore() {
     const more = res.items ?? []
     const existing = new Set(items.value.map((it) => it.id))
     items.value = items.value.concat(more.filter((it) => !existing.has(it.id)))
-    hasMore.value = more.length >= 20
+    // 同上：末页恰好满 20 条时 next_cursor=0，不应继续显示加载更多。
+    hasMore.value = (res.next_cursor ?? 0) > 0
     nextCursor.value = res.next_cursor ?? 0
   } catch {
     // 加载更多失败：保留按钮可重试
