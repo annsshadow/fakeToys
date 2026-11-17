@@ -58,6 +58,17 @@
         </svg>
       </view>
 
+      <!-- G111 本章 BOSS 清单 -->
+      <view v-if="bossLevels.length" class="card boss-list-card">
+        <view class="card-title">本章首领关</view>
+        <view v-for="b in bossLevels" :key="b.id" class="bl-row">
+          <text class="bl-name">第 {{ b.id }} 关 · {{ b.name }}</text>
+          <text class="dim">难度 {{ b.difficulty }}‰</text>
+          <text v-if="b.stars > 0" class="bl-cleared">★{{ b.stars }}</text>
+          <text v-else class="dim">未通关</text>
+        </view>
+      </view>
+
       <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
       <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
         <view class="card-title">
@@ -262,6 +273,13 @@ const chapterTotal = computed(() => chapterLevels.value.length * 3)
 /* G85 本章难度曲线（第七批）                                                   */
 /* 各关 difficulty 折线，直观看到章内难度爬升与陡增点。数据来自 chapterLevels。     */
 /* -------------------------------------------------------------------------- */
+/** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
+const bossLevels = computed(() =>
+  chapterLevels.value
+    .filter((l) => l.is_boss)
+    .map((l) => ({ id: l.id, name: l.name, difficulty: l.difficulty, stars: starOf(l.id) })),
+)
+
 const difficultyCurve = computed(() => {
   const list = chapterLevels.value
   const max = Math.max(1, ...list.map((l) => l.difficulty ?? 0))
@@ -549,6 +567,11 @@ onMounted(() => {
   font-size: 20rpx;
   color: var(--warn);
 }
+
+/* G111 本章 BOSS 清单 */
+.bl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.bl-name { flex: 1; font-size: 24rpx; }
+.bl-cleared { color: var(--warn); font-weight: 600; }
 
 /* G85 本章难度曲线 */
 .diff-svg { width: 100%; height: 184rpx; overflow: visible; }

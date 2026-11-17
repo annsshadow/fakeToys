@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G110 统一时间轴 + G111 BOSS清单 + G112 公告搜索', () => {
+    expect(read('../pages/me/me.vue')).toContain('unifiedTimeline')
+    expect(read('../pages/stage/stage.vue')).toContain('bossLevels')
+    expect(read('../pages/announcements/announcements.vue')).toContain('annKeyword')
+  })
+
   it('G107 品质分布环 + G108 部位×阶成长表 + G109 技能效率榜', () => {
     expect(read('../pages/gems/gems.vue')).toContain('qualityDonut')
     expect(read('../pages/equipment/equipment.vue')).toContain('tierMatrix')

@@ -285,6 +285,16 @@
         </text>
       </view>
 
+      <!-- G110 全账号统一时间轴 -->
+      <view v-if="unifiedTimeline.length && meTab === 'records'" class="card timeline-card">
+        <view class="card-title">最近动态</view>
+        <view v-for="(e, i) in unifiedTimeline" :key="i" class="tl-row">
+          <text class="tl-kind">{{ e.kind }}</text>
+          <text class="flex-1 tl-text">{{ e.text }}</text>
+          <text class="dim">{{ fmtChallengeTime(e.at) }}</text>
+        </view>
+      </view>
+
       <!-- 挑战历史（2026-10-30 实质优化第 18 轮）。
            此前玩家只能看到最近一次挑战结果，历史记录没有入口。 -->
       <view v-if="challengeHistory.length" v-show="meTab === 'records'" class="card">
@@ -668,6 +678,19 @@ const meTabDefs: Array<{ key: MeTab; label: string }> = [
 ]
 
 /** 第六批 R40：六类历史全空 → 给「记录」页一个可执行空态，而不是纯空白。 */
+/** G110 全账号统一时间轴：合并六类记录按时间倒序，跨类看「最近干了什么」。 */
+const unifiedTimeline = computed(() => {
+  type Ev = { at: string; kind: string; text: string }
+  const evs: Ev[] = []
+  for (const b of battleHistory.value) evs.push({ at: b.created_at, kind: '战斗', text: `第 ${b.level_id} 关 · ${b.result === 'win' ? '胜' : '负'} ${b.score}分` })
+  for (const c of challengeHistory.value) evs.push({ at: c.created_at, kind: '挑战', text: c.won ? '攻破成功' : '挑战失败' })
+  for (const d of defenseChallengeHistory.value) evs.push({ at: d.created_at, kind: '被挑战', text: d.won ? '防线守住' : '防线被破' })
+  for (const p of purchaseHistory.value) evs.push({ at: p.created_at, kind: '购买', text: p.item_name })
+  for (const r of redemptionHistory.value) evs.push({ at: r.created_at, kind: '兑换', text: r.code })
+  for (const o of orderHistory.value) evs.push({ at: o.created_at, kind: '订单', text: o.sku })
+  return evs.filter((e) => e.at).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 20)
+})
+
 const noRecordsYet = computed(() =>
   !challengeHistory.value.length &&
   !defenseChallengeHistory.value.length &&
@@ -1430,6 +1453,12 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G110 统一时间轴 */
+.tl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.tl-kind { width: 100rpx; flex-shrink: 0; font-size: 22rpx; color: var(--accent); }
+.tl-text { font-size: 24rpx; }
+.tl-row .dim { font-size: 20rpx; }
+
 /* G89 挑战胜负统计 */
 .challenge-stats { margin-bottom: 12rpx; }
 .challenge-seq { display: flex; flex-direction: row; gap: 6rpx; margin-top: 8rpx; }
