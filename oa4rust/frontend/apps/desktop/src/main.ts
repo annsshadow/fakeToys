@@ -7,6 +7,7 @@ import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { shouldRetryQuery } from './views/listQuery'
 import '@oa4rust/ui'
@@ -554,4 +555,6 @@ app.use(VueQueryPlugin, { queryClient })
 // 登录人变化（登出/切换/换账号重登）即清查询缓存——视图 queryKey 不含登录人，
 // 保留缓存会把上一账号 staleTime 内的数据渲染给当前账号（跨账号数据泄漏）。
 watchSessionCacheReset(queryClient, () => useSession().state.user?.unique ?? null)
+// R162：视图层手写模态统一支持 Escape 关闭、Tab 焦点陷阱与关闭后焦点归还。
+installViewModalManager()
 app.mount('#o2-app-root')
