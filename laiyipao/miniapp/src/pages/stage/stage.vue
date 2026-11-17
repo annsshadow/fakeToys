@@ -58,6 +58,12 @@
         </svg>
       </view>
 
+      <!-- G115 本章体力预算 -->
+      <view v-if="energyBudget.count > 0" class="card energy-budget">
+        <view class="card-title">清章体力预算<text class="dim">剩 {{ energyBudget.count }} 关未通关</text></view>
+        <text class="dim">总消耗 {{ energyBudget.cost }} · 通关返还 {{ energyBudget.back }} · 净消耗 {{ energyBudget.net }}</text>
+      </view>
+
       <!-- G111 本章 BOSS 清单 -->
       <view v-if="bossLevels.length" class="card boss-list-card">
         <view class="card-title">本章首领关</view>
@@ -274,6 +280,14 @@ const chapterTotal = computed(() => chapterLevels.value.length * 3)
 /* 各关 difficulty 折线，直观看到章内难度爬升与陡增点。数据来自 chapterLevels。     */
 /* -------------------------------------------------------------------------- */
 /** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
+/** G115 本章通关体力预算：未通关关卡总消耗 / 通关返还 / 净消耗。 */
+const energyBudget = computed(() => {
+  const undone = chapterLevels.value.filter((l) => starOf(l.id) === 0)
+  const cost = undone.reduce((s, l) => s + (l.energy_cost ?? 0), 0)
+  const back = (store.config?.drop_rates?.energy_on_win ?? 0) * undone.length
+  return { count: undone.length, cost, back, net: cost - back }
+})
+
 const bossLevels = computed(() =>
   chapterLevels.value
     .filter((l) => l.is_boss)

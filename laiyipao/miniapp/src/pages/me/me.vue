@@ -355,6 +355,16 @@
         </view>
       </view>
 
+      <!-- G114 被挑战损失排行 -->
+      <view v-if="topLooters.length" v-show="meTab === 'records'" class="card">
+        <text class="card-title">损失排行<text class="dim">（防线被破 Top5）</text></text>
+        <view v-for="(l, i) in topLooters" :key="i" class="tl-row">
+          <text class="dim">{{ i + 1 }}. {{ l.name }}</text>
+          <view class="flex-1 loot-track"><view class="loot-fill" :style="{ width: Math.min(100, l.total / 5) + '%' }" /></view>
+          <text class="mono">{{ l.total }}</text>
+        </view>
+      </view>
+
       <!-- 最近战报（2026-10-30 实质优化第 19 轮）。
            玩家打完关卡后没有任何历史战报入口。 -->
       <view v-if="battleHistory.length" v-show="meTab === 'records'" class="card">
@@ -678,6 +688,18 @@ const meTabDefs: Array<{ key: MeTab; label: string }> = [
 ]
 
 /** 第六批 R40：六类历史全空 → 给「记录」页一个可执行空态，而不是纯空白。 */
+/** G114 被挑战损失排行：按每次被破防的 loot 总和取 Top5，看防线最常被谁攻破。 */
+const topLooters = computed(() =>
+  defenseChallengeHistory.value
+    .filter((d) => !d.won)
+    .map((d) => ({
+      name: d.challenger_nickname || '匿名',
+      total: Object.values(d.loot ?? {}).reduce((s, v) => s + v, 0),
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5),
+)
+
 /** G110 全账号统一时间轴：合并六类记录按时间倒序，跨类看「最近干了什么」。 */
 const unifiedTimeline = computed(() => {
   type Ev = { at: string; kind: string; text: string }
@@ -1453,6 +1475,10 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G114 损失排行 */
+.loot-track { height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; margin: 0 12rpx; }
+.loot-fill { height: 100%; background: var(--bad); border-radius: 999rpx; }
+
 /* G110 统一时间轴 */
 .tl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
 .tl-kind { width: 100rpx; flex-shrink: 0; font-size: 22rpx; color: var(--accent); }

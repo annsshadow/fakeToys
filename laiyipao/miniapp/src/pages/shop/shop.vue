@@ -32,6 +32,17 @@
         </view>
       </view>
 
+      <!-- G113 今日限购清空成本 -->
+      <view v-if="!loading && clearCost.length" class="card">
+        <view class="card-title">买空今日限购需</view>
+        <view class="clear-cost-row">
+          <text v-for="c in clearCost" :key="c.key" class="clear-cost-chip">
+            {{ c.label }} {{ c.cost }}<text v-if="c.gap > 0" class="cc-gap">（差 {{ c.gap }}）</text>
+            <text v-else class="cc-ok">（够）</text>
+          </text>
+        </view>
+      </view>
+
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
@@ -140,6 +151,25 @@ const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
 /* 聚合「今天还能买」的商品，按产出类型统计剩余次数 —— 玩家一眼看到今天还能补什么。 */
 /* 不臆造货币汇率，只统计次数与产出类型。数据来自 items。                         */
 /* -------------------------------------------------------------------------- */
+/** G113 今日限购清空成本：按货币汇总「买空今日限购」总花费与余额缺口。 */
+const clearCost = computed(() => {
+  const need: Record<string, number> = {}
+  for (const it of items.value) {
+    const left = it.limit_per_day > 0 ? it.limit_per_day - it.bought_today : 0
+    if (left <= 0) continue
+    for (const [k, v] of Object.entries(it.price)) {
+      need[k] = (need[k] ?? 0) + v * left
+    }
+  }
+  return Object.entries(need).map(([k, cost]) => ({
+    key: k,
+    label: CURRENCY_CN[k] ?? k,
+    cost,
+    have: wallet.value[k as keyof typeof wallet.value] ?? 0,
+    gap: Math.max(0, cost - (wallet.value[k as keyof typeof wallet.value] ?? 0)),
+  }))
+})
+
 const todaySupply = computed(() => {
   const m = new Map<string, { key: string; label: string; count: number }>()
   for (const it of items.value) {
@@ -334,6 +364,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G113 买空限购成本 */
+.clear-cost-row { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.clear-cost-chip { background: var(--panel-2); border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 22rpx; }
+.cc-gap { color: var(--bad); }
+.cc-ok { color: var(--ok); }
+
 /* G82 今日产出总览 */
 .supply-chips { display: flex; flex-wrap: wrap; gap: 8rpx; }
 .supply-chip {

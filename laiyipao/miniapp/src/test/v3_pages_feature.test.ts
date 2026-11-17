@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G113 清空成本 + G114 损失排行 + G115 体力预算', () => {
+    expect(read('../pages/shop/shop.vue')).toContain('clearCost')
+    expect(read('../pages/me/me.vue')).toContain('topLooters')
+    expect(read('../pages/stage/stage.vue')).toContain('energyBudget')
+  })
+
   it('G110 统一时间轴 + G111 BOSS清单 + G112 公告搜索', () => {
     expect(read('../pages/me/me.vue')).toContain('unifiedTimeline')
     expect(read('../pages/stage/stage.vue')).toContain('bossLevels')
