@@ -1349,6 +1349,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 45.4 交付与边界
 
 - 本轮三提交 483f160ef、2ef57a665 及本现量文档 §45 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十六、第37轮：R187跳转到主要内容(WCAG 2.4.1) + laiyipao负结果 + 移动端标准侦察（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+延续 §43.4 策略：子代理 oaopt-r187 做全局无障碍标准升级，lybug-r37 深查 laiyipao（负结果），主线程独立侦察移动端系统性标准缺口（负结果）。均主线程复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 46.1 oa4rust R187 跳转到主要内容链接 WCAG 2.4.1 Bypass Blocks（提交 c1cc6a9ba）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 桌面侧栏+顶栏 20+ 导航/搜索/用户菜单项，键盘用户每次路由切换从头 Tab 极痛苦；全仓无跳转链接机制 | WCAG 2.4.1 Bypass Blocks 标准缺口，非主观审美 |
+| 修复 | installSkipLink() 把隐藏跳转链接插在 Vue 挂载点 #o2-app-root 之外跨路由常驻；聚焦显示左上角，点击焦点直达 main#main-content；MutationObserver 处理安装早于 mount 及视图替换 main 的时序；main 用 tabindex=-1 只收程序化焦点，:focus:not(:focus-visible) 抑制永久轮廓（键盘聚焦由 R184 全局焦点环接管）；返回 dispose 完整清理 | 5 文件（skipLink.ts + 契约测试 + main.ts + AppShell.vue + dark.css） |
+| 门禁 | skipLink.contract.test.ts jsdom 行为测试 4 例（body 首元素/位置/异步挂载/dispose）RED（模块不存在）→GREEN 4/4；pnpm test 1354 passed、typecheck 6 包、lint 369 文件 0 error | — |
+
+### 46.2 laiyipao（lybug-r37）诚实负结果
+
+- 先读 Go 契约再核消费面，逐族排查：结算/分数族（battle.go SettleInput/ValidateSettle 上界 ↔ battle.vue 回填逐字段对齐，battleGrade/nextGoal 纯客户端派生非契约字段）、掉落/装备/技能配置族（DropRates/ScoreRules/skill_rules ↔ game/score.ts/skill.ts 由契约测试钉死）、已修/无消费者项（Confidence 0..100/task scope/limit_per_day/rank=0 哨兵/公告月份分组/my_battle_history 分页）。
+- 未发现可写 RED 的确证新 bug，零改动，工作树 laiyipao 保持干净；禁改项（B3、wins/losses 方向、ChallengedToday、aoeRadius=0、config.levels[].seed）未触碰。
+- 门禁实测：miniapp pnpm test 1468 passed|2 skipped、vue-tsc type-check 通过。
+
+### 46.3 主线程移动端系统性标准侦察（负结果）
+
+- prefers-reduced-motion / outline:none / transition·animation 在移动端 .vue 中均 0 处——移动端无桌面 R181/R184 的标准落点（浏览器默认焦点环未被屏蔽，触摸设备无 reduced-motion 落点），不强造。
+- 日期格式化仅 attendance/calendar 两页各 1 处 fmtTime，非桌面 R186 那种 27 视图统一热路径，收益有限不构成同族缺口。
+- store session.ts 已有 initTicket 代际守卫（第25轮已修），无 R172/R173 残留。
+
+### 46.4 交付与边界
+
+- 本轮唯一代码提交 c1cc6a9ba 及本现量文档 §46 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中。
+- B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
