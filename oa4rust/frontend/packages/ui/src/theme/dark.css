@@ -247,3 +247,17 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== 无障碍：键盘焦点可见（WCAG 2.4.7 Focus Visible）=====
+ * 桌面存在 149 处 outline:none 移除浏览器原生焦点轮廓，但全仓 CSS 无 :focus-visible
+ * 兜底：纯键盘用户用 Tab 导航时看不到焦点落在哪个控件上，基本无法操作。
+ * 这里用统一的霓虹青焦点环覆盖——只在键盘交互(:focus-visible)时出现，鼠标点击
+ * 不触发，因此不干扰输入框 :focus 时用 border-color 表达聚焦的既有视觉设计。
+ * 与 R181 的 reduced-motion 守卫同属全局主题层的统一无障碍标准。
+ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  /* biome-ignore lint/complexity/noImportantStyles: 必须覆盖各视图 scoped 样式里的 outline:none */
+  outline: 2px solid var(--color-primary) !important;
+  /* biome-ignore lint/complexity/noImportantStyles: 焦点环与控件之间留出可见间隙 */
+  outline-offset: 2px !important;
+}

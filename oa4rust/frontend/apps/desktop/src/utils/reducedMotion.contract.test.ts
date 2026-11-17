@@ -37,3 +37,24 @@ describe('全局主题的减少动态效果标准（WCAG 2.3.3）', () => {
     expect(uiIndex).toMatch(/import\s+['"]\.\/theme\/dark\.css['"]/)
   })
 })
+
+describe('全局主题的键盘焦点可见标准（WCAG 2.4.7）', () => {
+  it('全局主题提供 :focus-visible 焦点环，兜住 149 处 outline:none', () => {
+    expect(themeCss).toMatch(/:focus-visible\s*\{/)
+  })
+
+  it('焦点环只作用于可聚焦交互元素并用主题主色而非写死色值', () => {
+    const start = themeCss.indexOf(':where(')
+    expect(start).toBeGreaterThan(-1)
+    const rule = themeCss.slice(start, themeCss.indexOf('}', start))
+    expect(rule).toMatch(/a,\s*button,\s*input,\s*textarea,\s*select,\s*\[tabindex\]/)
+    expect(rule).toMatch(/outline:\s*2px\s+solid\s+var\(--color-primary\)/)
+    expect(rule).toMatch(/outline-offset:\s*2px/)
+  })
+
+  it('焦点环用 !important 覆盖各视图 scoped 样式的 outline:none', () => {
+    const start = themeCss.indexOf(':where(')
+    const rule = themeCss.slice(start, themeCss.indexOf('}', start))
+    expect(rule).toMatch(/outline:\s*2px[^;]*!important/)
+  })
+})
