@@ -1088,6 +1088,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 36.4 交付与边界
 
 - 本轮两提交 31f69f2a5、0f5c2530f 及本现量文档 §36 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十七、第28轮：R178 confirmMsg重入悬挂 + 移动端日期越界 + 专精kind标签契约（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r178 桌面 confirmMsg / lybug-r28 laiyipao 专精）+ 主线程独立侦察并修复移动端 datetime 越界（写范围 oa4rust/mobile，与子代理不重叠）。所有修复均主线程独立复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 37.1 oa4rust 桌面 R178 confirmMsg 重入悬挂 + keydown 叠加（提交 8efecfdde）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | toast.ts confirmMsg 单例遮罩重入时只 remove 旧 DOM 却不 resolve 旧 Promise、不注销旧 onKeyDown：连续两次调用（如快速双击不同删除按钮）使首个 await 永久悬挂、页面流程卡死；幽灵 keydown 叠加在新弹窗上重复响应 Esc，focus 陷阱干扰；finish 无幂等守卫可二次 resolve | 真实可达 async 僵尸 + 监听器泄漏，不在 R155-R177 清单 |
+| 修复 | 加模块级 dismissOpenConfirm 钩子，confirmMsg 重入先调它以 false settle 旧弹窗 + 注销监听 + 摘 DOM；finish 加 finished 幂等守卫并在自身关闭时清钩子 | 最小改动，单例语义不变 |
+| 门禁 | 行为测试（改写旧 closing protection 用例断言旧 Promise settle + 新增重入单 keydown 处理器用例）RED（旧 Promise 悬挂 + 2 个 keydown）→GREEN 25/25；主代理独立复跑 25 passed；pnpm test 1325 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 37.2 oa4rust 移动端 parseServerDate 时/分/秒越界（提交 843e07307）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | mobile/src/utils/datetime.ts 与桌面 R175 完全同构：parseServerDate 只回读校验年月日溢出、未校验时/分/秒范围，JS Date 对越界静默进位（10:61→11:01、10:30:60→10:31、25:00→次日01:00），桌面已修移动端未修 | 用户可感知边界错误，与桌面同构 |
+| 修复 | 加 hh>23||mm>59||ss>59 返回 null 最小校验（对齐桌面 R175），保留年月日回读校验 | 最小改动 |
+| 门禁 | 越界行为测试 RED（10:61 被进位）→GREEN 6/6；mobile pnpm test 263 passed、tsc 0；oa4rust 全量通过 | — |
+
+### 37.3 laiyipao 专精收益汇总漏服务端 kind 英文原文（提交 486cde317）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | mastery.vue investedValue 的 KIND_CN 映射键写成旧键 attack/heat/element/reaction/slot，与服务端下发节点 kind（element_cap/reaction_mult/heat_cap/skill_damage/extra_slot/mechanic/crit/armor）完全对不上，KIND_CN[kind]??kind 回退致 8 个权威 kind 里 5 个以英文原文显示在 G103 收益汇总（如 element_cap +10）、另 3 个标签语义不符 | 服务端 power.go:62 masteryLayerKinds + :70 masteryKindNames + mastery_coverage_test.go 佐证每 kind 必须有中文名 |
+| 修复 | KIND_CN 键值换成服务端权威 8 个 kind 与中文名，加说明注释；未动其它逻辑 | 最小改动，与服务端契约同源 |
+| 门禁 | mastery_kind_label_contract.test.ts（jsdom 挂载 mastery.vue，mock 8 个 kind 全点亮，断言 8 个中文 label 无英文 key）RED（漏英文 key）→GREEN 1/1；主代理独立复跑 1 passed；全量 pnpm test 1468 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 37.4 交付与边界
+
+- 本轮三提交 843e07307、8efecfdde、486cde317 及本现量文档 §37 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
