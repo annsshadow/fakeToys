@@ -22,6 +22,11 @@
           <Icon name="bolt" :size="26" />
           <text class="mono">{{ store.wallet.energy }}</text>
         </view>
+        <!-- 第六批 R56：钥匙是第四种货币（me 页有用途说明），此前首页完全不显示 -->
+        <view class="res-pill">
+          <text class="res-glyph">🔑</text>
+          <text class="mono">{{ store.wallet.keys ?? 0 }}</text>
+        </view>
       </view>
     </view>
 
@@ -57,12 +62,14 @@
           <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
-          v-for="a in announcements"
+          v-for="(a, i) in announcements"
           :key="a.id"
           class="ann-item"
           @click="toggleAnn(a.id)"
         >
           <view class="ann-head">
+            <!-- 第六批 R55：首页公告首条与公告页统一「最新」徽章 -->
+            <text v-if="i === 0" class="ann-new">最新</text>
             <text class="ann-title">{{ a.title }}</text>
             <text class="dim mono">{{ formatAnnDate(a.published_at) }}</text>
             <!-- R64 展开态指示：此前只能靠正文有没有截断点来猜 -->
@@ -791,6 +798,16 @@ onShareAppMessage(() => indexShare())
   justify-content: space-between;
   align-items: baseline;
   gap: 16rpx;
+}
+
+/* 第六批 R55 首页公告「最新」徽章（与公告页同语言） */
+.ann-new {
+  font-size: 20rpx;
+  color: var(--fire);
+  border: 1rpx solid var(--fire);
+  border-radius: 6rpx;
+  padding: 0 8rpx;
+  flex-shrink: 0;
 }
 
 .ann-title {

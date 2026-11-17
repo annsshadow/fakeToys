@@ -19,7 +19,7 @@
           换一种元素搭配比堆面板更有效。
         </text>
         <text v-if="myReactions.length" class="muted" style="display: block; margin-top: 12rpx">
-          共 {{ myReactions.length }} / {{ allReactions.length }} 条。反应伤害里攻击力的权重被结构性限制在
+          共 {{ myReactions.length }} / {{ allReactions.length }} 条，还差 {{ allReactions.length - myReactions.length }} 条未解锁。反应伤害里攻击力的权重被结构性限制在
           30% 以内，所以「凑齐元素」比「堆攻击力」更决定胜负。
         </text>
       </view>
@@ -45,8 +45,9 @@
               <DefIcon name="reaction" :size="40" />
             </view>
             <text class="rxn-name">{{ r.name }}</text>
-            <!-- R66 可达反应加脉冲，和「不可达」拉开差距 -->
+            <!-- R66 可达反应加脉冲；第六批 R53：不可达也明示，不再只有色块需要对照 -->
             <text v-if="reachable.has(r.key as ReactionKey)" class="rxn-hit reachable-pulse">可达</text>
+            <text v-else class="chip">当前不可达</text>
           </view>
           <!-- 触发元素对（本地由 lookupReaction 反查，与服务端反应表同源） -->
           <view v-if="reactionPairs(r.key)" class="rxn-stats">

@@ -36,6 +36,8 @@
               {{ s.kind === 'active' ? '主动' : '被动' }}
             </text>
             <text v-if="isOwned(s.id)" class="chip hit">已拥有</text>
+            <!-- 第六批 R46：未解锁技能明示状态，避免「在图鉴看到却拿不到」的困惑 -->
+            <text v-else class="chip">未解锁</text>
           </view>
           <text class="rxn-descr">{{ s.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
@@ -47,7 +49,8 @@
             <text v-if="s.pierce > 1" class="stat">穿透 {{ s.pierce }}</text>
             <text v-if="s.aoe_radius > 0" class="stat">溅射 {{ s.aoe_radius }}</text>
             <text v-if="s.chain > 1" class="stat">连锁 {{ s.chain }}</text>
-            <text class="stat">解锁等级 {{ s.unlock_level }}</text>
+            <!-- 第六批 R45：明确「需 Lv.N」而非裸数字 -->
+            <text class="stat">需 Lv.{{ s.unlock_level }}</text>
           </view>
         </view>
         <text v-if="!skills.length" class="muted">技能表为空（配置未加载？）</text>

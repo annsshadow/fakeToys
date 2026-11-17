@@ -30,8 +30,12 @@
               <DefIcon name="gem" :size="40" />
             </view>
             <text class="rxn-name">{{ g.name }}</text>
+            <!-- 第六批 R44：展示 code，便于按代码检索/与后台对照 -->
+            <text class="dim mono">#{{ g.code }}</text>
             <text class="dim">{{ attrLabel(g.attr) }}</text>
             <text v-if="ownedCountOf(g.id) > 0" class="chip hit">已拥有 ×{{ ownedCountOf(g.id) }}</text>
+            <!-- 第六批 R43：已拥有实例的最佳品质（背包有品质，图鉴此前看不到） -->
+            <text v-if="ownedCountOf(g.id) > 0" class="dim">最佳 {{ qualityName(bestQualityOf(g.id)) }}</text>
           </view>
           <text class="rxn-descr">{{ g.descr || '（服务端未提供说明）' }}</text>
         </view>
@@ -92,6 +96,23 @@ const ownedCount = computed(() => ownedGems.value.length)
 
 function ownedCountOf(gemId: number): number {
   return ownedGems.value.filter((g) => g.gem_id === gemId).length
+}
+
+/** 第六批 R43：已拥有实例里的最佳品质。 */
+const QUALITY_ORDER = ['gray', 'blue', 'purple', 'red', 'gold']
+function bestQualityOf(gemId: number): string {
+  const owned = ownedGems.value.filter((g) => g.gem_id === gemId)
+  if (!owned.length) return 'gray'
+  return owned.reduce((best, g) =>
+    QUALITY_ORDER.indexOf(g.quality) > QUALITY_ORDER.indexOf(best) ? g.quality : best,
+  'gray')
+}
+
+function qualityName(q: string): string {
+  const map: Record<string, string> = {
+    gray: '普通', blue: '稀有', purple: '史诗', red: '焰金', gold: '传说',
+  }
+  return map[q] ?? q
 }
 
 function attrLabel(a: string): string {

@@ -17,7 +17,8 @@
           {{ f.label }}
         </view>
         <!-- R78 筛选结果计数：筛选后还剩几场一眼可见 -->
-        <text class="filter-count">共 {{ items.length }} 场</text>
+        <!-- 第六批 R60：分页未拉完时「共 N 场」是错的，改为「已加载 N 场」 -->
+        <text class="filter-count">{{ hasMore ? '已加载' : '共' }} {{ items.length }} 场</text>
       </view>
 
       <view v-if="loading" class="card">
@@ -36,7 +37,8 @@
         <text class="muted" style="display: block; margin-top: 8rpx">
           打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
         </text>
-        <text class="empty-hint">去关卡页挑一关开打 →</text>
+        <!-- 第六批 R36：此前这行看起来像链接却点不动（假入口）。接上真实跳转。 -->
+        <text class="empty-hint link" @click="goStage">去关卡页挑一关开打 →</text>
       </view>
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
@@ -269,6 +271,11 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
  */
 function goVerify(battleId: number) {
   uni.navigateTo({ url: `/pages/verify/verify?battle_id=${battleId}` })
+}
+
+/** 第六批 R36：空态引导接上真实跳转（此前是点不动的假链接）。 */
+function goStage() {
+  uni.navigateTo({ url: '/pages/stage/stage' })
 }
 
 /**

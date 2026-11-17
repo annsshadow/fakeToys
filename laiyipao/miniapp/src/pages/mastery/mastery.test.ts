@@ -204,11 +204,11 @@ describe('mastery.vue 专精页', () => {
     expect(um.mock.showToast).toHaveBeenCalledWith({ title: '专精加载失败', icon: 'none' })
   })
 
-  it('家族 tab：点击切换家族（内联 handler），已投入的家族有小圆点', async () => {
+  it('家族 tab：点击切换家族（内联 handler），已投入的家族显示点数徽章（第六批 R61）', async () => {
     mockApi.fetchMastery.mockResolvedValue({ points: 3, nodes: [11] })
     const { wrapper } = mountPage(Mastery)
     await flushPromises()
-    expect(wrapper.find('.tab-dot').exists()).toBe(true) // flame 已投入
+    expect(wrapper.find('.tab-invest').exists()).toBe(true) // flame 已投入，直接显示 +N
     await wrapper.find('.tab-chip').trigger('click') // curFamily = f.family
     await flushPromises()
     expect(wrapper.text()).toContain('烈焰专精树')

@@ -23,6 +23,16 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           抗性为千分比：正值减伤、负值易伤。
         </text>
+        <!-- 第六批 R52：类别快速筛选 chip，不必在搜索框里输中文 -->
+        <view class="chip-row" style="margin-bottom: 12rpx">
+          <text
+            v-for="c in CATEGORY_FILTERS"
+            :key="c.key"
+            class="chip tap"
+            :class="{ hit: categoryFilter === c.key }"
+            @click="categoryFilter = c.key"
+          >{{ c.label }}</text>
+        </view>
         <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
@@ -56,7 +66,7 @@
               class="stat"
               :class="v > 0 ? 'res-up' : 'res-down'"
             >
-              {{ elementName(el as Element) }} {{ v > 0 ? '+' : '' }}{{ (v / 10).toFixed(1) }}%
+              {{ elementName(el as Element) }}抗性 {{ v > 0 ? '+' : '' }}{{ (v / 10).toFixed(1) }}%（{{ v }}‰）
             </text>
           </view>
           <text v-else class="muted">无元素抗性</text>
@@ -93,10 +103,23 @@ const enemies = computed(() => store.config?.enemies ?? [])
 /** 图鉴搜索（2026-11-01 新一轮第 70 轮）：按名称/类别中文过滤。 */
 const keyword = ref('')
 
+/** 第六批 R52：类别 chip 筛选，'all' 表示不过滤。 */
+const categoryFilter = ref('all')
+const CATEGORY_FILTERS = [
+  { key: 'all', label: '全部' },
+  { key: 'normal', label: '普通' },
+  { key: 'ranged', label: '远程' },
+  { key: 'flying', label: '飞行' },
+  { key: 'special', label: '特殊' },
+  { key: 'elite', label: '精英' },
+  { key: 'boss', label: 'Boss' },
+] as const
+
 const filteredEnemies = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
-  if (!kw) return enemies.value
   return enemies.value.filter((en) => {
+    if (categoryFilter.value !== 'all' && en.category !== categoryFilter.value) return false
+    if (!kw) return true
     return (
       en.name.toLowerCase().includes(kw) ||
       categoryLabel(en.category).toLowerCase().includes(kw) ||

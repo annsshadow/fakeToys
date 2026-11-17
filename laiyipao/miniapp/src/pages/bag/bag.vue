@@ -215,11 +215,13 @@
             </text>
           </view>
           <view class="flex-1" style="text-align: right">
+            <text v-if="equipping" class="dim">处理中…</text>
             <text v-if="!e.owned" class="dim">Lv{{ e.unlock_level }} 解锁</text>
             <text v-else-if="e.equipped" class="dim" style="color: #7ee787">已装备</text>
             <view
               v-if="e.owned && !e.equipped"
               class="btn btn-primary"
+              :class="{ 'btn-disabled': equipping }"
               style="padding: 8rpx 20rpx; font-size: 24rpx"
               @click="equip(e.id)"
             >
@@ -228,6 +230,7 @@
             <view
               v-else-if="e.equipped"
               class="btn"
+              :class="{ 'btn-disabled': equipping }"
               style="padding: 8rpx 20rpx; font-size: 24rpx"
               @click="unequip(e.id)"
             >
@@ -302,7 +305,9 @@
               <text class="dim" style="display: block">{{ affixText(g.affixes) }}</text>
             </view>
             <view class="skill-act">
-              <text v-if="gemBusyId === g.id" class="dim">处理中…</text>
+              <!-- 第六批 R35：洗练时用 washingId 显示行内反馈（此前只看 gemBusyId，
+                   洗练在途仍显示可点的「洗练」—— 点了没反应的那类缺陷） -->
+              <text v-if="gemBusyId === g.id || washingId === g.id" class="dim">处理中…</text>
               <template v-else>
                 <text
                   v-if="!g.equipped_slot"

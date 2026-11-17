@@ -31,7 +31,8 @@
               <DefIcon :name="'slot:' + e.slot" :size="40" />
             </view>
             <text class="rxn-name">{{ e.name }}</text>
-            <text class="dim">{{ slotLabel(e.slot) }} · {{ tierLabel(e.tier) }}</text>
+            <!-- 第六批 R47：★ 与 T 阶并列，玩家不必猜星星代表什么 -->
+            <text class="dim">{{ slotLabel(e.slot) }} · {{ tierLabel(e.tier) }}（T{{ e.tier }}）</text>
             <text v-if="e.element" class="tag" :class="'tag-' + e.element">{{ elementName(e.element) }}</text>
             <text v-if="isOwned(e.id)" class="chip hit">已拥有</text>
           </view>
@@ -39,7 +40,8 @@
           <view class="rxn-stats">
             <text v-if="e.base_armor > 0" class="stat">护甲 {{ e.base_armor }}</text>
             <text v-if="e.base_bonus_pct > 0" class="stat">加成 {{ e.base_bonus_pct }}%</text>
-            <text class="stat">解锁等级 {{ e.unlock_level }}</text>
+            <!-- 第六批 R48：与技能图鉴口径统一，「需 Lv.N」 -->
+            <text class="stat">需 Lv.{{ e.unlock_level }}</text>
           </view>
         </view>
         <text v-if="!items.length" class="muted">装备表为空（配置未加载？）</text>

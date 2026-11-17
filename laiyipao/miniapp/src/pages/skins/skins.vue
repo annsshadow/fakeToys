@@ -23,6 +23,14 @@
           数值与说明直接来自服务端 /config。皮肤被动是<strong>机制型词条</strong>，
           改变战斗方式而非只加数值。
         </text>
+        <!-- 第六批 R49：稀有度构成一眼可见，搜索前就知道有哪些档次 -->
+        <text class="muted" style="display: block; margin-bottom: 8rpx">
+          稀有度分布：传说 {{ countByRarity('legendary') }} · 史诗 {{ countByRarity('epic') }} · 稀有 {{ countByRarity('rare') }} · 普通 {{ countByRarity('common') }}
+        </text>
+        <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
+        <text class="dim" style="display: block; margin-bottom: 8rpx">
+          当前版本皮肤暂无获得途径，图鉴用于了解被动机制。
+        </text>
         <text class="result-count">显示 {{ filteredSkins.length }} / 共 {{ skins.length }} 条</text>
         <view v-for="s in filteredSkins" :key="s.id" class="rxn skin">
           <view class="rxn-head">
@@ -75,6 +83,11 @@ interface SkinDef {
  * 客户端**零 UI 消费** —— 玩家不知道皮肤系统长什么样。这里补上图鉴页。
  */
 const skins = computed(() => (store.config?.skins ?? []) as unknown as SkinDef[])
+
+/** 第六批 R49：按稀有度统计，未知稀有度归入普通。 */
+function countByRarity(rarity: string): number {
+  return skins.value.filter((s) => (s.rarity in RARITY_CLASS ? s.rarity : 'common') === rarity).length
+}
 
 /** 图鉴搜索（2026-11-01 新一轮第 78 轮）：名称/稀有度中文过滤。 */
 const keyword = ref('')

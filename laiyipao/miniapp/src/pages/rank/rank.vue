@@ -15,7 +15,8 @@
       <view class="rank-desc-row">
         <text class="muted">{{ curDesc }}</text>
         <!-- R79 榜单条数：切 tab 后立刻知道这一榜有多少人 -->
-        <text v-if="items.length" class="rank-count">共 {{ items.length }} 人上榜</text>
+        <!-- 第六批 R59：榜单可能被服务端截断，「共 N 人」是假话；改成「显示前 N 名」 -->
+        <text v-if="items.length" class="rank-count">显示前 {{ items.length }} 名</text>
       </view>
 
       <view v-if="loading" class="card">
@@ -64,6 +65,15 @@
         </view>
         <text v-if="myRank.rank > 0" class="dim">我的{{ curLabel }}：{{ formatScore(myRank.score) }}</text>
         <text v-else class="dim">{{ noScoreHint }}</text>
+      </view>
+      <!-- 第六批 R39：拉取失败与「没成绩」此前都让整块消失，用户分不清。
+           显式占位说明「排名暂不可用」，避免把故障误读成自己没上榜。 -->
+      <view v-else-if="!loading" class="card my-rank">
+        <view class="my-rank-row">
+          <text class="muted">我的排名</text>
+          <text class="my-rank-none">排名暂不可用</text>
+        </view>
+        <text class="dim">榜单仍可正常查看，稍后重试即可。</text>
       </view>
     </view>
   </view>

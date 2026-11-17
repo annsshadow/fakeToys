@@ -42,8 +42,15 @@
             placeholder="例如 1"
             placeholder-class="ph"
           />
-          <view class="btn" style="width: 180rpx; height: 72rpx" @click="fetchReplay">
-            取复现信息
+          <!-- 第六批 R38：此前 fetchReplay 是 async 却无任何在途反馈，
+               与同页 doReplay 的 spinner 不一致；现在显示「获取中…」并禁用重复点。 -->
+          <view
+            class="btn"
+            :class="{ 'btn-disabled': fetching }"
+            style="width: 180rpx; height: 72rpx"
+            @click="fetchReplay"
+          >
+            {{ fetching ? '获取中…' : '取复现信息' }}
           </view>
         </view>
         <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)">
@@ -107,8 +114,14 @@
           本地重放并提交验真
         </view>
 
-        <view class="btn" style="margin-top: 12rpx" @click="doFalsify">
-          提交伪造哈希（演示证伪）
+        <!-- 第六批 R64：提交在途给即时反馈，不必等裁定卡出现 -->
+        <view
+          class="btn"
+          :class="{ 'btn-disabled': falsifying }"
+          style="margin-top: 12rpx"
+          @click="doFalsify"
+        >
+          {{ falsifying ? '提交中…' : '提交伪造哈希（演示证伪）' }}
         </view>
         <text class="dim" style="display: block; margin-top: 12rpx">
           「伪造哈希」提交全零值，必然不一致 —— 这正是「任何人可证伪」的含义：
@@ -221,7 +234,11 @@ function duration(ms: number): string {
   return prettyDuration(ms)
 }
 
+/** 第六批 R38：取复现信息的在途标记。 */
+const fetching = ref(false)
+
 async function fetchReplay() {
+  if (fetching.value) return
   errMsg.value = ''
   replayInfo.value = null
   outcome.value = null
@@ -231,6 +248,7 @@ async function fetchReplay() {
     errMsg.value = '请输入有效的 battle_id'
     return
   }
+  fetching.value = true
   try {
     replayInfo.value = await api.getReplay(id)
   } catch (e) {
@@ -239,6 +257,8 @@ async function fetchReplay() {
     // 否则页面同时显示「一致 —— 分数可复现」和一行错误，
     // 玩家会以为验真通过了。
     outcome.value = null
+  } finally {
+    fetching.value = false
   }
 }
 
@@ -282,13 +302,22 @@ function doReplay() {
   }, 30)
 }
 
-function doFalsify() {
+/** 第六批 R64：伪造哈希提交在途标记。 */
+const falsifying = ref(false)
+
+async function doFalsify() {
+  if (falsifying.value) return
   if (!replayInfo.value) {
     errMsg.value = '请先取复现信息'
     return
   }
   outcome.value = null
-  void submit('0000000000000000')
+  falsifying.value = true
+  try {
+    await submit('0000000000000000')
+  } finally {
+    falsifying.value = false
+  }
 }
 
 onMounted(async () => {

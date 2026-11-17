@@ -71,8 +71,8 @@ describe('rank.vue 排行榜', () => {
     await flushPromises()
     expect(mockApi.fetchLeaderboard).toHaveBeenCalledWith('power')
     expect(wrapper.text()).toContain('按累计成长值排名。')
-    // R79 榜单条数
-    expect(wrapper.find('.rank-count').text()).toContain('共 3 人上榜')
+    // R79 榜单条数；第六批 R59：改为「显示前 N 名」（榜单可能被截断）
+    expect(wrapper.find('.rank-count').text()).toContain('显示前 3 名')
     const rows = wrapper.findAll('.rank-row')
     expect(rows.length).toBe(3)
     // 空昵称回退为"玩家"
@@ -212,12 +212,13 @@ describe('rank.vue 排行榜', () => {
     expect(wrapper.text()).toContain('积累成长值')
   })
 
-  it('我的排名失败 → 榜单照常显示（次要信息不拖垮主内容）', async () => {
+  it('我的排名失败 → 榜单照常显示，并给出「暂不可用」占位（第六批 R39）', async () => {
     mockApi.fetchMyRank.mockRejectedValue(new Error('boom'))
     const { wrapper } = mountPage(Rank)
     await flushPromises()
     expect(wrapper.findAll('.rank-row').length).toBe(3)
-    expect(wrapper.text()).not.toContain('我的排名')
+    // R39：失败不再静默消失 —— 显式区分「没成绩」与「没拿到」
+    expect(wrapper.text()).toContain('排名暂不可用')
     expect(wrapper.text()).not.toContain('第 0')
   })
 

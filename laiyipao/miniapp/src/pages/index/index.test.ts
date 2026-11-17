@@ -89,10 +89,10 @@ describe('index.vue 首页', () => {
     expect(store.loggedIn).toBe(true)
     expect(wrapper.text()).toContain('游客7')
     expect(wrapper.text()).toContain('游客账号')
-    // 2026-11-17 v2：资源栏从「金 10」纯文本改为图标胶囊，断言改为胶囊值序列
-    // （意图不变：钱包三个资源按 金/钻/体 顺序渲染）。
+    // 2026-11-17 v2：资源栏从「金 10」纯文本改为图标胶囊，断言改为胶囊值序列。
+    // 第六批 R56：补上第四种货币「钥匙」，顺序为 金/钻/体/钥匙。
     const pillValues = wrapper.findAll('.res-pill .mono').map((el) => el.text())
-    expect(pillValues).toEqual(['10', '20', '30'])
+    expect(pillValues).toEqual(['10', '20', '30', '40'])
     // buildRating 已下发：五维与短板建议出现
     expect(wrapper.text()).toContain('构筑评分')
     expect(wrapper.text()).toContain('5/5')

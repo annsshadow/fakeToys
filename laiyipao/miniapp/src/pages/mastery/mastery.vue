@@ -47,13 +47,18 @@
             @click="curFamily = f.family"
           >
             {{ f.name }}
-            <text v-if="invested(f.family) > 0" class="tab-dot" />
+            <!-- 第六批 R61：已投点数直接写在页签上，此前只有一个小圆点看不出多少 -->
+            <text v-if="invested(f.family) > 0" class="tab-invest">+{{ invested(f.family) }}</text>
           </view>
         </view>
       </scroll-view>
 
       <view v-if="curNodes.length" class="card">
         <text class="card-title">{{ curName }}专精树</text>
+        <!-- 第六批 R62：说明锁定原因，玩家不必靠点一下才收到 toast 才知道 -->
+        <text class="dim" style="display: block; margin-bottom: 12rpx">
+          锁定节点需先在上一层点亮 2 项；每层最多选 2 项。
+        </text>
         <view v-for="layer in 3" :key="layer" class="layer">
           <view class="layer-head">
             <text class="layer-title">第 {{ layer }} 层</text>
@@ -288,6 +293,13 @@ onMounted(async () => {
   height: 10rpx;
   border-radius: 50%;
   background: var(--ok);
+}
+
+/* 第六批 R61 页签已投点数徽章 */
+.tab-invest {
+  margin-left: 8rpx;
+  color: var(--ok);
+  font-size: 20rpx;
 }
 
 .reset-row {

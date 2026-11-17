@@ -16,6 +16,12 @@
           <Icon name="bolt" :size="26" />
           <text class="mono">{{ wallet.energy ?? 0 }}</text>
         </view>
+        <!-- 第六批 R37：补上钥匙胶囊 —— keys 是真实货币（三星钥匙掉落、副本/BOSS 用途），
+             此前 shop 的 wallet-bar 只画了三种，商城正好是主要消费场景却看不到余额。 -->
+        <view class="res-pill">
+          <text class="res-glyph">🔑</text>
+          <text class="mono">{{ wallet.keys ?? 0 }}</text>
+        </view>
       </view>
 
       <view v-for="g in groups" :key="g.key" class="card">
@@ -159,6 +165,16 @@ const PAYLOAD_CN: Record<string, string> = {
   gem_wash_token: '洗练石',
 }
 
+/** 第六批 R58：确认弹窗里预判余额是否足够，不必点了才报错。 */
+function affordHint(it: ShopItem): string {
+  for (const [k, v] of Object.entries(it.price)) {
+    if (v <= 0) continue
+    const have = (wallet.value as unknown as Record<string, number>)[k] ?? 0
+    if (have < v) return `余额不足：还差 ${v - have} ${CURRENCY_CN[k] ?? k}`
+  }
+  return '余额充足'
+}
+
 function priceText(it: ShopItem): string {
   const parts = Object.entries(it.price)
     .filter(([, v]) => v > 0)
@@ -246,7 +262,7 @@ async function doBuy(it: ShopItem) {
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
       title: '确认购买',
-      content: `购买「${it.name}」？将花费 ${priceText(it)}。`,
+      content: `购买「${it.name}」？将花费 ${priceText(it)}。（${affordHint(it)}）`,
       confirmText: '购买',
       cancelText: '取消',
       success: (r) => resolve(!!r.confirm),

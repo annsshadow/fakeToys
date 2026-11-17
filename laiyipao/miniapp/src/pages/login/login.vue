@@ -18,6 +18,7 @@
         <input
           v-model="username"
           class="inp"
+          :class="{ 'input-error': !!errMsg }"
           type="text"
           placeholder="用户名"
           placeholder-class="ph"
@@ -27,6 +28,7 @@
           <input
             v-model="password"
             class="inp flex-1"
+            :class="{ 'input-error': !!errMsg }"
             type="text"
             :password="!showPassword"
             placeholder="口令"
@@ -45,6 +47,10 @@
             <text class="pw-toggle-label">{{ showPassword ? '隐藏' : '显示' }}</text>
           </view>
         </view>
+        <!-- 第六批 R72：说明用户名来自本机回填，不是系统默认值 -->
+        <text v-if="usernamePrefilled" class="dim" style="display: block; margin-bottom: 8rpx">
+          已填入上次登录的用户名，可自行修改。
+        </text>
         <!-- R81 空字段实时提示：按钮变暗的同时说明为什么 -->
         <text v-if="!username || !password" class="form-hint">请填写用户名与口令后可登录</text>
         <view
@@ -111,9 +117,14 @@ const submitting = ref(false)
 /** 显示密码（2026-11-01 新一轮第 83 轮）：避免长口令输错。 */
 const showPassword = ref(false)
 
+/** 第六批 R72：用户名是否由本机回填（避免玩家误以为是默认值）。 */
+const usernamePrefilled = ref(false)
+
 onLoad(() => {
   // 只回填用户名：口令不存、也不预填（见上方注释）。
-  username.value = loadLastUsername() || 'admin'
+  const last = loadLastUsername()
+  usernamePrefilled.value = !!last
+  username.value = last || 'admin'
 })
 
 async function submit(): Promise<void> {
