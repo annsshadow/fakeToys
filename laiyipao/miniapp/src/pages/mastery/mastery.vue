@@ -259,9 +259,12 @@ const investedValue = computed(() => {
       }
     }
   }
+  // key 必须与服务端 masteryLayerKinds（internal/domain/power.go）一致 ——
+  // 配置下发的节点 kind 就是这些 key，写错就会把英文原文漏给玩家。
   const KIND_CN: Record<string, string> = {
-    attack: '攻击', heat: '热量', element: '元素', reaction: '反应',
-    armor: '护甲', crit: '暴击', slot: '额外槽位', mechanic: '机制',
+    element_cap: '元素上限', reaction_mult: '反应倍率', heat_cap: '热量上限',
+    skill_damage: '技能伤害', crit: '暴击率', extra_slot: '额外插槽',
+    mechanic: '机制改造', armor: '防线护甲',
   }
   return [...m.entries()]
     .map(([kind, value]) => ({ kind, label: KIND_CN[kind] ?? kind, value }))
