@@ -134,7 +134,7 @@
         <div class="form-group"><label>描述</label><input v-model="modalForm.desc" class="form-input" placeholder="可选描述" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showModal=false">取消</button>
-          <button class="btn-save" :disabled="!modalForm.name" @click="modalSave">保存</button>
+          <button class="btn-save" :disabled="!modalForm.name || modalSaving" @click="modalSave">{{ modalSaving ? '保存中...' : '保存' }}</button>
         </div>
       </div>
     </div>
@@ -1011,7 +1011,9 @@ function editStatement(s: Stmt) {
   modalForm.value = { name: s.name || '', flag: s.flag || '', sql: s.sql ?? '', desc: s.desc || '' }
   showModal.value = true
 }
+const modalSaving = ref(false)
 const saveM = useMutation({
+  onSettled: () => (modalSaving.value = false),
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (data: any) => {
     if (editing.value && currentStatement.value?.id)
@@ -1040,7 +1042,9 @@ async function saveByFlag() {
   }
 }
 function modalSave() {
+  if (modalSaving.value) return
   if (!modalForm.value.name.trim()) return
+  modalSaving.value = true
   const payload = {
     name: modalForm.value.name,
     flag: modalForm.value.flag,

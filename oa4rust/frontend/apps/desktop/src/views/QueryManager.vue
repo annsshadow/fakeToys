@@ -52,7 +52,7 @@
         <h3>新建查询</h3>
         <div class="fg3"><label>名称</label><input v-model="nform.name" class="fi3" placeholder="查询名称" /></div>
         <div class="fg3"><label>SQL</label><textarea v-model="nform.sql" class="fta3" rows="5" placeholder="SELECT ..."></textarea></div>
-        <div class="mf3"><button class="bc3" @click="showCreate=false">取消</button><button class="bs3" :disabled="!nform.name" @click="createQ">创建</button></div>
+        <div class="mf3"><button class="bc3" @click="showCreate=false">取消</button><button class="bs3" :disabled="!nform.name || createSaving" @click="createQ">{{ createSaving ? '创建中...' : '创建' }}</button></div>
       </div>
     </div>
   </div>
@@ -187,7 +187,9 @@ async function delQ() {
   // confirmMsg 返回 Promise<boolean>：未 await 时恒为 truthy，删除会在用户点确认前就发出
   if (await confirmMsg('确定删除？')) dm.mutate(selected.value.id)
 }
+const createSaving = ref(false)
 const cm = useMutation({
+  onSettled: () => (createSaving.value = false),
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: () => api.post('/api/query/assemble/designer/create', nform.value),
   onSuccess: () => {
@@ -196,7 +198,10 @@ const cm = useMutation({
   },
 })
 function createQ() {
-  if (nform.value.name) cm.mutate()
+  if (createSaving.value) return
+  if (!nform.value.name) return
+  createSaving.value = true
+  cm.mutate()
 }
 function fmtT(t?: string) {
   return t ? formatServerDateTime(t) : ''

@@ -268,7 +268,7 @@
         <div class="form-group"><label>分类</label><input v-model="nform.category" class="form-input" placeholder="如：query, stat, admin" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showCreate=false">取消</button>
-          <button class="btn-save" :disabled="!nform.name" @click="createQuery">创建</button>
+          <button class="btn-save" :disabled="!nform.name || createSaving" @click="createQuery">{{ createSaving ? '创建中...' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -852,7 +852,9 @@ async function deleteQuery() {
   delM.mutate(selected.value.id)
 }
 
+const createSaving = ref(false)
 const cm = useMutation({
+  onSettled: () => (createSaving.value = false),
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: () =>
     api.post('/api/query/assemble/designer/create', {
@@ -866,7 +868,10 @@ const cm = useMutation({
   },
 })
 function createQuery() {
-  if (nform.value.name) cm.mutate()
+  if (createSaving.value) return
+  if (!nform.value.name) return
+  createSaving.value = true
+  cm.mutate()
 }
 
 function refresh() {

@@ -13,8 +13,8 @@
         <div class="avatar-large">{{ user?.name?.charAt(0) || 'U' }}</div>
         <div class="avatar-actions">
           <label class="upload-btn">
-            📷 更换头像
-            <input type="file" accept="image/*" class="hidden-input" @change="handleAvatarUpload" />
+            {{ avatarSaving ? '上传中...' : '📷 更换头像' }}
+            <input type="file" accept="image/*" class="hidden-input" :disabled="avatarSaving" @change="handleAvatarUpload" />
           </label>
         </div>
       </div>
@@ -195,6 +195,7 @@ const user = computed(() => session.state.user ?? null)
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const pwdError = ref('')
 const pwdSaving = ref(false)
+const avatarSaving = ref(false)
 
 const signature = ref('')
 
@@ -249,14 +250,17 @@ function savePassword(): void {
 }
 
 function handleAvatarUpload(e: Event): void {
+  if (avatarSaving.value) return
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file || !user.value) return
+  avatarSaving.value = true
   const formData = new FormData()
   formData.append('file', file)
   avatarMutation.mutate(formData)
 }
 
 const avatarMutation = useMutation({
+  onSettled: () => (avatarSaving.value = false),
   mutationFn: (formData: FormData) => api.upload(`/api/person/icon/${user.value!.unique}`, formData),
   onSuccess: () => {
     toast.success('头像上传成功')

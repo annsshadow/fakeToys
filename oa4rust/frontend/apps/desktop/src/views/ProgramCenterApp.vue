@@ -299,7 +299,7 @@
         <div class="form-group"><label>Flag</label><input v-model="agentForm.flag" class="form-input" placeholder="唯一标识"/></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showCreateAgent=false">取消</button>
-          <button class="btn-primary" @click="onCreateAgent">创建</button>
+          <button class="btn-primary" :disabled="agentCreateSaving" @click="onCreateAgent">{{ agentCreateSaving ? '创建中...' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -324,7 +324,7 @@
         <div class="form-group"><label>Flag</label><input v-model="dictForm.dictFlag" class="form-input" placeholder="唯一标识（dictFlag）"/></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showCreateDict=false">取消</button>
-          <button class="btn-primary" :disabled="!dictForm.name?.trim()||!dictForm.dictFlag?.trim()" @click="onCreateDict">创建</button>
+          <button class="btn-primary" :disabled="!dictForm.name?.trim()||!dictForm.dictFlag?.trim()||dictCreateSaving" @click="onCreateDict">{{ dictCreateSaving ? '创建中...' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -433,6 +433,8 @@ const agentSaving = ref(false)
 
 // 字典创建（POST /api/program_center/dict；后端字段名为 dictFlag）
 const dictForm = ref({ name: '', dictFlag: '' })
+const agentCreateSaving = ref(false)
+const dictCreateSaving = ref(false)
 
 // 字典数据编辑器（GET dict/{flag}/data + POST dict/{flag}/data/data）
 const showDictData = ref(false)
@@ -904,6 +906,7 @@ async function executeAgent(a: Agent) {
 }
 
 const createAgentM = useMutation({
+  onSettled: () => (agentCreateSaving.value = false),
   mutationFn: (data: { name: string; flag: string }) => api.post('/api/program_center/agent/create', data),
   onSuccess: () => {
     showCreateAgent.value = false
@@ -914,7 +917,9 @@ const createAgentM = useMutation({
   onError: () => toast.error('创建失败'),
 })
 async function onCreateAgent() {
+  if (agentCreateSaving.value) return
   if (!agentForm.value.name || !agentForm.value.flag) return
+  agentCreateSaving.value = true
   createAgentM.mutate(agentForm.value)
 }
 
@@ -969,6 +974,7 @@ async function deleteDict(d: Dict) {
 // 新建字典（POST /api/program_center/dict；DictCreateRequest 的 flag 键名为 dictFlag，
 // 原 /dict/create 为未注册死端点且误用 flag 键）
 const createDictM = useMutation({
+  onSettled: () => (dictCreateSaving.value = false),
   mutationFn: (data: { name: string; dictFlag: string }) => api.post('/api/program_center/dict', data),
   onSuccess: () => {
     showCreateDict.value = false
@@ -979,6 +985,8 @@ const createDictM = useMutation({
   onError: () => toast.error('创建失败'),
 })
 function onCreateDict() {
+  if (dictCreateSaving.value) return
+  dictCreateSaving.value = true
   createDictM.mutate(dictForm.value)
 }
 

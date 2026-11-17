@@ -216,7 +216,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="showNewTopic = false">取消</button>
-          <button class="btn-submit" :disabled="!newTopic.title.trim()" @click="createTopic">发布</button>
+          <button class="btn-submit" :disabled="!newTopic.title.trim() || topicSaving" @click="createTopic">{{ topicSaving ? '发布中...' : '发布' }}</button>
         </div>
       </div>
     </div>
@@ -276,7 +276,7 @@
           </div>
           <div class="reply-input">
             <input v-model="replyText" class="reply-textarea" placeholder="写下你的回复..." @keydown.enter.ctrl="submitReply" />
-            <button class="reply-btn" @click="submitReply">回复</button>
+            <button class="reply-btn" :disabled="replySaving" @click="submitReply">{{ replySaving ? '发送中...' : '回复' }}</button>
           </div>
         </div>
       </div>
@@ -664,7 +664,9 @@ const { loadError: repliesLoadError, reload: reloadReplies } = useListError({
 
 // 创建帖子（后端已注册路由为 /api/bbs/subject/create，非 assemble/control 旧面）
 // authorId 取登录人 unique：后端 subject/create 不回落会话，缺省则「我的主题」过滤不到本人帖。
+const topicSaving = ref(false)
 const createMutation = useMutation({
+  onSettled: () => (topicSaving.value = false),
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
     api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
   onSuccess: () => {
@@ -687,7 +689,9 @@ function openNewTopic(): void {
 }
 
 function createTopic(): void {
+  if (topicSaving.value) return
   if (!newTopic.value.title.trim() || !newTopic.value.sectionId) return
+  topicSaving.value = true
   createMutation.mutate(
     { ...newTopic.value },
     {
@@ -704,7 +708,9 @@ function createTopic(): void {
 }
 
 // 发布回复
+const replySaving = ref(false)
 const replyMutation = useMutation({
+  onSettled: () => (replySaving.value = false),
   mutationFn: (content: string) =>
     api.post('/api/bbs/assemble/control/reply/create', {
       subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
@@ -719,7 +725,9 @@ const replyMutation = useMutation({
 })
 
 function submitReply(): void {
+  if (replySaving.value) return
   if (!replyText.value.trim() || !viewingTopic.value) return
+  replySaving.value = true
   replyMutation.mutate(replyText.value, {
     onSuccess: () => {
       replyText.value = ''

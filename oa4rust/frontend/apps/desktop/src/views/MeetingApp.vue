@@ -110,7 +110,7 @@
         <div class="fg"><label>结束</label><input v-model="form.endTime" type="datetime-local" class="fi" /></div>
         <div class="fg"><label>说明</label><input v-model="form.content" class="fi" placeholder="会议说明（可选）" /></div>
         <div v-if="err" class="em">{{err}}</div>
-        <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title" @click="createMeeting">创建</button></div>
+        <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title || createSaving" @click="createMeeting">{{ createSaving ? '创建中...' : '创建' }}</button></div>
       </div>
     </div>
     <div v-if="detail.open" class="mo" @click.self="detail.open=false">
@@ -212,7 +212,9 @@ function statusCls(m: M) {
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
 }
+const createSaving = ref(false)
 const cm = useMutation({
+  onSettled: () => (createSaving.value = false),
   // 后端 create_meeting 契约：title/content/startTime/endTime/creator/roomId（buildingId 仅用于筛选会议室，不下发）
   mutationFn: () =>
     api.post('/api/meeting/assemble/control/meeting/create', {
@@ -233,7 +235,9 @@ const cm = useMutation({
   },
 })
 function createMeeting() {
+  if (createSaving.value) return
   if (!form.value.title) return
+  createSaving.value = true
   cm.mutate()
 }
 // 会议详情：GET meeting/{id}（x_meeting 主体）+ list/{meetingId}（控制项 x_meeting_assemble_control）
