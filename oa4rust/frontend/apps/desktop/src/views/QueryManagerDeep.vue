@@ -435,7 +435,7 @@ import { computed, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { parseCsv } from '../utils/csv'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -1163,16 +1163,16 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `queries_${new Date().toISOString().slice(0, 10)}.json`,
+      `queries_${businessTodayYMD()}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${businessTodayYMD()}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${businessTodayYMD()}.sql`)
   }
   showExportImport.value = false
 }

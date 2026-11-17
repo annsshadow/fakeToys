@@ -381,6 +381,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
+import { businessTodayYMD } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -663,7 +664,7 @@ async function loadErrorLogs() {
 async function loadPromptErrorFilters() {
   const headFlag = '0'
   const cnt = '20'
-  const today = new Date().toISOString().slice(0, 10)
+  const today = businessTodayYMD()
   const excls = 'java.lang.Exception'
   const logger = 'root'
   try {
@@ -694,7 +695,7 @@ async function loadPromptErrorFilters() {
 async function loadPromptErrorPrev() {
   const headFlag = '999999999'
   const cnt = '20'
-  const today = new Date().toISOString().slice(0, 10)
+  const today = businessTodayYMD()
   const excls = 'java.lang.Exception'
   const logger = 'root'
   try {
@@ -727,7 +728,7 @@ async function loadUnexpectedFilters() {
   const headFlag = '0'
   const prevFlag = '999999999'
   const cnt = '20'
-  const today = new Date().toISOString().slice(0, 10)
+  const today = businessTodayYMD()
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [nextDate, prev, prevDate] = await Promise.all([
@@ -754,7 +755,7 @@ async function loadWarnFilters() {
   const headFlag = '0'
   const prevFlag = '999999999'
   const cnt = '20'
-  const today = new Date().toISOString().slice(0, 10)
+  const today = businessTodayYMD()
   try {
     const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
     const [nextDate, prev, prevDate] = await Promise.all([

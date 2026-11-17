@@ -240,7 +240,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { monthEndYMD, parseServerDate } from '../utils/date'
+import { businessTodayYM, businessTodayYMD, monthEndYMD, parseServerDate } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -269,7 +269,7 @@ interface A {
   endDate?: string
   status?: string
 }
-const month = ref(new Date().toISOString().slice(0, 7)),
+const month = ref(businessTodayYM()),
   page = ref(1),
   records = ref<R[]>([]),
   appeals = ref<A[]>([]),
@@ -391,7 +391,7 @@ async function exportData() {
   try {
     // 按所选月份区间调后端 v2 统计导出端点，返回 {status,count} 聚合行，
     // 前端落成 CSV（带 BOM 保证 Excel 中文不乱码）本地下载。
-    const ym = month.value || new Date().toISOString().slice(0, 7)
+    const ym = month.value || businessTodayYM()
     const endDate = monthEndYMD(ym)
     const r: any = await api.post('/api/attendance/assemble/control/v2/detail/statistic/export/filter', {
       startDate: `${ym}-01`,
@@ -439,7 +439,7 @@ async function loadV2Schedule() {
     const gid = groups[0] ? String(groups[0].id ?? '') : ''
     const person = session.state.user?.unique ?? ''
     const monthStr = month.value
-    const today = new Date().toISOString().slice(0, 10)
+    const today = businessTodayYMD()
     const [cfg, list, byPerson] = await Promise.all([
       gid
         ? api
@@ -923,7 +923,7 @@ async function reciveDetailById() {
 async function createAttDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
-  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   const status = prompt('状态(如 normal/late):', 'normal') || 'normal'
   try {
     await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
@@ -935,7 +935,7 @@ async function createAttDetail() {
 async function reciveMobileDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
-  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
     await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
     toast.success('移动端接收已提交')
@@ -970,7 +970,7 @@ async function importLeave() {
 async function importAttV2Records(mode: string) {
   try {
     if (mode === 'daily') {
-      const date = prompt('导入日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const date = prompt('导入日期(YYYY-MM-DD):', businessTodayYMD()) || ''
       if (!date.trim()) return
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
@@ -984,7 +984,7 @@ async function importAttV2Records(mode: string) {
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
       const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
-      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', businessTodayYMD()) || ''
       const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', {
         rows: [{ userId, checkInType, recordDateString }],
       })
@@ -1020,7 +1020,7 @@ async function attAppealWrite(op: string) {
   }
 }
 async function checkMyRestDate() {
-  const date = prompt('校验日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('校验日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
     await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
     toast.success('休息日校验已提交')
@@ -1033,7 +1033,7 @@ async function loadStatisticShow() {
   const pv = '999999999'
   const c = '20'
   const nm = '0'
-  const dt = new Date().toISOString().slice(0, 10)
+  const dt = businessTodayYMD()
   const yr = String(new Date().getFullYear())
   const mo = String(new Date().getMonth() + 1)
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
@@ -1255,8 +1255,8 @@ async function deleteRule(rule: any) {
 async function submitAppeal() {
   const type = prompt('请假类型 (sick/personal/vacation):', 'sick')
   if (!type) return
-  const start = prompt('开始日期:', new Date().toISOString().slice(0, 10))
-  const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
+  const start = prompt('开始日期:', businessTodayYMD())
+  const end = prompt('结束日期:', businessTodayYMD())
   if (!start || !end) return
   try {
     // 后端 appeal/submit 契约：appealDate + reason；申诉人/创建者以会话登录人为事实源（防冒充），

@@ -169,7 +169,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -343,7 +343,7 @@ function downloadConfig() {
 function exportConfigs() {
   const data = items.value.map((i) => ({ name: i.name, flag: i.flag, category: i.category, config: i.config }))
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  downloadBlob(blob, `configs_${new Date().toISOString().slice(0, 10)}.json`)
+  downloadBlob(blob, `configs_${businessTodayYMD()}.json`)
 }
 function exportSelected() {
   if (!selected.value) return

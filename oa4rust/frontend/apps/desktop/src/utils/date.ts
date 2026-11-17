@@ -73,3 +73,30 @@ export function formatServerDateTime(value: unknown, options?: Intl.DateTimeForm
     options ?? { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
   )
 }
+
+/**
+ * 业务日界常量：业务时区固定 UTC+8（与 views/timerStart.ts 的 beijingNow、O26-1 一致）。
+ */
+const BUSINESS_UTC_OFFSET_HOURS = 8
+const BUSINESS_OFFSET_MS = BUSINESS_UTC_OFFSET_HOURS * 60 * 60 * 1000
+
+/**
+ * 业务今日 / 本月（固定 UTC+8 口径）。
+ *
+ * 不能用 `new Date().toISOString().slice(0,10|7)`：那是 UTC 日期，UTC+8 凌晨
+ * 00:00–08:00 会回落到昨天 / 上月，导致考勤默认日期、今日筛选、导出文件名等
+ * 在每天的头 8 小时出错。这里与 beijingNow 同一口径：把时刻平移 +8h 后按 UTC
+ * 字段读取，结果与浏览器所在时区无关。
+ */
+export function businessTodayYMD(now: Date = new Date()): string {
+  const shifted = new Date(now.getTime() + BUSINESS_OFFSET_MS)
+  const y = String(shifted.getUTCFullYear()).padStart(4, '0')
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(shifted.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** 业务本月（"YYYY-MM"），与 businessTodayYMD 同口径。 */
+export function businessTodayYM(now: Date = new Date()): string {
+  return businessTodayYMD(now).slice(0, 7)
+}

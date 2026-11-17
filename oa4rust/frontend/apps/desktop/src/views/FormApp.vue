@@ -168,7 +168,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -373,11 +373,11 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `forms_${new Date().toISOString().slice(0, 10)}.json`,
+      `forms_${businessTodayYMD()}.json`,
     )
   } else {
     const csv = `name,flag,version\n${data.map((d) => `"${d.name}","${d.flag}","${d.version}"`).join('\n')}`
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `forms_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `forms_${businessTodayYMD()}.csv`)
   }
   showImportExport.value = false
 }

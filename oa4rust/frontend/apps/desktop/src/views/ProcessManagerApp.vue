@@ -162,6 +162,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { businessTodayYMD } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -328,7 +329,7 @@ async function loadSurfaceManageReads() {
   const cnt = '20'
   const app = 'default'
   const flag = 'default'
-  const dt = new Date().toISOString().slice(0, 10)
+  const dt = businessTodayYMD()
   const first: any = items.value[0] ?? {}
   const wid = String(first.id ?? '0')
   try {

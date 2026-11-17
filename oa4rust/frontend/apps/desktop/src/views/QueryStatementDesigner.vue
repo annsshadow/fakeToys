@@ -886,7 +886,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { formatPercent } from '../utils/formatNumber'
 import { toast } from '../utils/toast'
@@ -1942,17 +1942,17 @@ function doExport() {
   }))
   if (exportFmt.value === 'json') {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    downloadBlob(blob, `statements_${new Date().toISOString().slice(0, 10)}.json`)
+    downloadBlob(blob, `statements_${businessTodayYMD()}.json`)
   } else if (exportFmt.value === 'sql') {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `statements_${new Date().toISOString().slice(0, 10)}.sql`)
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `statements_${businessTodayYMD()}.sql`)
   } else {
     const csv =
       'name,flag,sql,category\n' +
       data
         .map((d) => `"${d.name}","${d.flag || ''}","${(d.sql || '').replace(/"/g, '""')}","${d.category || ''}"`)
         .join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${businessTodayYMD()}.csv`)
   }
   showExportImport.value = false
 }
