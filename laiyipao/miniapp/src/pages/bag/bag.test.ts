@@ -947,4 +947,62 @@ describe('bag.vue 背包可用性（100 轮打磨）', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('已定位到上方输入框')
   })
+
+  // ── 第 21 轮：出战热量预算上限必须与战斗引擎同一单位 ───────────────
+  //
+  // 服务端契约：build.attacker.heat_cap_permille 是**千分比加成**，
+  // engine.ts 把它注入 heat.capBonus，HeatSystem.cap 计算真实上限：
+  //   capBonus<=0 → 100；否则 100*(1000+capBonus)/1000。
+  // 技能 heat_cost 是绝对热量点（content.go 基础技能 20）。
+  // 选关/背包展示的「出战热量 X / 上限」必须与之一致，否则给玩家
+  // 一个假的预算（无加成时显示 /0、进度条恒空、永不提示过热）。
+  function attackerWith(heatCapPermille: number) {
+    return {
+      attack: 1000,
+      crit_permille: 0,
+      crit_multiplier_permille: 1500,
+      reaction_mult_permille: 1000,
+      element_cap: 3,
+      reaction_tier: 0,
+      element_coef_permille: 1000,
+      heat_cap_permille: heatCapPermille,
+      armor_permille: 0,
+      mechanic_permille: 0,
+    }
+  }
+
+  it('R21 无热量上限加成时预算上限是 100（不是 0），过热警告按真实占用显示', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2), attacker: attackerWith(0) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] }) // 20 + 20 = 40 热量
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    const head = wrapper.find('.hb-head .dim')
+    expect(head.exists()).toBe(true)
+    // 无加成：真实上限 100（HEAT_MAX），占用 40 → 不应显示 /0
+    expect(head.text()).toContain('40 / 100')
+    // 40/100 = 40% 进度条，不应是空的 0%
+    const fill = wrapper.find('.hb-fill')
+    expect(fill.attributes('style')).toContain('width: 40%')
+  })
+
+  it('R21 热量上限加成 200‰ 时预算上限是 120（不是 20）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2), attacker: attackerWith(200) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    // 真实 cap = 100*(1000+200)/1000 = 120；旧写法 200/10 = 20（低估 6 倍）
+    expect(wrapper.find('.hb-head .dim').text()).toContain('40 / 120')
+  })
 })

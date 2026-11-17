@@ -464,6 +464,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { skillBaseDamageAtLevel } from '@/game/skill'
+import { HEAT_MAX } from '@/game/heatmap'
 import type { OwnedGem } from '@/api/client'
 import type { SkillDef } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -511,7 +512,10 @@ const heatBudget = computed(() => {
     .map((id) => allSkills.value.find((s) => s.id === id))
     .filter((s): s is NonNullable<typeof s> => !!s)
   const used = skills.reduce((sum, s) => sum + (s.heat_cost ?? 0), 0)
-  const cap = Number((store.attacker as any).heatCapPermille ?? 1000) / 10
+  // 与 HeatSystem.cap 同一单位：heat_cap_permille 是千分比加成，
+  // 不是绝对热量；无加成时上限就是 HEAT_MAX（100）。
+  const bonus = BigInt((store.attacker as any).heatCapPermille ?? 0)
+  const cap = Number(bonus <= 0n ? HEAT_MAX : (HEAT_MAX * (1000n + bonus)) / 1000n)
   return {
     used,
     cap,
