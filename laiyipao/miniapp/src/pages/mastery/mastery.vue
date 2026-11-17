@@ -66,6 +66,10 @@
           </view>
           <text class="mono fo-val">{{ f.got }}/{{ f.cap }}</text>
         </view>
+        <!-- G103 收益汇总：专精点换来了什么 -->
+        <view v-if="investedValue.length" class="invested-value">
+          <text v-for="v in investedValue" :key="v.kind" class="iv-chip">{{ v.label }} +{{ v.value }}</text>
+        </view>
       </view>
 
       <view v-if="curNodes.length" class="card">
@@ -206,6 +210,25 @@ const familyOverview = computed(() => {
 })
 const totalInvested = computed(() => familyOverview.value.reduce((s, f) => s + f.got, 0))
 
+/** G103 已点亮节点属性收益汇总：按 kind 分组累加 value，看清专精点换来了什么。 */
+const investedValue = computed(() => {
+  const m = new Map<string, number>()
+  for (const f of families.value) {
+    for (const n of f.nodes) {
+      if (selectedSet.value.has(n.id)) {
+        m.set(n.kind, (m.get(n.kind) ?? 0) + n.value)
+      }
+    }
+  }
+  const KIND_CN: Record<string, string> = {
+    attack: '攻击', heat: '热量', element: '元素', reaction: '反应',
+    armor: '护甲', crit: '暴击', slot: '额外槽位', mechanic: '机制',
+  }
+  return [...m.entries()]
+    .map(([kind, value]) => ({ kind, label: KIND_CN[kind] ?? kind, value }))
+    .sort((a, b) => b.value - a.value)
+})
+
 async function toggle(n: MasteryNode) {
   if (selected.value.includes(n.id)) {
     uni.showToast({ title: '已点亮的节点需通过重置取消', icon: 'none' })
@@ -287,6 +310,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G103 专精收益汇总 */
+.invested-value { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
+.iv-chip {
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
 /* G71 专精投入总览 */
 .overview-card .card-title .mono { color: var(--kinetic); }
 .fo-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }

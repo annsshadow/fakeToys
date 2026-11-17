@@ -148,6 +148,21 @@
         </view>
       </view>
 
+      <!-- G101 攻方全属性面板：战力不再是单一数字，而是可读的属性构成 -->
+      <view class="card">
+        <text class="card-title">攻方属性</text>
+        <text class="dim" style="display: block; margin-bottom: 12rpx">
+          服务端权威下发，战斗与回放验真都以这套值为准。
+        </text>
+        <view v-for="r in attackerRows" :key="r.label" class="attr-row">
+          <text class="attr-label">{{ r.label }}</text>
+          <view class="attr-track">
+            <view class="attr-fill" :style="{ width: r.pct + '%', background: r.color }" />
+          </view>
+          <text class="mono attr-val">{{ r.value }}</text>
+        </view>
+      </view>
+
       <!-- 主行动（v2 hero）：页面唯一的渐变强调块，一眼看到「该点哪里」 -->
       <view class="action-card card-hero tap" @click="goStage">
         <view class="flex-1">
@@ -438,6 +453,23 @@ const dims = computed(() => {
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
 /** G87 闯关进度环：已解锁关数 / 总关数的 SVG 弧（hero 卡里的文字升级为可视化）。 */
+/** G101 攻方全属性面板：把「我的战力」拆成可读的属性构成（数据来自 store.attacker）。 */
+const attackerRows = computed(() => {
+  const a = store.attacker
+  const pm = (v: bigint) => Number(v) / 10 // ‰ → %
+  return [
+    { label: '面板攻击力', value: `${a.attack}‰`, pct: Math.min(100, Number(a.attack) / 5), color: 'var(--fire)' },
+    { label: '暴击率', value: `${pm(a.critPermille)}%`, pct: Math.min(100, pm(a.critPermille)), color: 'var(--warn)' },
+    { label: '暴击倍率', value: `${pm(a.critMultiplierPermille)}%`, pct: Math.min(100, pm(a.critMultiplierPermille) / 2), color: 'var(--warn)' },
+    { label: '反应倍率', value: `${pm(a.reactionMultPermille)}%`, pct: Math.min(100, pm(a.reactionMultPermille) / 2), color: 'var(--corrosion)' },
+    { label: '元素系数', value: `${pm(a.elementCoefPermille)}%`, pct: Math.min(100, pm(a.elementCoefPermille) / 2), color: 'var(--ice)' },
+    { label: '元素层数上限', value: `${a.elementCap}`, pct: Math.min(100, Number(a.elementCap) / 10 * 100), color: 'var(--ice)' },
+    { label: '热量上限', value: `${pm(a.heatCapPermille)}%`, pct: Math.min(100, pm(a.heatCapPermille) / 2), color: 'var(--kinetic)' },
+    { label: '防线护甲', value: `${pm(a.armorPermille)}%`, pct: Math.min(100, pm(a.armorPermille) / 5), color: 'var(--kinetic)' },
+    { label: '机制强度', value: `${pm(a.mechanicPermille)}%`, pct: Math.min(100, pm(a.mechanicPermille) / 5), color: 'var(--ok)' },
+  ]
+})
+
 const stageRing = computed(() => {
   const cap = store.config?.levels?.length ?? 0
   const done = Math.max(0, Math.min(cap, store.unlockedLevel ?? 0))
@@ -622,6 +654,13 @@ onShareAppMessage(() => indexShare())
   font-weight: 700;
   color: var(--fire);
 }
+
+/* G101 攻方属性面板 */
+.attr-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 10rpx 0; }
+.attr-label { width: 140rpx; flex-shrink: 0; font-size: 24rpx; color: var(--text-2); }
+.attr-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.attr-fill { height: 100%; border-radius: 999rpx; }
+.attr-val { width: 110rpx; text-align: right; font-size: 24rpx; }
 
 /* G87 闯关进度环 */
 .stage-ring-wrap { position: relative; width: 96rpx; height: 96rpx; flex-shrink: 0; margin-right: 12rpx; }

@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G101 攻方全属性面板 + G102 漏怪率走势 + G103 专精收益汇总', () => {
+    expect(read('../pages/index/index.vue')).toContain('attackerRows')
+    expect(read('../pages/battles/battles.vue')).toContain('leakRateTrend')
+    expect(read('../pages/mastery/mastery.vue')).toContain('investedValue')
+  })
+
   it('G98 技能图鉴合成技能专区（补齐图鉴最大内容缺口）', () => {
     const src = read('../pages/skills/skills.vue')
     expect(src).toContain('compositeSkills')

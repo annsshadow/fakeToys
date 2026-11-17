@@ -40,6 +40,7 @@
         </view>
         <svg class="trend-svg" viewBox="0 0 300 96" aria-label="战绩分数趋势">
           <polyline class="trend-line" :points="trend.line" />
+          <polyline v-if="leakRateTrend.pts.length >= 2" class="leak-line" :points="leakRateTrend.line" />
           <circle
             v-for="(p, i) in trend.pts"
             :key="'pt' + i"
@@ -47,6 +48,9 @@
             :class="p.win ? 'trend-win' : 'trend-lose'"
           />
         </svg>
+        <view class="trend-legend">
+          <text class="dim">● 分数（蓝）　● 漏怪率（红）　越低越好</text>
+        </view>
       </view>
 
       <!-- G83 关卡胜率分布：每关打赢比例，找出还卡着的关 -->
@@ -296,6 +300,25 @@ const elementText = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
+/* G102 漏怪率走势（第七批）                                                    */
+/* 每局 leaked/(kills+leaked) 的防守质量百分比，序列折线 —— 看出是靠输出硬堆还是守得稳。 */
+/* -------------------------------------------------------------------------- */
+const leakRateTrend = computed(() => {
+  const seq = [...items.value].reverse().slice(-20)
+  const pts = seq.map((it, i) => {
+    const k = it.kills ?? 0
+    const l = it.leaked ?? 0
+    const rate = k + l > 0 ? Math.round(l / (k + l) * 100) : 0
+    return {
+      x: seq.length <= 1 ? 150 : (i / (seq.length - 1)) * 300,
+      y: 80 - rate * 0.7,
+      rate,
+    }
+  })
+  return { pts, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+})
+
+/* -------------------------------------------------------------------------- */
 /* G96 战绩总量统计（第七批）                                                   */
 /* 已加载战报的击杀/漏怪/反应/分数总和与均值 —— 一个「我的战斗生涯」总账。        */
 /* -------------------------------------------------------------------------- */
@@ -500,6 +523,8 @@ onMounted(async () => {
   stroke-width: 2;
   stroke-linejoin: round;
 }
+.leak-line { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.trend-legend { text-align: center; font-size: 20rpx; }
 .trend-win { fill: var(--ok); }
 .trend-lose { fill: var(--bad); }
 
