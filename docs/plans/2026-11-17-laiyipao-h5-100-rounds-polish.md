@@ -36,8 +36,8 @@
 | T | 战斗页空间利用与战场生命感（用户点名） | R1–R6 ✅ |
 | U | 背包可用性重构（用户点名） | R7–R10 ✅ |
 | V | 关卡页信息密度与状态化 | R11–R13 ✅ |
-| W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30（进行中，当前 R28） |
-| X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50 |
+| W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30 ✅ |
+| X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50（下一批） |
 | Y | 第二轮探索收敛（新取证驱动） | R51–R70 |
 | Z | 收尾审计与回归 | R71–R100 |
 
@@ -73,3 +73,5 @@
 | R26 | 11-17 | 皮肤图鉴·搜索反馈 | 同上 | codex_search_ux.test R26 |
 | R27 | 11-17 | 宝石图鉴·搜索反馈 | 同上 | codex_search_ux.test R27 |
 | R28 | 11-17 | 反应图鉴·搜索反馈 | 同上 | codex_search_ux.test R28 |
+| R29 | 11-17 | 登录·口令显隐与聚焦 | 显示/隐藏切换换成眼睛图标（新增 eye/eye-off 图标）+ 更大点击盒；输入框聚焦高亮 | login.test R29（图标态与 password 属性同步） |
+| R30 | 11-17 | W 批收尾·空态骨架统一 | 榜单/商城/公告三处裸空态补「图标 + 主文案 + 下一步」共享骨架 | rank.test R30 + shop/announcements 源码守卫 |

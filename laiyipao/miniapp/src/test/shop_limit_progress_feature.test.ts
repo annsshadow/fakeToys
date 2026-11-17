@@ -36,4 +36,11 @@ describe('商城每日限购进度守卫', () => {
     // 这里断言「有一个 v-if 守卫 .limit-wrap 块」以兼容两种等价写法。
     expect(src).toMatch(/v-if="[^"]*limit_per_day[^"]*"[^>]*class="limit-wrap"/)
   })
+
+  it('R30 商城空态给统一骨架与下一步提示', () => {
+    const src = readFileSync(SHOP_VUE, 'utf-8')
+    expect(src).toContain('class="card empty-block"')
+    expect(src).toContain('empty-glyph')
+    expect(src).toContain('稍后再来看看')
+  })
 })

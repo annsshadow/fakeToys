@@ -15,7 +15,11 @@
       <text class="muted" style="display: block; margin-bottom: 16rpx">{{ curDesc }}</text>
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
-      <view v-else-if="items.length === 0" class="card"><text class="muted">暂无数据</text></view>
+      <view v-else-if="items.length === 0" class="card empty-block">
+        <text class="empty-glyph">🏆</text>
+        <text class="muted">暂无数据</text>
+        <text class="dim">打一局战斗积累成长值，就能出现在这个榜上。</text>
+      </view>
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
         <view

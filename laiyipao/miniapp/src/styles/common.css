@@ -343,6 +343,14 @@ page,
   margin-bottom: 12rpx;
 }
 
+/* R29 输入框聚焦反馈：让玩家一眼看到当前在填哪个框 */
+.inp:focus,
+.search-inp:focus {
+  outline: none;
+  border-color: var(--fire);
+  box-shadow: 0 0 0 2rpx var(--fire-soft);
+}
+
 /* 图鉴搜索结果计数 + 无结果引导（R23–R28 六个图鉴页共用） */
 .result-count {
   display: block;
@@ -365,6 +373,21 @@ page,
   border: 1rpx solid var(--fire);
   border-radius: 999rpx;
   padding: 8rpx 32rpx;
+}
+
+/* 统一空态骨架（R30：榜单/商城/公告等）：图标 + 主文案 + 下一步提示 */
+.empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32rpx 16rpx;
+}
+
+.empty-glyph {
+  font-size: 56rpx;
+  opacity: 0.65;
+  margin-bottom: 8rpx;
 }
 
 .ph {

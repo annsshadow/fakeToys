@@ -34,10 +34,16 @@
             :disabled="submitting"
             @confirm="submit"
           />
-          <!-- 显示密码切换（2026-11-01 新一轮第 83 轮） -->
-          <text class="link" style="flex-shrink: 0" @click="showPassword = !showPassword">
-            {{ showPassword ? '隐藏' : '显示' }}
-          </text>
+          <!-- 显示密码切换（2026-11-01 第 83 轮；R29 换成眼睛图标 + 更大点击区） -->
+          <view
+            class="pw-toggle"
+            :class="{ on: showPassword }"
+            style="flex-shrink: 0"
+            @click="showPassword = !showPassword"
+          >
+            <Icon :name="showPassword ? 'eye-off' : 'eye'" :size="36" />
+            <text class="pw-toggle-label">{{ showPassword ? '隐藏' : '显示' }}</text>
+          </view>
         </view>
         <view
           class="btn btn-primary"
@@ -88,6 +94,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { loadLastUsername } from '@/api/client'
 import { useStatusBarPad } from '@/utils/statusBar'
+import Icon from '@/components/Icon.vue'
 
 const store = useGameStore()
 
@@ -131,6 +138,25 @@ async function submit(): Promise<void> {
 </script>
 
 <style scoped>
+/* R29 口令显隐：眼睛图标 + 足够大的点击盒 + 聚焦反馈 */
+.pw-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4rpx;
+  padding: 12rpx 8rpx;
+  border-radius: 10rpx;
+  color: var(--muted);
+}
+
+.pw-toggle.on {
+  color: var(--fire);
+}
+
+.pw-toggle-label {
+  font-size: 22rpx;
+}
+
 .login-hero {
   display: flex;
   flex-direction: column;

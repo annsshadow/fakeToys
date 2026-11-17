@@ -54,7 +54,11 @@
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
       <view v-else-if="loadError" class="card"><text class="muted">加载失败：{{ loadError }}</text></view>
-      <view v-else-if="items.length === 0" class="card"><text class="muted">商城暂无可售商品。</text></view>
+      <view v-else-if="items.length === 0" class="card empty-block">
+        <text class="empty-glyph">🛒</text>
+        <text class="muted">商城暂无可售商品。</text>
+        <text class="dim">运营上新后这里会自动出现，稍后再来看看。</text>
+      </view>
     </view>
   </view>
 </template>

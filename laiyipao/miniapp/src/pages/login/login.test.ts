@@ -143,4 +143,29 @@ describe('login.vue 登录页', () => {
     expect(wrapper.text()).toContain('用户名或密码错误')
     expect(um.mock.reLaunch).not.toHaveBeenCalled()
   })
+
+  // ── R29 口令显隐图标 + 聚焦反馈（2026-11-17 100 轮打磨 W 批）────────
+  it('R29 显隐切换：眼睛图标与口令输入态同步翻转', async () => {
+    const { wrapper } = mountPage(Login)
+    await flushPromises()
+    const toggle = wrapper.find('.pw-toggle')
+    expect(toggle.exists()).toBe(true)
+
+    // 初始：隐藏态 → eye 图标 + 「显示」
+    expect(toggle.classes()).not.toContain('on')
+    expect(toggle.text()).toBe('显示')
+    const pw = wrapper.findAll('input')[1]!
+    expect(pw.attributes('password')).toBe('true')
+
+    // 点一下：显形态 → eye-off 图标 + 「隐藏」，输入不再被遮蔽
+    await toggle.trigger('click')
+    expect(toggle.classes()).toContain('on')
+    expect(toggle.text()).toBe('隐藏')
+    expect(pw.attributes('password')).toBe('false')
+
+    // 再点一下回到隐藏
+    await toggle.trigger('click')
+    expect(toggle.classes()).not.toContain('on')
+    expect(pw.attributes('password')).toBe('true')
+  })
 })

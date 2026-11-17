@@ -142,6 +142,10 @@ describe('rank.vue 排行榜', () => {
     const { wrapper } = mountPage(Rank)
     await flushPromises()
     expect(wrapper.text()).toContain('暂无数据')
+    // R30 空态骨架：图标 + 主文案 + 下一步引导
+    expect(wrapper.find('.empty-block').exists()).toBe(true)
+    expect(wrapper.find('.empty-glyph').exists()).toBe(true)
+    expect(wrapper.text()).toContain('打一局战斗积累成长值')
   })
 
   it('加载失败 → toast 提示并清空列表', async () => {

@@ -7,7 +7,8 @@
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
 
-      <view v-else-if="items.length === 0" class="card">
+      <view v-else-if="items.length === 0" class="card empty-block">
+        <text class="empty-glyph">📢</text>
         <text class="card-title">暂无公告</text>
         <text class="muted" style="display: block; margin-top: 8rpx">
           新服或活动前公告为空是正常的。

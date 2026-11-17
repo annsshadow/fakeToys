@@ -40,6 +40,12 @@ describe('公告列表页守卫', () => {
     expect(src).toContain('v-if="i === 0"')
   })
 
+  it('R30 公告空态给统一骨架', () => {
+    const src = readFileSync(ANN_VUE, 'utf-8')
+    expect(src).toContain('class="card empty-block"')
+    expect(src).toContain('empty-glyph')
+  })
+
   it('pages.json 注册路由', () => {
     const pages = readFileSync(PAGES_JSON, 'utf-8')
     expect(pages).toContain('pages/announcements/announcements')
