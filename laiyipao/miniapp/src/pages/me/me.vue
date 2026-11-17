@@ -212,7 +212,11 @@
           <view class="flex-1">
             <text class="cand-name">{{ c.owner_name || '玩家' }} 的防线</text>
             <text class="dim" style="display: block">
-              战力 {{ c.power }} · 元素 {{ c.element_coverage }}/5 · {{ c.wins }}胜{{ c.losses }}负
+              战力 {{ c.power }}
+              <text class="power-diff" :class="powerDiff(c) <= 0 ? 'easier' : 'harder'">
+                {{ powerDiff(c) <= 0 ? '弱于我 ' + Math.abs(powerDiff(c)) : '强于我 +' + powerDiff(c) }}
+              </text>
+              · 元素 {{ c.element_coverage }}/5 · {{ c.wins }}胜{{ c.losses }}负
             </text>
             <text class="dim" style="display: block">
               快照 {{ c.snapshot?.skills?.length ?? 0 }} 技能 ·
@@ -1157,6 +1161,11 @@ const stolenText = computed(() => {
 })
 
 /** 快照不完整时不给出挑战入口 —— 盲报会污染对方的战绩数据 */
+/** G124 战力差：对手战力 - 我的战力（负=比我弱，更易攻破）。 */
+function powerDiff(c: DefenseView): number {
+  return Number(c.power ?? 0) - Number(store.power ?? 0)
+}
+
 function snapshotOk(c: DefenseView): boolean {
   // 第 140 轮：护盾过期判断用服务端时钟基准，本地时钟偏几小时不再误判
   return validateSnapshot(c, store.estimateServerNowMs()).ok
@@ -1475,6 +1484,11 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G124 战力差标签 */
+.power-diff { margin-left: 8rpx; font-weight: 600; }
+.power-diff.easier { color: var(--ok); }
+.power-diff.harder { color: var(--bad); }
+
 /* G114 损失排行 */
 .loot-track { height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; margin: 0 12rpx; }
 .loot-fill { height: 100%; background: var(--bad); border-radius: 999rpx; }

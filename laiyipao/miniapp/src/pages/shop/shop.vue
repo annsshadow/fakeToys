@@ -43,6 +43,18 @@
         </view>
       </view>
 
+      <!-- G126 性价比对照 -->
+      <view v-if="!loading && valueTable.length" class="card">
+        <view class="card-title">性价比对照<text class="dim">同货币内比较</text></view>
+        <view v-for="vg in valueTable" :key="vg.currency" class="value-group">
+          <text class="dim">{{ vg.currency }} · 每单位产出</text>
+          <view v-for="(r, i) in vg.rows" :key="i" class="value-row">
+            <text>{{ i + 1 }}. {{ r.name }}</text>
+            <text class="mono">{{ r.per }}</text>
+          </view>
+        </view>
+      </view>
+
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
@@ -151,6 +163,27 @@ const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
 /* 聚合「今天还能买」的商品，按产出类型统计剩余次数 —— 玩家一眼看到今天还能补什么。 */
 /* 不臆造货币汇率，只统计次数与产出类型。数据来自 items。                         */
 /* -------------------------------------------------------------------------- */
+/** G126 性价比对照：同货币分组内按「每单位货币产出量」排序，不臆造跨货币汇率。 */
+const valueTable = computed(() => {
+  const groups: Record<string, Array<{ name: string; per: number; text: string }>> = {}
+  for (const it of items.value) {
+    const priceEntries = Object.entries(it.price).filter(([, v]) => v > 0)
+    if (priceEntries.length !== 1) continue // 多货币混合商品不做折算，避免误导
+    const [cur, amount] = priceEntries[0]!
+    const payloadTotal = Object.values(it.payload).reduce((s, v) => s + v, 0)
+    if (payloadTotal <= 0) continue
+    ;(groups[cur] ??= []).push({
+      name: it.name,
+      per: Math.round(payloadTotal / amount * 100) / 100,
+      text: priceText(it),
+    })
+  }
+  return Object.entries(groups).map(([cur, list]) => ({
+    currency: CURRENCY_CN[cur] ?? cur,
+    rows: list.sort((a, b) => b.per - a.per).slice(0, 3),
+  }))
+})
+
 /** G113 今日限购清空成本：按货币汇总「买空今日限购」总花费与余额缺口。 */
 const clearCost = computed(() => {
   const need: Record<string, number> = {}
@@ -364,6 +397,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G126 性价比对照 */
+.value-group { margin: 12rpx 0; }
+.value-row { display: flex; flex-direction: row; justify-content: space-between; padding: 6rpx 0; font-size: 24rpx; }
+.value-row .mono { color: var(--ok); }
+
 /* G113 买空限购成本 */
 .clear-cost-row { display: flex; flex-wrap: wrap; gap: 8rpx; }
 .clear-cost-chip { background: var(--panel-2); border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 22rpx; }

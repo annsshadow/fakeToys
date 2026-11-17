@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G124 战力差 + G125 会话验真记录 + G126 性价比对照', () => {
+    expect(read('../pages/me/me.vue')).toContain('powerDiff')
+    expect(read('../pages/verify/verify.vue')).toContain('verifyHistory')
+    expect(read('../pages/shop/shop.vue')).toContain('valueTable')
+  })
+
   it('G122 出战热量预算 + G123 反应强度排行', () => {
     expect(read('../pages/bag/bag.vue')).toContain('heatBudget')
     expect(read('../pages/reactions/reactions.vue')).toContain('strengthRank')

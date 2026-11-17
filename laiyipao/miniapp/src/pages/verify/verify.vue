@@ -154,6 +154,21 @@
           验真记录已落库，可在运营后台「战斗记录与验真」页查看一致率统计。
         </text>
       </view>
+
+      <!-- G125 本次会话验真记录 -->
+      <view v-if="verifyHistory.length" class="card">
+        <text class="card-title">本次验真记录</text>
+        <view
+          v-for="h in verifyHistory"
+          :key="h.id + h.at"
+          class="kv vh-row tap"
+          @click="refillBattleId(h.id)"
+        >
+          <text class="mono">#{{ h.id }}</text>
+          <text :class="h.matched ? 'vh-ok' : 'vh-bad'">{{ h.matched ? '一致' : '不一致' }}</text>
+          <text class="dim">{{ h.at }}</text>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -214,6 +229,12 @@ onLoad((query) => {
 const replayInfo = ref<ReplayInfo | null>(null)
 const outcome = ref<ReplayOutcome | null>(null)
 const result = ref<any>(null)
+
+/** G125 本次会话验真记录：保留每次验真的结论，可点击回填 battle_id。 */
+const verifyHistory = ref<Array<{ id: number; matched: boolean; at: string }>>([])
+function refillBattleId(id: number) {
+  battleId.value = String(id)
+}
 const errMsg = ref('')
 const replaying = ref(false)
 
@@ -302,6 +323,12 @@ async function submit(hash: string) {
   const id = Number(battleId.value)
   try {
     result.value = await api.verifyReplay(id, hash)
+    // G125 记录本次结论（与本地裁定一致即可，不入哈希）
+    const matched = result.value?.matched ?? outcome.value?.matched ?? false
+    verifyHistory.value = [
+      { id, matched, at: new Date().toLocaleTimeString() },
+      ...verifyHistory.value.filter((h) => h.id !== id),
+    ].slice(0, 8)
   } catch (e) {
     errMsg.value = (e as Error).message
   }
@@ -376,6 +403,11 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G125 会话验真记录 */
+.vh-row { cursor: pointer; }
+.vh-ok { color: var(--ok); }
+.vh-bad { color: var(--bad); }
+
 /* G117 哈希逐段对照 */
 .hash-segments { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
 .hs-seg { font-family: monospace; font-size: 22rpx; padding: 4rpx 8rpx; border-radius: 6rpx; }
