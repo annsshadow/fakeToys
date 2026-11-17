@@ -175,6 +175,38 @@ describe('runInSandbox', () => {
     expect(sandbox.iframe.srcdoc).toBe('<script>boot()</script>')
   })
 
+  it('并发执行时每个调用只消费自己的结果，且不会因共享回调槽而永久挂起', async () => {
+    // 真实场景：ProcessDesigner 连续触发两次「运行脚本」。沙箱是单例 iframe，
+    // 两段代码会先后被沙箱执行并回传两条结果；调用方必须各拿各的。
+    const first = sandbox.mod.runInSandbox('first()', 40)
+    const second = sandbox.mod.runInSandbox('second()', 40)
+    sandbox.iframe.__fire('load')
+    expect(sandbox.iframe.contentWindow!.postMessage).toHaveBeenCalledTimes(2)
+
+    const deliver = (output: string) =>
+      sandbox.messageListeners.forEach((fn) =>
+        fn({
+          source: sandbox.iframe.contentWindow,
+          data: { __oa4rust_sandbox_result: true, ok: true, output, executionTimeMs: 1 },
+        }),
+      )
+    deliver('result-of-first')
+    deliver('result-of-second')
+
+    // 软超时：缺陷版本会让首个 promise 永久挂起，不能让它拖垮整个测试套件。
+    type Settled = { settled: true; value: unknown } | { settled: false }
+    const settle = (promise: Promise<unknown>): Promise<Settled> =>
+      Promise.race([
+        promise.then((value): Settled => ({ settled: true, value })),
+        new Promise<Settled>((resolve) => setTimeout(() => resolve({ settled: false }), 120)),
+      ])
+    const [a, b] = await Promise.all([settle(first), settle(second)])
+    expect(a.settled, '第一个调用不得永久挂起').toBe(true)
+    expect(b.settled, '第二个调用不得永久挂起').toBe(true)
+    if (a.settled) expect(a.value).toMatchObject({ ok: true, output: 'result-of-first' })
+    if (b.settled) expect(b.value).toMatchObject({ ok: true, output: 'result-of-second' })
+  })
+
   it('destroySandbox unregisters the window message listener', () => {
     sandbox.mod.runInSandbox('x')
     expect(sandbox.messageListeners.length).toBe(1)

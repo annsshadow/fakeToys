@@ -19,9 +19,18 @@ interface SandboxResult {
   executionTimeMs: number
 }
 
+interface PendingRun {
+  id: number
+  resolve: (r: SandboxResult) => void
+  timer: ReturnType<typeof setTimeout>
+}
+
 let iframe: HTMLIFrameElement | null = null
 let iframeLoaded = false
-let pendingCallback: ((r: SandboxResult) => void) | null = null
+let nextRunId = 0
+// 沙箱 iframe 是单例：并发调用按 postMessage 顺序执行并回传结果。
+// 用 FIFO 队列让每条结果只消费最早的一次调用，后发调用不得覆盖先发调用的回调。
+const pendingRuns: PendingRun[] = []
 
 /** Lazy-create the sandbox iframe on first use. */
 function getOrCreateFrame(): HTMLIFrameElement {
@@ -50,17 +59,15 @@ function onSandboxMessage(e: MessageEvent): void {
   const data = e.data
   if (!data || typeof data !== 'object' || data.__oa4rust_sandbox_result !== true) return
 
-  const callback = pendingCallback
-  pendingCallback = null
-
-  if (callback) {
-    callback({
-      ok: data.ok,
-      output: data.output ?? undefined,
-      error: data.error ?? undefined,
-      executionTimeMs: data.executionTimeMs ?? 0,
-    })
-  }
+  const pending = pendingRuns.shift()
+  if (!pending) return
+  clearTimeout(pending.timer)
+  pending.resolve({
+    ok: data.ok,
+    output: data.output ?? undefined,
+    error: data.error ?? undefined,
+    executionTimeMs: data.executionTimeMs ?? 0,
+  })
 }
 
 /**
@@ -74,7 +81,19 @@ export function runInSandbox(code: string, timeoutMs = 5000): Promise<SandboxRes
   return new Promise<SandboxResult>((resolve) => {
     const frame = getOrCreateFrame()
 
-    pendingCallback = resolve
+    const id = ++nextRunId
+    // 超时只清理自己这一条：不能像单槽那样误清/漏清其它在途调用。
+    const timer = setTimeout(() => {
+      const index = pendingRuns.findIndex((run) => run.id === id)
+      if (index < 0) return
+      pendingRuns.splice(index, 1)
+      resolve({
+        ok: false,
+        error: `sandbox timed out after ${timeoutMs}ms`,
+        executionTimeMs: timeoutMs,
+      })
+    }, timeoutMs)
+    pendingRuns.push({ id, resolve, timer })
 
     // The sandboxed iframe has an opaque origin (sandbox="allow-scripts" without
     // allow-same-origin), so it must be posted with targetOrigin '*' — a specific
@@ -86,20 +105,6 @@ export function runInSandbox(code: string, timeoutMs = 5000): Promise<SandboxRes
     }
     if (iframeLoaded) post()
     else frame.addEventListener('load', post, { once: true })
-
-    // Force-gc the iframe after a while to prevent memory leak if the user
-    // navigates away without the message completing.
-    setTimeout(() => {
-      if (pendingCallback) {
-        const cb = pendingCallback
-        pendingCallback = null
-        cb({
-          ok: false,
-          error: `sandbox timed out after ${timeoutMs}ms`,
-          executionTimeMs: timeoutMs,
-        })
-      }
-    }, timeoutMs)
   })
 }
 
@@ -126,4 +131,11 @@ export function destroySandbox(): void {
     iframe = null
     iframeLoaded = false
   }
+  // iframe 已销毁，在途调用永远等不到结果：取消定时器并以错误结果兑现，
+  // 既不遗留悬挂 promise，也不让新 iframe 的结果被旧调用错误消费。
+  for (const run of pendingRuns) {
+    clearTimeout(run.timer)
+    run.resolve({ ok: false, error: 'sandbox destroyed before result arrived', executionTimeMs: 0 })
+  }
+  pendingRuns.length = 0
 }
