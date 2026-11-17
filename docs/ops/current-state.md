@@ -966,6 +966,38 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 32.4 交付与边界
 
 - 本轮两提交 49d213fb9、7a13f2421 及本现量文档 §32 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十三、第24轮：R174 websocket all监听一帧三次 + 装备图鉴千分比单位 + 部署再复核（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r174 / lybug-r24），主线程独立复核 diff + 复跑测试 + 双全量门禁后提交；主线程另再复核目标二 augmentor 本地交付链路（无新增可修缺口）。
+
+### 33.1 oa4rust R174 onmessage 重复 dispatch 致 all 监听一帧三次（提交 0d69705e6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | websocket.ts:98 onmessage 在 dispatch(msg.type,envelope) 后又显式 dispatch('$all',msg.data)，而 dispatch() 内部（:170-176）每次已向 $all 广播统一 {event,data} 信封。任何下行帧让 on('$all') 被调用三次：正确信封/裸 msg.data 形状错/误导的 '$all' 信封。全局广播通道（未读计数/审计/会话刷新）一帧当三帧处理；现有 websocket.test.ts:119 只断言 seen[0] 长期漏检 | 无需 type='$all' 生产者，任何正常帧触发 |
+| 修复 | 删除 onmessage 中冗余显式 dispatch 两行注释说明；未动消息合并/raw 回退/send 语义 | 最小改动 |
+| 门禁 | 新增行为测试断言单帧下 on('$all') 恰好一次且形状为合并 envelope（修复前收到 3 项 RED）→GREEN 27/27；主代理独立复跑 27 passed；pnpm test 1320 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 33.2 laiyipao 装备图鉴 base_bonus_pct 千分比误标百分号（提交 323e9cf83）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | equipment.vue:76 把千分比 base_bonus_pct（50‰=加成5%）显示成「加成 50%」放大 10 倍；同字段 bag.vue:239 与 bestPerSlot 均正确标 ‰ | 服务端 content.go:503 Descr 明写攻击力+50‰、equipment_descr_test.go:49 同口径、build_parts.go:300 直接叠加千分比、testdata smoke_levels.json 同值佐证 |
+| 修复 | 单行 % 改 ‰，与背包/服务端同口径 | 不碰共享 schema |
+| 门禁 | equipment_bonus_unit.test.ts jsdom 组件行为测试 RED（显示加成50%）→GREEN（加成50‰）1/1；主代理独立复跑 1 passed；全量 pnpm test 1466 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 33.3 目标二 augmentor 部署链路再复核（无新增缺口）
+
+- 本地服务 health=200、根页 200；写鉴权口令文件存在（Temp/aug-key.txt，gitignored，值不读不回显）。
+- web/dist 生产产物已 gitignore（git ls-files 0、check-ignore yes）；vite.config.ts base=process.env.VITE_BASE||'/' 子路径构建配置齐备；scripts/check-dist.mjs 产物体检完整（入口壳/懒加载 chunk/首屏无 echarts/vendor 基线）。
+- nginx augmentor-test.conf 与 laiyipao-test.conf 同规范（/augmentor-api/ 剥离前缀反代 :8000、/augmentor/ 静态别名）。远程部署仍需 GitHub secrets DEPLOY_*（本会话 gh CLI 不可用、Secrets 不可读），维持 §31.3 交付边界，不臆造缺口。
+
+### 33.4 交付与边界
+
+- 本轮两提交 0d69705e6、323e9cf83 及本现量文档 §33 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
