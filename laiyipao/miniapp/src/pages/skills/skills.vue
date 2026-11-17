@@ -23,6 +23,26 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ skills.length }} 个已解锁（背包可查看拥有状态）。
         </text>
+        <!-- G66 技能元素×类型覆盖矩阵：每格「已拥有/总数」，缺口一眼可见 -->
+        <view class="card-title" style="font-size: 26rpx">元素 × 类型覆盖</view>
+        <view class="skill-matrix">
+          <view class="sm-row">
+            <view class="sm-head" />
+            <view v-for="k in kindCols" :key="'h' + k.key" class="sm-head">{{ k.label }}</view>
+          </view>
+          <view v-for="row in skillMatrix" :key="row.el" class="sm-row">
+            <view class="sm-head" :style="{ color: row.color }">{{ ELEMENT_NAME[row.el] }}</view>
+            <view
+              v-for="cell in row.cells"
+              :key="row.el + cell.key"
+              class="sm-cell"
+              :class="{ covered: cell.owned > 0 }"
+            >
+              {{ cell.owned }}/{{ cell.total }}
+            </view>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredSkills.length }} / 共 {{ skills.length }} 条</text>
         <view v-for="s in filteredSkills" :key="s.id" class="rxn skill">
           <view class="rxn-head">
@@ -67,7 +87,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -107,6 +127,26 @@ const ownedSkillIds = computed(() => {
   return new Set(Object.keys(bag).map(Number))
 })
 
+/* -------------------------------------------------------------------------- */
+/* G66 技能元素×类型覆盖矩阵（第七批）                                          */
+/* 5 元素 × 主动/被动，格子显示「已拥有/总数」，帮玩家看出哪类元素缺技能。        */
+/* -------------------------------------------------------------------------- */
+const kindCols = [
+  { key: 'active', label: '主动' },
+  { key: 'passive', label: '被动' },
+] as const
+const skillMatrix = computed(() =>
+  ELEMENT_ORDER.map((el) => ({
+    el,
+    color: ELEMENT_COLOR[el],
+    cells: kindCols.map((k) => {
+      const all = skills.value.filter((s) => s.element === el && s.kind === k.key)
+      const owned = all.filter((s) => ownedSkillIds.value.has(s.id)).length
+      return { ...k, owned, total: all.length }
+    }),
+  })),
+)
+
 const ownedCount = computed(
   () => skills.value.filter((s) => ownedSkillIds.value.has(s.id)).length,
 )
@@ -121,6 +161,20 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
+/* G66 技能元素×类型覆盖矩阵 */
+.skill-matrix { display: flex; flex-direction: column; gap: 4rpx; margin-bottom: 16rpx; }
+.sm-row { display: flex; flex-direction: row; gap: 4rpx; }
+.sm-head { flex: 1; text-align: center; font-size: 22rpx; font-weight: 600; padding: 6rpx 0; }
+.sm-cell {
+  flex: 1;
+  text-align: center;
+  font-size: 22rpx;
+  padding: 10rpx 0;
+  border-radius: 8rpx;
+  background: var(--panel-2);
+  color: var(--dim);
+}
+.sm-cell.covered { background: rgba(126, 231, 135, 0.14); color: var(--ok); }
 /* 条目分隔线走共享的 .rxn（styles/common.css） */
 /* R67 主动/被动标签配色 */
 .kind-tag { font-size: 22rpx; }

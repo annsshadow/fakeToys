@@ -36,6 +36,21 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G66 技能元素×类型覆盖矩阵', () => {
+    const src = read('../pages/skills/skills.vue')
+    expect(src).toContain('skillMatrix')
+    expect(src).toContain('kindCols')
+    expect(src).toContain('sm-cell')
+  })
+
+  it('G63 选关全章节星级总览', () => {
+    const src = read('../pages/stage/stage.vue')
+    expect(src).toContain('chapterOverview')
+    expect(src).toContain('allStarCap')
+    expect(src).toContain('overview-fill')
+    expect(src).toContain('全局进度')
+  })
+
   it('G75 皮肤稀有度分布环图', () => {
     const src = read('../pages/skins/skins.vue')
     expect(src).toContain('rarityDonut')

@@ -44,6 +44,21 @@
         </view>
       </view>
 
+      <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
+      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
+        <view class="card-title">
+          <text>全局进度</text>
+          <text class="mono">{{ allStars }} / {{ allStarCap }} ★</text>
+        </view>
+        <view v-for="ch in chapterOverview" :key="ch.id" class="overview-row">
+          <text class="dim overview-name">{{ ch.name }}</text>
+          <view class="overview-track">
+            <view class="overview-fill" :style="{ width: ch.pct + '%' }" />
+          </view>
+          <text class="mono overview-pct">{{ ch.pct }}%</text>
+        </view>
+      </view>
+
       <!-- 关卡网格 -->
       <view class="grid">
         <view
@@ -228,6 +243,22 @@ const chapterStars = computed(() =>
   chapterLevels.value.reduce((sum, lv) => sum + (starOf(lv.id) ?? 0), 0),
 )
 const chapterTotal = computed(() => chapterLevels.value.length * 3)
+
+/* -------------------------------------------------------------------------- */
+/* G63 全章节星级总览（第七批）                                                 */
+/* 此前只有「本章」进度；这里汇总全部关卡的已获星/总星，并给每章一个完成度，      */
+/* 玩家一眼看到整体推进度与各章差距。数据来自 stars + config.levels/chapters。   */
+/* -------------------------------------------------------------------------- */
+const allStars = computed(() => (store.config?.levels ?? []).reduce((s, lv) => s + (starOf(lv.id) ?? 0), 0))
+const allStarCap = computed(() => (store.config?.levels ?? []).length * 3)
+const chapterOverview = computed(() =>
+  chapters.value.map((ch) => {
+    const lv = (store.config?.levels ?? []).filter((l) => l.chapter === ch.id)
+    const got = lv.reduce((s, l) => s + (starOf(l.id) ?? 0), 0)
+    const cap = lv.length * 3
+    return { id: ch.id, name: ch.name, got, cap, pct: cap ? Math.round(got / cap * 100) : 0 }
+  }),
+)
 
 // 选关页只读元数据（章节/名称/难度/体力/星级/地形），**不需要 waves** ——
 // 所以这里用摘要类型就够，不必为此把完整关卡拉回来。
@@ -485,6 +516,14 @@ onMounted(() => {
   font-size: 20rpx;
   color: var(--warn);
 }
+
+/* G63 全章节星级总览 */
+.overview-card .card-title .mono { color: var(--warn); }
+.overview-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.overview-name { width: 140rpx; flex-shrink: 0; }
+.overview-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.overview-fill { height: 100%; background: var(--warn); border-radius: 999rpx; }
+.overview-pct { width: 72rpx; text-align: right; font-size: 22rpx; color: var(--warn); }
 
 /* 章节星级进度（2026-11-01 新一轮第 52 轮） */
 .star-progress {
