@@ -128,7 +128,7 @@
             <ul v-if="attachments.length" class="detail-list">
               <li v-for="att in attachments" :key="att.id" class="clickable" @click="viewAttachment(att.id)">
                 <span class="name">{{ att.name || att.id }}</span>
-                <span class="muted">{{ att.extension }} · {{ fmtSize(att.length) }}</span>
+                <span class="muted">{{ att.extension }} · {{ formatFileSize(att.length) }}</span>
               </li>
             </ul>
             <p v-else class="muted">无附件</p>
@@ -552,6 +552,8 @@ import {
   type XformDefinition,
 } from '../contracts/xform'
 import { parseServerDate } from '../utils/date'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { formatFileSize } from '../utils/formatSize'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface TaskItem {
@@ -3476,14 +3478,6 @@ function fmtTime(value: unknown): string {
   if (!value) return ''
   const date = parseServerDate(value)
   return date ? date.toLocaleString('zh-CN') : String(value)
-}
-
-function fmtSize(bytes: unknown): string {
-  const n = typeof bytes === 'number' ? bytes : Number(bytes)
-  if (!Number.isFinite(n) || n <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)))
-  return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`
 }
 </script>
 

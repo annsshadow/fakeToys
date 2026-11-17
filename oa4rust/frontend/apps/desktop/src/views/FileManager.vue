@@ -145,7 +145,7 @@
               <span class="file-icon">{{ iconForFile(f) }}</span>
               {{ f.name }}
             </span>
-            <span class="col-size">{{ formatSize(f.size) }}</span>
+            <span class="col-size">{{ formatFileSize(f.size) }}</span>
             <span class="col-time">{{ fmtTime(f.updateTime) }}</span>
             <span class="col-actions">
               <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
@@ -159,7 +159,7 @@
           <div v-for="f in files" :key="f.id" class="file-card" @dblclick="openItem(f)">
             <div class="file-thumb">{{ iconForFile(f) }}</div>
             <div class="file-name">{{ f.name }}</div>
-            <div class="file-meta">{{ formatSize(f.size) }}</div>
+            <div class="file-meta">{{ formatFileSize(f.size) }}</div>
           </div>
         </div>
       </template>
@@ -187,7 +187,7 @@
         <div v-if="detail.loading" class="loading-state"><p>加载中…</p></div>
         <template v-else>
           <div class="detail-line">名称：{{ detail.name || '—' }}</div>
-          <div class="detail-line">大小：{{ formatSize(detail.size) }}</div>
+          <div class="detail-line">大小：{{ formatFileSize(detail.size) }}</div>
           <img v-if="detail.preview" :src="detail.preview" class="detail-preview" alt="预览" />
           <div v-else class="detail-line">（无图片预览）</div>
         </template>
@@ -220,6 +220,8 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { formatFileSize } from '../utils/formatSize'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -860,13 +862,6 @@ function iconForFile(f: FileItem): string {
     css: '🎨',
   }
   return icons[ext] ?? '📄'
-}
-
-function formatSize(bytes?: number): string {
-  if (!bytes) return '—'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function fmtTime(ts?: string): string {
