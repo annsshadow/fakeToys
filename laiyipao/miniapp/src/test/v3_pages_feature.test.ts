@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G107 品质分布环 + G108 部位×阶成长表 + G109 技能效率榜', () => {
+    expect(read('../pages/gems/gems.vue')).toContain('qualityDonut')
+    expect(read('../pages/equipment/equipment.vue')).toContain('tierMatrix')
+    expect(read('../pages/skills/skills.vue')).toContain('efficiencyRank')
+  })
+
   it('G104 元素克制排行 + G105 机制对照表 + G106 分数区间直方图', () => {
     expect(read('../pages/enemies/enemies.vue')).toContain('counterRanking')
     expect(read('../pages/reactions/reactions.vue')).toContain('mechanismTable')

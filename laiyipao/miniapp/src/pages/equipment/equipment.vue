@@ -34,6 +34,19 @@
           </view>
         </view>
 
+        <!-- G108 部位×阶成长表 -->
+        <view v-if="tierMatrix.tiers.length" class="tier-matrix">
+          <text class="card-title" style="font-size: 26rpx">部位 × 阶（护甲）</text>
+          <view class="tm-row">
+            <view class="tm-head" />
+            <view v-for="t in tierMatrix.tiers" :key="t" class="tm-head">T{{ t }}</view>
+          </view>
+          <view v-for="r in tierMatrix.rows" :key="r.slot" class="tm-row">
+            <view class="tm-head tm-label">{{ r.label }}</view>
+            <view v-for="(v, i) in r.cells" :key="i" class="tm-cell">{{ v === null ? '—' : v }}</view>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredItems.length }} / 共 {{ items.length }} 条</text>
         <view v-for="e in filteredItems" :key="e.id" class="rxn equip">
           <view class="rxn-head">
@@ -102,6 +115,23 @@ const items = computed(() => (store.config?.equipment ?? []) as unknown as Equip
 /* 按 slot 分组，每组挑护甲+加成最高的一件 —— 看「每个部位的天花板」，           */
 /* 配合背包已拥有状态决定刷装方向。数据来自 items + ownedIds。                   */
 /* -------------------------------------------------------------------------- */
+/** G108 部位×阶成长表：CSS 矩阵，每部位各阶护甲值 —— 看数值成长曲线。 */
+const tierMatrix = computed(() => {
+  const tiers = [...new Set(items.value.map((e) => e.tier))].sort((a, b) => a - b)
+  const slots = [...new Set(items.value.map((e) => e.slot))]
+  return {
+    tiers,
+    rows: slots.map((slot) => ({
+      slot,
+      label: slotLabel(slot),
+      cells: tiers.map((tier) => {
+        const eq = items.value.filter((e) => e.slot === slot && e.tier === tier)
+        return eq.length ? Math.max(...eq.map((e) => e.base_armor)) : null
+      }),
+    })),
+  }
+})
+
 const bestPerSlot = computed(() => {
   const groups = new Map<string, EquipmentDef[]>()
   for (const e of items.value) {
@@ -169,6 +199,13 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
+/* G108 部位×阶成长表 */
+.tier-matrix { margin: 8rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
+.tm-row { display: flex; flex-direction: row; gap: 4rpx; margin: 4rpx 0; }
+.tm-head { flex: 1; text-align: center; font-size: 20rpx; color: var(--muted); font-weight: 600; }
+.tm-label { flex: 1.4; text-align: left; }
+.tm-cell { flex: 1; text-align: center; font-size: 22rpx; padding: 6rpx 0; background: var(--panel-3); border-radius: 6rpx; }
+
 /* G81 各部位最强装备 */
 .best-slots { margin: 8rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
 .bs-row { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8rpx; padding: 6rpx 0; }

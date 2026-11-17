@@ -32,6 +32,26 @@
           </view>
         </view>
 
+        <!-- G107 持有宝石品质分布环 -->
+        <view v-if="ownedCount > 0" class="quality-donut-wrap">
+          <svg class="quality-donut" viewBox="0 0 100 100" aria-label="宝石品质分布">
+            <circle class="qd-bg" cx="50" cy="50" r="40" />
+            <circle
+              v-for="seg in qualityDonut"
+              :key="seg.key"
+              class="qd-seg" cx="50" cy="50" r="40"
+              :stroke="seg.color"
+              :stroke-dasharray="`${seg.dash} ${251.3 - seg.dash}`"
+              :stroke-dashoffset="seg.offset"
+            />
+          </svg>
+          <view class="quality-legend">
+            <text v-for="seg in qualityDonut" :key="'q' + seg.key" class="ql-item">
+              <text class="ql-dot" :style="{ background: seg.color }" />{{ seg.label }} {{ seg.count }}
+            </text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredGems.length }} / 共 {{ gems.length }} 条</text>
         <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
           <view class="rxn-head">
@@ -104,6 +124,26 @@ const ownedGems = ref<OwnedGem[]>([])
 
 const ownedCount = computed(() => ownedGems.value.length)
 
+/** G107 持有宝石品质分布环：五档品质按颗数切环（数据来自 ownedGems[].quality）。 */
+const QUALITY_COLOR: Record<string, string> = {
+  gray: '#8b949e', blue: '#58a6ff', purple: '#c9a7ff', red: '#ff6b35', gold: '#ffd700',
+}
+const qualityDonut = computed(() => {
+  const defs = QUALITY_ORDER.map((q) => ({
+    key: q, label: qualityName(q), color: QUALITY_COLOR[q]!,
+    count: ownedGems.value.filter((g) => g.quality === q).length,
+  }))
+  const total = defs.reduce((s, d) => s + d.count, 0)
+  const C = 2 * Math.PI * 40
+  let acc = 0
+  return defs.map((d) => {
+    const frac = total > 0 ? d.count / total : 0
+    const seg = { ...d, pct: Math.round(frac * 100), dash: frac * C, offset: -acc * C }
+    acc += frac
+    return seg
+  })
+})
+
 /* -------------------------------------------------------------------------- */
 /* G80 宝石词条覆盖统计（第七批）                                               */
 /* 聚合已拥有宝石的全部词条：每种词条出现几颗、最高值多少 —— 看「我的词条库偏向」。 */
@@ -169,6 +209,15 @@ onShow(() => {
 </script>
 
 <style scoped>
+/* G107 品质分布环 */
+.quality-donut-wrap { display: flex; align-items: center; gap: 20rpx; margin: 8rpx 0 16rpx; }
+.quality-donut { width: 150rpx; height: 150rpx; transform: rotate(-90deg); }
+.qd-bg { fill: none; stroke: var(--panel-3); stroke-width: 12; }
+.qd-seg { fill: none; stroke-width: 12; }
+.quality-legend { display: flex; flex-wrap: wrap; gap: 8rpx; flex: 1; }
+.ql-item { font-size: 22rpx; color: var(--muted); }
+.ql-dot { display: inline-block; width: 14rpx; height: 14rpx; border-radius: 50%; margin-right: 6rpx; }
+
 /* G80 词条覆盖统计 */
 .affix-coverage { margin: 8rpx 0 16rpx; }
 .affix-chips { display: flex; flex-wrap: wrap; gap: 8rpx; }

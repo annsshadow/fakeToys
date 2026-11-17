@@ -96,6 +96,21 @@
           <text class="dim">合成：{{ s.materialA }} + {{ s.materialB }}</text>
         </view>
       </view>
+
+      <!-- G109 技能效率榜 -->
+      <view v-if="efficiencyRank.byHeat.length" class="card">
+        <text class="card-title">技能效率榜</text>
+        <text class="dim" style="display: block; margin-bottom: 8rpx">每点热量伤害（热量是硬约束）</text>
+        <view v-for="s in efficiencyRank.byHeat" :key="s.id" class="eff-row">
+          <text class="eff-name">{{ s.name }}</text>
+          <view class="eff-track"><view class="eff-fill" :style="{ width: s.pct + '%' }" /></view>
+          <text class="mono eff-val">{{ s.v }}</text>
+        </view>
+        <text class="dim" style="display: block; margin: 12rpx 0 8rpx">每秒伤害 Top5</text>
+        <text class="eff-time" v-for="(s, i) in efficiencyRank.byTime" :key="'t' + s.id">
+          {{ i + 1 }}. {{ s.name }} · {{ s.v }}/s
+        </text>
+      </view>
     </view>
   </view>
 </template>
@@ -124,6 +139,29 @@ const skills = computed(() => store.config?.skills ?? [])
 /* 这是图鉴最大的内容缺口。这里补上：产物 + 由哪两个材料熔炼而来。                 */
 /* 数据来自 config.composite_skills / recipes，纯客户端派生。                     */
 /* -------------------------------------------------------------------------- */
+/** G109 技能效率榜：伤害/热量 与 伤害/秒，帮玩家在热量硬约束下选技能。 */
+const efficiencyRank = computed(() => {
+  const rank = (fn: (s: any) => number) =>
+    [...skills.value]
+      .filter((s: any) => fn(s) > 0)
+      .sort((a: any, b: any) => fn(b) - fn(a))
+      .slice(0, 5)
+  const byHeat = rank((s) => s.base_damage / Math.max(1, s.heat_cost))
+  const byTime = rank((s) => s.base_damage / Math.max(0.1, s.cooldown_ms / 1000))
+  const maxHeat = Math.max(1, ...byHeat.map((s: any) => s.base_damage / Math.max(1, s.heat_cost)))
+  return {
+    byHeat: byHeat.map((s: any) => ({
+      id: s.id, name: s.name,
+      v: (s.base_damage / Math.max(1, s.heat_cost)).toFixed(0),
+      pct: Math.round((s.base_damage / Math.max(1, s.heat_cost)) / maxHeat * 100),
+    })),
+    byTime: byTime.map((s: any) => ({
+      id: s.id, name: s.name,
+      v: (s.base_damage / Math.max(0.1, s.cooldown_ms / 1000)).toFixed(0),
+    })),
+  }
+})
+
 const allSkillDefs = computed(() => [
   ...(store.config?.skills ?? []),
   ...(store.config?.composite_skills ?? []),
@@ -205,6 +243,14 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
+/* G109 技能效率榜 */
+.eff-row { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin: 8rpx 0; }
+.eff-name { width: 180rpx; flex-shrink: 0; font-size: 22rpx; }
+.eff-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.eff-fill { height: 100%; background: var(--fire); border-radius: 999rpx; }
+.eff-val { width: 70rpx; text-align: right; font-size: 22rpx; color: var(--warn); }
+.eff-time { display: block; font-size: 22rpx; color: var(--text-2); margin: 4rpx 0; }
+
 /* G66 技能元素×类型覆盖矩阵 */
 .skill-matrix { display: flex; flex-direction: column; gap: 4rpx; margin-bottom: 16rpx; }
 .sm-row { display: flex; flex-direction: row; gap: 4rpx; }
