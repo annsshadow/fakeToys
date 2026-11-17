@@ -65,6 +65,7 @@ const AFFIX_NAME: Record<string, string> = {
   element_cap: '元素层数',
   heat_cap: '热量上限',
   armor: '护甲',
+  skill_damage: '技能伤害',
 }
 
 /** 宝石词条的中文名；未知词条原样返回。 */
