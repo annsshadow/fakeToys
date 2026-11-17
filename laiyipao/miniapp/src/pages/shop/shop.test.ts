@@ -243,4 +243,17 @@ describe('shop.vue 限购进度条（R17）', () => {
     )
     if (unlimited) expect(unlimited.find('.limit-wrap').exists()).toBe(false)
   })
+
+  it('R35 购买成功：仅刚买的那一行短暂高亮', async () => {
+    const { wrapper } = mountPage(Shop)
+    await flushPromises()
+    expect(wrapper.findAll('.shop-row.bought-flash').length).toBe(0)
+
+    await wrapper.findAll('.shop-row').at(0)!.find('.link')!.trigger('click')
+    await flushPromises()
+    await flushPromises()
+    const flashed = wrapper.findAll('.shop-row.bought-flash')
+    expect(flashed.length).toBe(1)
+    expect(flashed[0]!.text()).toContain('随机宝石')
+  })
 })

@@ -307,4 +307,22 @@ describe('verify.vue 验真页', () => {
     await flushPromises()
     expect(wrapper.findAll('.step')[2]!.classes()).toContain('on')
   })
+
+  // ── R33 裁定结果入场动效（X 批）────────────────────────────────────
+  it('R33 本地裁定与服务端裁定均带弹入动效类', async () => {
+    const { wrapper } = mountPage(Verify)
+    await flushPromises()
+    await fetchInfo(wrapper)
+    // 重放前不应有结论卡
+    expect(wrapper.find('.verdict-box').exists()).toBe(false)
+
+    await wrapper.findAll('.btn').find((b: any) => b.text().includes('本地重放并提交'))!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(wrapper.find('.verdict-box').classes()).toContain('pop-in')
+
+    const cards = wrapper.findAll('.card.pop-in')
+    expect(cards.length).toBeGreaterThan(0)
+    expect(cards.at(-1)!.text()).toContain('服务端裁定')
+  })
 })

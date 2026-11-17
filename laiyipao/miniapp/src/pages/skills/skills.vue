@@ -10,7 +10,7 @@
       </view>
 
       <!-- 技能图鉴（服务端下发的权威表） -->
-      <view class="card">
+      <view class="card stagger-in">
         <text class="card-title">技能图鉴</text>
         <!-- 搜索（2026-11-01 新一轮第 71 轮）：按名称/元素/主动被动过滤 -->
         <input

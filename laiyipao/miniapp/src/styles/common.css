@@ -503,6 +503,48 @@ page,
   100% { background-position: -200% 0; }
 }
 
+/* X 批 R33+：结果入场动效（结论/成功反馈出现时给一个短促弹入） */
+.pop-in {
+  animation: pop-in 0.32s cubic-bezier(0.2, 0.85, 0.3, 1.15) both;
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: translateY(12rpx) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-2rpx) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* R34 领奖成功高亮：短促放大 + 品牌色描边，1.2s 后由 JS 熄灭 */
+.claim-pop {
+  animation: claim-pop 0.45s ease-out;
+  border-color: var(--fire) !important;
+  box-shadow: 0 0 0 3rpx var(--fire-soft);
+}
+
+@keyframes claim-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* R36 列表错峰入场：首屏条目依次淡入，避免「一整块突然砸下来」 */
+.stagger-in > * {
+  animation: stagger-in 0.34s ease-out both;
+}
+
+.stagger-in > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.22s; }
+.stagger-in > *:nth-child(n + 7) { animation-delay: 0.26s; }
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(10rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .is-disabled {
   opacity: 0.45;
   pointer-events: none;

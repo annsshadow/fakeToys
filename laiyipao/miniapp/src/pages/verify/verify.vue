@@ -86,7 +86,8 @@
           无法重放：{{ outcome.error }}
         </view>
 
-        <view v-else-if="outcome" class="verdict-box" :class="outcome.matched ? 'ok' : 'bad'">
+        <!-- R33 裁定出现时弹入：让「验真有结论」成为一个看得见的事件 -->
+        <view v-else-if="outcome" class="verdict-box pop-in" :class="outcome.matched ? 'ok' : 'bad'">
           <view class="kv">
             <text class="muted">本地重放哈希</text>
             <text class="mono hash">{{ pretty(outcome.computedHash) }}</text>
@@ -113,7 +114,7 @@
         </text>
       </view>
 
-      <view v-if="result" class="card" :style="{ borderColor: result.matched ? 'var(--ok)' : 'var(--bad)' }">
+      <view v-if="result" class="card pop-in" :style="{ borderColor: result.matched ? 'var(--ok)' : 'var(--bad)' }">
         <text class="card-title">服务端裁定</text>
         <view class="kv">
           <text class="muted">你提交的哈希</text>

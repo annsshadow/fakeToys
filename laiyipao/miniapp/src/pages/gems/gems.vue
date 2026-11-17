@@ -10,7 +10,7 @@
       </view>
 
       <!-- 宝石图鉴（服务端下发的权威表） -->
-      <view class="card">
+      <view class="card stagger-in">
         <text class="card-title">宝石图鉴</text>
         <!-- 搜索（2026-11-01 新一轮第 75 轮）：按名称/属性过滤 -->
         <input

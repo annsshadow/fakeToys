@@ -36,4 +36,32 @@ describe('微交互与加载反馈守卫', () => {
       expect(src, p).toContain('加载中…')
     }
   })
+
+  it('R33 验真裁定结果带弹入动效', () => {
+    const src = read('../pages/verify/verify.vue')
+    expect(src).toContain('verdict-box pop-in')
+    expect(src).toContain('card pop-in')
+    expect(CSS()).toContain('@keyframes pop-in')
+  })
+
+  it('R34 签到/领奖成功高亮动效', () => {
+    const src = read('../pages/signin/signin.vue')
+    expect(src).toContain('claim-pop')
+    expect(src).toContain('flashFeedback')
+    expect(CSS()).toContain('@keyframes claim-pop')
+  })
+
+  it('R35 商城购买成功行高亮', () => {
+    const src = read('../pages/shop/shop.vue')
+    expect(src).toContain('bought-flash')
+    expect(src).toContain('justBoughtId')
+  })
+
+  it('R36 六个图鉴页列表错峰入场', () => {
+    expect(CSS()).toContain('@keyframes stagger-in')
+    for (const p of ['enemies', 'equipment', 'skills', 'skins', 'gems', 'reactions']) {
+      const src = read(`../pages/${p}/${p}.vue`)
+      expect(src, p).toContain('stagger-in')
+    }
+  })
 })

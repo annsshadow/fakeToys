@@ -77,3 +77,7 @@
 | R30 | 11-17 | W 批收尾·空态骨架统一 | 榜单/商城/公告三处裸空态补「图标 + 主文案 + 下一步」共享骨架 | rank.test R30 + shop/announcements 源码守卫 |
 | R31 | 11-17 | 按压反馈与无障碍 | 补上注释声称存在但实际缺失的 .btn:active；.link:active；系统减少动效时关装饰动画 | micro_interaction_feature.test R31 |
 | R32 | 11-17 | 列表加载骨架屏 | 榜单/战报/商城/公告加载态由一行字改为 3 行 shimmer 骨架，保留「加载中…」文案锚点 | rank.test R32 + micro_interaction_feature.test R32 |
+| R33 | 11-17 | 验真·裁定入场动效 | 本地裁定框与服务端裁定卡弹入（pop-in），让「有结论」成为看得见的事件 | verify.test R33 + 源码守卫 |
+| R34 | 11-17 | 签到·成功反馈高亮 | 签到成功点亮当天 / 领奖成功点亮对应任务行，1.2s 自动熄灭 | signin.test R34（两态）+ 源码守卫 |
+| R35 | 11-17 | 商城·购买成功行反馈 | 仅刚买的那一行短促高亮（bought-flash），玩家一眼确认买的是哪件 | shop.test R35 + 源码守卫 |
+| R36 | 11-17 | 图鉴·列表错峰入场 | 六个图鉴页条目依次淡入（stagger-in），避免整块突然砸下 | micro_interaction_feature.test R36 |

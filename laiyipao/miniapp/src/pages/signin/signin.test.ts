@@ -309,4 +309,31 @@ describe('signin.vue 签到页', () => {
     expect(percents[0]!.classes()).toContain('done')
     expect(percents[1]!.classes()).not.toContain('done')
   })
+
+  // ── R34 成功反馈动效（X 批）────────────────────────────────────────
+  it('R34 签到成功后刚点亮的那天短暂高亮', async () => {
+    mockApi.signIn.mockResolvedValue({ already: false, day_index: 4, reward: { coin: 4000 } })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.findAll('.day')[3]!.classes()).not.toContain('claim-pop')
+
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+    const days = wrapper.findAll('.day')
+    expect(days[3]!.classes()).toContain('claim-pop') // 刚签的第 4 天
+    expect(days[2]!.classes()).not.toContain('claim-pop') // 已签的旧天不高亮
+  })
+
+  it('R34 领取任务后对应任务行短暂高亮', async () => {
+    mockApi.claimTask.mockResolvedValue({ reward: { coin: 500 } })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.findAll('.task')[0]!.classes()).not.toContain('claim-pop')
+
+    await wrapper.findAll('.task .btn')[0]!.trigger('click')
+    await flushPromises()
+    const tasks = wrapper.findAll('.task')
+    expect(tasks[0]!.classes()).toContain('claim-pop')
+    expect(tasks[1]!.classes()).not.toContain('claim-pop')
+  })
 })

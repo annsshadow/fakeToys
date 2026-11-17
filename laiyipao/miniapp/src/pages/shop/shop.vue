@@ -20,7 +20,12 @@
 
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}</text>
-        <view v-for="it in g.items" :key="it.id" class="shop-row">
+        <view
+          v-for="it in g.items"
+          :key="it.id"
+          class="shop-row"
+          :class="{ 'bought-flash': justBoughtId === it.id }"
+        >
           <view class="icon-badge">
             <Icon :name="it.category === 'gem' ? 'gem' : it.category === 'boost' ? 'bolt' : 'bag'" :size="40" />
           </view>
@@ -104,6 +109,9 @@ const loading = ref(true)
 const loadError = ref('')
 /** 正在购买的商品 id；非 0 时禁用全部购买按钮，防连点连扣。 */
 const buyingId = ref(0)
+/** R35 购买成功行高亮（1.2s 后自动熄灭）。 */
+const justBoughtId = ref(0)
+let boughtTimer: ReturnType<typeof setTimeout> | null = null
 const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
 
 /** 与服务端 `economy.ShopItemView` 一一对应。 */
@@ -245,6 +253,13 @@ async function doBuy(it: ShopItem) {
     // 购买同时改变「买了几个」与「余额」，两者都必须以服务端为准：
     // 本地加 1 会在限次边界上显示还能买，而服务端已经拒绝。
     await load()
+    // R35 成功反馈：只有刚买的那一行闪烁，玩家一眼确认「买的是这件」
+    if (boughtTimer) clearTimeout(boughtTimer)
+    justBoughtId.value = it.id
+    boughtTimer = setTimeout(() => {
+      justBoughtId.value = 0
+      boughtTimer = null
+    }, 1200)
     uni.showToast({ title: '购买成功', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
@@ -280,6 +295,17 @@ onMounted(async () => {
 }
 .shop-row:last-child {
   border-bottom: none;
+}
+
+/* R35 购买成功：刚买的那一行短促高亮 */
+.shop-row.bought-flash {
+  animation: bought-flash 0.6s ease-out;
+  background: var(--ok-soft, rgba(126, 231, 135, 0.1));
+}
+
+@keyframes bought-flash {
+  0% { background: rgba(126, 231, 135, 0.28); }
+  100% { background: rgba(126, 231, 135, 0); }
 }
 .skill-name {
   font-size: var(--fs-md);

@@ -20,6 +20,7 @@
               claimed: d <= claimedCount,
               today: d === claimedCount + 1,
               future: d > claimedCount + 1,
+              'claim-pop': justSigned && d === claimedCount,
             }"
           >
             <!-- R20 已签天给对勾角标，未来天整体降权：三态一眼可分 -->
@@ -73,7 +74,12 @@
             {{ s.label }}
           </text>
         </view>
-        <view v-for="t in tasks" :key="t.id" class="task">
+        <view
+          v-for="t in tasks"
+          :key="t.id"
+          class="task"
+          :class="{ 'claim-pop': justClaimedTask === t.id }"
+        >
           <view class="flex-1">
             <text class="task-name">{{ t.name }}</text>
             <text class="dim" style="display: block; margin-top: 4rpx">
@@ -136,6 +142,20 @@ const signedToday = ref(false)
 const lastResult = ref('')
 const code = ref('')
 const redeemMsg = ref('')
+/** R34 成功反馈：刚签到/刚领奖的目标短暂高亮，随后自动熄灭。 */
+const justSigned = ref(false)
+const justClaimedTask = ref(0)
+let feedbackTimer: ReturnType<typeof setTimeout> | null = null
+function flashFeedback(kind: 'sign' | 'task', id = 0) {
+  if (feedbackTimer) clearTimeout(feedbackTimer)
+  justSigned.value = kind === 'sign'
+  justClaimedTask.value = kind === 'task' ? id : 0
+  feedbackTimer = setTimeout(() => {
+    justSigned.value = false
+    justClaimedTask.value = 0
+    feedbackTimer = null
+  }, 1200)
+}
 // 第 135 轮：七日签到奖励表改由服务端下发（权威），不再本地硬编码。
 // key = day_index。未加载成功时为空对象 → rewardFor 回落本地缺省公式。
 const calendar = ref<Record<number, Record<string, number>>>({})
@@ -239,6 +259,7 @@ async function doSignIn() {
       canSign.value = false
       signedToday.value = true
       lastResult.value = `签到成功，获得 ${rewardText(res.reward)}`
+      flashFeedback('sign') // R34
       await store.refreshWallet()
     }
   } catch (e) {
@@ -257,6 +278,7 @@ async function doSignIn() {
 async function claim(id: number) {
   try {
     const res = await api.claimTask(id)
+    flashFeedback('task', id) // R34
     uni.showToast({ title: `已领取 ${rewardText(res.reward)}`, icon: 'none' })
     await load()
     await store.refreshWallet()

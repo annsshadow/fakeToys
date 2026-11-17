@@ -10,7 +10,7 @@
       </view>
 
       <!-- 皮肤图鉴（服务端下发的权威表） -->
-      <view class="card">
+      <view class="card stagger-in">
         <text class="card-title">皮肤图鉴</text>
         <!-- 搜索（2026-11-01 新一轮第 78 轮）：按名称/稀有度过滤 -->
         <input

@@ -25,7 +25,7 @@
       </view>
 
       <!-- 反应图鉴（服务端下发的权威表） -->
-      <view class="card">
+      <view class="card stagger-in">
         <text class="card-title">反应图鉴</text>
         <!-- 搜索（2026-11-01 新一轮第 77 轮）：按反应名过滤 -->
         <input

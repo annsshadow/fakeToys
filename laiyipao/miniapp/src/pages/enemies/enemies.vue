@@ -10,7 +10,7 @@
       </view>
 
       <!-- 敌人图鉴（服务端下发的权威表） -->
-      <view class="card">
+      <view class="card stagger-in">
         <text class="card-title">敌人图鉴</text>
         <!-- 搜索（2026-11-01 新一轮第 70 轮）：图鉴条目多，名称/类别过滤快速定位 -->
         <input
