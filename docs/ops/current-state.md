@@ -634,6 +634,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 21.4 交付与边界
 
 - 本轮三提交 228079495、4a749bc81、c6d01a3e6 及本现量文档 §21 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 二十二、第13轮：R163文件大小格式化统一 + laiyipao背包品质key翻译 + backlog销账（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r163 / lybug-r13）+ 主线程 backlog 销账。两修复经独立复跑确认 GREEN 后提交。
+
+### 22.1 oa4rust R163 统一文件大小格式化（提交 5ba17ce06）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | FileInfoApp.vue:77-82、FileManager.vue:865-870、ProcessWork.vue:3479-3486 三页各写 formatSize：空值占位符 - / — / 0 B 三种语义冲突，前两页止于 MB（1 GB 显示 1024.0 MB），ProcessWork 负数/空一律 0 B。可比先例 date.ts(R154) 已抽公共时间格式工具 | 三页行为互相矛盾，普遍、可行为验证 |
+| 修复 | 新增 utils/formatSize.ts 统一契约：无效值（缺失/空串/非数字/NaN/Infinity/负数）→—、0→0 B、1024 分档 B/KB/MB/GB（B 整数其余 1 位小数）、GB 封顶、接受数值字符串；三页删本地函数改调 formatFileSize；FileInfoApp 顺带 f.size||f.fileSize 改 ?? 避免 0 误回退 | 沿用文件内既有 biome-ignore noUnusedImports 模板豁免写法 |
+| 门禁 | formatSize.test.ts 3 例行为测试（分档封顶/数值串/无效占位）；RED 模块不存在→GREEN | 主代理从 oa4rust 根复跑 3 passed；pnpm test 1284 passed、typecheck 6 包、lint 343 文件 0 error |
+
+### 22.2 laiyipao 背包品质档位英文 key 与中文名不一致（提交 e75b6a990）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 GemQualities(content.go:91-101) 下发 name 为英文 key gray/blue/purple/red/gold，经 /config 的 gem_qualities 原样下发(service.go:1521,1645)；背包页持有宝石行 bag.vue:331 用 qualityName() 显示中文金，品质档位表 bag.vue:294 却直接渲染 q.name 裸 gold，gemQualities computed(bag.vue:671-673) 未翻译。玩家看到「我的宝石：金」与「品质档位：gold」指同一档，违背 utils/labels.ts 消灭英文 key 上屏约定 | 判断宝石价值的关键说明像两套体系 |
+| 修复 | gemQualities computed 经既有 qualityName() 翻译 name（未知值 newkey 原样保留，不吞），最小改动复用既有映射、不硬编码 | 未碰服务端 |
+| 门禁 | 组件测试（jsdom + mountPage(Bag)，注入 gray/gold/newkey 三档）RED expected 灰 received gold→GREEN；断言已知中文化、未知保留、倍率来自服务端 | 主代理独立复跑 bag 37/37；全量 pnpm test 1449 passed｜2 skipped；vue-tsc/tsc 双 exit0 |
+
+### 22.3 backlog B1/B2/B7 销账（提交 31668cc49）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 第 11-16 轮归集的 open-value-backlog 中 B1 弱网文案/B2 删除守卫/B7 debug-tag 死分支均已落地（现量 §14/§15.1/§381 有提交与守卫佐证），但 backlog 证据列仍标「未写代码/未清」，属销账遗漏 | 主线程回归审查发现 |
+| 修复 | 同行替换三条证据列为已落地状态 + 提交 hash + 现量章节引用（保留条目标题与判据，不打乱后续引用） | 只改证据列，不新增/删条目 |
+| 门禁 | grep 复核三条证据列已更新、无重复 | 文档改动无需代码门禁 |
+
+### 22.4 交付与边界
+
+- 本轮三提交 5ba17ce06、e75b6a990、31668cc49 及本现量文档 §22 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（唯一 "design token" 注释命中非真值）；工作树仅含本轮改动，无真值入库。
