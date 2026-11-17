@@ -57,6 +57,15 @@ describe('Z 批收尾审计守卫', () => {
     expect(readPages('shop')).toContain('buy-failed')
     expect(readPages('bag')).toContain('preset-saved-hint')
   })
+
+  it('R86–R90 收尾视觉打磨', () => {
+    const css = CSS()
+    expect(css).toContain('border-left: 5rpx solid var(--fire)')
+    expect(css).toContain('/* R87 chip-row 间距一致 */')
+    expect(css).toContain('@keyframes btn-sheen')
+    expect(css).toContain('R90 tag-outline')
+    expect(css).toContain('R88 link-underline-active')
+  })
 })
 
 function readPages(name: string): string {

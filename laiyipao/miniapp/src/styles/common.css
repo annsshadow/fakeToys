@@ -893,3 +893,48 @@ uni-page-body {
 .btn {
   min-height: 72rpx;
 }
+
+/* ============ Z 批 R86–R90：收尾视觉打磨 ============ */
+
+/* R86 卡片标题左侧强调条 */
+.card-title {
+  border-left: 5rpx solid var(--fire);
+  padding-left: 12rpx;
+}
+
+/* R87 chip-row 间距一致 */
+.chip-row {
+  gap: 12rpx;
+}
+
+/* R88 link-underline-active */
+.link:active {
+  text-decoration: underline;
+}
+
+/* R89 主按钮高光扫过（首次渲染时一次，不循环） */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: skewX(-20deg);
+  animation: btn-sheen 0.9s ease-out 1;
+}
+
+@keyframes btn-sheen {
+  to { left: 120%; }
+}
+
+/* R90 tag-outline */
+.tag {
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}

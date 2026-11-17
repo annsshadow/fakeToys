@@ -130,3 +130,8 @@
 | R83 | 11-17 | 验真·无效 ID 红框 | battle_id 校验失败时输入框标红 | z_audit_feature.test R83 |
 | R84 | 11-17 | 商城·失败行红闪 | 购买失败的那一件短促红闪，明确是哪件没买成 | z_audit_feature.test R84 |
 | R85 | 11-17 | 背包·预设保存留痕 | 保存成功后页内显示「✓ 已保存 N」，不依赖一闪而过的 toast | z_audit_feature.test R85 |
+| R86 | 11-17 | 全局·卡片标题强调条 | .card-title 左侧品牌色竖条，页面层次更清晰 | z_audit_feature.test R86 |
+| R87 | 11-17 | 全局·chip 行间距一致 | .chip-row 统一 12rpx 间距 | z_audit_feature.test R87 |
+| R88 | 11-17 | 全局·链接按下反馈 | .link:active 加下划线 | z_audit_feature.test R88 |
+| R89 | 11-17 | 全局·主按钮高光 | 主按钮一次性高光扫过，强化主行动 | z_audit_feature.test R89 |
+| R90 | 11-17 | 全局·标签描边 | .tag 加浅描边，深底上更立体 | z_audit_feature.test R90 |
