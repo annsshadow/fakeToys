@@ -45,6 +45,11 @@
           </view>
         </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
+        <!-- G133 被动→元素流派映射 -->
+        <view v-if="passiveElementMap.length" class="pe-map">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">被动对应元素流派</text>
+          <text v-for="p in passiveElementMap" :key="p.el" class="pe-chip">{{ p.name }} · {{ p.count }} 款</text>
+        </view>
         <!-- G121 稀有度×被动矩阵 -->
         <view v-if="passiveKinds.length" class="rp-matrix">
           <text class="dim" style="display: block; margin-bottom: 8rpx">稀有度 × 被动机制（款数）</text>
@@ -93,6 +98,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import DefIcon from '@/components/DefIcon.vue'
+import { ELEMENT_NAME, type Element } from '@/game/elements'
 
 const store = useGameStore()
 
@@ -174,6 +180,25 @@ const RARITY_CLASS: Record<string, true> = { rare: true, epic: true, legendary: 
 /* G90 被动机制分类统计（第七批）                                               */
 /* 按 passive 类型聚合皮肤数量，看「这游戏有哪几类皮肤机制」。数据来自 skins。     */
 /* -------------------------------------------------------------------------- */
+/** G133 被动→元素流派映射：把皮肤被动 key 对上五元素，理解该往哪方向配装。 */
+const passiveElementMap = computed(() => {
+  const KEY_EL: Record<string, string> = {
+    fire_burn: 'fire', ice_freeze: 'ice', volt_chain: 'lightning',
+    blight_spread: 'corrosion', kinetic_bonus: 'kinetic', boss_breaker: 'kinetic',
+  }
+  const m = new Map<string, string[]>()
+  for (const s of skins.value) {
+    const el = KEY_EL[s.passive]
+    if (!el) continue
+    const arr = m.get(el) ?? []
+    arr.push(s.name)
+    m.set(el, arr)
+  }
+  return [...m.entries()].map(([el, names]) => ({
+    el, name: ELEMENT_NAME[el as Element] ?? el, count: names.length,
+  }))
+})
+
 /** G121 稀有度×被动机制矩阵：行=稀有度，列=被动类型，格内款数。 */
 const RARITIES = ['legendary', 'epic', 'rare', 'common']
 const passiveKinds = computed(() => [...new Set(skins.value.map((s) => s.passive))])
@@ -210,6 +235,10 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
+/* G133 被动→元素映射 */
+.pe-map { margin: 8rpx 0; }
+.pe-chip { display: inline-block; background: var(--ice-soft); color: var(--ice); border-radius: 8rpx; padding: 4rpx 12rpx; font-size: 22rpx; margin: 0 8rpx 8rpx 0; }
+
 /* G121 稀有度×被动矩阵 */
 .rpm-row { display: flex; flex-direction: row; gap: 6rpx; margin: 6rpx 0; align-items: center; }
 .rpm-label { width: 100rpx; flex-shrink: 0; font-size: 22rpx; }

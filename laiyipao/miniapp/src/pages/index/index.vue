@@ -83,7 +83,10 @@
       <view class="card">
         <view class="card-title">
           <text>构筑评分</text>
-          <text class="score mono">{{ store.buildRating?.total ?? 0 }}</text>
+          <view class="rating-grade-row">
+            <text class="rating-grade" :class="'rg-' + ratingGrade.grade">{{ ratingGrade.grade }}</text>
+            <text class="score mono">{{ store.buildRating?.total ?? 0 }}</text>
+          </view>
         </view>
 
         <!-- R61 构筑五维雷达图（实质可视化）：进度条只能逐行读，雷达图把
@@ -203,6 +206,13 @@
           <text>开始</text>
           <Icon name="chevron-right" :size="28" />
         </view>
+      </view>
+
+      <!-- G134 章节里程碑 -->
+      <view v-if="chapterMilestone.nextBoss || chapterMilestone.nextChapter" class="card milestone-card">
+        <view class="card-title">下一目标</view>
+        <text v-if="chapterMilestone.nextBoss" class="ms-item">下一个首领：第 {{ chapterMilestone.nextBoss.id }} 关（还差 {{ chapterMilestone.nextBoss.gap }} 关）</text>
+        <text v-if="chapterMilestone.nextChapter" class="ms-item">下一章「{{ chapterMilestone.nextChapter.name }}」：还差 {{ chapterMilestone.nextChapter.gap }} 关</text>
       </view>
 
       <!-- 功能入口（2026-11-16 分组）：
@@ -469,6 +479,28 @@ const dims = computed(() => {
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
 /** G87 闯关进度环：已解锁关数 / 总关数的 SVG 弧（hero 卡里的文字升级为可视化）。 */
+/** G141 构筑评分等级：把总分换成 S/A/B/C 评级 + 进度，给玩家一个可追求的目标。 */
+const ratingGrade = computed(() => {
+  const total = Number(store.buildRating?.total ?? 0)
+  const max = 5 + 7 + 8 + 18 + 8 // 五维上界之和（与 dims 口径一致）
+  const pct = max > 0 ? Math.min(100, Math.round(total / max * 100)) : 0
+  const grade = pct >= 80 ? 'S' : pct >= 60 ? 'A' : pct >= 40 ? 'B' : pct >= 20 ? 'C' : 'D'
+  return { grade, pct, total, max }
+})
+
+/** G134 章节里程碑：下一个 Boss 在第几关、还差几关 —— 把「继续打」变成看得见的短期目标。 */
+const chapterMilestone = computed(() => {
+  const levels = store.config?.levels ?? []
+  const cur = store.unlockedLevel ?? 1
+  const nextBoss = levels.find((l) => l.is_boss && l.id > cur)
+  const chapters = store.config?.chapters ?? []
+  const nextChapter = chapters.find((c) => (c.start_level ?? 0) > cur)
+  return {
+    nextBoss: nextBoss ? { id: nextBoss.id, gap: nextBoss.id - cur } : null,
+    nextChapter: nextChapter ? { id: nextChapter.id, name: nextChapter.name, gap: (nextChapter.start_level ?? 0) - cur } : null,
+  }
+})
+
 /** G127 补分边际收益：每维补满还能涨多少总分（权重×缺口），给出最值得补的一维。 */
 const marginalGain = computed(() => {
   const caps: Record<string, number> = {
@@ -686,6 +718,18 @@ onShareAppMessage(() => indexShare())
   font-weight: 700;
   color: var(--fire);
 }
+
+/* G141 构筑评级 */
+.rating-grade-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; }
+.rating-grade { width: 48rpx; height: 48rpx; line-height: 48rpx; text-align: center; border-radius: 10rpx; font-weight: 800; font-size: 28rpx; }
+.rg-S { background: rgba(255,215,0,0.2); color: #ffd700; }
+.rg-A { background: rgba(126,231,135,0.2); color: var(--ok); }
+.rg-B { background: rgba(88,166,255,0.2); color: var(--ice); }
+.rg-C { background: rgba(201,167,255,0.2); color: var(--kinetic); }
+.rg-D { background: var(--panel-3); color: var(--muted); }
+
+/* G134 章节里程碑 */
+.ms-item { display: block; font-size: 24rpx; color: var(--text-2); margin: 8rpx 0; }
 
 /* G127 补分边际收益 */
 .mg-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 10rpx 0; border-bottom: 1rpx solid var(--border-soft); }

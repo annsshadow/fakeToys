@@ -450,6 +450,15 @@
         </view>
       </view>
 
+      <!-- G142 订单与兑换总账 -->
+      <view v-if="orderSummary.orders || orderSummary.redemptions" v-show="meTab === 'records'" class="card">
+        <text class="card-title">消费总账</text>
+        <view class="spend-summary">
+          <text class="spend-chip">订单 {{ orderSummary.orders }} 笔 · 共 {{ orderSummary.amount }} 元</text>
+          <text class="spend-chip">兑换 {{ orderSummary.redemptions }} 次</text>
+        </view>
+      </view>
+
       <!-- 第六批 R40：六类记录全空时此前是纯空白，新玩家切「记录」页以为坏了。 -->
       <view v-if="noRecordsYet && meTab === 'records'" class="card empty-block">
         <text class="empty-glyph">📜</text>
@@ -692,6 +701,13 @@ const meTabDefs: Array<{ key: MeTab; label: string }> = [
 ]
 
 /** 第六批 R40：六类历史全空 → 给「记录」页一个可执行空态，而不是纯空白。 */
+/** G142 订单与兑换汇总：累计订单金额（分→元）+ 兑换次数，补记录页的总账视角。 */
+const orderSummary = computed(() => ({
+  orders: orderHistory.value.length,
+  amount: (orderHistory.value.reduce((s, o) => s + (o.amount ?? 0), 0) / 100).toFixed(2),
+  redemptions: redemptionHistory.value.length,
+}))
+
 /** G114 被挑战损失排行：按每次被破防的 loot 总和取 Top5，看防线最常被谁攻破。 */
 const topLooters = computed(() =>
   defenseChallengeHistory.value

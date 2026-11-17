@@ -44,6 +44,19 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G133 被动元素映射 + G134 章节里程碑 + G135 点数规划 + G136 预设元素指纹 + G137 追赶分差 + G138 装备贡献 + G139 全属性快照 + G140 连胜连败 + G141 构筑评级 + G142 消费总账', () => {
+    expect(read('../pages/skins/skins.vue')).toContain('passiveElementMap')
+    expect(read('../pages/index/index.vue')).toContain('chapterMilestone')
+    expect(read('../pages/mastery/mastery.vue')).toContain('pointPlanner')
+    expect(read('../pages/bag/bag.vue')).toContain('presetElements')
+    expect(read('../pages/rank/rank.vue')).toContain('chaseGap')
+    expect(read('../pages/bag/bag.vue')).toContain('equippedContribution')
+    expect(read('../pages/verify/verify.vue')).toContain('attackerFullRows')
+    expect(read('../pages/battles/battles.vue')).toContain('streak')
+    expect(read('../pages/index/index.vue')).toContain('ratingGrade')
+    expect(read('../pages/me/me.vue')).toContain('orderSummary')
+  })
+
   it('G127 边际收益 + G128 全系矩阵 + G129 地形索引 + G130 词条区间 + G131 月份分组 + G132 效率卡', () => {
     expect(read('../pages/index/index.vue')).toContain('marginalGain')
     expect(read('../pages/mastery/mastery.vue')).toContain('familyMatrix')

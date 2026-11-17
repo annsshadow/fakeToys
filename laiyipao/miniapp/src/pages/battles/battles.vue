@@ -30,6 +30,10 @@
           <view class="total-item"><text class="mono total-val">{{ battleTotals.leaked }}</text><text class="dim">总漏怪</text></view>
           <view class="total-item"><text class="mono total-val">{{ battleTotals.avgScore }}</text><text class="dim">均分</text></view>
         </view>
+        <!-- G140 连胜/连败 -->
+        <text v-if="streak.count > 0" class="streak-note">
+          当前{{ streak.type === 'win' ? '连胜' : '连败' }} {{ streak.count }} 场 · 最长连胜 {{ streak.maxWin }}
+        </text>
       </view>
 
       <!-- G70 战绩趋势折线：分数走势 + 胜负色点，趋势一眼可见 -->
@@ -319,6 +323,24 @@ const elementText = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
+/* G140 连胜/连败：当前连续胜负状态 + 最长连胜，给连续作战的节奏反馈。             */
+/* -------------------------------------------------------------------------- */
+const streak = computed(() => {
+  const seq = [...items.value].reverse() // 时间正序
+  let cur = 0
+  let curType = ''
+  let maxWin = 0
+  let tmp = 0
+  for (const it of seq) {
+    const win = it.result === 'win'
+    if (curType === (win ? 'win' : 'lose')) cur++
+    else { curType = win ? 'win' : 'lose'; cur = 1 }
+    if (win) { tmp++; maxWin = Math.max(maxWin, tmp) } else tmp = 0
+  }
+  return { type: curType, count: seq.length ? cur : 0, maxWin }
+})
+
+/* -------------------------------------------------------------------------- */
 /* G132 命中率效率卡：只聚合已展开过的局（details 缓存），不额外发请求。           */
 /* -------------------------------------------------------------------------- */
 const efficiencyStats = computed(() => {
@@ -532,6 +554,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G140 连胜连败 */
+.streak-note { display: block; text-align: center; font-size: 22rpx; color: var(--warn); margin-top: 8rpx; }
+
 /* G118 交战热度 */
 .heat-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
 .heat-label { width: 140rpx; flex-shrink: 0; }

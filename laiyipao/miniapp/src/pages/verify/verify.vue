@@ -76,6 +76,10 @@
         <view class="build-snapshot">
           <text v-for="s in buildSnapshotCard" :key="s.label" class="bs-item">{{ s.label }} {{ s.value }}</text>
         </view>
+        <!-- G139 攻方全属性快照 -->
+        <view v-if="attackerFullRows.length" class="attacker-full">
+          <text v-for="r in attackerFullRows" :key="r.label" class="af-item">{{ r.label }} {{ r.value }}</text>
+        </view>
         <view class="kv"><text class="muted">记录时间</text><text class="mono">{{ replayInfo.created_at }}</text></view>
         <view class="kv">
           <text class="muted">服务端记录的哈希</text>
@@ -255,6 +259,24 @@ const attackerText = computed(() => {
   return `攻击 ${a.attack}‰ · 暴击 ${a.crit_permille}‰ · 元素系数 ${a.element_coef_permille}‰`
 })
 
+/** G139 冻结快照攻方全属性：验真前提是看清当时构筑，展示完整 9 项（缺字段标注老战报）。 */
+const attackerFullRows = computed(() => {
+  const a = replayInfo.value?.build?.attacker
+  if (!a) return []
+  const pm = (v: number | undefined) => v === undefined ? '—' : `${Number(v) / 10}%`
+  return [
+    { label: '攻击力', value: `${a.attack ?? 0}‰` },
+    { label: '暴击率', value: pm(a.crit_permille) },
+    { label: '暴击倍率', value: pm(a.crit_multiplier_permille) },
+    { label: '反应倍率', value: pm(a.reaction_mult_permille) },
+    { label: '元素系数', value: pm(a.element_coef_permille) },
+    { label: '层数上限', value: `${a.element_cap ?? 0}` },
+    { label: '热量上限', value: pm(a.heat_cap_permille) },
+    { label: '护甲', value: pm(a.armor_permille) },
+    { label: '机制强度', value: pm(a.mechanic_permille) },
+  ]
+})
+
 /** G99 冻结构筑分区快照：把验真战报里冻结的各维度数量化展示（验真前提是看清当时的构筑）。 */
 const buildSnapshotCard = computed(() => {
   const b = replayInfo.value?.build
@@ -403,6 +425,10 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G139 攻方全属性快照 */
+.attacker-full { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.af-item { font-size: 20rpx; color: var(--text-2); background: var(--panel-2); border-radius: 6rpx; padding: 4rpx 10rpx; }
+
 /* G125 会话验真记录 */
 .vh-row { cursor: pointer; }
 .vh-ok { color: var(--ok); }

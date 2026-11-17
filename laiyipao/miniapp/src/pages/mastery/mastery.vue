@@ -91,6 +91,12 @@
         <text class="dim" style="display: block; margin-bottom: 12rpx">
           锁定节点需先在上一层点亮 2 项；每层最多选 2 项。
         </text>
+        <!-- G135 点数规划器 -->
+        <view class="point-planner">
+          <text class="pp-item">剩余 {{ pointPlanner.points }} 点</text>
+          <text class="pp-item">可立即点亮 {{ pointPlanner.available }} 个</text>
+          <text v-if="pointPlanner.needFirst > 0" class="pp-hint">先点亮第 1 层 {{ pointPlanner.needFirst }} 项解锁后续</text>
+        </view>
         <view v-for="layer in 3" :key="layer" class="layer">
           <view class="layer-head">
             <text class="layer-title">第 {{ layer }} 层</text>
@@ -223,6 +229,13 @@ const familyOverview = computed(() => {
 })
 const totalInvested = computed(() => familyOverview.value.reduce((s, f) => s + f.got, 0))
 
+/** G135 点数规划器：当前系可立即点亮的节点数 + 剩余点数够不够走完。 */
+const pointPlanner = computed(() => {
+  const available = curNodes.value.filter((n) => !selectedSet.value.has(n.id) && !isLocked(n)).length
+  const needFirst = curNodes.value.filter((n) => n.layer === 2 && pickedInLayer(1) === 0).length
+  return { points: points.value, available, needFirst }
+})
+
 /** G128 全系 4选2 结构矩阵：每系一行、三层，格内显示该层已选数/总数。 */
 const familyMatrix = computed(() =>
   families.value.map((f) => ({
@@ -336,6 +349,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G135 点数规划器 */
+.point-planner { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 12rpx; }
+.pp-item { background: var(--kinetic-soft); color: var(--kinetic); border-radius: 8rpx; padding: 4rpx 12rpx; font-size: 22rpx; }
+.pp-hint { font-size: 22rpx; color: var(--warn); }
+
 /* G128 全系结构矩阵 */
 .fm-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
 .fm-head { border-bottom: 1rpx solid var(--border); }

@@ -217,6 +217,11 @@
           </view>
         </view>
 
+        <!-- G138 已装备属性贡献 -->
+        <view v-if="equippedContribution.count > 0" class="equip-contrib">
+          <text class="dim">当前穿戴 {{ equippedContribution.count }} 件 · 护甲 +{{ equippedContribution.armor }}‰ · 攻击 +{{ equippedContribution.bonus }}‰</text>
+        </view>
+
         <view v-if="myEquipments.length === 0" class="dim">
           {{ equipError ? '装备读取失败（见下方提示）' : '正在读取装备…' }}
         </view>
@@ -388,6 +393,9 @@
               {{ p.slots.skills.length }} 技能 / {{ p.slots.equipment.length }} 装备 /
               {{ p.slots.gems.length }} 宝石
             </text>
+            <text v-if="presetElements(p).length" class="preset-elements">
+              元素：<text v-for="el in presetElements(p)" :key="el" class="pe-tag" :class="'badge-' + el">{{ el }}</text>
+            </text>
           </view>
           <view class="skill-act">
             <text v-if="presetBusyId === p.id" class="dim">处理中…</text>
@@ -486,6 +494,16 @@ function tabCount(key: BagTab): number {
 }
 
 const selected = ref<number[]>([0, 0, 0, 0])
+
+/** G138 已装备属性贡献：当前穿戴装备提供的护甲/攻击总和 —— 看清加成从哪来。 */
+const equippedContribution = computed(() => {
+  const eq = myEquipments.value.filter((e) => e.equipped)
+  return {
+    count: eq.length,
+    armor: eq.reduce((s, e) => s + (e.base_armor ?? 0), 0),
+    bonus: eq.reduce((s, e) => s + (e.base_bonus_pct ?? 0), 0),
+  }
+})
 
 /** G122 出战热量预算：4 个已选技能的热量总和 vs 上限，配装当屏就知道会不会过热。 */
 const heatBudget = computed(() => {
@@ -1115,6 +1133,16 @@ async function clearSlot(idx: number) {
 
 // ---- 阵型预设（第 49 轮） ----
 const presets = ref<api.PresetView[]>([])
+
+/** G136 预设元素指纹：每套预设的元素覆盖 chip，帮玩家区分各套构筑方向。 */
+function presetElements(p: api.PresetView): string[] {
+  const els = new Set<string>()
+  for (const s of p.slots.skills as any[]) {
+    const def = allSkills.value.find((d) => d.id === (typeof s === 'number' ? s : s?.id))
+    if (def?.element) els.add(def.element)
+  }
+  return [...els]
+}
 const presetName = ref('')
 /** Y 批 R51/R52：空态可执行化。 */
 const presetFocus = ref(false)
@@ -1226,6 +1254,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G138 已装备贡献 */
+.equip-contrib { margin-bottom: 12rpx; padding: 8rpx 12rpx; background: var(--ok-soft, rgba(126,231,135,0.1)); border-radius: 8rpx; }
+
+/* G136 预设元素指纹 */
+.preset-elements { display: block; font-size: 20rpx; color: var(--muted); margin-top: 4rpx; }
+.pe-tag { display: inline-block; font-size: 18rpx; padding: 0 6rpx; border-radius: 4rpx; margin-left: 4rpx; }
+
 /* G122 出战热量预算 */
 .heat-budget { margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx solid var(--border); }
 .hb-head { display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 8rpx; }

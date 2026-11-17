@@ -85,6 +85,11 @@
           <text v-else class="my-rank-none">暂无成绩</text>
         </view>
         <text v-if="myRank.rank > 0" class="dim">我的{{ curLabel }}：{{ formatScore(myRank.score) }}</text>
+        <!-- G137 追赶分差 -->
+        <view v-if="chaseGap" class="chase-gap">
+          <text v-if="chaseGap.toAbove !== null">距上一名还差 {{ chaseGap.toAbove }} 分</text>
+          <text v-if="chaseGap.toBelow !== null">领先下一名 {{ chaseGap.toBelow }} 分</text>
+        </view>
         <text v-else class="dim">{{ noScoreHint }}</text>
       </view>
       <!-- 第六批 R39：拉取失败与「没成绩」此前都让整块消失，用户分不清。
@@ -129,6 +134,20 @@ const curLabel = computed(() => tabs.find((t) => t.key === curType.value)?.label
 /* G76 榜单分数分布柱状图（第七批）                                             */
 /* 已加载的每名玩家一根柱，最高分归一到满高；我的那根高亮。数据来自 items/myRank。 */
 /* -------------------------------------------------------------------------- */
+/** G137 追赶分差：距上一名还差多少、超越下一名需要多少（把名次换成可执行目标）。 */
+const chaseGap = computed(() => {
+  const my = myRank.value
+  if (!my || my.rank <= 0) return null
+  const idx = my.rank - 1
+  const above = items.value[idx - 1]
+  const below = items.value[idx + 1]
+  const myScore = Number(my.score ?? 0)
+  return {
+    toAbove: above ? Math.max(0, Number(above.score) - myScore) : null,
+    toBelow: below ? Math.max(0, myScore - Number(below.score)) : null,
+  }
+})
+
 /** G106 分数区间直方图：把前 N 名分数分桶，我的分数所在桶高亮。 */
 const scoreBuckets = computed(() => {
   const scores = items.value.map((it: any) => Number(it.score) || 0)
@@ -279,6 +298,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G137 追赶分差 */
+.chase-gap { display: flex; flex-direction: row; gap: 16rpx; margin-top: 8rpx; font-size: 22rpx; color: var(--accent); }
+
 /* G106 分数区间直方图 */
 .bucket-bars { display: flex; flex-direction: row; align-items: flex-end; height: 200rpx; gap: 6rpx; padding-top: 12rpx; }
 .bucket-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4rpx; }
