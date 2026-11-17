@@ -24,6 +24,36 @@
         </text>
       </view>
 
+      <!-- G74 元素反应覆盖矩阵：5×5，行=元素A、列=元素B，格子=反应名；可达高亮 -->
+      <view class="card">
+        <text class="card-title">元素反应覆盖矩阵</text>
+        <text class="dim" style="display: block; margin-bottom: 12rpx">
+          行 × 列 = 两元素组合；亮色格 = 当前构筑能触发的反应，灰格 = 暂不可达。
+        </text>
+        <view class="matrix">
+          <!-- 表头：列元素名 -->
+          <view class="matrix-row">
+            <view class="matrix-corner" />
+            <view v-for="b in ELEMENT_ORDER" :key="'h' + b" class="matrix-head" :style="{ color: ELEMENT_COLOR[b] }">
+              {{ ELEMENT_NAME[b] }}
+            </view>
+          </view>
+          <!-- 每行：行元素名 + 5 个格子 -->
+          <view v-for="row in reactionMatrix" :key="'r' + row[0]!.a" class="matrix-row">
+            <view class="matrix-head" :style="{ color: ELEMENT_COLOR[row[0]!.a] }">
+              {{ ELEMENT_NAME[row[0]!.a] }}
+            </view>
+            <view
+              v-for="cell in row"
+              :key="cell.a + '-' + cell.b"
+              class="matrix-cell"
+              :class="{ hit: cell.reachable, self: cell.self }"
+              :style="{ background: cellColor(cell) }"
+            >{{ cell.self ? '·' : cell.name }}</view>
+          </view>
+        </view>
+      </view>
+
       <!-- 反应图鉴（服务端下发的权威表） -->
       <view class="card stagger-in">
         <text class="card-title">反应图鉴</text>
@@ -89,7 +119,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, lookupReaction, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 
@@ -129,6 +159,39 @@ const filteredReactions = computed(() => {
  * 「我这个构筑能打出哪些反应链」，只能打完一局才知道。
  */
 const reachable = computed(() => reachableReactions(new Set(store.equippedElements)))
+
+/* -------------------------------------------------------------------------- */
+/* G74 元素反应覆盖矩阵（第七批）                                               */
+/* 5×5 穷举元素对 → 反应；可达的（当前构筑能触发）高亮，不可达的灰显。            */
+/* 数据来自引擎同款 lookupReaction + 服务端反应表，纯客户端派生，零契约改动。     */
+/* -------------------------------------------------------------------------- */
+interface MatrixCell {
+  a: Element
+  b: Element
+  key: ReactionKey | null
+  name: string
+  reachable: boolean
+  self: boolean
+}
+const reactionMatrix = computed<MatrixCell[][]>(() =>
+  ELEMENT_ORDER.map((a) =>
+    ELEMENT_ORDER.map((b) => {
+      const key = a === b ? null : lookupReaction(a, b)
+      const def = key ? allReactions.value.find((r) => r.key === key) : null
+      return {
+        a, b, key,
+        name: def?.name ?? (a === b ? '—' : '无反应'),
+        reachable: !!key && reachable.value.has(key),
+        self: a === b,
+      }
+    }),
+  ),
+)
+function cellColor(cell: MatrixCell): string {
+  if (cell.self) return 'var(--panel-3)'
+  if (!cell.key) return 'var(--panel-2)'
+  return cell.reachable ? ELEMENT_COLOR[cell.a] : 'var(--panel-2)'
+}
 
 const myReactions = computed<ReactionKey[]>(() => {
   const out: ReactionKey[] = []
@@ -172,6 +235,37 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* G74 元素反应覆盖矩阵 */
+.matrix { display: flex; flex-direction: column; gap: 4rpx; }
+.matrix-row { display: flex; flex-direction: row; gap: 4rpx; }
+.matrix-corner { width: 96rpx; flex-shrink: 0; }
+.matrix-head {
+  width: 96rpx;
+  flex: 1;
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 8rpx 0;
+}
+.matrix-cell {
+  flex: 1;
+  min-height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18rpx;
+  text-align: center;
+  border-radius: 8rpx;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.matrix-cell.hit {
+  color: #fff;
+  opacity: 1;
+  font-weight: 600;
+}
+.matrix-cell.self { opacity: 0.35; }
+
 /* 图鉴样式已下沉到 styles/common.css（跨 6 个图鉴页复用） */
 /* R66 可达反应脉冲 */
 .reachable-pulse { animation: reachable-pulse 2s ease-in-out infinite; }

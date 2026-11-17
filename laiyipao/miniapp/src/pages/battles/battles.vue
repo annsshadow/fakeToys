@@ -21,6 +21,23 @@
         <text class="filter-count">{{ hasMore ? '已加载' : '共' }} {{ items.length }} 场</text>
       </view>
 
+      <!-- G70 战绩趋势折线：分数走势 + 胜负色点，趋势一眼可见 -->
+      <view v-if="trend.count >= 2" class="card trend-card">
+        <view class="card-title">
+          <text>战绩趋势</text>
+          <text class="dim">近 {{ trend.count }} 局 · 均分 {{ trend.avg }}</text>
+        </view>
+        <svg class="trend-svg" viewBox="0 0 300 96" aria-label="战绩分数趋势">
+          <polyline class="trend-line" :points="trend.line" />
+          <circle
+            v-for="(p, i) in trend.pts"
+            :key="'pt' + i"
+            :cx="p.x" :cy="p.y" r="3"
+            :class="p.win ? 'trend-win' : 'trend-lose'"
+          />
+        </svg>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -134,6 +151,32 @@ const filters = [
 ] as const
 type BattleFilter = (typeof filters)[number]['key']
 const filter = ref<BattleFilter>('all')
+
+/* -------------------------------------------------------------------------- */
+/* G70 战绩趋势折线（第七批）                                                   */
+/* 已加载战报按时间正序（列表最新在前，这里反转）画分数折线 + 胜负色点。         */
+/* 数据来自 items[].score/result，纯客户端派生，零契约改动。                     */
+/* -------------------------------------------------------------------------- */
+const trend = computed(() => {
+  const seq = [...items.value].reverse().slice(-20) // 最近 20 局，时间正序
+  const n = seq.length
+  const maxScore = Math.max(1, ...seq.map((it) => it.score))
+  const W = 300
+  const H = 90
+  const pts = seq.map((it, i) => ({
+    x: n <= 1 ? W / 2 : (i / (n - 1)) * W,
+    y: H - (it.score / maxScore) * (H - 12) - 6,
+    win: it.result === 'win' || it.result === '1' || it.stars > 0,
+    score: it.score,
+  }))
+  return {
+    pts,
+    line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+    count: n,
+    maxScore,
+    avg: n ? Math.round(seq.reduce((s, it) => s + it.score, 0) / n) : 0,
+  }
+})
 
 /**
  * 结果筛选（2026-11-01 新一轮第 80 轮）：切换时**重新从第一页加载**，
@@ -319,6 +362,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G70 战绩趋势折线 */
+.trend-card .card-title { margin-bottom: 8rpx; }
+.trend-svg { width: 100%; height: 192rpx; overflow: visible; }
+.trend-line {
+  fill: none;
+  stroke: var(--ice);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.trend-win { fill: var(--ok); }
+.trend-lose { fill: var(--bad); }
+
 .battle-row {
   padding: 12rpx 0;
   border-bottom: 1rpx solid var(--border);
