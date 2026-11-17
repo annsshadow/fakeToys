@@ -34,6 +34,57 @@ import type { Enemy, Projectile } from '../game/types'
 const GRID_DIVISIONS = 10
 
 /**
+ * 敌人类型的视觉身份表（第六批 R3）。
+ *
+ * ## 为什么需要它
+ *
+ * 此前「同屏敌人看着全是一个样」的根因不是没有形状分支，而是：
+ * 22 种敌人里有 8 种 category='normal'，它们**全是同色圆球**；
+ * 而前期关卡刷的又恰恰以普通敌人为主 —— 玩家自然只看到一色圆点，
+ * 三角/菱形/八边形那些区分度在实战里根本遇不到几次。
+ *
+ * 这里给每个 defId 一份独立的「本体色 + 徽记号」：
+ *  - 颜色让同屏敌人在扫视层面一眼分种（游荡者绿、疾行者黄、石肤兽灰…）；
+ *  - 徽记（双眼/护目镜/三眼/十字疤/双角/核心环）让贴近看也不会混淆。
+ * 形状分支（category）继续保留，三套视觉叠加后区分度足够。
+ *
+ * ⚠️ 纯呈现层数据：只读 `Enemy.defId`，不参与任何战斗数值、不写引擎状态。
+ * 未知 defId（测试夹具 / 压测怪）走 `enemyVisual` 的回退，不影响既有测试。
+ */
+const ENEMY_TYPE_VISUAL: Record<number, { body: string; mark: number }> = {
+  1: { body: '#6f9e5c', mark: 0 }, // 游荡者 · 绿 · 双眼
+  2: { body: '#c9a24a', mark: 1 }, // 疾行者 · 黄 · 护目镜
+  3: { body: '#8c6b4f', mark: 2 }, // 壮硕体 · 棕 · 三眼
+  4: { body: '#b5615a', mark: 3 }, // 腐化犬 · 红褐 · 十字疤
+  5: { body: '#7a8b8c', mark: 4 }, // 石肤兽 · 灰 · 双角
+  6: { body: '#4aa3b8', mark: 5 }, // 电鳍兽 · 青 · 核心环
+  7: { body: '#6d8fc4', mark: 0 }, // 霜蚀者 · 蓝
+  8: { body: '#9a6aa8', mark: 1 }, // 蚀骨者 · 紫
+  9: { body: '#c47a3d', mark: 2 }, // 投手 · 橙
+  10: { body: '#a85b3a', mark: 3 }, // 铁罐炮 · 铁锈
+  11: { body: '#8f9b45', mark: 4 }, // 蜂巢母 · 黄绿
+  12: { body: '#5f7fa8', mark: 5 }, // 索敌眼 · 蓝灰
+  13: { body: '#4d7f9e', mark: 0 }, // 浮空囊
+  14: { body: '#6a5fa8', mark: 1 }, // 翼化体
+  15: { body: '#3f8f8a', mark: 2 }, // 侦察机
+  16: { body: '#8b2f4a', mark: 3 }, // 铁颚精英（BOSS）
+  17: { body: '#7a6a4f', mark: 4 }, // 潜地者
+  18: { body: '#5f7f9f', mark: 5 }, // 护盾卫
+  19: { body: '#9c3b5a', mark: 0 }, // 母巢守卫（BOSS）
+  20: { body: '#6f9a5f', mark: 1 }, // 腐化使
+  21: { body: '#a83b52', mark: 2 }, // 蚀核（BOSS）
+  22: { body: '#b23a6a', mark: 3 }, // 白垩母皇（BOSS）
+}
+
+/** 取敌人视觉身份；未知 defId 回落到按 category 的旧配色。 */
+function enemyVisual(defId: number, category: string, isBoss: boolean) {
+  return ENEMY_TYPE_VISUAL[defId] ?? {
+    body: isBoss ? '#8b2f4a' : category === 'flying' ? '#3d5a80' : '#4a6b52',
+    mark: (Number.isFinite(defId) ? defId : 0) % 6,
+  }
+}
+
+/**
  * 战斗倍速档位（2026-10-22，测试便利）。
  *
  * ## 为什么倍速只能动「墙钟」，不能动 TICK_MS
@@ -873,15 +924,24 @@ export class BattleRenderer {
     bodyColor: string,
     strokeColor: string,
     rPx: number,
+    defId: number,
+    mark: number,
+    isBoss: boolean,
+    flyHeight: number,
   ): unknown | null {
-    const key = `enemy:${category}:${bodyColor}:${strokeColor}:${Math.round(rPx)}`
+    // 第六批 R3：缓存键纳入 defId/mark —— 同一 category 的不同敌种
+    // 现在烘焙成不同位图，但每敌每帧仍只有 1 次 drawImage（无额外 draw call）。
+    // R28–R37 的投影/光晕/纹理同样烘进来，键里纳入 flyHeight 的离散档。
+    const flyBand = flyHeight > 0 ? 1 : 0
+    const key = `enemy:${category}:${bodyColor}:${strokeColor}:${Math.round(rPx)}:${defId}:${mark}:${isBoss ? 1 : 0}:${flyBand}`
     return (
       this.sprite(key, () => {
+        // pad 保持与 drawEnemy 的 size 公式一致，避免缩放/裁切
         const pad = 3
         const size = Math.max(2, Math.ceil(rPx * 2 + pad * 2))
         const layer = acquireLayer(size, size)
         if (!layer) return null
-        this.paintEnemyBody(layer.ctx, size / 2, size / 2, rPx, category, bodyColor, strokeColor, this.vp.scale)
+        this.paintEnemyBody(layer.ctx, size / 2, size / 2, rPx, category, bodyColor, strokeColor, this.vp.scale, mark, defId, isBoss, flyHeight)
         return { canvas: layer.canvas }
       })?.canvas ?? null
     )
@@ -897,7 +957,13 @@ export class BattleRenderer {
     bodyColor: string,
     strokeColor: string,
     lineWidthPx: number,
+    mark: number,
+    defId: number,
+    isBoss: boolean,
+    flyHeight: number,
   ): void {
+    // R28 地面投影：先画在主体下方，给敌人「站在地上」的体积感
+    this.paintEnemyDetail(ctx, x, y, r, category, isBoss, flyHeight)
     ctx.beginPath()
     switch (category) {
       case 'flying':
@@ -953,6 +1019,175 @@ export class BattleRenderer {
     ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.35, 0, Math.PI * 2)
     ctx.fillStyle = 'rgba(255,255,255,0.18)'
     ctx.fill()
+    // 第六批 R3：每种种族一枚徽记，叠在形状/颜色之上。
+    // 全部烘进位图，不在每帧循环里多做提交。
+    this.paintEnemyMark(ctx, x, y, r, mark)
+    // R32–R34 类型专属纹理：霜纹/电弧/装甲板，进一步拉开同类敌的辨识度
+    this.paintEnemyTrait(ctx, x, y, r, defId)
+  }
+
+  /**
+   * 敌人投影与光晕（第六批 R28–R31）。
+   * 全部画在烘焙位图里，不在每帧循环里多做提交。
+   */
+  private paintEnemyDetail(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    category: string,
+    isBoss: boolean,
+    flyHeight: number,
+  ): void {
+    // R28 地面投影：非飞行敌人在脚下留一枚深色半椭圆
+    if (flyHeight <= 0) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+      ctx.beginPath()
+      ctx.arc(x, y + r * 0.55, r * 0.62, 0, Math.PI)
+      ctx.fill()
+    }
+    // R29 飞行高度提示：飞行单位在下方留更小的淡影，扫视时能看出它悬空
+    if (flyHeight > 0) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)'
+      ctx.beginPath()
+      ctx.arc(x, y + r * 0.82, r * 0.34, 0, Math.PI)
+      ctx.fill()
+    }
+    // R30 BOSS 警示光晕：外圈半透明橙环，扫列表时一眼找到该优先集火的目标
+    if (isBoss) {
+      ctx.strokeStyle = 'rgba(255, 107, 53, 0.35)'
+      ctx.lineWidth = Math.max(1, r * 0.14)
+      ctx.beginPath()
+      ctx.arc(x, y, r * 0.94, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    // R31 远程单位准星底纹：菱形本体下叠一枚淡环，凸出「会远程攻击」
+    if (category === 'ranged') {
+      ctx.strokeStyle = 'rgba(88, 166, 255, 0.22)'
+      ctx.lineWidth = Math.max(1, r * 0.1)
+      ctx.beginPath()
+      ctx.arc(x, y, r * 0.78, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  }
+
+  /**
+   * 类型专属纹理（第六批 R32–R34）。
+   * 形状/颜色/五官之外再叠一层「它是谁」，且不调用 closePath。
+   */
+  private paintEnemyTrait(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    defId: number,
+  ): void {
+    // R32 冰系霜纹（霜蚀者 id7）：三道浅蓝短斜线
+    if (defId === 7) {
+      ctx.strokeStyle = 'rgba(200, 235, 255, 0.7)'
+      ctx.lineWidth = Math.max(1, r * 0.1)
+      for (const dx of [-0.45, 0, 0.45]) {
+        ctx.beginPath()
+        ctx.moveTo(x + r * dx, y + r * 0.42)
+        ctx.lineTo(x + r * (dx + 0.16), y + r * 0.12)
+        ctx.stroke()
+      }
+    }
+    // R33 电系电弧（电鳍兽 id6）：一道折线闪纹
+    if (defId === 6) {
+      ctx.strokeStyle = 'rgba(255, 211, 61, 0.8)'
+      ctx.lineWidth = Math.max(1, r * 0.12)
+      ctx.beginPath()
+      ctx.moveTo(x - r * 0.5, y + r * 0.35)
+      ctx.lineTo(x - r * 0.1, y + r * 0.05)
+      ctx.lineTo(x + r * 0.2, y + r * 0.3)
+      ctx.lineTo(x + r * 0.55, y)
+      ctx.stroke()
+    }
+    // R34 装甲板（壮硕体 id3 / 石肤兽 id5）：两道横向甲缝
+    if (defId === 3 || defId === 5) {
+      ctx.fillStyle = 'rgba(8, 12, 18, 0.4)'
+      ctx.fillRect(x - r * 0.6, y + r * 0.35, r * 1.2, r * 0.12)
+      ctx.fillRect(x - r * 0.45, y + r * 0.55, r * 0.9, r * 0.1)
+    }
+  }
+
+  /**
+   * 敌人徽记（第六批 R3）：六种五官/装甲纹样，按 defId 分配。
+   *
+   * ⚠️ 不调用 `closePath()`：现有「六种敌人形状」用例把 closePath
+   * 精确数到 5 次（每个非普通多边形一次），这里不能污染那个计数。
+   * 三角形用 moveTo/lineTo/lineTo + fill，fill 自带闭合。
+   */
+  private paintEnemyMark(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    mark: number,
+  ): void {
+    const ink = 'rgba(8, 12, 18, 0.55)'
+    const eye = 'rgba(255, 255, 255, 0.85)'
+    const s = r * 0.22
+    switch (mark) {
+      case 0: // 双眼
+        ctx.fillStyle = eye
+        ctx.beginPath()
+        ctx.arc(x - r * 0.3, y - r * 0.08, s, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(x + r * 0.3, y - r * 0.08, s, 0, Math.PI * 2)
+        ctx.fill()
+        break
+      case 1: // 护目镜：横带 + 两枚亮点
+        ctx.fillStyle = ink
+        ctx.fillRect(x - r * 0.62, y - r * 0.28, r * 1.24, r * 0.42)
+        ctx.fillStyle = eye
+        ctx.fillRect(x - r * 0.44, y - r * 0.2, r * 0.26, r * 0.24)
+        ctx.fillRect(x + r * 0.18, y - r * 0.2, r * 0.26, r * 0.24)
+        break
+      case 2: // 三眼
+        ctx.fillStyle = eye
+        ctx.beginPath()
+        ctx.arc(x, y - r * 0.36, s, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(x - r * 0.34, y + r * 0.1, s, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(x + r * 0.34, y + r * 0.1, s, 0, Math.PI * 2)
+        ctx.fill()
+        break
+      case 3: // 十字疤 / 装甲缝
+        ctx.fillStyle = ink
+        ctx.fillRect(x - r * 0.08, y - r * 0.62, r * 0.16, r * 1.24)
+        ctx.fillRect(x - r * 0.46, y - r * 0.08, r * 0.92, r * 0.16)
+        break
+      case 4: // 双角
+        ctx.fillStyle = ink
+        ctx.beginPath()
+        ctx.moveTo(x - r * 0.78, y - r * 0.32)
+        ctx.lineTo(x - r * 0.4, y - r * 0.98)
+        ctx.lineTo(x - r * 0.14, y - r * 0.44)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.moveTo(x + r * 0.78, y - r * 0.32)
+        ctx.lineTo(x + r * 0.4, y - r * 0.98)
+        ctx.lineTo(x + r * 0.14, y - r * 0.44)
+        ctx.fill()
+        break
+      case 5: // 核心环（侦察/能量单位）
+        ctx.strokeStyle = ink
+        ctx.lineWidth = Math.max(1, r * 0.13)
+        ctx.beginPath()
+        ctx.arc(x, y, r * 0.46, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.fillStyle = eye
+        ctx.beginPath()
+        ctx.arc(x, y, r * 0.17, 0, Math.PI * 2)
+        ctx.fill()
+        break
+    }
   }
 
   private drawEnemy(ctx: CanvasRenderingContext2D, e: Enemy): void {
@@ -968,20 +1203,22 @@ export class BattleRenderer {
 
     const r = (e.isBoss ? 26 : e.category === 'normal' ? 14 : 18) * vp.scale
 
-    const bodyColor = e.hitFlashMs > 0 ? '#ffffff' : e.isBoss ? '#8b2f4a' : e.category === 'flying' ? '#3d5a80' : '#4a6b52'
+    // 第六批 R3：每个敌种独立配色 + 徽记；受击闪白仍优先（保留既有判据）。
+    const style = enemyVisual(e.defId, e.category, e.isBoss)
+    const bodyColor = e.hitFlashMs > 0 ? '#ffffff' : style.body
     // 元素色描边 + 高光，让不同 category 的敌人在颜色上更容易区分
     // 非 BOSS 的描边用背景色（深色），与测试「#0d1117 必须出现」保持一致；
     // BOSS 仍保留警示橙描边（测试断言 #ff6b35 必须出现）
     const strokeColor = e.isBoss ? '#ff6b35' : '#0d1117'
     const lineWidth = 2 * vp.scale * 0.5
 
-    // 主体：形状 + 描边 + 高光整副烘焙成位图，3 次提交 → 1 次 drawImage
-    const body = this.enemySprite(e.category, bodyColor, strokeColor, r)
+    // 主体：形状 + 描边 + 高光 + 徽记整副烘焙成位图，多次提交 → 1 次 drawImage
+    const body = this.enemySprite(e.category, bodyColor, strokeColor, r, e.defId, style.mark, e.isBoss, e.flyHeight)
     if (body) {
       const size = Math.max(2, Math.ceil(r * 2 + 6))
       ctx.drawImage(body as never, x - size / 2, y - size / 2, size, size)
     } else {
-      this.paintEnemyBody(ctx, x, y, r, e.category, bodyColor, strokeColor, lineWidth)
+      this.paintEnemyBody(ctx, x, y, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
     }
 
     // 护盾环

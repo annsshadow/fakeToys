@@ -692,6 +692,27 @@ describe('BattleRenderer 分支覆盖（假引擎直驱绘制分支）', () => {
     expect(canvas.__ctx.strokeStyles).toContain('#0d1117')
   })
 
+  it('第六批 R3 同 category 的不同敌种也有独立本体色与徽记（不再是清一色圆球）', () => {
+    const enemies = [
+      fakeEnemy({ uid: 1, defId: 1, category: 'normal' }), // 游荡者
+      fakeEnemy({ uid: 2, defId: 2, category: 'normal' }), // 疾行者
+      fakeEnemy({ uid: 3, defId: 5, category: 'normal' }), // 石肤兽
+      fakeEnemy({ uid: 4, defId: 16, category: 'boss', isBoss: true }), // 铁颚精英
+    ]
+    const r = makeRenderer(fakeEngine({ enemies }))
+    r.draw(TICK_MS)
+    const fills = canvas.__ctx.fillStyles
+    // 三种普通敌各有自己的颜色 —— 旧实现下它们全是同一个 #4a6b52
+    expect(fills).toContain('#6f9e5c')
+    expect(fills).toContain('#c9a24a')
+    expect(fills).toContain('#7a8b8c')
+    // 徽记的「眼白」墨色出现，证明形状之外还叠加了五官纹样
+    expect(fills).toContain('rgba(255, 255, 255, 0.85)')
+    // 新增徽记不得污染「六种形状」用例依赖的 closePath 精确计数：
+    // 这里 3 个 normal（0 次）+ 1 个 boss（1 次）= 恰好 1 次
+    expect(canvas.__ctx.calls.filter((c) => c === 'closePath').length).toBe(1)
+  })
+
   it('敌人状态分支：受击闪白 / 护盾环 / 冻结 / 眩晕 / 出生进度 / 飞行高度 / 元素层数截断', () => {
     const stacks = new Map<Element, bigint>([
       ['fire', 2n],
