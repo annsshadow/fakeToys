@@ -277,4 +277,34 @@ describe('verify.vue 验真页', () => {
     await flushPromises()
     expect(mockApi.guestLogin).toHaveBeenCalledTimes(1)
   })
+
+  // ── R21 流程步骤条（2026-11-17 100 轮打磨 W 批）────────────────────
+  it('R21 三步进度条随填 ID / 取信息 / 出裁定逐段点亮', async () => {
+    const { wrapper } = mountPage(Verify)
+    await flushPromises()
+    let steps = wrapper.findAll('.step')
+    expect(steps.length).toBe(3)
+    // 初始：三步都未点亮
+    expect(steps.every((s) => !s.classes().includes('on'))).toBe(true)
+
+    // 填入 battle_id → 第 1 步点亮
+    const input = wrapper.find('input')
+    ;(input.element as HTMLInputElement).value = '9'
+    await input.trigger('input')
+    steps = wrapper.findAll('.step')
+    expect(steps[0]!.classes()).toContain('on')
+    expect(steps[1]!.classes()).not.toContain('on')
+
+    // 取复现信息 → 第 2 步点亮
+    await fetchInfo(wrapper)
+    steps = wrapper.findAll('.step')
+    expect(steps[1]!.classes()).toContain('on')
+    expect(steps[2]!.classes()).not.toContain('on')
+
+    // 本地重放 + 提交 → 第 3 步点亮
+    await wrapper.findAll('.btn').find((b: any) => b.text().includes('本地重放并提交'))!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(wrapper.findAll('.step')[2]!.classes()).toContain('on')
+  })
 })

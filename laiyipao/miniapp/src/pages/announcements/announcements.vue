@@ -15,10 +15,12 @@
       </view>
 
       <view v-else>
-        <view v-for="a in items" :key="a.id" class="card ann-card">
+        <view v-for="(a, i) in items" :key="a.id" class="card ann-card">
           <view class="ann-head">
+            <!-- R22 最新一条给「最新」徽章，日期做成统一胶囊，与其它列表页一致 -->
+            <text v-if="i === 0" class="ann-new">最新</text>
             <text class="ann-title">{{ a.title }}</text>
-            <text class="dim mono">{{ formatDate(a.published_at) }}</text>
+            <text class="ann-date mono">{{ formatDate(a.published_at) }}</text>
           </view>
           <text class="ann-body">{{ a.body }}</text>
         </view>
@@ -64,6 +66,8 @@ onMounted(async () => {
 <style scoped>
 .ann-card {
   margin-bottom: 16rpx;
+  /* R22 左侧强调条：与其它列表页的卡片视觉语言对齐 */
+  border-left: 6rpx solid var(--fire);
 }
 
 .ann-head {
@@ -73,6 +77,24 @@ onMounted(async () => {
   align-items: center;
   gap: 16rpx;
   margin-bottom: 8rpx;
+}
+
+.ann-new {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  color: var(--fire);
+  background: var(--fire-soft);
+}
+
+.ann-date {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  color: var(--muted);
+  background: var(--panel-2);
 }
 
 .ann-title {

@@ -14,6 +14,23 @@
         </text>
       </view>
 
+      <!-- R21 流程步骤条：把「填 ID → 取信息 → 出裁定」三段进度显性化，
+           与全端页签/step chip 的视觉语言一致。 -->
+      <view class="steps">
+        <view class="step" :class="{ on: !!battleId }">
+          <text class="step-no">1</text>
+          <text class="step-label">填 ID</text>
+        </view>
+        <view class="step" :class="{ on: !!replayInfo }">
+          <text class="step-no">2</text>
+          <text class="step-label">取信息</text>
+        </view>
+        <view class="step" :class="{ on: !!result }">
+          <text class="step-no">3</text>
+          <text class="step-label">出裁定</text>
+        </view>
+      </view>
+
       <view class="card">
         <text class="card-title">输入 battle_id</text>
         <view class="row" style="gap: 12rpx">
@@ -291,9 +308,53 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* R21 流程步骤条 */
+.steps {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
 
+.step {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 22rpx;
+  color: var(--dim);
+}
 
+.step:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 1rpx;
+  background: var(--border);
+  margin: 0 12rpx;
+}
 
+.step-no {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 1rpx solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  flex-shrink: 0;
+}
+
+.step.on {
+  color: var(--fire);
+}
+
+.step.on .step-no {
+  background: var(--fire-soft);
+  border-color: var(--fire);
+  color: var(--fire);
+  font-weight: 700;
+}
 
 .verdict-box {
   border-radius: 10rpx;

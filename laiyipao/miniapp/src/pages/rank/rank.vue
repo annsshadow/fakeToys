@@ -18,9 +18,16 @@
       <view v-else-if="items.length === 0" class="card"><text class="muted">暂无数据</text></view>
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
-        <view v-for="(it, i) in items" :key="it.user_id" class="rank-row" :class="{ me: it.user_id === store.userId }">
+        <view
+          v-for="(it, i) in items"
+          :key="it.user_id"
+          class="rank-row"
+          :class="[rankRowClass(i, it), { me: it.user_id === store.userId }]"
+        >
           <text class="rank-no mono" :class="'no-' + (i + 1)">{{ i + 1 }}</text>
           <text class="rank-name flex-1">{{ it.nickname || '玩家' }}</text>
+          <!-- R18 前三名奖牌：名次徽章之外再给一枚一眼可辨的贵金属标记 -->
+          <text v-if="i < 3" class="medal">{{ MEDALS[i] }}</text>
           <text class="rank-score mono">{{ formatScore(it.score) }}</text>
         </view>
       </view>
@@ -97,6 +104,22 @@ function formatScore(v: number): string {
   // 2026-11-16：删掉同值死分支 —— 两个分支返回的都是 String(v)，
   // 「效率榜将来会格式化」的意图用这条注释保留，真需要时再写。
   return String(v)
+}
+
+/** R18 前三名奖牌字形（与 --rank-* 令牌配色对应）。 */
+const MEDALS = ['🥇', '🥈', '🥉'] as const
+
+/**
+ * R18 榜单视觉分层：
+ *  - 前三名给 podium 底 + 左侧贵金属描边；
+ *  - 0 分玩家给 zero 降权 —— 有分与没分不再是一模一样的行。
+ * 「我」的高亮仍由模板里独立的 me 类负责，两者互不覆盖。
+ */
+function rankRowClass(i: number, it: { score: number }): string {
+  const cls: string[] = []
+  if (i < 3) cls.push(`podium podium-${i + 1}`)
+  if (Number(it.score) <= 0) cls.push('zero')
+  return cls.join(' ')
 }
 
 async function load() {
@@ -207,6 +230,30 @@ onMounted(async () => {
 
 .rank-row.me {
   background: rgba(255, 107, 53, 0.08);
+}
+
+/* R18 前三名：底色 + 左侧贵金属描边（inset 阴影不撑破布局） */
+.rank-row.podium {
+  background: linear-gradient(90deg, var(--panel-2), transparent 78%);
+  border-radius: 10rpx;
+}
+
+.rank-row.podium-1 { box-shadow: inset 5rpx 0 0 var(--rank-gold); }
+.rank-row.podium-2 { box-shadow: inset 5rpx 0 0 var(--rank-silver); }
+.rank-row.podium-3 { box-shadow: inset 5rpx 0 0 var(--rank-bronze); }
+
+.medal {
+  font-size: 26rpx;
+  margin-right: 8rpx;
+}
+
+/* R18 0 分玩家降权：有分/没分一眼可分 */
+.rank-row.zero {
+  opacity: 0.55;
+}
+
+.rank-row.zero .rank-score {
+  color: var(--dim);
 }
 
 .rank-no {

@@ -276,4 +276,37 @@ describe('signin.vue 签到页', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('兑换码无效')
   })
+
+  // ── R20 签到三态 + 任务进度完成态（2026-11-17 100 轮打磨 W 批）─────
+  it('R20 签到三态：已签有对勾、今日脉冲、未来天降权', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 2, signed_today: false, can_sign: true })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const days = wrapper.findAll('.day')
+    // 第 1、2 天已签：绿框 + 对勾角标
+    expect(days[0]!.classes()).toContain('claimed')
+    expect(days[0]!.find('.day-check').exists()).toBe(true)
+    expect(days[1]!.classes()).toContain('claimed')
+    // 第 3 天今日：脉冲，但还没签（无对勾）
+    expect(days[2]!.classes()).toContain('today')
+    expect(days[2]!.classes()).not.toContain('future')
+    expect(days[2]!.find('.day-check').exists()).toBe(false)
+    // 第 4 天起未来：降权
+    expect(days[3]!.classes()).toContain('future')
+    expect(days[6]!.classes()).toContain('future')
+  })
+
+  it('R20 任务进度条完成态：done 任务渐变金 + 百分比', async () => {
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const bars = wrapper.findAll('.task-progress')
+    expect(bars.length).toBe(3)
+    // fixture 第 1 条 done:true progress 3/3；第 2 条未完成
+    expect(bars[0]!.classes()).toContain('done')
+    expect(bars[1]!.classes()).not.toContain('done')
+    const percents = wrapper.findAll('.task-percent')
+    expect(percents[0]!.text()).toBe('100%')
+    expect(percents[0]!.classes()).toContain('done')
+    expect(percents[1]!.classes()).not.toContain('done')
+  })
 })

@@ -357,7 +357,7 @@ describe('stage.vue 关卡页状态化（100 轮打磨）', () => {
   })
 
   it('R13 开始按钮吸底：sticky 类常驻，不可进入仍走 btn-disabled 降透明', async () => {
-    const { wrapper, store } = mountPage(Stage)
+    const { wrapper } = mountPage(Stage)
     await flushPromises()
     triggerUniHook(wrapper.vm, 'onLoad', {})
     await flushPromises()

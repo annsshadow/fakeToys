@@ -16,8 +16,14 @@
             v-for="d in 7"
             :key="d"
             class="day"
-            :class="{ claimed: d <= claimedCount, today: d === claimedCount + 1 }"
+            :class="{
+              claimed: d <= claimedCount,
+              today: d === claimedCount + 1,
+              future: d > claimedCount + 1,
+            }"
           >
+            <!-- R20 已签天给对勾角标，未来天整体降权：三态一眼可分 -->
+            <text v-if="d <= claimedCount" class="day-check">✓</text>
             <text class="day-no">第 {{ d }} 天</text>
             <text class="day-coin">{{ rewardFor(d).coin ?? 0 }} 金</text>
             <text v-if="rewardFor(d).gem" class="day-gem">{{ rewardFor(d).gem }} 钻</text>
@@ -74,9 +80,10 @@
               {{ t.progress }} / {{ t.target }}
             </text>
             <!-- 任务进度条（2026-11-01 新一轮第 36 轮） -->
-            <view class="task-progress">
+            <view class="task-progress" :class="{ done: t.done }">
               <view class="task-progress-fill" :style="{ width: taskPercent(t) + '%' }" />
             </view>
+            <text class="task-percent" :class="{ done: t.done }">{{ taskPercent(t) }}%</text>
             <text class="dim" style="display: block">
               奖励：{{ rewardText(t.reward) }}
             </text>
@@ -294,13 +301,16 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
   opacity: 0.55;
   transition: opacity 0.2s, border-color 0.2s, background 0.2s;
 }
 
+/* R20 三态：已签（对勾+绿框）/ 今日（橙光脉冲）/ 未来（进一步降权） */
 .day.claimed {
   opacity: 1;
   border-color: rgba(126, 231, 135, 0.4);
+  background: rgba(126, 231, 135, 0.06);
 }
 
 .day.today {
@@ -308,6 +318,18 @@ onMounted(async () => {
   border-color: var(--fire);
   background: var(--fire-soft, rgba(255, 107, 53, 0.18));
   animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.day.future {
+  opacity: 0.3;
+}
+
+.day-check {
+  position: absolute;
+  top: 2rpx;
+  right: 8rpx;
+  font-size: 22rpx;
+  color: var(--ok);
 }
 
 .day-no {
@@ -356,6 +378,23 @@ onMounted(async () => {
   background: var(--ok, #3fb950);
   border-radius: 6rpx;
   transition: width 0.3s ease;
+}
+
+/* R20 完成态：渐变金 + 百分比变绿，未完成保持单一绿条 */
+.task-progress.done .task-progress-fill {
+  background: linear-gradient(90deg, var(--ok), var(--warn));
+}
+
+.task-percent {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--muted);
+}
+
+.task-percent.done {
+  color: var(--ok);
+  font-weight: 600;
 }
 
 .code-input {

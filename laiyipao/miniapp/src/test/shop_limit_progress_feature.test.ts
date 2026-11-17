@@ -31,6 +31,9 @@ describe('商城每日限购进度守卫', () => {
   it('模板必须渲染限购进度文案', () => {
     const src = readFileSync(SHOP_VUE, 'utf-8')
     expect(src).toContain('purchaseProgressText(it)')
-    expect(src).toContain('v-if="purchaseProgressText(it)"')
+    // R17 把 v-if 从「按文案真假」改成「按 limit_per_day > 0」——文案仍在
+    // 同一条件块内渲染，只是条件更直接（买满也显示进度条 + 「今日已买满」）。
+    // 这里断言「有一个 v-if 守卫 .limit-wrap 块」以兼容两种等价写法。
+    expect(src).toMatch(/v-if="[^"]*limit_per_day[^"]*"[^>]*class="limit-wrap"/)
   })
 })

@@ -70,4 +70,12 @@ describe('我的战报历史页守卫', () => {
     expect(src).toContain("label: '胜利'")
     expect(src).toContain("label: '失败'")
   })
+
+  it('R19 胜负色差与空态引导锚点', () => {
+    const src = readFileSync(BATTLES_VUE, 'utf-8')
+    expect(src).toContain("it.result === 'win' ? 'win' : 'lose'")
+    expect(src).toContain('result-badge')
+    expect(src).toContain('empty-state')
+    expect(src).toContain('empty-glyph')
+  })
 })

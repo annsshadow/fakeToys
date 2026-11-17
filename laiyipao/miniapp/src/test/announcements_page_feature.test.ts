@@ -32,6 +32,14 @@ describe('公告列表页守卫', () => {
     expect(src).toContain('a.published_at')
   })
 
+  it('R22 列表行统一：左侧强调条 + 日期胶囊 + 最新徽章', () => {
+    const src = readFileSync(ANN_VUE, 'utf-8')
+    expect(src).toContain('border-left: 6rpx solid var(--fire)')
+    expect(src).toContain('ann-date')
+    expect(src).toContain('ann-new')
+    expect(src).toContain('v-if="i === 0"')
+  })
+
   it('pages.json 注册路由', () => {
     const pages = readFileSync(PAGES_JSON, 'utf-8')
     expect(pages).toContain('pages/announcements/announcements')

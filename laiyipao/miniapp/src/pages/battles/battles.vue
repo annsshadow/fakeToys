@@ -20,11 +20,14 @@
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
 
-      <view v-else-if="items.length === 0" class="card">
-        <text class="card-title">暂无战报</text>
+      <view v-else-if="items.length === 0" class="card empty-state">
+        <!-- R19 空态不再是一行孤零零的文字：给一个锚点 + 明确下一步 -->
+        <text class="empty-glyph">⚔</text>
+        <text class="card-title">还没有战报</text>
         <text class="muted" style="display: block; margin-top: 8rpx">
           打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
         </text>
+        <text class="empty-hint">去关卡页挑一关开打 →</text>
       </view>
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
@@ -32,11 +35,12 @@
           v-for="it in items"
           :key="it.id"
           class="battle-row tap"
-          :class="{ expanded: expandedId === it.id }"
+          :class="[it.result === 'win' ? 'win' : 'lose', { expanded: expandedId === it.id }]"
           @click="toggleDetail(it)"
         >
           <view class="battle-head">
-            <text class="mono" :style="{ color: it.result === 'win' ? 'var(--ok)' : 'var(--bad)' }">
+            <!-- R19 胜负做成实心徽章，整行再给淡色底，扫一眼就能分胜败 -->
+            <text class="result-badge" :class="it.result === 'win' ? 'win' : 'lose'">
               {{ it.result === 'win' ? '胜' : '负' }}
             </text>
             <text class="battle-stars" :class="{ dim: it.stars === 0 }">
@@ -302,6 +306,55 @@ onMounted(async () => {
 .battle-row {
   padding: 12rpx 0;
   border-bottom: 1rpx solid var(--border);
+}
+
+/* R19 胜负色差：整行淡底 + 左侧色条，不必逐字读「胜/负」 */
+.battle-row.win {
+  background: linear-gradient(90deg, rgba(126, 231, 135, 0.08), transparent 60%);
+  box-shadow: inset 4rpx 0 0 rgba(126, 231, 135, 0.55);
+}
+
+.battle-row.lose {
+  background: linear-gradient(90deg, rgba(255, 123, 114, 0.08), transparent 60%);
+  box-shadow: inset 4rpx 0 0 rgba(255, 123, 114, 0.45);
+}
+
+.result-badge {
+  min-width: 44rpx;
+  text-align: center;
+  padding: 6rpx 0;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.result-badge.win {
+  color: var(--ok);
+  background: rgba(126, 231, 135, 0.14);
+}
+
+.result-badge.lose {
+  color: var(--bad);
+  background: rgba(255, 123, 114, 0.14);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.empty-glyph {
+  font-size: 64rpx;
+  opacity: 0.6;
+  margin-bottom: 8rpx;
+}
+
+.empty-hint {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: var(--fire);
 }
 
 .battle-row:last-child {

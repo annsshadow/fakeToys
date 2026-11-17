@@ -152,6 +152,32 @@ describe('rank.vue 排行榜', () => {
     expect(wrapper.text()).toContain('暂无数据')
   })
 
+  // ── R18 榜单视觉分层（2026-11-17 100 轮打磨 W 批）─────────────────
+  it('R18 前三名 podium 奖牌、0 分行降权', async () => {
+    mockApi.fetchLeaderboard.mockResolvedValue({
+      items: [
+        { user_id: 1, nickname: '甲', score: 100 },
+        { user_id: 2, nickname: '乙', score: 80 },
+        { user_id: 3, nickname: '丙', score: 0 },
+        { user_id: 4, nickname: '丁', score: 0 },
+      ],
+    })
+    const { wrapper } = mountPage(Rank)
+    await flushPromises()
+    const rows = wrapper.findAll('.rank-row')
+    expect(rows.length).toBe(4)
+    expect(rows[0]!.classes()).toContain('podium-1')
+    expect(rows[1]!.classes()).toContain('podium-2')
+    expect(rows[2]!.classes()).toContain('podium-3')
+    // 前三名才有奖牌，第 4 行没有
+    expect(rows[0]!.find('.medal').exists()).toBe(true)
+    expect(rows[3]!.find('.medal').exists()).toBe(false)
+    // 0 分行降权（有分用户不带 zero）
+    expect(rows[0]!.classes()).not.toContain('zero')
+    expect(rows[2]!.classes()).toContain('zero')
+    expect(rows[3]!.classes()).toContain('zero')
+  })
+
   // ── 我的排名（2026-10-23）──────────────────────────────────────────
   // 补的是「榜单看得见但用不上」：只回前 50 条，未进前 50 的人找不到自己。
 
