@@ -54,6 +54,16 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('Math.ceil(r * 2.8 + 6)')
   })
 
+  it('R93 残血血条变红 + R94 受击描边闪白（零 draw call 增量）', () => {
+    const src = canvas()
+    expect(src).toContain('R93 低血量血条变红')
+    expect(src).toContain("hpPct < 0.3 ? '#ff7b72'")
+    expect(src).toContain('R94 受击闪白时描边也闪白')
+    expect(src).toContain("e.hitFlashMs > 0 ? '#ffffff' : e.isBoss")
+    expect(src).toContain('R95 护盾环')
+    expect(src).toContain("e.isBoss ? '#ffd33d' : '#58a6ff'")
+  })
+
   it('A6 弹体元素形状 R26 + 弹体朝向 R31（全部烘焙/状态操作，零 draw call 增量）', () => {
     const src = canvas()
     expect(src).toContain('R26 元素弹体差异化形状')

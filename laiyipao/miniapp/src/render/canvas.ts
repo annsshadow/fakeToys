@@ -1504,7 +1504,8 @@ export class BattleRenderer {
     // 元素色描边 + 高光，让不同 category 的敌人在颜色上更容易区分
     // 非 BOSS 的描边用背景色（深色），与测试「#0d1117 必须出现」保持一致；
     // BOSS 仍保留警示橙描边（测试断言 #ff6b35 必须出现）
-    const strokeColor = e.isBoss ? '#ff6b35' : '#0d1117'
+    // R94 受击闪白时描边也闪白：整个敌人「亮一下」，打击感更强（零 draw call 增量）
+    const strokeColor = e.hitFlashMs > 0 ? '#ffffff' : e.isBoss ? '#ff6b35' : '#0d1117'
     const lineWidth = 2 * vp.scale * 0.5
 
     // R11 行走摆动 + R23 受击击退：两者都只改本体绘制坐标，零额外 draw call。
@@ -1531,12 +1532,12 @@ export class BattleRenderer {
       this.paintEnemyBody(ctx, bx, by, r * spawnScale, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
     }
 
-    // 护盾环
+    // R95 护盾环：首领带盾时用金色加粗环（区别于普通蓝盾），一眼看出首领还有盾
     if (e.shield > 0n) {
       ctx.beginPath()
       ctx.arc(x, y, r + 4 * vp.scale, 0, Math.PI * 2)
-      ctx.strokeStyle = '#58a6ff'
-      ctx.lineWidth = 2 * vp.scale * 0.4
+      ctx.strokeStyle = e.isBoss ? '#ffd33d' : '#58a6ff'
+      ctx.lineWidth = e.isBoss ? 3 * vp.scale * 0.6 : 2 * vp.scale * 0.4
       ctx.stroke()
     }
 
@@ -1639,7 +1640,9 @@ export class BattleRenderer {
       const hpPct = Number(e.hp) / Number(e.maxHp)
       ctx.fillStyle = 'rgba(0,0,0,0.5)'
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw, 3 * vp.scale)
-      ctx.fillStyle = e.isBoss ? '#ff6b35' : '#7ee787'
+      // R93 低血量血条变红：残血敌人一眼可辨（优先集火目标），零 draw call 增量。
+      // >=30% 仍用原色（既有测试锚点 #7ee787 保持）。
+      ctx.fillStyle = hpPct < 0.3 ? '#ff7b72' : e.isBoss ? '#ff6b35' : '#7ee787'
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw * hpPct, 3 * vp.scale)
       // R13 护盾叠加条：有护盾时在血条上方叠一条蓝条，护盾破了就没 —— 
       // 「打不动」的原因（护盾）第一次在敌人身上可见。
