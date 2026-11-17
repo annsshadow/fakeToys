@@ -889,6 +889,7 @@ import SqlEditor from '../components/SqlEditor.vue'
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { formatPercent } from '../utils/formatNumber'
+import { resultPageView } from '../utils/resultPagination'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -976,22 +977,32 @@ const filtered = computed(() => {
   return list
 })
 
-const sortedResult = computed(() => {
-  let data = resultFilter.value
-    ? resultData.value.filter((row) =>
-        Object.values(row).some((v) => String(v).toLowerCase().includes(resultFilter.value.toLowerCase())),
-      )
-    : resultData.value
-  if (sortCol.value) {
-    data = [...data].sort((a, b) => {
-      const av = a[sortCol.value],
-        bv = b[sortCol.value]
-      return sortAsc.value ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
-    })
-  }
-  return data.slice((page.value - 1) * pageSize, page.value * pageSize)
-})
-const totalPages = computed(() => Math.ceil(resultData.value.length / pageSize))
+const resultView = computed(() =>
+  resultPageView(
+    resultData.value,
+    (row) =>
+      !resultFilter.value ||
+      Object.values(row).some((v) => String(v).toLowerCase().includes(resultFilter.value.toLowerCase())),
+    page.value,
+    pageSize,
+    sortCol.value
+      ? (a, b) => {
+          const av = a[sortCol.value],
+            bv = b[sortCol.value]
+          return sortAsc.value ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
+        }
+      : undefined,
+  ),
+)
+const sortedResult = computed(() => resultView.value.rows)
+const totalPages = computed(() => resultView.value.totalPages)
+// 过滤/排序后页码被夹取时同步回 ref，使分页器显示与实际展示行始终一致。
+watch(
+  () => resultView.value.page,
+  (p) => {
+    if (page.value !== p) page.value = p
+  },
+)
 
 const statusText = computed(() => {
   if (!currentStatement.value) return '未选择语句'
