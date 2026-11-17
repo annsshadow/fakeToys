@@ -15,7 +15,7 @@ export function useI18nInstance(): I18n {
   if (!_i18n) {
     _i18n = createI18n({
       legacy: false,
-      locale: DEFAULT_LOCALE,
+      locale: _locale.value,
       fallbackLocale: 'en',
       messages: { 'zh-cn': {}, en: {}, es: {} },
     })
