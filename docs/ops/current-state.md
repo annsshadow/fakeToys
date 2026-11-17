@@ -1060,6 +1060,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 35.4 交付与边界
 
 - 本轮两提交 9e379df2a、01865dab9 及本现量文档 §35 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十六、第27轮：R177 toast悬停定时器竞态 + 商城category契约漂移（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r177 / lybug-r27），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 36.1 oa4rust R177 toast 悬停移开再移回时提前退场（提交 31f69f2a5）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | toast.ts showToast 自动消失用 const timer，mouseenter 只 clear 原始 timer，mouseleave 里 setTimeout(duration/2) 的 id 未保存。用户短暂移开再移回（leave→re-enter）时 re-enter 无法取消上一次 leave 挂起的 timer，toast 在正悬停时提前退场（oa4ToastOut）消失，反复 leave/enter 还泄漏多个未追踪 timer；原 hover 测试只覆盖 leave 不 re-enter | 用户可感知行为错误 + 竞态，不在 R155-R176 清单 |
+| 修复 | const timer 改 let timer，mouseleave 先 clearTimeout(timer) 再 timer=setTimeout(duration/2)，单一被追踪 timer：enter 总能取消当前 pending、leave 替换之 | 3 行最小改动 |
+| 门禁 | 悬停重入行为测试（fake timers，断言退场动画状态/DOM 留存/remove 次数）RED（remove 调用 2 次，悬停期间被旧 timer 提前退场）→GREEN 24/24；主代理独立复跑 24 passed；pnpm test 1324 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 36.2 laiyipao 商城只渲染三类商品丢弃货币/装备/首充（提交 0f5c2530f）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | shop.vue CATEGORY_ORDER 仅 ['gem','boost',''] 三类，load() 按 (x.category||'')===c.key 过滤。服务端 seed.go:394-444 实际下发 currency（金币袋/金币箱/体力补给/钥匙串）、boost、starter（首充礼包）、gem、equipment（6 件装备），economy.go LoadShop 原样下发 ShopItemView.Category 未白名单收窄。客户端按三类过滤把 15 个种子商品中约 11 件静默丢弃：看不到也买不到，属长期契约漂移（首版 68c65c909 即如此） | 服务端契约佐证充分，非风格 |
+| 修复 | CATEGORY_ORDER 补全 currency/货币补给、starter/新手礼包、equipment/装备三类；新增 KNOWN_CATEGORY_KEYS，未知类目归「其他」不再静默丢弃 | 未知类目兜底，避免未来再漂移 |
+| 门禁 | shop_category_render.test.ts（jsdom 挂载 Shop，mock 覆盖 5 类商品，断言 6 件全渲染）RED（首充礼包不可见）→GREEN；主代理独立复跑 1 passed；全量 pnpm test 1467 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 36.3 主线程目标二复核（无新增缺口）
+
+- 探测 augmentor/deploy 无 .local.keys（仅 README + nginx/），gh CLI 缺失、GitHub Secrets DEPLOY_* 本会话不可读；与 §33.3 边界一致，本地交付完备（health=200、根页 200、写鉴权口令 gitignored），远程部署超出会话边界，不臆造缺口。
+
+### 36.4 交付与边界
+
+- 本轮两提交 31f69f2a5、0f5c2530f 及本现量文档 §36 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
