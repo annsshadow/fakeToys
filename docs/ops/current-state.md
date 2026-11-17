@@ -907,6 +907,37 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 30.4 交付与边界
 
 - 本轮四提交 65d7b8ce8、939c44890、130d08a63 及本现量文档 §30 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十一、第22轮：R172 init(force)在途竞态 + 反应图鉴千分比单位（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r172 / lybug-r22），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。主线程另复核 augmentor 部署链路（目标二），确认无本地可修缺口。
+
+### 31.1 oa4rust R172 session init(force) 复用旧身份请求竞态（提交 0332b408c）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | packages/sdk/src/session.ts 原 force=true 仅跳过「已初始化」早退，但若已有 in-flight 普通 init()，force 直接复用同一 initPromise 拿到身份变更前发起的 who 结果。慢网下 main.ts:510 路由守卫 init() 未返回时，login()/SSO.vue:48/OAuthCallback.vue:43/switchUser()/refresh() 成功后调 init(true) 被旧请求判为匿名→抛 AuthenticationError 或渲染旧身份 | 真实可达身份错误，非风格 |
+| 修复 | 加 initTicket 代际令牌：force 发起新 who 读取并 ++initTicket；restoreCurrentUser(ticket)/finally 收尾仅 ticket===initTicket 时执行——旧请求后返回既不覆盖新身份，也不提前解锁 loading 或清掉新强制请求 | 最小改动，保留原早退语义 |
+| 门禁 | session.force-init.test.ts deferred 两请求行为测试 RED(get 仅1次)→GREEN(2次+身份 logged-in)；主代理从 oa4rust 根独立复跑 1 passed；pnpm test 1318 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 31.2 laiyipao 反应图鉴 amplify_pct 千分比当百分比（提交 f1d70db47）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | reactions.vue:123 把千分比 amplify_pct(600‰=+60%) 直接显示成「增幅 600%」；:204 强度排行 base_coef*(1+amplify_pct/100) 把千分比当百分比放大 10 倍（超导 base50/amplify600 算成 350，正确 50*(1+0.6)=80） | 服务端 elements.go:128 注释千分比、engine_combat.go:941 赋给 AmplifyPermille、testdata reaction_specs.json superconduct=600 对应 descr「+60%」佐证，客户端 engine.ts 亦按 ‰ 用 |
+| 修复 | 显示值 /10、强度排行 /1000 两行最小改动 | 只改图鉴展示/派生，不碰共享 schema |
+| 门禁 | 回归测试 RED(显示 600%/强度 350)→GREEN 4/4；主代理独立复跑 4 passed；全量 pnpm test 1464 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 31.3 目标二 augmentor 部署链路复核（无本地缺口）
+
+- 复核 deploy/nginx/augmentor-test.conf：/augmentor-api/ 剥离前缀反代 :8000、/augmentor/ 静态 alias + try_files，与 laiyipao-test.conf 同规范；vite.config.ts base=process.env.VITE_BASE||'/'、api.ts API_BASE=VITE_API_BASE||'/api' 正确接线；写鉴权 X-API-Key 拦截器完整。
+- 本地服务 health=200、根页 200，匿名 POST 401/带 key POST 200（口令存 gitignored Temp/aug-key.txt 不回显）。远程部署仍需 GitHub secrets DEPLOY_*（本会话不可读），维持既有交付边界，不臆造缺口。
+
+### 31.4 交付与边界
+
+- 本轮两提交 0332b408c、f1d70db47 及本现量文档 §31 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
