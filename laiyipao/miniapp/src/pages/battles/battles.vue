@@ -87,6 +87,15 @@
         </view>
       </view>
 
+      <!-- G132 命中率效率卡 -->
+      <view v-if="efficiencyStats" class="card eff-card">
+        <view class="card-title">战斗效率<text class="dim">已展开 {{ efficiencyStats.count }} 局</text></view>
+        <text class="dim">命中率 {{ efficiencyStats.accuracy }}% · 平均最高热量 {{ efficiencyStats.avgHeat }}</text>
+      </view>
+      <view v-else-if="!loading && items.length" class="card">
+        <text class="dim">点开任意战报后，这里会统计命中率与热量效率。</text>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -307,6 +316,21 @@ const elementText = computed(() => {
   return Object.entries(d.elements_used)
     .map(([k, v]) => `${ELEMENT_NAME[k as keyof typeof ELEMENT_NAME] ?? k} ×${v}`)
     .join('、')
+})
+
+/* -------------------------------------------------------------------------- */
+/* G132 命中率效率卡：只聚合已展开过的局（details 缓存），不额外发请求。           */
+/* -------------------------------------------------------------------------- */
+const efficiencyStats = computed(() => {
+  const ds = Object.values(details.value)
+  if (!ds.length) return null
+  const shots = ds.reduce((s, d) => s + (d.shots ?? 0), 0)
+  const hits = ds.reduce((s, d) => s + (d.hits ?? 0), 0)
+  return {
+    count: ds.length,
+    accuracy: shots > 0 ? Math.round(hits / shots * 100) : 0,
+    avgHeat: Math.round(ds.reduce((s, d) => s + (d.heat_max ?? 0), 0) / ds.length),
+  }
 })
 
 /* -------------------------------------------------------------------------- */

@@ -44,6 +44,15 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G127 边际收益 + G128 全系矩阵 + G129 地形索引 + G130 词条区间 + G131 月份分组 + G132 效率卡', () => {
+    expect(read('../pages/index/index.vue')).toContain('marginalGain')
+    expect(read('../pages/mastery/mastery.vue')).toContain('familyMatrix')
+    expect(read('../pages/stage/stage.vue')).toContain('terrainIndex')
+    expect(read('../pages/gems/gems.vue')).toContain('affixRange')
+    expect(read('../pages/announcements/announcements.vue')).toContain('groupedByMonth')
+    expect(read('../pages/battles/battles.vue')).toContain('efficiencyStats')
+  })
+
   it('G124 战力差 + G125 会话验真记录 + G126 性价比对照', () => {
     expect(read('../pages/me/me.vue')).toContain('powerDiff')
     expect(read('../pages/verify/verify.vue')).toContain('verifyHistory')

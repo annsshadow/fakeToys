@@ -72,6 +72,19 @@
         </view>
       </view>
 
+      <!-- G128 全系 4选2 结构矩阵 -->
+      <view v-if="familyMatrix.length" class="card">
+        <view class="card-title">全系结构</view>
+        <view class="fm-row fm-head">
+          <text class="dim fm-name">系</text>
+          <text v-for="l in [1,2,3]" :key="l" class="dim fm-cell">第{{ l }}层</text>
+        </view>
+        <view v-for="f in familyMatrix" :key="f.family" class="fm-row">
+          <text class="fm-name">{{ f.name }}</text>
+          <text v-for="l in f.layers" :key="l.layer" class="fm-cell" :class="{ on: l.got > 0 }">{{ l.got }}/{{ l.cap }}</text>
+        </view>
+      </view>
+
       <view v-if="curNodes.length" class="card">
         <text class="card-title">{{ curName }}专精树</text>
         <!-- 第六批 R62：说明锁定原因，玩家不必靠点一下才收到 toast 才知道 -->
@@ -210,6 +223,19 @@ const familyOverview = computed(() => {
 })
 const totalInvested = computed(() => familyOverview.value.reduce((s, f) => s + f.got, 0))
 
+/** G128 全系 4选2 结构矩阵：每系一行、三层，格内显示该层已选数/总数。 */
+const familyMatrix = computed(() =>
+  families.value.map((f) => ({
+    family: f.family,
+    name: f.name,
+    layers: [1, 2, 3].map((layer) => {
+      const nodes = f.nodes.filter((n) => n.layer === layer)
+      const got = nodes.filter((n) => selectedSet.value.has(n.id)).length
+      return { layer, got, cap: nodes.length }
+    }),
+  })),
+)
+
 /** G103 已点亮节点属性收益汇总：按 kind 分组累加 value，看清专精点换来了什么。 */
 const investedValue = computed(() => {
   const m = new Map<string, number>()
@@ -310,6 +336,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G128 全系结构矩阵 */
+.fm-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
+.fm-head { border-bottom: 1rpx solid var(--border); }
+.fm-name { flex: 1.4; font-size: 22rpx; }
+.fm-cell { flex: 1; text-align: center; font-size: 22rpx; color: var(--dim); }
+.fm-cell.on { color: var(--kinetic); font-weight: 600; }
+
 /* G103 专精收益汇总 */
 .invested-value { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
 .iv-chip {

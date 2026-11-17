@@ -148,6 +148,22 @@
         </view>
       </view>
 
+      <!-- G127 补分边际收益：先补哪一维最划算 -->
+      <view class="card">
+        <view class="card-title">最值得补的一维</view>
+        <text class="dim" style="display: block; margin-bottom: 12rpx">按「权重 × 还差多少」排序，点条目直达对应页面。</text>
+        <view
+          v-for="(m, i) in marginalGain.slice(0, 3)"
+          :key="m.label"
+          class="mg-row tap"
+          @click="m.hint && go(m.hint)"
+        >
+          <text class="mg-rank">{{ i + 1 }}</text>
+          <text class="flex-1">{{ m.label }}<text class="dim">（还差 {{ m.gap }}）</text></text>
+          <text class="mg-gain">收益 {{ m.gain }}</text>
+        </view>
+      </view>
+
       <!-- G101 攻方全属性面板：战力不再是单一数字，而是可读的属性构成 -->
       <view class="card">
         <text class="card-title">攻方属性</text>
@@ -453,6 +469,22 @@ const dims = computed(() => {
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
 /** G87 闯关进度环：已解锁关数 / 总关数的 SVG 弧（hero 卡里的文字升级为可视化）。 */
+/** G127 补分边际收益：每维补满还能涨多少总分（权重×缺口），给出最值得补的一维。 */
+const marginalGain = computed(() => {
+  const caps: Record<string, number> = {
+    元素覆盖: 5, 反应链: 7, 专精投入: 8, 装备契合: 18, 机制深度: 8,
+  }
+  const rows = dims.value.map((d) => {
+    const cap = caps[d.label] ?? 1
+    const cur = Number(String(d.value).split('/')[0]) || 0
+    const gap = Math.max(0, cap - cur)
+    // 每补 1 点的总分增量 = 权重份额 × (总分 / cap)，用权重×缺口做可比排序
+    const gain = d.weightPct * gap
+    return { label: d.label, gap, gain, hint: d.hint, hintLabel: d.hintLabel }
+  })
+  return rows.sort((a, b) => b.gain - a.gain)
+})
+
 /** G101 攻方全属性面板：把「我的战力」拆成可读的属性构成（数据来自 store.attacker）。 */
 const attackerRows = computed(() => {
   const a = store.attacker
@@ -654,6 +686,11 @@ onShareAppMessage(() => indexShare())
   font-weight: 700;
   color: var(--fire);
 }
+
+/* G127 补分边际收益 */
+.mg-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 10rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.mg-rank { width: 44rpx; height: 44rpx; line-height: 44rpx; text-align: center; border-radius: 50%; background: var(--fire-soft); color: var(--fire); font-weight: 700; }
+.mg-gain { color: var(--warn); font-weight: 600; font-size: 24rpx; }
 
 /* G101 攻方属性面板 */
 .attr-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 10rpx 0; }

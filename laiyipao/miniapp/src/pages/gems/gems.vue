@@ -32,6 +32,15 @@
           </view>
         </view>
 
+        <!-- G130 词条数值区间 -->
+        <view v-if="affixRange.length" class="affix-range">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">词条数值（最低 / 均值 / 最高）</text>
+          <view v-for="a in affixRange" :key="a.key" class="ar-row">
+            <text class="ar-name">{{ a.name }}</text>
+            <text class="mono ar-val">{{ a.min }} / {{ a.avg }} / {{ a.max }}</text>
+          </view>
+        </view>
+
         <!-- G107 持有宝石品质分布环 -->
         <view v-if="ownedCount > 0" class="quality-donut-wrap">
           <svg class="quality-donut" viewBox="0 0 100 100" aria-label="宝石品质分布">
@@ -124,6 +133,25 @@ const ownedGems = ref<OwnedGem[]>([])
 
 const ownedCount = computed(() => ownedGems.value.length)
 
+/** G130 词条数值区间：每种词条的 min/max/均值，判断洗到多少算好。 */
+const affixRange = computed(() => {
+  const m = new Map<string, number[]>()
+  for (const g of ownedGems.value) {
+    for (const a of g.affixes ?? []) {
+      const arr = m.get(a.affix) ?? []
+      arr.push(a.value)
+      m.set(a.affix, arr)
+    }
+  }
+  return [...m.entries()].map(([key, vals]) => ({
+    key,
+    name: affixName(key),
+    min: Math.min(...vals),
+    max: Math.max(...vals),
+    avg: Math.round(vals.reduce((s, v) => s + v, 0) / vals.length),
+  })).sort((a, b) => b.avg - a.avg)
+})
+
 /** G107 持有宝石品质分布环：五档品质按颗数切环（数据来自 ownedGems[].quality）。 */
 const QUALITY_COLOR: Record<string, string> = {
   gray: '#8b949e', blue: '#58a6ff', purple: '#c9a7ff', red: '#ff6b35', gold: '#ffd700',
@@ -209,6 +237,11 @@ onShow(() => {
 </script>
 
 <style scoped>
+/* G130 词条区间 */
+.ar-row { display: flex; flex-direction: row; justify-content: space-between; padding: 6rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.ar-name { font-size: 24rpx; }
+.ar-val { font-size: 22rpx; color: var(--ok); }
+
 /* G107 品质分布环 */
 .quality-donut-wrap { display: flex; align-items: center; gap: 20rpx; margin: 8rpx 0 16rpx; }
 .quality-donut { width: 150rpx; height: 150rpx; transform: rotate(-90deg); }

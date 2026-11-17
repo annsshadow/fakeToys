@@ -59,14 +59,17 @@
           <text class="link" @click="annKeyword = ''">清除搜索</text>
         </text>
         <text v-else-if="filteredItems.length === 0" class="muted">该时间段没有公告。</text>
-        <view v-for="(a, i) in filteredItems" :key="a.id" class="card ann-card">
-          <view class="ann-head">
-            <!-- R22 最新一条给「最新」徽章，日期做成统一胶囊，与其它列表页一致 -->
-            <text v-if="i === 0" class="ann-new">最新</text>
-            <text class="ann-title">{{ a.title }}</text>
-            <text class="ann-date mono">{{ formatDate(a.published_at) }}</text>
+        <!-- G131 按月份分组归档 -->
+        <view v-for="grp in groupedByMonth" :key="grp[0]" class="month-group">
+          <text class="month-label">{{ grp[0] }}</text>
+          <view v-for="(a, i) in grp[1]" :key="a.id" class="card ann-card">
+            <view class="ann-head">
+              <text v-if="i === 0" class="ann-new" :class="{ hidden: !isFirstGroup(grp[0]) }">最新</text>
+              <text class="ann-title">{{ a.title }}</text>
+              <text class="ann-date mono">{{ formatDate(a.published_at) }}</text>
+            </view>
+            <text class="ann-body">{{ a.body }}</text>
           </view>
-          <text class="ann-body">{{ a.body }}</text>
         </view>
       </view>
     </view>
@@ -95,6 +98,23 @@ const annFilters = [
 type AnnFilter = (typeof annFilters)[number]['key']
 const annFilter = ref<AnnFilter>('all')
 /** G112 关键词搜索：在时间筛选基础上叠加标题/正文关键词（数据来自 items）。 */
+/** G131 公告按月份分组：把卡片列表变成有脉络的归档（数据来自 filteredItems）。 */
+/** 是否最早分组（用于「最新」徽章只标全局第一条）。 */
+function isFirstGroup(key: string): boolean {
+  return groupedByMonth.value[0]?.[0] === key
+}
+
+const groupedByMonth = computed(() => {
+  const m = new Map<string, typeof items.value>()
+  for (const a of filteredItems.value) {
+    const key = (a.published_at ?? '').slice(0, 7) || '未标注日期'
+    const arr = m.get(key) ?? []
+    arr.push(a)
+    m.set(key, arr)
+  }
+  return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+})
+
 const annKeyword = ref('')
 const filteredItems = computed(() => {
   const kw = annKeyword.value.trim().toLowerCase()
@@ -140,6 +160,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G131 月份分组 */
+.month-group { margin-bottom: 16rpx; }
+.month-label { display: block; font-size: 24rpx; color: var(--accent); font-weight: 600; margin: 12rpx 0 8rpx; padding-left: 8rpx; border-left: 4rpx solid var(--accent); }
+.ann-new.hidden { display: none; }
+
 .ann-card {
   margin-bottom: 16rpx;
   /* R22 左侧强调条：与其它列表页的卡片视觉语言对齐 */

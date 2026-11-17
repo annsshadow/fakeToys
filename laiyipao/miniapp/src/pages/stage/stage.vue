@@ -58,6 +58,15 @@
         </svg>
       </view>
 
+      <!-- G129 地形关索引 -->
+      <view v-if="terrainIndex.length" class="card">
+        <view class="card-title">地形关索引</view>
+        <view v-for="t in terrainIndex" :key="t.kind" class="ti-row">
+          <text class="dim ti-name">{{ t.name }}</text>
+          <text class="ti-ids">第 {{ t.ids.join('、') }} 关<text v-if="t.total > t.ids.length"> 等 {{ t.total }} 关</text></text>
+        </view>
+      </view>
+
       <!-- G115 本章体力预算 -->
       <view v-if="energyBudget.count > 0" class="card energy-budget">
         <view class="card-title">清章体力预算<text class="dim">剩 {{ energyBudget.count }} 关未通关</text></view>
@@ -280,6 +289,21 @@ const chapterTotal = computed(() => chapterLevels.value.length * 3)
 /* 各关 difficulty 折线，直观看到章内难度爬升与陡增点。数据来自 chapterLevels。     */
 /* -------------------------------------------------------------------------- */
 /** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
+/** G129 地形关索引：按地形类型列出哪些关有它 —— 想练/避开某地形时一次找全。 */
+const terrainIndex = computed(() => {
+  const m = new Map<string, number[]>()
+  for (const l of store.config?.levels ?? []) {
+    for (const t of l.terrain ?? []) {
+      const arr = m.get(t.kind) ?? []
+      arr.push(l.id)
+      m.set(t.kind, arr)
+    }
+  }
+  return [...m.entries()]
+    .map(([kind, ids]) => ({ kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }))
+    .sort((a, b) => b.total - a.total)
+})
+
 /** G115 本章通关体力预算：未通关关卡总消耗 / 通关返还 / 净消耗。 */
 const energyBudget = computed(() => {
   const undone = chapterLevels.value.filter((l) => starOf(l.id) === 0)
@@ -581,6 +605,11 @@ onMounted(() => {
   font-size: 20rpx;
   color: var(--warn);
 }
+
+/* G129 地形关索引 */
+.ti-row { display: flex; flex-direction: row; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.ti-name { width: 140rpx; flex-shrink: 0; }
+.ti-ids { flex: 1; font-size: 22rpx; color: var(--text-2); }
 
 /* G111 本章 BOSS 清单 */
 .bl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
