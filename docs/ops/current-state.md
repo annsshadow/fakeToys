@@ -1199,6 +1199,37 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - 主线程独立侦察移动端与桌面同构缺口：calendar.vue 日历网格用本地 Date+setDate 正确处理跨月跨年（无桌面 R169 字符串键问题）、业务日无 UTC 混用（无桌面 R167 缺口）、datetime.ts 已含 R175 同构的时分秒越界校验、feed 类模块与 format 工具守卫成熟——无可确证新缺口，未造改动。
 - 目标二 augmentor 维持 §33.3/§36.3 交付边界（本地完备、远程卡 GitHub secrets 超会话边界）。
 - 本轮无代码提交；本现量文档 §40 为唯一变更，SSH 推送后核验远端 HEAD=本地 HEAD 再 update-ref。
+
+## 四十一、第32轮：R181全局减少动态效果标准 + R182筛选分页不一致 + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮主线由主线程先做一次实质样式标准升级（R181），再并行委派 oaopt-r182（桌面分页）/ lybug-r32（laiyipao）。桌面两项均主线程独立复核 diff + 复跑测试 + 全量门禁后提交；laiyipao 如实报负结果不强造。
+
+### 41.1 oa4rust R181 全局主题补齐 prefers-reduced-motion 标准（提交 69995e804）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 桌面有 136 处 transition/animation/shimmer 动效，但全仓仅 QueryStatementDesigner.vue 一个视图有局部 prefers-reduced-motion 守卫（:2724），其余视图对前庭功能敏感/系统开启「减少动态效果」的用户仍会眩晕——WCAG 2.3.3 现代样式标准的全局缺失，与「统一设计标准」目标不符 | 全局主题层缺口，非主观审美 |
+| 修复 | ui 包全局主题 dark.css 加 @media(prefers-reduced-motion:reduce) 守卫，收敛 animation-duration/iteration-count/transition-duration/scroll-behavior 四项到近瞬时（0.01ms/1/0.01ms/auto），保留 transitionend 而非直接 none；对 4 处 !important 加自解释 biome-ignore（守卫必须覆盖各视图 scoped 动效，是正当例外；不改共享 biome 配置） | 一次升级全局生效 |
+| 门禁 | reducedMotion.contract.test.ts 3 例钉死守卫存在/四项声明/经 ui 入口全局引入，防回归；pnpm test 1333 passed、typecheck 6 包、lint 361 文件 0 error（仅 8 条既有 info） | 测试文件 import 顺序经 biome 整理 |
+
+### 41.2 oa4rust R182 结果筛选与分页不一致（提交 432d838b1）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | QueryStatementDesigner.vue:980-994 sortedResult 对「过滤后」数据 slice 分页，totalPages 却按「未过滤全量」resultData.length 算，且 resultFilter 变化不重置页码：翻到第 2 页后筛选只剩 1 行时，分页器仍显示「第 2/2 页」但表格空白（slice 越界），筛到 0 行仍显示 2 页可翻 | 真实可达用户可感知错误，非样式 |
+| 修复 | 新增纯函数 resultPageView(allRows, matches, page, pageSize, compare?) 统一「过滤→排序→分页」，按过滤后行数算 totalPages（无结果回 1）、夹取 page 到 [1,totalPages]、非法 pageSize 归一到 1；.vue 以 resultView computed 替换旧两段并加 watch 把夹取页码同步回 page ref | 保留原大小写不敏感匹配/localeCompare 排序语义 |
+| 门禁 | resultPagination.test.ts 6 条纯函数行为测试（页数/夹取页码/可见行/非法 size）复刻旧实现 RED（4 例失败）→GREEN 6/6；主代理独立复跑 6 passed；pnpm test 1339 passed、typecheck 6 包、lint 361 文件 0 error | — |
+
+### 41.3 laiyipao（lybug-r32）诚实负结果
+
+- 系统核对前端 store/api/client 与 Go 契约、config 条件请求、score/skill 跨端常量、LCG/FNV/伤害公式、heat 状态机、reaction_specs 双端逐字段、defense 纯函数、榜单/统计展示等，均有成对契约测试锁住或属已修/语义歧义排除项，未发现可写 RED→GREEN 的确证新 bug，如实报负结果、未改任何文件。
+- 被动排除：B3 auth_person id≠uid（R152 不可确证）、防线 wins/losses 记账方向（语义歧义）、ChallengedToday（无赋值无消费者）、battleGrade/index 雷达相对刻度（无服务端契约对应）；elements.go 注释陈旧但双端行为一致，非 bug。
+
+### 41.4 交付与边界
+
+- 本轮三提交 69995e804、432d838b1 及本现量文档 §41 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3/§36.3 交付边界。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（新 Go 测试已 gofmt 规范化）；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
