@@ -22,6 +22,31 @@ function installDom() {
   return { attrs, storage }
 }
 
+/** 可控的 prefers-color-scheme 桩：matches=true 表示系统偏好暗色，emit 模拟 OS 切换。 */
+function installMatchMedia(initialMatches: boolean) {
+  const listeners = new Set<(e: { matches: boolean }) => void>()
+  const mql = {
+    matches: initialMatches,
+    media: '(prefers-color-scheme: dark)',
+    addEventListener(_type: string, cb: (e: { matches: boolean }) => void) {
+      listeners.add(cb)
+    },
+    removeEventListener(_type: string, cb: (e: { matches: boolean }) => void) {
+      listeners.delete(cb)
+    },
+    emit(matches: boolean) {
+      mql.matches = matches
+      for (const cb of [...listeners]) cb({ matches })
+    },
+    get listenerCount() {
+      return listeners.size
+    },
+  }
+  const query = vi.fn(() => mql)
+  vi.stubGlobal('matchMedia', query)
+  return { mql, query }
+}
+
 let attrs: Record<string, string>
 let storage: Map<string, string>
 
@@ -64,5 +89,79 @@ describe('theme provider', () => {
 
   it('useTheme returns the shared singleton provider', () => {
     expect(useTheme()).toBe(themeProvider)
+  })
+
+  describe('system preference following', () => {
+    it('init without a stored theme follows a dark system preference', () => {
+      const { query, mql } = installMatchMedia(true)
+      const provider = createThemeProvider()
+      provider.init()
+      expect(query).toHaveBeenCalledWith('(prefers-color-scheme: dark)')
+      expect(provider.theme.value).toBe('dark')
+      expect(attrs['data-theme']).toBe('dark')
+      expect(mql.listenerCount).toBe(1)
+    })
+
+    it('init without a stored theme follows a light system preference', () => {
+      const { mql } = installMatchMedia(false)
+      const provider = createThemeProvider()
+      provider.init()
+      expect(provider.theme.value).toBe('light')
+      expect(attrs['data-theme']).toBe('light')
+      expect(mql.listenerCount).toBe(1)
+    })
+
+    it('system theme changes update the applied theme without persisting', () => {
+      const { mql } = installMatchMedia(true)
+      const provider = createThemeProvider()
+      provider.init()
+      mql.emit(false)
+      expect(provider.theme.value).toBe('light')
+      expect(attrs['data-theme']).toBe('light')
+      expect(storage.has('oa4rust_theme')).toBe(false)
+      mql.emit(true)
+      expect(provider.theme.value).toBe('dark')
+      expect(storage.has('oa4rust_theme')).toBe(false)
+    })
+
+    it('explicit setTheme stops following later system changes', () => {
+      const { mql } = installMatchMedia(true)
+      const provider = createThemeProvider()
+      provider.init()
+      provider.setTheme('dark')
+      expect(storage.get('oa4rust_theme')).toBe('dark')
+      expect(mql.listenerCount).toBe(0)
+      mql.emit(false)
+      expect(provider.theme.value).toBe('dark')
+      expect(attrs['data-theme']).toBe('dark')
+    })
+
+    it('explicit toggleTheme stops following later system changes', () => {
+      const { mql } = installMatchMedia(false)
+      const provider = createThemeProvider()
+      provider.init()
+      provider.toggleTheme()
+      expect(provider.theme.value).toBe('dark')
+      expect(storage.get('oa4rust_theme')).toBe('dark')
+      expect(mql.listenerCount).toBe(0)
+      mql.emit(false)
+      expect(provider.theme.value).toBe('dark')
+    })
+
+    it('a stored preference wins over the system and installs no listener', () => {
+      const { mql } = installMatchMedia(true)
+      storage.set('oa4rust_theme', 'light')
+      const provider = createThemeProvider()
+      provider.init()
+      expect(provider.theme.value).toBe('light')
+      expect(mql.listenerCount).toBe(0)
+      mql.emit(false)
+      expect(provider.theme.value).toBe('light')
+    })
+
+    it('falls back to dark safely when matchMedia is unavailable (SSR/node)', () => {
+      expect(() => createThemeProvider().init()).not.toThrow()
+      expect(attrs['data-theme']).toBe('dark')
+    })
   })
 })
