@@ -42,7 +42,7 @@ Pillow>=12.3.0
 soundfile>=0.12.1
 
 # ============ LLM 框架集成 (可选) ============
-langchain>=1.4.7
+langchain>=1.5.0
 langchain-core>=0.1.0
 llama-index-core>=0.10.0
 
