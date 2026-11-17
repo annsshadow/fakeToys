@@ -120,3 +120,8 @@
 | R73 | 11-17 | 全局·次级文字对比度 | muted/dim 两档文字在深底上更易读 | z_audit_feature.test R73 |
 | R74 | 11-17 | 全局·哈希字距与选中 | 长哈希加字距，选中高亮用品牌色 | z_audit_feature.test R74 |
 | R75 | 11-17 | 全局·按钮最小点击区 | .btn 设 min-height 72rpx，防触屏误点 | z_audit_feature.test R75 |
+| R76 | 11-17 | 背包·页签数量徽章 | 四个页签显示各类已拥有数量，切换前可知内容量 | z_audit_feature.test R76 |
+| R77 | 11-17 | 商城·分组计数 | 商品分组标题加「N 件」 | z_audit_feature.test R77 |
+| R78 | 11-17 | 战报·筛选结果计数 | 筛选 chip 行加「共 N 场」 | battles.test R78 |
+| R79 | 11-17 | 排行榜·榜单条数 | 榜单描述行加「共 N 人上榜」 | rank.test R79 |
+| R80 | 11-17 | 我的·候选防线计数 | 可挑战防线卡标题加「N 条」 | z_audit_feature.test R80 |

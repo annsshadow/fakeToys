@@ -218,7 +218,7 @@
       </view>
 
       <view v-if="candidates.length" v-show="meTab === 'main'" class="card">
-        <text class="card-title">可挑战的防线</text>
+        <text class="card-title">可挑战的防线<text class="cand-count">{{ candidates.length }} 条</text></text>
         <text class="dim" style="display: block; margin-bottom: 12rpx">
           挑战在<b>你的设备上本地模拟</b>：用你的构筑攻对方快照，战斗数据不上传。
           攻穿即可窃取对方 10% 资源。今日剩余 {{ attackLeft }} 次。
@@ -1558,6 +1558,14 @@ onUnload(() => {
 
 .cand:last-child {
   border-bottom: none;
+}
+
+/* R80 候选防线计数 */
+.cand-count {
+  margin-left: 12rpx;
+  font-size: 20rpx;
+  color: var(--dim);
+  font-weight: 400;
 }
 
 .cand-name {

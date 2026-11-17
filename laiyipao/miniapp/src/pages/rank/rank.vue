@@ -12,7 +12,11 @@
           {{ t.label }}
         </view>
       </view>
-      <text class="muted" style="display: block; margin-bottom: 16rpx">{{ curDesc }}</text>
+      <view class="rank-desc-row">
+        <text class="muted">{{ curDesc }}</text>
+        <!-- R79 榜单条数：切 tab 后立刻知道这一榜有多少人 -->
+        <text v-if="items.length" class="rank-count">共 {{ items.length }} 人上榜</text>
+      </view>
 
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
@@ -203,6 +207,22 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* R79 榜单条数 */
+.rank-desc-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.rank-count {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--dim);
+}
+
 .tabs {
   display: flex;
   flex-direction: row;

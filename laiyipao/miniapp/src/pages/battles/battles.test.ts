@@ -80,6 +80,8 @@ describe('battles.vue 战报行视觉分层（R19）', () => {
     expect(badges[0]!.text()).toBe('胜')
     expect(badges[1]!.classes()).toContain('lose')
     expect(badges[1]!.text()).toBe('负')
+    // R78 筛选结果计数
+    expect(wrapper.find('.filter-count').text()).toContain('共 2 场')
   })
 
   it('空态给引导锚点（不再是孤零零一行文字）', async () => {

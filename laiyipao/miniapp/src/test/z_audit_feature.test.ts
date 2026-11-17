@@ -41,4 +41,16 @@ describe('Z 批收尾审计守卫', () => {
   it('R75 按钮最小点击区', () => {
     expect(CSS()).toContain('min-height: 72rpx')
   })
+
+  it('R76–R80 各页数量徽章', () => {
+    expect(readPages('bag')).toContain('tab-count')
+    expect(readPages('shop')).toContain('group-count')
+    expect(readPages('battles')).toContain('filter-count')
+    expect(readPages('rank')).toContain('rank-count')
+    expect(readPages('me')).toContain('cand-count')
+  })
 })
+
+function readPages(name: string): string {
+  return readFileSync(join(__dirname, `../pages/${name}/${name}.vue`), 'utf-8')
+}

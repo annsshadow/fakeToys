@@ -19,7 +19,7 @@
       </view>
 
       <view v-for="g in groups" :key="g.key" class="card">
-        <text class="card-title">{{ g.label }}</text>
+        <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
           v-for="it in g.items"
           :key="it.id"
@@ -290,6 +290,14 @@ onMounted(async () => {
 .wallet-bar :deep(svg) {
   color: var(--fire);
 }
+/* R77 分组商品计数 */
+.group-count {
+  margin-left: 12rpx;
+  font-size: 20rpx;
+  color: var(--dim);
+  font-weight: 400;
+}
+
 .shop-row {
   display: flex;
   align-items: center;

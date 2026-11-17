@@ -16,6 +16,8 @@
         >
           {{ f.label }}
         </view>
+        <!-- R78 筛选结果计数：筛选后还剩几场一眼可见 -->
+        <text class="filter-count">共 {{ items.length }} 场</text>
       </view>
 
       <view v-if="loading" class="card">
@@ -438,6 +440,14 @@ onMounted(async () => {
   flex-direction: row;
   gap: 12rpx;
   margin-bottom: 16rpx;
+}
+
+/* R78 筛选结果计数 */
+.filter-count {
+  margin-left: auto;
+  align-self: center;
+  font-size: 22rpx;
+  color: var(--dim);
 }
 
 .filter-chip {

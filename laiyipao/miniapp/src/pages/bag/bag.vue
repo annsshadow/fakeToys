@@ -22,7 +22,7 @@
           class="chip tap"
           :class="{ hit: bagTab === t.key }"
           @click="bagTab = t.key"
-        >{{ t.label }}</text>
+        >{{ t.label }}<text class="tab-count">{{ tabCount(t.key) }}</text></text>
       </view>
       <!-- 技能槽配置 -->
       <view v-show="bagTab === 'skills'" class="card">
@@ -446,6 +446,14 @@ const bagTabDefs: Array<{ key: BagTab; label: string }> = [
   { key: 'gems', label: '宝石' },
   { key: 'more', label: '皮肤与道具' },
 ]
+
+/** Z 批 R76：页签数量徽章，切之前就知道每类有多少。 */
+function tabCount(key: BagTab): number {
+  if (key === 'skills') return allSkills.value.filter((s) => isOwned(s.id)).length
+  if (key === 'gear') return myEquipments.value.filter((e) => e.owned).length
+  if (key === 'gems') return ownedGems.value.length
+  return skins.value.length
+}
 
 const selected = ref<number[]>([0, 0, 0, 0])
 /** 保存中：保存期间禁用操作，避免连点产生竞态 */
@@ -1124,6 +1132,13 @@ onMounted(async () => {
  * 页签早已滚出屏幕。sticky 吸顶让页签在任何滚动深度都可达；
  * 背景填 var(--bg) 并用负边距盖住两侧，避免滚动内容从字缝里透出。
  */
+/* R76 页签数量徽章 */
+.tab-count {
+  margin-left: 6rpx;
+  font-size: 20rpx;
+  color: var(--dim);
+}
+
 .bag-tabs {
   position: sticky;
   top: 0;

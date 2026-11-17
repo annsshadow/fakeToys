@@ -71,6 +71,8 @@ describe('rank.vue 排行榜', () => {
     await flushPromises()
     expect(mockApi.fetchLeaderboard).toHaveBeenCalledWith('power')
     expect(wrapper.text()).toContain('按累计成长值排名。')
+    // R79 榜单条数
+    expect(wrapper.find('.rank-count').text()).toContain('共 3 人上榜')
     const rows = wrapper.findAll('.rank-row')
     expect(rows.length).toBe(3)
     // 空昵称回退为"玩家"
