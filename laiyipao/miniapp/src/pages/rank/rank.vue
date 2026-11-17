@@ -142,9 +142,17 @@ const chaseGap = computed(() => {
   const above = items.value[idx - 1]
   const below = items.value[idx + 1]
   const myScore = Number(my.score ?? 0)
+  // 服务端 economy.go leaderboardOrderSQL：只有效率榜是 ASC（分数越低越好），
+  // 其余榜 DESC。分差必须按**当前榜**的排序方向取绝对值，否则效率榜上
+  // Math.max(0, ...) 会把两侧都夹成 0，显示「还差 0 分 / 领先 0 分」。
+  const ascending = curType.value === 'efficiency'
   return {
-    toAbove: above ? Math.max(0, Number(above.score) - myScore) : null,
-    toBelow: below ? Math.max(0, myScore - Number(below.score)) : null,
+    toAbove: above
+      ? Math.max(0, ascending ? myScore - Number(above.score) : Number(above.score) - myScore)
+      : null,
+    toBelow: below
+      ? Math.max(0, ascending ? Number(below.score) - myScore : myScore - Number(below.score))
+      : null,
   }
 })
 
