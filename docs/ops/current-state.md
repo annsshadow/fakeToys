@@ -1285,6 +1285,42 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 43.5 交付与边界
 
 - 本轮无代码提交；本现量文档 §43 为唯一变更，SSH 推送后核验远端 HEAD=本地 HEAD 再 update-ref。
+
+## 四十四、第35轮：R184键盘焦点可见 + R185正文对比度AA + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+按 §43.4 策略调整，本轮主线聚焦**全局主题层的系统性 WCAG 标准升级**（与 R181 reduced-motion 同路线：标准驱动、一处生效、契约测试防回归）。主线程先做 R184，子代理 oaopt-r185 补 R185；lybug-r35 深查 laiyipao 契约后如实报负结果。所有改动均主线程独立复核 diff + 实算验证 + 全量门禁后提交。
+
+### 44.1 oa4rust R184 全局键盘焦点可见标准（提交 eed05a5a6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 桌面 149 处 outline:none 移除原生焦点轮廓，但全仓 CSS 0 处 :focus-visible 兜底：纯键盘用户 Tab 导航时看不到焦点落在哪个控件，基本无法操作（WCAG 2.4.7 Focus Visible） | 标准缺口，非主观审美 |
+| 修复 | 全局主题 dark.css 加 :where(a,button,input,textarea,select,[tabindex]):focus-visible 焦点环（2px var(--color-primary)+2px offset，!important 覆盖各视图 scoped 的 outline:none），只在键盘交互时出现、不干扰输入框 :focus 的 border-color 既有设计 | 一处生效全视图覆盖 |
+| 门禁 | reducedMotion.contract.test.ts 从 3 例扩到 6 例，新增焦点环存在/作用于可聚焦元素/主题主色/!important 覆盖断言；pnpm test 1340 passed、typecheck 6 包、lint 364 文件 0 error | — |
+
+### 44.2 oa4rust R185 正文 token 对比度 WCAG AA（提交 4acb58607）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 全局 token --text-muted 对比度不达 WCAG 2.1 AA 1.4.3（正文≥4.5:1）：dark #4a5568 对 base/surface 仅 2.42~2.64:1、light #94a3b8 仅 2.32~2.56:1；全仓 556 处复用（副标题/表头/空状态/时间戳/元数据等真实正文），用户可读性缺陷 | 按 sRGB 相对亮度公式实算确证 |
+| 修复 | dark #4a5568→#7b8aa8（4.79~5.72:1）、light #94a3b8→#5c6a7d（4.98~5.51:1），两主题仍分别暗于/亮于 --text-secondary 保留文字层级；token 一处改经 ui 入口全局生效 | 两行 token 最小改动 |
+| 门禁 | textContrast.contract.test.ts 4 例按 WCAG sRGB 公式实算钉死三背景≥4.5:1+层级关系，RED（2.64/2.32:1 失败）→GREEN 4/4；主代理独立复跑 4 passed；pnpm test 1347 passed、typecheck 6 包、lint 365 文件 0 error | — |
+
+### 44.3 laiyipao（lybug-r35）诚实负结果
+
+- 按「换角度深查」穷尽：shop 限购/category/价格、battle/battles 客户端派生统计、reactions 全部单位口径、config 持久化与 client.ts 响应接口、MyRank rank=0 哨兵、enemies/equipment/signin/difficulty/gems/wallet 口径，均与服务端 Go 契约/testdata 逐项对齐或属已修。
+- 最接近候选「config.levels[].seed 类型口径差异（Go int64 下发裸数字 vs TS 声明 string、契约 C2 要求字符串化）」经主线程独立核验：玩家路径已用 seed_str 字符串化（game.go:60/65、routes_e2e_test.go 锁定）、全 miniapp 无任何代码读取 config.levels[].seed（stage.vue 只读 levels/chapters 做进度），无用户可见失败、写不出自然 RED 行为测试，按不强造原则放弃。
+- 零文件改动，工作树干净。
+
+### 44.4 全局主题三条 WCAG 标准小结
+
+- 第32-35 轮在 ui 包全局主题 dark.css 连续落地三条可验证标准：R181 prefers-reduced-motion（WCAG 2.3.3）、R184 :focus-visible 焦点环（WCAG 2.4.7）、R185 --text-muted 对比度（WCAG 2.1 AA 1.4.3）；每条都配契约测试防回归，验证了 §43.4「系统性样式/标准升级」路线可行且高质量。
+
+### 44.5 交付与边界
+
+- 本轮两提交 eed05a5a6、4acb58607 及本现量文档 §44 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持既有交付边界。
 - B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
