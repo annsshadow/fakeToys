@@ -747,6 +747,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 25.4 交付与边界
 
 - 本轮三提交 c3a065bdb、3aab77916、55699fb5e 及本现量文档 §25 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用（遵循 SSH 抖动教训）。
+
+## 二十六、第17轮：R167业务日UTC+8统一 + start页token化续批 + 战报keyset游标分页（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r167 / lybug-r17）+ 主线程 start 页 token 化续批，均经独立复跑确认 GREEN 后提交。
+
+### 26.1 oa4rust R167 业务日统一 UTC+8 消除今日/本月错一天（提交 13f40bc39）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 业务时区固定 UTC+8（timerStart.ts:14 BUSINESS_UTC_OFFSET_HOURS=8，beijingNow 按 +8h 平移），但 9 个视图 29 处用 new Date().toISOString().slice(0,10|7) 取今日/本月＝UTC 日。UTC+8 每天 00:00–08:00 UTC 日仍是昨天（跨月是上月），考勤默认日期/今日筛选/打卡导入/各模块导出全线错一天/一月 | 分布：Attendance(11处)、ConfigDesigner、Form(2)、ProcessTaskCenter、ProcessManager、ProgramCenter(4)、QueryDesigner(3)、QueryManagerDeep(3)、QueryStatementDesigner(3)；全仓无本地业务日助手，R154 date.ts 只做月末/解析/格式化 |
+| 修复 | date.ts 新增 businessTodayYMD(now=new Date())/businessTodayYM(now=new Date())，按 +8h 平移后取 UTC 字段，与 beijingNow 同口径、与浏览器时区无关；29 处全部替换为助手 + 9 条 import | 剩余 toISOString 6 处均非今日语义（时间戳/导出时间/历史展示），刻意不动 |
+| 门禁 | businessToday.test.ts 4 例行为测试（固定时刻/跨月边界 2025-12-31T16:30Z→2026-01-01/时区无关）；RED 4 failed→GREEN | 主代理从 oa4rust 根复跑 4 passed；pnpm test 1300 passed、typecheck 6 包、lint 350 文件 0 error |
+
+### 26.2 oa4rust 移动端 R161 增量续批：process/start 页 token 化（提交 8b87a5f08）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 承接 R161/mine 续批，process/start 页仍有 35 处硬编码色（全端最多），选中态浅蓝 #f0f7ff 为语义色但无 token | 主线程增量，与子代理写范围不重叠 |
+| 修复 | App.vue 新增 --color-primary-soft(#f0f7ff)；start 页 35 处色值全部归一到语义 token（含 #f56c6c 错误红变体归一 --color-error、#4a4a4a/#666 归一 --color-text-secondary 与 login/bbs 同口径）；契约测试新增 start 页 13 项断言 + 新 token | 改后 start 页硬编码色 0 处，style 仍 scoped 纯 CSS |
+| 门禁 | pnpm test 250 passed、tsc --noEmit 0、uni build 成功（Compiler 5.26）、改动文件 biome 0 error | 主代理独立核验四门禁 |
+
+### 26.3 laiyipao 战报分页改 keyset 游标（提交 c024150e1）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 myBattleHistory(routes.go:814-837)用 ?cursor + 返回 next_cursor，economy.go:1282-1329 在 cursor>0 时忽略 offset 改 AND id<$cursor，专防「翻页途中插入新战报致旧行跨页重复/漏行」（有 TestMyBattleHistoryCursorNoDupUnderInserts 佐证）；但客户端 client.ts:1297 只发 limit/offset/result、返回无 next_cursor，battles.vue loadMore 用 items.length 当 offset。翻页期间新打一局→重复行+漏更早行 | 前端请求与服务端分页契约不一致 + 边界竞态，非已修的「loadMore 漏 result 筛选」 |
+| 修复 | client.ts myBattleHistory 增第4参 cursor=0、query 加 &cursor=、返回类型加 next_cursor；battles.vue 增 nextCursor ref，reload 存 next_cursor、loadMore 改 api.myBattleHistory(20,0,filter,nextCursor.value) 并更新游标；保留原去重 | 两个既有测试 mock 同步返回 next_cursor（夹具贴合契约，非产品逻辑） |
+| 门禁 | battles.test.ts 组件行为 RED（第一页后插入 id=100，断言 40 条连续 50..11；实收 39 条缺 11 且 30 重复）→GREEN 5/5 | 主代理独立复跑 5 passed + 修掉末尾空行格式回归；全量 pnpm test 1455 passed｜2 skipped；tsc/vue-tsc 双 exit0 |
+
+### 26.4 交付与边界
+
+- 本轮三提交 13f40bc39、8b87a5f08、c024150e1 及本现量文档 §26 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0（修掉 battles.test.ts 末尾空行）、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
