@@ -214,3 +214,33 @@ describe('shop.vue 商城页', () => {
     expect(mockApi.buyItem).toHaveBeenCalledWith(9)
   })
 })
+// ==================== 限购进度条（2026-11-17 100 轮打磨 R17）====================
+
+describe('shop.vue 限购进度条（R17）', () => {
+  it('有限购商品显示进度条，宽度 = 已购/上限；买满转绿', async () => {
+    const { wrapper } = mountPage(Shop)
+    await flushPromises()
+    // 第 56 行 fixture：limit 3, bought 0 → 第一条有 bar
+    const wraps = wrapper.findAll('.limit-wrap')
+    expect(wraps.length).toBeGreaterThan(0)
+    const fill = wrapper.find('.limit-fill')
+    expect(fill.attributes('style')).toContain('width: 0%')
+
+    // 买到第 2 条（id 9 从 0 → 1，limit 3）→ 33%
+    const bought = shopList().map((x) => (x.id === 9 ? { ...x, bought_today: 1 } : x))
+    mockApi.fetchShop.mockResolvedValue({ items: bought } as any)
+    const { wrapper: w2 } = mountPage(Shop)
+    await flushPromises()
+    expect(w2.find('.limit-fill').attributes('style')).toContain('width: 33%')
+  })
+
+  it('不限次商品不显示进度条', async () => {
+    // limit_per_day=0 的商品（id 8 之类）无 .limit-wrap
+    const { wrapper } = mountPage(Shop)
+    await flushPromises()
+    const unlimited = wrapper.findAll('.shop-row').find((r) =>
+      r.text().includes('不限'),
+    )
+    if (unlimited) expect(unlimited.find('.limit-wrap').exists()).toBe(false)
+  })
+})

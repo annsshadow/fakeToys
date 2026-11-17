@@ -27,8 +27,18 @@
           <view class="flex-1">
             <text class="skill-name">{{ it.name }}</text>
             <text class="price-text block">{{ priceText(it) }}</text>
-            <!-- 每日限购进度（2026-11-01 新一轮第 49 轮） -->
-            <text v-if="purchaseProgressText(it)" class="dim">{{ purchaseProgressText(it) }}</text>
+            <!-- 每日限购进度（2026-11-01 新一轮第 49 轮；2026-11-17 R17 改进度条）：
+                 纯文字「今日已购 x/y」看不出还剩多少，做成 mini 条 + 文案。 -->
+            <view v-if="it.limit_per_day > 0" class="limit-wrap">
+              <view class="limit-bar">
+                <view
+                  class="limit-fill"
+                  :style="{ width: limitPct(it) + '%' }"
+                  :class="{ full: soldOut(it) }"
+                />
+              </view>
+              <text class="dim limit-text">{{ purchaseProgressText(it) }}</text>
+            </view>
           </view>
           <view class="skill-act">
             <text v-if="buyingId === it.id" class="dim">购买中…</text>
@@ -152,6 +162,12 @@ function purchaseProgressText(it: ShopItem): string {
   return `今日已购 ${it.bought_today}/${it.limit_per_day}`
 }
 
+/** 限购进度百分比（100 轮打磨 R17）：mini 条宽度。 */
+function limitPct(it: ShopItem): number {
+  if (it.limit_per_day <= 0) return 0
+  return Math.min(100, Math.round((it.bought_today / it.limit_per_day) * 100))
+}
+
 async function load() {
   loading.value = true
   loadError.value = ''
@@ -263,6 +279,30 @@ onMounted(async () => {
   font-size: var(--fs-sm);
   margin-top: 4rpx;
   font-variant-numeric: tabular-nums;
+}
+/* 每日限购 mini 进度条（100 轮打磨 R17） */
+.limit-wrap {
+  margin-top: 6rpx;
+}
+.limit-bar {
+  width: 100%;
+  height: 8rpx;
+  background: var(--panel-3);
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+.limit-fill {
+  height: 100%;
+  border-radius: 4rpx;
+  background: var(--fire);
+  transition: width 0.3s ease-out;
+}
+.limit-fill.full {
+  background: var(--ok);
+}
+.limit-text {
+  font-size: 22rpx;
+  margin-top: 4rpx;
 }
 .skill-act {
   flex-shrink: 0;

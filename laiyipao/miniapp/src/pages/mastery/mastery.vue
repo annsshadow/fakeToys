@@ -62,9 +62,13 @@
               :class="{
                 on: selected.includes(n.id),
                 locked: isLocked(n),
+                selectable: !selected.includes(n.id) && !isLocked(n),
               }"
               @click="toggle(n)"
             >
+              <!-- 已点亮勾选标（100 轮打磨 R15）：三态此前只有底色差别，
+                   已选与可选在深色背景下几乎不可分。加角标一眼可辨。 -->
+              <view v-if="selected.includes(n.id)" class="node-check">✓</view>
               <text class="node-name">{{ n.name }}</text>
               <text class="node-value">+{{ n.value }}</text>
             </view>
@@ -313,6 +317,7 @@ onMounted(async () => {
 
 .node {
   flex: 1;
+  position: relative;
   background: var(--panel-2);
   border: 1rpx solid var(--border);
   border-radius: 12rpx;
@@ -326,6 +331,27 @@ onMounted(async () => {
 .node.on {
   background: rgba(201, 167, 255, 0.16);
   border-color: var(--kinetic);
+}
+
+/* 可选未选（100 轮打磨 R15）：比锁定态更亮的可交互提示（描边 + 轻抬） */
+.node.selectable {
+  border-color: rgba(201, 167, 255, 0.45);
+  background: var(--panel-2);
+}
+
+.node.selectable:active {
+  transform: scale(0.97);
+}
+
+/* 已点亮勾选角标 */
+.node-check {
+  position: absolute;
+  top: 4rpx;
+  right: 6rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  color: var(--kinetic);
+  font-weight: 700;
 }
 
 .node.locked {

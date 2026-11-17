@@ -1,11 +1,17 @@
 <template>
   <view class="page-root" :style="{ paddingTop: statusBarPad }">
     <view class="pad safe-bottom">
+      <!--
+        返回入口提到独立首行（100 轮打磨 R16）。
+        此前「‹ 返回」与头像挤在同一 flex 行里：返回文字 + 96rpx 头像 + 昵称区
+        三者争宽，昵称一长就把返回挤到半截换行，观感错位（R0 截图取证）。
+        改成 `page-head` 式的独立首行后，头像与昵称独占一整行。
+      -->
+      <view v-if="canGoBack" class="me-back-row">
+        <text class="back-btn tap" @click="goBack">‹ 返回</text>
+      </view>
       <view class="card">
         <view class="row" style="gap: 20rpx">
-          <!-- 返回入口（2026-11-16）：本页是自定义导航（无系统返回栏），
-               此前只能靠浏览器后退 / 系统手势返回。栈底（直接打开本页）时不显示。 -->
-          <text v-if="canGoBack" class="back-btn tap" @click="goBack">‹ 返回</text>
           <view class="avatar">炮</view>
           <view class="flex-1">
             <!-- 昵称 + 改名入口（2026-10-30 实质优化第 9 轮）。
@@ -1418,6 +1424,13 @@ onUnload(() => {
   align-items: center;
   color: var(--accent);
   font-size: var(--fs-sm);
+}
+
+/* 独立返回行（100 轮打磨 R16）：与头像行分离，按钮不再被昵称挤断 */
+.me-back-row {
+  display: flex;
+  align-items: center;
+  min-height: 64rpx;
 }
 
 .avatar {

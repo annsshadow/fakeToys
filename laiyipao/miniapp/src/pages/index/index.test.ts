@@ -326,3 +326,49 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).not.toContain('全部 0 条')
   })
 })
+
+// ==================== 构筑评分空维补导（2026-11-17 100 轮打磨 R14）====================
+
+describe('index.vue 构筑评分空维补导（R14）', () => {
+  it('0 分维度给出可点补导入口，点击后导航到对应页面', async () => {
+    // 只有装备维度有分，其余四维为 0 —— 四条死灰条必须变成四个入口
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: null,
+      build_rating: {
+        total: 1, element_coverage: 0, reaction_coverage: 0,
+        mastery_done: 0, equipment_synergy: 5, mechanic_depth: 0, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+
+    // 4 条 0 分维度 → 4 个补导入口（有分的那条不出入口）
+    const hints = wrapper.findAll('.dim-hint')
+    expect(hints.length).toBe(4)
+    expect(wrapper.text()).toContain('去背包配元素')
+    expect(wrapper.text()).toContain('看反应搭配')
+    expect(wrapper.text()).toContain('去点亮专精')
+
+    // 点第 1 条 → 导航到背包
+    await hints[0]!.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/bag/bag' })
+  })
+
+  it('五维全满时不出任何补导入口', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: null,
+      build_rating: {
+        total: 99, element_coverage: 5, reaction_coverage: 7,
+        mastery_done: 8, equipment_synergy: 18, mechanic_depth: 8, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    expect(wrapper.findAll('.dim-hint').length).toBe(0)
+    expect(wrapper.findAll('.dim-empty-hint').length).toBe(0)
+  })
+})

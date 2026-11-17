@@ -81,12 +81,24 @@
              每行尾部的「权重」是服务端 rating_weights 下发的份额（第 150 轮），
              让玩家知道补哪一维对总分的边际收益最大。 -->
         <view v-for="d in dims" :key="d.label" class="dim-row">
-          <text class="dim-label">{{ d.label }}</text>
+          <view class="dim-row-head">
+            <text class="dim-label">{{ d.label }}</text>
+            <text v-if="d.weightPct > 0" class="dim-weight mono">权重 {{ d.weightPct }}%</text>
+          </view>
           <view class="bar">
             <view class="bar-fill" :style="{ width: d.pct + '%', background: d.color }" />
           </view>
-          <text class="dim-value mono">{{ d.value }}</text>
-          <text v-if="d.weightPct > 0" class="dim-weight mono">权重 {{ d.weightPct }}%</text>
+          <view class="dim-row-foot">
+            <text class="dim-value mono">{{ d.value }}</text>
+            <!-- 空维补导（100 轮打磨 R14）：0 分的维度此前是一条死灰条，玩家
+                 不知道去哪补。每条弱点给出明确入口，把「缺什么」变成「点这里」。 -->
+            <text
+              v-if="d.pct === 0 && d.hint"
+              class="dim-hint link"
+              @click="go(d.hint)"
+            >→ {{ d.hintLabel }}</text>
+            <text v-else class="dim-empty-hint" v-if="d.pct === 0">待培养</text>
+          </view>
         </view>
 
         <!-- 短板提示：这是 I-7 真正想做的事 -->
@@ -331,14 +343,35 @@ const dims = computed(() => {
       color: 'var(--bad)',
       weight: wOf('mechanic_depth'),
     },
-  ].map((d) => ({
-    ...d,
-    /** 权重份额（%）。权重全为 0 或 config 未到时给 0，不做除零兜底成假数字。 */
-    weightPct: weightSum > 0 ? Math.round((d.weight / weightSum) * 100) : 0,
-  }))
+  ].map((d) => {
+    const hint = DIM_HINT[d.label]
+    return {
+      ...d,
+      /** 权重份额（%）。权重全为 0 或 config 未到时给 0，不做除零兜底成假数字。 */
+      weightPct: weightSum > 0 ? Math.round((d.weight / weightSum) * 100) : 0,
+      // 空维补导入口（100 轮打磨 R14）；该 label 未登记则不给入口，只显示「待培养」
+      hint: hint?.path,
+      hintLabel: hint?.label,
+    }
+  })
 })
 
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
+
+/**
+ * 五维 → 补导入口（100 轮打磨 R14）。
+ *
+ * 维度 label 是服务端下发的中文（评级口径，不客户端拼），
+ * 但「缺了这一维该去哪补」是纯客户端导航，二者分开维护不冲突。
+ * 0 分的维度给一个明确入口，把死灰条变成可点的下一步。
+ */
+const DIM_HINT: Record<string, { path: string; label: string }> = {
+  元素覆盖: { path: '/pages/bag/bag', label: '去背包配元素' },
+  反应链: { path: '/pages/reactions/reactions', label: '看反应搭配' },
+  专精投入: { path: '/pages/mastery/mastery', label: '去点亮专精' },
+  装备契合: { path: '/pages/equipment/equipment', label: '去配装备' },
+  机制深度: { path: '/pages/bag/bag', label: '去装机制卡' },
+}
 
 function go(path: string) {
   uni.navigateTo({ url: path })
@@ -460,42 +493,66 @@ onShareAppMessage(() => indexShare())
 }
 
 .dim-row {
+  margin-bottom: 18rpx;
+}
+
+/* 每维：上行标题+权重、中部进度条、数值+补导。垂直布局让空维的补导有处安放，
+   不再是一条挤在 393rpx 里的死灰条（100 轮打磨 R14）。 */
+.dim-row-head,
+.dim-row-foot {
   display: flex;
   flex-direction: row;
   align-items: center;
-  margin-bottom: 14rpx;
+}
+
+.dim-row-head {
+  justify-content: space-between;
+  margin-bottom: 6rpx;
+}
+
+.dim-row-foot {
+  justify-content: space-between;
+  margin-top: 6rpx;
 }
 
 .dim-label {
-  width: 140rpx;
   font-size: 24rpx;
   color: var(--muted);
 }
 
 .bar {
-  flex: 1;
+  width: 100%;
   height: 12rpx;
   background: var(--panel-3);
   border-radius: 6rpx;
   overflow: hidden;
-  margin: 0 16rpx;
 }
 
 .bar-fill {
   height: 100%;
   border-radius: 7rpx;
+  transition: width 0.4s ease-out;
 }
 
 .dim-value {
-  width: 88rpx;
-  text-align: right;
   font-size: 24rpx;
   color: var(--text-2);
 }
 
 .dim-weight {
-  width: 110rpx;
-  text-align: right;
+  font-size: 22rpx;
+  color: var(--dim);
+}
+
+/* 空维补导链接：紧凑小链接，点进去补这一维 */
+.dim-hint {
+  font-size: 22rpx;
+  padding: 0;
+  min-height: auto;
+}
+
+/* 无补导的空维文案 */
+.dim-empty-hint {
   font-size: 22rpx;
   color: var(--dim);
 }
