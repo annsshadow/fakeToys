@@ -54,6 +54,15 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('Math.ceil(r * 2.8 + 6)')
   })
 
+  it('A5 BOSS登场缩放 R15 / 编队微扰 R24 / 死亡碎裂规模 R12', () => {
+    const src = canvas()
+    expect(src).toContain('R15 BOSS 登场缩放')
+    expect(src).toContain('spawnScale')
+    expect(src).toContain('R24 编队微扰')
+    expect(src).toContain('const formation =')
+    expect(src).toContain('R12 死亡碎裂规模')
+  })
+
   it('R18 元素层发光圆点（fillRect→arc+fill，零 draw call 增量）', () => {
     const src = canvas()
     expect(src).toContain('R18 元素层数从方块改为发光圆点')

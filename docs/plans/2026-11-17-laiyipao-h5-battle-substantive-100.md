@@ -140,7 +140,7 @@
 
 ## 四、状态与批次台账
 
-**进行中：R1–R7、R9–R11、R13–R19、R20–R23、R30 已落地**（约 20 轮实质），其余待续。
+**进行中：R1–R7、R9–R24（除部分）、R30 已落地**（约 23 轮实质），其余待续。
 
 | 批次 | 轮次 | 关键改动 | 验证 |
 |---|---|---|---|
@@ -160,3 +160,7 @@
 > 因此后续战斗优化一律走「零每帧 draw call 增量」：烘进精灵 / 改已有绘制的形状尺寸颜色 / 批处理。
 
 | A4 敌人剪影 | R14、R17、R18、R19、R22 | R14 飞行双翼 / R17 BOSS 王冠尖刺 / R22 精英肩甲 / R19 抗性角标（全部烘进 enemySprite，精灵外扩到 2.8r）/ R18 元素层方块→发光圆点（fillRect→arc+fill 单次提交） | `canvas.test.ts` + `perf_frame.test.ts`（峰值仍 120）+ `v3_battle_substantive.test.ts` 11/11 |
+| A5 登场与编队 | R12、R15、R24 | R15 BOSS 出生按 spawnProgress 从半尺寸长大（只改 drawImage 尺寸）/ R24 同波敌人按 uid 错开 x 避免完全重叠 / R12 BOSS 死亡碎裂规模加大（parts 仍单 path fill） | `canvas.test.ts` + `perf_frame.test.ts` + `v3_battle_substantive.test.ts` 12/12 |
+
+> 测试锚点纪律：R12 试图改击杀碎片色触发既有 `#8b949e` 断言失败 → 回退改「碎裂规模」而非颜色，
+> 测试锚点只增不删，实质优化在不破坏既有判据的前提下达成。

@@ -557,15 +557,17 @@ export class BattleRenderer {
           // R9 击杀地面残留：在死亡点留一枚短暂暗痕，战斗会「留下痕迹」
           this.killScars.push({ x: Number(e.x) / 1000, y: Number(e.y) / 1000, life: e.boss ? 4200 : 2600 })
           if (this.killScars.length > 12) this.killScars.shift()
-          // 死亡爆散：环形消散 + 少量碎片。BOSS 已有震屏，这里补视觉终点。
+          // R12 死亡碎裂规模：BOSS 击杀用更大的冲击环 + 更多碎块（20→14 档），
+          // 首领倒下有「散架」的终点感；碎块仍合并单 path fill，零 draw call 增量。
+          // 普通敌保留 #8b949e（既有测试锚点），引擎零改动。
           this.spawnFx({
             x: Number(e.x) / 1000,
             y: Number(e.y) / 1000,
             color: e.boss ? '#ff6b35' : '#8b949e',
-            life: e.boss ? 560 : 340,
+            life: e.boss ? 680 : 340,
             r0: e.boss ? 10 : 6,
-            r1: e.boss ? 52 : 26,
-            parts: makeBurstParts(e.boss ? 8 : 5, e.boss ? 34 : 20),
+            r1: e.boss ? 72 : 26,
+            parts: makeBurstParts(e.boss ? 14 : 5, e.boss ? 46 : 20),
             pts: null,
             halo: e.boss,
           })
@@ -1510,17 +1512,23 @@ export class BattleRenderer {
     const gait = e.flyHeight > 0
       ? 0 // 飞行单位不做地面行走摆动
       : 2.2 * vp.scale * Math.sin((this.engine.elapsedMs || 0) / 130 + e.uid)
+    // R24 编队微扰：同波敌人 x 按 uid 错开一点，避免完全重叠成一坨看不清数量
+    const formation = 2.5 * vp.scale * Math.sin(e.uid * 2.399)
     const kb = Number(e.knockback) / 1000 * vp.scale
-    const bx = x + kb
+    const bx = x + kb + formation
     const by = y + gait
+
+    // R15 BOSS 登场缩放：出生进度 0→1 时本体从半尺寸长到全尺寸（配合 globalAlpha，
+    // 让首领「从传送门里长出来」而非凭空闪现）。只改 drawImage 尺寸，零额外 draw call。
+    const spawnScale = e.spawnProgress < 1 && e.isBoss ? 0.45 + 0.55 * e.spawnProgress : 1
 
     // 主体：形状 + 描边 + 高光 + 徽记整副烘焙成位图，多次提交 → 1 次 drawImage
     const body = this.enemySprite(e.category, bodyColor, strokeColor, r, e.defId, style.mark, e.isBoss, e.flyHeight)
     if (body) {
-      const size = Math.max(2, Math.ceil(r * 2.8 + 6)) // A4：与精灵烘焙尺寸一致（容纳翼/冠装饰）
+      const size = Math.max(2, Math.ceil(r * 2.8 + 6)) * spawnScale // A4 尺寸 + R15 登场缩放
       ctx.drawImage(body as never, bx - size / 2, by - size / 2, size, size)
     } else {
-      this.paintEnemyBody(ctx, bx, by, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
+      this.paintEnemyBody(ctx, bx, by, r * spawnScale, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
     }
 
     // 护盾环
