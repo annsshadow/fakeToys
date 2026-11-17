@@ -1228,6 +1228,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 41.4 交付与边界
 
 - 本轮三提交 69995e804、432d838b1 及本现量文档 §41 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十二、第33轮：R183 SSE流尾事件丢失 + laiyipao诚实负结果 + 目标二本地交付复核（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r183 / lybug-r33），主线程独立复核 diff + 复跑测试 + 全量门禁后提交；另复核目标二 augmentor 本地实例交付状态（完备）。
+
+### 42.1 oa4rust R183 SSE 流尾未终止空行事件与解码器残留丢失（提交 5d3375e79）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | api.ts stream() SSE 解析仅在缓冲区匹配空行分隔 /(\r?\n){2}/ 时才回调 onEvent；for(;;) reader.read() done 直接 break，既不 decoder.decode() flush 解码器内部残留多字节字符，也不处理缓冲区里最后一条「无终止空行」的事件。服务端流尾常直接结束（发完 data:[DONE] 不补空行），最后一条事件被静默丢弃——AI 流式输出最后一段 token/结束标记丢失，界面无法收尾 | 真实可达用户可感知数据丢失，非样式 |
+| 修复 | 把重复解析收敛为 emitEvent(raw) 与 drainEvents():string（解析所有空行分隔完整事件、返回未闭合尾部）；reader 循环结束后 buf=decoder.decode()+drainEvents()；if(buf.trim()) emitEvent(buf) | 最小改动，保留跨分块/CRLF/取消/超时语义 |
+| 门禁 | api.stream.tail.test.ts 行为测试（ReadableStream 喂入尾部无空行的 event/data 帧，断言收到 [token,done]）RED（只收到首条、[DONE] 丢失）→GREEN 1/1；既有 api.stream.test.ts 9 passed；主代理独立复跑 10 passed；pnpm test 1340 passed、typecheck 6 包、lint 364 文件 0 error | — |
+
+### 42.2 laiyipao（lybug-r33）诚实负结果
+
+- 穷尽排查 miniapp + server：damage.ts↔damage.go 七步、元素/反应/terrain/heat、LCG/暴击/回放哈希、星级、配置缓存、UI 统计等逐字段对照 Go 契约/testdata，均一致或属已修/语义歧义排除项；feature vs main 58 文件 diff 中 server/internal/domain 零 diff、service 仅两处已知已修。
+- 前端基线 pnpm test 133 文件/1468 用例 passed、server 定点契约测试 ok，无预置失败；未发现可写 RED→GREEN 的确证新 bug，如实报负结果、未改任何文件。
+- 被动排除：elements.ts:201 aoeRadius=0 //[mutation] 100 是 bulk-import 既有值、与 Go ReactionBurnCloud AoeRadius=0 一致且有双向契约测试守护（改成 100 反破坏契约）；防线 wins/losses 方向、ChallengedToday、B3 维持不动。
+
+### 42.3 目标二 augmentor 本地交付复核（无新增缺口）
+
+- 本地实例存活：GET /api/health=200（{"status":"ok","version":"3.0.0"}）、根页 200、匿名 POST /api/config=401（写鉴权生效）；进程监听 127.0.0.1:8000。
+- 复核 augmentor/web 的轮询定时器（AugmentForm.tsx:47、Augmentation.tsx:164）均有正确 clearInterval cleanup，全局 index.css 无自定义动画（仅 antd 组件样式）——无恒定 reduced-motion 落点，不加猜测性样式改动。
+- 远程部署仍卡 GitHub Secrets DEPLOY_*（本会话 gh CLI 不可用），维持 §33.3/§36.3/§39.4 交付边界，本地交付完备不臆造。
+
+### 42.4 交付与边界
+
+- 本轮一提交 5d3375e79 及本现量文档 §42 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3/§36.3 交付边界。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
