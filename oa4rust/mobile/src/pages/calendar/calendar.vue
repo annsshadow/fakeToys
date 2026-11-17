@@ -292,7 +292,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -306,22 +306,22 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   text-align: center;
   padding: 16rpx 0;
   font-size: 28rpx;
-  color: #5b6572;
-  background: #fff;
+  color: var(--color-text-body);
+  background: var(--color-surface);
   border-radius: 12rpx;
 }
 .tab.on {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .sub {
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
   margin-bottom: 20rpx;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -333,34 +333,34 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 }
 .time {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-weight: 600;
   min-width: 150rpx;
 }
 .title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .meta {
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .content {
   margin-top: 12rpx;
   font-size: 26rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   line-height: 1.5;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
   padding: 40rpx 0;
 }
 .error-text {
@@ -372,13 +372,13 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
-  background: #fdf2f0;
+  background: var(--color-error-tint);
   border-radius: 12rpx;
   margin-bottom: 20rpx;
 }
@@ -390,7 +390,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 }
 .detail-close {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .sub-row {
   display: flex;
@@ -400,7 +400,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 }
 .compose-btn {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-weight: 600;
 }
 .compose {
@@ -410,22 +410,22 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 }
 .picker {
   font-size: 26rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   padding: 16rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   border-radius: 12rpx;
 }
 .c-input {
   font-size: 26rpx;
   padding: 16rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   border-radius: 12rpx;
 }
 .c-submit {
   text-align: center;
   padding: 18rpx 0;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 28rpx;
   font-weight: 600;
   border-radius: 12rpx;
@@ -439,8 +439,8 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   margin-top: 16rpx;
   text-align: center;
   padding: 14rpx 0;
-  border: 1rpx solid #e74c3c;
-  color: #e74c3c;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
   border-radius: 12rpx;
 }

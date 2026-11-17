@@ -215,7 +215,7 @@ const emptyText = computed(() =>
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -229,17 +229,17 @@ const emptyText = computed(() =>
   text-align: center;
   padding: 16rpx 0;
   font-size: 28rpx;
-  color: #5b6572;
-  background: #fff;
+  color: var(--color-text-body);
+  background: var(--color-surface);
   border-radius: 12rpx;
 }
 .tab.on {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -252,16 +252,16 @@ const emptyText = computed(() =>
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .card-status {
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .card-meta {
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .actions {
   display: flex;
@@ -271,26 +271,26 @@ const emptyText = computed(() =>
 .btn {
   flex: 1;
   font-size: 28rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 12rpx;
 }
 .btn.ghost {
-  background: #fff;
-  color: #5b6572;
-  border: 1px solid #dcdfe6;
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  border: 1px solid var(--color-border-strong);
 }
 .btn[disabled] {
-  background: #c0c4cc;
+  background: var(--color-placeholder);
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -301,30 +301,30 @@ const emptyText = computed(() =>
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .footer {
   padding: 8rpx 0 40rpx;
   text-align: center;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .footer-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .load-more {
   display: inline-block;
   padding: 10rpx 36rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  background: #fdf2f0;
-  border-bottom: 1px solid #f0f2f5;
+  background: var(--color-error-tint);
+  border-bottom: 1px solid var(--color-divider);
   margin-bottom: 20rpx;
 }
 .code-mask {
@@ -338,7 +338,7 @@ const emptyText = computed(() =>
 }
 .code-dialog {
   width: 560rpx;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 32rpx;
   text-align: center;
@@ -346,13 +346,13 @@ const emptyText = computed(() =>
 .code-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 16rpx;
 }
 .code-body {
   display: block;
   font-size: 34rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   letter-spacing: 4rpx;
   word-break: break-all;
   margin-bottom: 24rpx;

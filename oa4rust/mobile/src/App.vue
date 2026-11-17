@@ -23,6 +23,7 @@ page {
   --color-divider: #f0f2f5;
   --color-primary-soft: #f0f7ff;
   --color-error-tint: #fdf2f0;
+  --color-border-strong: #dcdfe6;
   --color-text-body: #5b6572;
   --color-placeholder: #c0c4cc;
 
