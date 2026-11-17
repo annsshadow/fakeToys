@@ -1319,6 +1319,38 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 44.5 交付与边界
 
 - 本轮两提交 eed05a5a6、4acb58607 及本现量文档 §44 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十五、第36轮：移动端正文对比度AA + R186日期格式化性能 + laiyipao同族回填负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+延续 §43.4 策略：主线程做移动端 WCAG AA 同族升级（R185 推广到移动），子代理 oaopt-r186 做有实测收益的性能升级，lybug-r36 系统核查 laiyipao 同族回填缺口（负结果）。均主线程独立复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 45.1 oa4rust 移动端正文 token 对比度 WCAG AA（提交 483f160ef）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 移动端 --color-text-muted(#8a94a6)/--color-text-secondary(#90979f) 用于空态提示(.tip)、列表元数据(.topic-meta/.reply-meta)等真实正文，对页面底#f5f7fa与卡片白#ffffff仅2.85~3.06:1，不达 WCAG 2.1 AA 1.4.3 正文4.5:1（与桌面 R185 同构；桌面已修移动端未修） | sRGB 公式实算确证，非主观审美 |
+| 修复 | muted→#67717f（4.61/4.95）、secondary→#646e7e（4.80/5.16），保留 body>secondary>muted 文字层级（旧值层级还颠倒）；两 token 经 App.vue 全局一处改生效 | 两行 token 最小改动 |
+| 门禁 | textContrast.contract.test.ts 4 例按 sRGB 公式实算两背景对比度+层级断言，RED（3 例失败含层级颠倒）→GREEN 4/4；同步 design-tokens.contract.test.ts 快照；mobile pnpm test/tsc 全绿、oa4rust 全量 pnpm test/typecheck/lint 全绿 | — |
+
+### 45.2 oa4rust R186 列表日期格式化单例 formatter 缓存（提交 2ef57a665）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 优化点 | formatServerDateTime 是 27 个列表视图 fmtTime 的统一实现、每行格式化一次的绝对热路径。原每行 date.toLocaleString 隐式新建 Intl.DateTimeFormat（加载 locale+解析 pattern）是确定主线程开销 | 10000 行实测 448.7ms |
+| 修复 | 默认无 options 热路径改缓存单例 Intl.DateTimeFormat 复用 .format()，实测 33.4ms≈13.4× 加速；显式 options（全仓仅 1 处）保留 toLocaleString 原语义——因 toLocaleString('zh-CN',{}) 输出带时间而 Intl.DateTimeFormat('zh-CN',{}) 只输出日期，盲目按 options 缓存会改边界输出契约 | 确定性 CPU 下降，非主观审美 |
+| 门禁 | dateFormatterCache.contract.test.ts 3 例（计数子类断言 1000 行仅构造 1 个 formatter/输出逐字等价/options 语义保持）行为断言；pnpm test 1350 passed、typecheck 6 包、lint 367 文件 0 error | — |
+
+### 45.3 laiyipao（lybug-r36）同族回填负结果
+
+- 目标：找「函数已读到某值但构造响应 View 时未回填对应字段」的同族 bug（样板：已修的 my_attempts_today/my_stolen_today）。
+- 系统核查全仓 526 个 .go 文件、service 目录 114 struct/668 json 字段，三遍静态扫描（composite literal 赋值 / 任意写形式缺失字段 / 非错误丢弃值），逐函数核查玩家侧与 admin 侧全部 View 构造；BuildSnapshot 为死类型、LeaderboardEntry.Detail 为 omitempty 可选、demoted 第三返回无对应字段均已解释，无新的同族缺口。
+- 如实报负结果、未改任何文件；禁改项（wins/losses 方向、ChallengedToday、B3 auth_person）未触碰。
+
+### 45.4 交付与边界
+
+- 本轮三提交 483f160ef、2ef57a665 及本现量文档 §45 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持既有交付边界。
 - B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
