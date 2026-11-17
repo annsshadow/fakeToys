@@ -45,6 +45,14 @@
           </view>
         </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
+        <!-- G121 稀有度×被动矩阵 -->
+        <view v-if="passiveKinds.length" class="rp-matrix">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">稀有度 × 被动机制（款数）</text>
+          <view v-for="r in rarityPassiveMatrix" :key="r.rarity" class="rpm-row">
+            <text class="dim rpm-label">{{ r.label }}</text>
+            <text v-for="(c, i) in r.cells" :key="i" class="rpm-cell" :class="{ on: c.n > 0 }">{{ c.n }}</text>
+          </view>
+        </view>
         <!-- G90 被动机制分类：有哪几类皮肤机制、各几款 -->
         <view v-if="passiveGroups.length" class="passive-groups">
           <text class="dim" style="display: block; margin-bottom: 8rpx">被动机制分类</text>
@@ -166,6 +174,20 @@ const RARITY_CLASS: Record<string, true> = { rare: true, epic: true, legendary: 
 /* G90 被动机制分类统计（第七批）                                               */
 /* 按 passive 类型聚合皮肤数量，看「这游戏有哪几类皮肤机制」。数据来自 skins。     */
 /* -------------------------------------------------------------------------- */
+/** G121 稀有度×被动机制矩阵：行=稀有度，列=被动类型，格内款数。 */
+const RARITIES = ['legendary', 'epic', 'rare', 'common']
+const passiveKinds = computed(() => [...new Set(skins.value.map((s) => s.passive))])
+const rarityPassiveMatrix = computed(() =>
+  RARITIES.map((r) => ({
+    rarity: r,
+    label: rarityLabel(r),
+    cells: passiveKinds.value.map((p) => ({
+      n: skins.value.filter((s) =>
+        (s.rarity in RARITY_CLASS ? s.rarity : 'common') === r && s.passive === p).length,
+    })),
+  })),
+)
+
 const passiveGroups = computed(() => {
   const m = new Map<string, number>()
   for (const s of skins.value) {
@@ -188,6 +210,12 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
+/* G121 稀有度×被动矩阵 */
+.rpm-row { display: flex; flex-direction: row; gap: 6rpx; margin: 6rpx 0; align-items: center; }
+.rpm-label { width: 100rpx; flex-shrink: 0; font-size: 22rpx; }
+.rpm-cell { flex: 1; text-align: center; font-size: 22rpx; padding: 6rpx 0; background: var(--panel-2); border-radius: 6rpx; color: var(--dim); }
+.rpm-cell.on { background: var(--legendary-soft); color: var(--legendary); }
+
 /* G90 被动机制分类 */
 .passive-groups { margin: 8rpx 0; }
 .passive-chip {

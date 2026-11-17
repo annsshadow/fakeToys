@@ -44,6 +44,12 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G119 血量分布 + G120 解锁分布 + G121 稀有度被动矩阵', () => {
+    expect(read('../pages/enemies/enemies.vue')).toContain('hpDistribution')
+    expect(read('../pages/equipment/equipment.vue')).toContain('unlockDist')
+    expect(read('../pages/skins/skins.vue')).toContain('rarityPassiveMatrix')
+  })
+
   it('G116 输入状态清单 + G117 哈希逐段对照 + G118 交战热度', () => {
     expect(read('../pages/login/login.vue')).toContain('inputChecks')
     expect(read('../pages/verify/verify.vue')).toContain('hashSegments')

@@ -58,6 +58,16 @@
           </view>
         </view>
 
+        <!-- G119 敌人数值分布 -->
+        <view class="hp-dist">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">血量分布（含 BOSS 计数）</text>
+          <view v-for="(b, i) in hpDistribution" :key="i" class="hd-row">
+            <text class="dim hd-label">{{ b.label }}+</text>
+            <view class="hd-track"><view class="hd-fill" :style="{ width: b.pct + '%' }" /></view>
+            <text class="mono hd-val">{{ b.count }}<text v-if="b.boss" class="hd-boss">★{{ b.boss }}</text></text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
@@ -206,6 +216,21 @@ function resistEntries(en: { resist?: Record<string, number> }): [string, number
 /* 五元素抗性 -500..500 → 半径：0 落在中圈，正抗性（减伤）外扩、负抗性（易伤）内缩。 */
 /* 数据全部来自 en.resist，不改 api/store 契约。                                */
 /* -------------------------------------------------------------------------- */
+/** G119 敌人数值分布：血量分 5 档统计敌人数，Boss 单独计数 —— 理解后期敌人厚在哪。 */
+const hpDistribution = computed(() => {
+  const hps = enemies.value.map((e) => e.hp)
+  const max = Math.max(1, ...hps)
+  const step = Math.ceil(max / 5)
+  const buckets = Array.from({ length: 5 }, (_, i) => ({ label: `${i * step}`, count: 0, boss: 0 }))
+  for (const e of enemies.value) {
+    const idx = Math.min(4, Math.floor(e.hp / step))
+    buckets[idx]!.count++
+    if (e.is_boss) buckets[idx]!.boss++
+  }
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count))
+  return buckets.map((b) => ({ ...b, pct: Math.round(b.count / maxCount * 100) }))
+})
+
 /** G104 元素克制排行：选一个元素，按该元素抗性升序排（越负越易伤），配装时快速找靶子。 */
 const counterElement = ref<Element>(ELEMENT_ORDER[0]!)
 const counterRanking = computed(() =>
@@ -250,6 +275,14 @@ const resistLabels = resistDirs.map((d, i) => ({
 </script>
 
 <style scoped>
+/* G119 血量分布 */
+.hd-row { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin: 6rpx 0; }
+.hd-label { width: 120rpx; flex-shrink: 0; font-size: 22rpx; }
+.hd-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.hd-fill { height: 100%; background: var(--bad); border-radius: 999rpx; }
+.hd-val { width: 100rpx; text-align: right; font-size: 22rpx; }
+.hd-boss { color: var(--warn); margin-left: 6rpx; }
+
 /* G104 元素克制排行 */
 .counter-box { margin: 12rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
 .counter-row { display: flex; flex-direction: row; align-items: center; gap: 8rpx; margin: 6rpx 0; }
