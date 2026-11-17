@@ -232,7 +232,9 @@ const trend = computed(() => {
   const pts = seq.map((it, i) => ({
     x: n <= 1 ? W / 2 : (i / (n - 1)) * W,
     y: H - (it.score / maxScore) * (H - 12) - 6,
-    win: it.result === 'win' || it.result === '1' || it.stars > 0,
+    // 胜负只认 result（服务端 resultStr 只有 win/lose）；stars 由分数门槛
+    // 独立算出、与胜负无关（lose+多星是合法数据），不能拿 stars>0 判胜。
+    win: it.result === 'win',
     score: it.score,
   }))
   return {

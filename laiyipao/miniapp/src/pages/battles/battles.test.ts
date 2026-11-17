@@ -94,3 +94,46 @@ describe('battles.vue 战报行视觉分层（R19）', () => {
     expect(wrapper.text()).toContain('去关卡页挑一关开打')
   })
 })
+
+describe('battles.vue 趋势胜负色必须与战报 result 一致', () => {
+  /**
+   * 服务端 result 只有 'win'/'lose' 两种值（game.go resultStr），
+   * 而 stars 由 computeStars(score, targets) 独立按分数门槛算、与胜负无关
+   * （battle.go）。所以 result='lose' 但 stars>0 是合法真实数据：
+   * 分数够门槛、但防线失守被判负。
+   *
+   * 列表徽章/连胜/胜率都用 result==='win' 把它判成「负」，
+   * 趋势图若用 stars>0 代替 result，就会把同一条「负」战报画成绿色胜利点 ——
+   * 同一份数据在页面上给出互相矛盾的结论。
+   */
+  it('败局带星（result=lose, stars>0）的趋势点必须画成负色 trend-lose，与列表徽章一致', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [
+        {
+          id: 1, result: 'win', stars: 3, level_id: 4, score: 1200,
+          kills: 20, leaked: 0, created_at: '2026-11-17T10:00:00Z',
+        },
+        {
+          id: 2, result: 'lose', stars: 2, level_id: 5, score: 900,
+          kills: 10, leaked: 8, created_at: '2026-11-16T10:00:00Z',
+        },
+      ],
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    // 列表徽章权威：items[1] 是「负」
+    const badges = wrapper.findAll('.result-badge')
+    expect(badges.length).toBe(2)
+    expect(badges[1]!.text()).toBe('负')
+
+    // 趋势圆点是时间正序（旧→新）：pts[0] 对应 items[1]（那条 lose+2星）
+    const dots = wrapper.findAll('.trend-svg circle')
+    expect(dots.length).toBe(2)
+    // 同一条「负」战报在趋势图也必须是负色，不能是绿色胜利点
+    expect(dots[0]!.classes()).toContain('trend-lose')
+    expect(dots[0]!.classes()).not.toContain('trend-win')
+    // 真正的胜场仍是胜利色
+    expect(dots[1]!.classes()).toContain('trend-win')
+  })
+})
