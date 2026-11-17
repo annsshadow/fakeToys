@@ -511,3 +511,35 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - 本轮两提交 c018ba825、bd1bdee76 及本现量文档 §17 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
+
+## 十八、第9轮：R159主题跟随系统偏好 + laiyipao战报翻页筛选 + 移动端设计标准取证（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r159 / lybug-r9）+ 主线程移动端样式体系侦察。两修复经独立复跑确认后提交。
+
+### 18.1 oa4rust SDK R159 主题首次访问跟随系统明暗偏好（提交 6fb796002）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | createThemeProvider.init() 原逻辑无存储时固定默认 dark，全仓 grep prefers-color-scheme/matchMedia 零命中；首次访问不跟随 OS 明暗偏好，系统主题变化不联动，不符合现代 Web 标准 | 主题体系本身成熟：dark.css 有完整 CSS 变量/玻璃拟态/明暗双主题，缺的是系统偏好入口 |
+| 修复 | init() 无存储时用 matchMedia('(prefers-color-scheme: dark)') 探测并注册 change 监听隐式联动（不写 localStorage）；显式 setTheme/toggleTheme 移除监听并持久化、停止跟随；SSR/node 无 matchMedia 安全兜底 dark；抽 applyTheme 只更新内存与 html 属性，顺带修复模块级 _theme 跨实例泄漏 | createO2App 的 theme 选项走 setTheme，停止跟随并持久化，app.lifecycle 契约保持 |
+| 门禁 | theme.test.ts 新增 installMatchMedia 桩 + 7 例（系统 dark/light 探测、change 联动、显式选择停止跟随、SSR 兜底）；RED 5 failed→GREEN | 主代理独立复跑 theme.test.ts 12 passed；全量 pnpm test 1268 passed、typecheck 6 包、lint 338 文件（三条既有 info 不失败） |
+
+### 18.2 laiyipao 战报「加载更多」丢失结果筛选（提交 130add509）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 myBattleHistory 读取 query 参数 result 作用于全量分页（routes.go:814-838、economy.go:1310-1327 if result != "" where += " AND result = $4"）；前端首页 reload() 带筛选，但 loadMore() 原为 api.myBattleHistory(20, items.length) 漏第三参。切「胜利」筛选翻页→服务端无过滤返回混合页→失败战报混入胜利列表，offset 按筛选后条数与未过滤集合错位致重复/漏行 | 原守卫 battles_history_feature.test.ts:61 只做源码字符串扫描，反把错误写法锁成绿（历史教训重演） |
+| 修复 | loadMore() 改 api.myBattleHistory(20, items.length, filter==='all'?'':filter)，与 reload 同口径透传；同步修正源码扫描守卫期望字符串 | 新增行为测试（真实挂载 DOM、模拟服务端按 result 过滤），断言翻页后「负」徽章数 0、第二次请求第三参为 'win' |
+| 门禁 | RED 1 failed（翻页出现负场）→GREEN | 主代理独立复跑 battles.test.ts + battles_history_feature.test.ts 11 passed；全量 pnpm test 1445 passed｜2 skipped EXIT=0；未改 server，go test 非必需 |
+
+### 18.3 移动端设计标准现状取证（主线程，未改代码）
+
+- uni.scss 形同虚设（仅 2 个未使用变量 $brand-primary/$brand-bg），19 个页面全部 <style scoped> 纯 CSS、sass 依赖不可用，硬编码色值 361 处（常见 #1f2733/#5a6478/#8a94a6/#f4f6fa/#f5f7fa/#ffffff 等）。与桌面端成熟 CSS 变量体系反差明显，是「统一设计标准」的长期缺口。
+- 但全量 token 化需引入 sass 预处理器并逐页替换 361 处，且真机视觉验收需外部口径（backlog C3），风险高、不可本会话闭环，本轮仅记账不动手，留待后续专门批次。
+- 桌面端性能基建已成熟：main.ts 89 处路由全部 () => import() 懒加载，vite.config.ts manualChunks 按 vue/naive/query/echarts 分组，无需重复优化。
+
+### 18.4 交付与边界
+
+- 本轮两提交 6fb796002、130add509 及本现量文档 §18 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
