@@ -38,6 +38,18 @@
         </svg>
       </view>
 
+      <!-- G83 关卡胜率分布：每关打赢比例，找出还卡着的关 -->
+      <view v-if="!loading && winRateByLevel.length" class="card winrate-card">
+        <view class="card-title">关卡胜率</view>
+        <view v-for="w in winRateByLevel" :key="w.level" class="wr-row">
+          <text class="dim wr-label">第 {{ w.level }} 关</text>
+          <view class="wr-track">
+            <view class="wr-fill" :style="{ width: w.rate + '%' }" />
+          </view>
+          <text class="mono wr-val">{{ w.rate }}%</text>
+        </view>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -260,6 +272,26 @@ const elementText = computed(() => {
     .join('、')
 })
 
+/* -------------------------------------------------------------------------- */
+/* G83 关卡胜率分布（第七批）                                                   */
+/* 已加载战报按 level_id 聚合胜/负，展示每关打赢比例 —— 看「哪些关还卡着」。       */
+/* 数据来自 items[].level_id/result，纯客户端派生。                               */
+/* -------------------------------------------------------------------------- */
+const winRateByLevel = computed(() => {
+  const m = new Map<number, { level: number; win: number; lose: number }>()
+  for (const it of items.value) {
+    const win = it.result === 'win'
+    const cur = m.get(it.level_id) ?? { level: it.level_id, win: 0, lose: 0 }
+    if (win) cur.win++
+    else cur.lose++
+    m.set(it.level_id, cur)
+  }
+  return [...m.values()]
+    .map((v) => ({ ...v, rate: Math.round(v.win / (v.win + v.lose) * 100) }))
+    .sort((a, b) => a.level - b.level)
+    .slice(-8) // 最近 8 个关卡，避免长榜
+})
+
 /* G78 元素使用构成（第七批）：注意 BattleDetail 只有「使用次数」，无按元素伤害数值，
    所以这里诚实标注是「使用频次构成」，绝不声称伤害量。 */
 const elementMix = computed(() => {
@@ -379,6 +411,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G83 关卡胜率分布 */
+.wr-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.wr-label { width: 140rpx; flex-shrink: 0; }
+.wr-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.wr-fill { height: 100%; background: var(--ok); border-radius: 999rpx; }
+.wr-val { width: 72rpx; text-align: right; font-size: 22rpx; color: var(--ok); }
+
 /* G78 元素使用频次构成条 */
 .mix-bar { display: flex; flex-direction: row; height: 12rpx; border-radius: 6rpx; overflow: hidden; margin: 6rpx 0 10rpx; }
 .mix-seg { height: 100%; background: var(--ice); }

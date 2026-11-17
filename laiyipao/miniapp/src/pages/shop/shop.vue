@@ -24,6 +24,14 @@
         </view>
       </view>
 
+      <!-- G82 今日产出总览：今天还能补哪些资源 -->
+      <view v-if="!loading && todaySupply.length" class="card supply-card">
+        <view class="card-title">今日还可获取</view>
+        <view class="supply-chips">
+          <text v-for="s in todaySupply" :key="s.key" class="supply-chip">{{ s.label }} ×{{ s.count }}</text>
+        </view>
+      </view>
+
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
@@ -100,7 +108,7 @@
  * 「服务端有扣减逻辑」不等于「玩家能用」—— 前者是代码完成度，
  * 后者才是机制闭环。这个页面补的是后者。
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import * as api from '@/api/client'
 import { useGameStore } from '@/store/game'
 import Icon from '@/components/Icon.vue'
@@ -126,6 +134,25 @@ const justFailedId = ref(0)
 let boughtTimer: ReturnType<typeof setTimeout> | null = null
 let failedTimer: ReturnType<typeof setTimeout> | null = null
 const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
+
+/* -------------------------------------------------------------------------- */
+/* G82 今日产出总览（第七批）                                                   */
+/* 聚合「今天还能买」的商品，按产出类型统计剩余次数 —— 玩家一眼看到今天还能补什么。 */
+/* 不臆造货币汇率，只统计次数与产出类型。数据来自 items。                         */
+/* -------------------------------------------------------------------------- */
+const todaySupply = computed(() => {
+  const m = new Map<string, { key: string; label: string; count: number }>()
+  for (const it of items.value) {
+    const left = it.limit_per_day > 0 ? it.limit_per_day - it.bought_today : 1
+    if (left <= 0) continue
+    for (const k of Object.keys(it.payload)) {
+      const cur = m.get(k) ?? { key: k, label: PAYLOAD_CN[k] ?? CURRENCY_CN[k] ?? k, count: 0 }
+      cur.count += left
+      m.set(k, cur)
+    }
+  }
+  return [...m.values()]
+})
 
 /** 与服务端 `economy.ShopItemView` 一一对应。 */
 interface ShopItem {
@@ -307,6 +334,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G82 今日产出总览 */
+.supply-chips { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.supply-chip {
+  background: var(--fire-soft);
+  color: var(--fire);
+  border-radius: 999rpx;
+  padding: 6rpx 16rpx;
+  font-size: 22rpx;
+}
+
 .wallet-bar {
   display: flex;
   flex-direction: row;

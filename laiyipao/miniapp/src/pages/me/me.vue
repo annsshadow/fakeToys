@@ -370,6 +370,11 @@
            玩家每次商城购买都落库，但没有任何入口查看历史。 -->
       <view v-if="purchaseHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">购买记录</text>
+        <!-- G84 消费统计摘要 -->
+        <view class="spend-summary">
+          <text v-for="s in spendSummary" :key="s.key" class="spend-chip">{{ s.label }}累计 {{ s.total }}</text>
+          <text class="dim">共 {{ purchaseHistory.length }} 笔</text>
+        </view>
         <view v-for="p in purchaseHistory" :key="p.id" class="ch-row">
           <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
             <text class="mono">{{ p.item_name }}</text>
@@ -800,6 +805,17 @@ async function toggleBattleDetail(b: api.BattleHistoryItem) {
 
 // 购买记录（2026-10-30 实质优化第 20 轮）。
 const purchaseHistory = ref<api.PurchaseItem[]>([])
+
+/** G84 消费统计：按货币聚合累计花费与次数（数据来自 purchaseHistory[].price）。 */
+const spendSummary = computed(() => {
+  const m = new Map<string, number>()
+  for (const p of purchaseHistory.value) {
+    for (const [k, v] of Object.entries(p.price ?? {})) {
+      m.set(k, (m.get(k) ?? 0) + v)
+    }
+  }
+  return [...m.entries()].map(([k, total]) => ({ key: k, label: currencyName(k), total }))
+})
 
 function priceText(price: Record<string, number>): string {
   const entries = Object.entries(price)
@@ -1390,6 +1406,16 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G84 消费统计摘要 */
+.spend-summary { display: flex; flex-wrap: wrap; gap: 8rpx; align-items: center; margin-bottom: 12rpx; }
+.spend-chip {
+  background: var(--fire-soft);
+  color: var(--fire);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
 /* G79 累计星级进度环 */
 .star-progress-line { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin-top: 4rpx; }
 .star-ring { width: 40rpx; height: 40rpx; }

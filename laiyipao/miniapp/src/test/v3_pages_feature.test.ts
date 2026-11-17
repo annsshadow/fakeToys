@@ -36,6 +36,27 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G82 商城今日产出总览', () => {
+    const src = read('../pages/shop/shop.vue')
+    expect(src).toContain('todaySupply')
+    expect(src).toContain('supply-chip')
+    expect(src).toContain('今日还可获取')
+  })
+
+  it('G83 关卡胜率分布', () => {
+    const src = read('../pages/battles/battles.vue')
+    expect(src).toContain('winRateByLevel')
+    expect(src).toContain('wr-fill')
+    expect(src).toContain('关卡胜率')
+  })
+
+  it('G84 消费统计', () => {
+    const src = read('../pages/me/me.vue')
+    expect(src).toContain('spendSummary')
+    expect(src).toContain('spend-chip')
+    expect(src).toContain('消费统计摘要')
+  })
+
   it('G79 累计星级进度环', () => {
     const src = read('../pages/me/me.vue')
     expect(src).toContain('starRing')
