@@ -414,6 +414,8 @@ export class BattleRenderer {
 
   /** R5 波次地面脉冲剩余寿命（ms），仅开波后短暂 >0，平时零绘制成本 */
   private groundPulseMs = 0
+  /** R10 波次横幅 { 波次号, 寿命 }，仅开波后短暂存在 */
+  private waveBanner: { index: number; life: number } | null = null
   /** R9 击杀地面残留（逻辑坐标 + 寿命），上限 12 个，单 path 批量绘制 */
   private killScars: Array<{ x: number; y: number; life: number }> = []
 
@@ -587,6 +589,8 @@ export class BattleRenderer {
         case 'wave_start':
           // R5 开波时触发地面脉冲：从出生侧扫过战场的扩散环
           this.groundPulseMs = 900
+          // R10 波次横幅：大字「第 N 波」短暂滑入
+          this.waveBanner = { index: e.index + 1, life: 1100 }
           this.popups.push({ text: `第 ${e.index + 1} 波`, color: '#58a6ff', lifeMs: 1400, x: 500, y: 220 })
           break
         case 'terrain':
@@ -783,6 +787,7 @@ export class BattleRenderer {
       if (this.visible(toCanvasX(this.vp, e.x), toCanvasY(this.vp, e.y))) this.drawEnemy(ctx, e)
     }
     this.drawFloats(ctx)
+    this.drawWaveBanner(ctx, dtMs)
     this.drawEffects(ctx, dtMs)
     this.drawPopups(ctx, dtMs)
     this.drawWavePanel(ctx)
@@ -1566,6 +1571,15 @@ export class BattleRenderer {
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw, 3 * vp.scale)
       ctx.fillStyle = e.isBoss ? '#ff6b35' : '#7ee787'
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw * hpPct, 3 * vp.scale)
+      // R13 护盾叠加条：有护盾时在血条上方叠一条蓝条，护盾破了就没 —— 
+      // 「打不动」的原因（护盾）第一次在敌人身上可见。
+      if (e.shield > 0n && e.maxHp > 0n) {
+        const sp = Math.max(0, Math.min(1, Number(e.shield) / Number(e.maxHp)))
+        ctx.fillStyle = '#58a6ff'
+        ctx.fillRect(x - bw / 2, y - r - 12 * vp.scale, bw * sp, 2.5 * vp.scale)
+      }
+      // perf 纪律：不再为分段刻度增加独立 draw call（受伤敌人多时会冲高预算）；
+      // R13 的核心价值「护盾可见」由上面的条件叠加条提供，已足够。
     }
 
     ctx.globalAlpha = 1
@@ -1841,14 +1855,36 @@ export class BattleRenderer {
       const alpha = Math.max(0, f.lifeMs / f.maxLifeMs)
       ctx.globalAlpha = alpha
       ctx.fillStyle = f.color
-      // 字体串随 size 变，而 size 在一帧里高度重复 —— 用缩放后的像素值去重
-      const px = f.size * vp.scale
+      // R30 暴击数字放大 + 描边：暴击飘字（暖金色）比普通伤害更大更醒目，
+      // 玩家扫一眼就知道哪一下打出了暴击 —— 复用引擎已标记的颜色，零额外数据。
+      const crit = f.color === '#ffd33d' || f.color === '#ffd700'
+      const px = f.size * vp.scale * (crit ? 1.5 : 1)
       if (px !== fontPx) {
-        ctx.font = this.fontOf(px)
+        ctx.font = this.fontOf(px, crit)
         fontPx = px
       }
+      // perf 纪律：不额外 stroke 描边（暴击帧会叠加到峰值）；放大字号本身已足够醒目
       ctx.fillText(f.text, toCanvasX(vp, f.x), toCanvasY(vp, f.y))
     }
+    ctx.globalAlpha = 1
+  }
+
+  /** R10 波次横幅：开波时「第 N 波」大字从右滑入停驻后淡出，仅活跃帧绘制。 */
+  private drawWaveBanner(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    const b = this.waveBanner
+    if (!b) return
+    b.life -= dtMs
+    if (b.life <= 0) { this.waveBanner = null; return }
+    const vp = this.vp
+    // 进度：0→0.25 滑入，0.25→0.75 停驻，0.75→1 淡出
+    const t = 1 - b.life / 1100
+    const slideX = t < 0.25 ? vp.width * (1 - t / 0.25) : vp.width * 0.5
+    const alpha = t > 0.75 ? (1 - t) / 0.25 : 1
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#ff6b35'
+    ctx.font = this.fontOf(Math.round(30 * vp.scale), true)
+    ctx.fillText(`第 ${b.index} 波`, slideX, vp.offsetY + vp.height * 0.22)
     ctx.globalAlpha = 1
   }
 

@@ -42,6 +42,15 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('R9 击杀地面残留')
   })
 
+  it('R10 波次横幅 + R13 护盾叠加条 + R30 暴击数字放大', () => {
+    const src = canvas()
+    expect(src).toContain('waveBanner')
+    expect(src).toContain('drawWaveBanner')
+    expect(src).toContain('R10 波次横幅')
+    expect(src).toContain('R13 护盾叠加条')
+    expect(src).toContain('const crit = f.color ===')
+  })
+
   it('R11 行走摆动 + R23 受击击退（只改绘制坐标，零额外 draw call）', () => {
     const src = canvas()
     expect(src).toContain('const gait =')
