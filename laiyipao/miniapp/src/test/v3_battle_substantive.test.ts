@@ -54,6 +54,15 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('Math.ceil(r * 2.8 + 6)')
   })
 
+  it('A6 弹体元素形状 R26 + 弹体朝向 R31（全部烘焙/状态操作，零 draw call 增量）', () => {
+    const src = canvas()
+    expect(src).toContain('R26 元素弹体差异化形状')
+    expect(src).toContain("case 'fire'")
+    expect(src).toContain("case 'kinetic'")
+    expect(src).toContain('R31 弹体朝向')
+    expect(src).toContain('ctx.rotate(Math.atan2(vy, vx))')
+  })
+
   it('A5 BOSS登场缩放 R15 / 编队微扰 R24 / 死亡碎裂规模 R12', () => {
     const src = canvas()
     expect(src).toContain('R15 BOSS 登场缩放')

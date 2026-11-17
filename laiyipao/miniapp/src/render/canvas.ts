@@ -1691,9 +1691,42 @@ export class BattleRenderer {
         layer.ctx.fillStyle = grad
         layer.ctx.fillRect(0, 0, size, size)
         layer.ctx.globalAlpha = 1
-        // 弹体（实心圆 + 白描边）
+        // R26 元素弹体差异化形状：烘焙期按元素画不同轮廓（运行期零增量），
+        // 让玩家从弹幕里一眼分出「这是火弹还是冰弹」，与敌人/图鉴的元素语言一致。
         layer.ctx.beginPath()
-        layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+        switch (element) {
+          case 'fire': // 火焰：朝右的水滴
+            layer.ctx.moveTo(c + rPx * 1.2, c)
+            layer.ctx.lineTo(c - rPx * 0.6, c - rPx)
+            layer.ctx.lineTo(c - rPx, c)
+            layer.ctx.lineTo(c - rPx * 0.6, c + rPx)
+            break
+          case 'ice': // 冰晶：菱形
+            layer.ctx.moveTo(c, c - rPx * 1.15)
+            layer.ctx.lineTo(c + rPx * 0.85, c)
+            layer.ctx.lineTo(c, c + rPx * 1.15)
+            layer.ctx.lineTo(c - rPx * 0.85, c)
+            break
+          case 'lightning': // 雷：闪电折线（用 fill 的多边形近似）
+            layer.ctx.moveTo(c + rPx * 0.2, c - rPx * 1.2)
+            layer.ctx.lineTo(c - rPx * 0.5, c + rPx * 0.1)
+            layer.ctx.lineTo(c + rPx * 0.05, c + rPx * 0.1)
+            layer.ctx.lineTo(c - rPx * 0.2, c + rPx * 1.2)
+            layer.ctx.lineTo(c + rPx * 0.6, c - rPx * 0.1)
+            layer.ctx.lineTo(c + rPx * 0.05, c - rPx * 0.1)
+            break
+          case 'corrosion': // 腐蚀：圆形（保留原样，泡泡感）
+            layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+            break
+          case 'kinetic': // 动能：三角箭头
+            layer.ctx.moveTo(c + rPx * 1.15, c)
+            layer.ctx.lineTo(c - rPx * 0.7, c - rPx)
+            layer.ctx.lineTo(c - rPx * 0.7, c + rPx)
+            break
+          default:
+            layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+        }
+        layer.ctx.closePath()
         layer.ctx.fillStyle = color
         layer.ctx.fill()
         layer.ctx.strokeStyle = '#ffffff'
@@ -1738,7 +1771,18 @@ export class BattleRenderer {
     const sprite = this.projectileSprite(p.element, r)
     if (sprite) {
       const size = Math.max(2, Math.ceil(r * 2.4 * 2) + 2)
-      ctx.drawImage(sprite as never, x - size / 2, y - size / 2, size, size)
+      // R31 弹体朝向：非圆对称的元素弹（火水滴/冰菱/雷/动能箭头）按飞行方向旋转，
+      // 让「往哪飞」与弹体轮廓一致；save/rotate/restore 是状态操作，零 draw call 增量。
+      const directional = p.element === 'fire' || p.element === 'kinetic' || p.element === 'lightning'
+      if (directional) {
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(Math.atan2(vy, vx))
+        ctx.drawImage(sprite as never, -size / 2, -size / 2, size, size)
+        ctx.restore()
+      } else {
+        ctx.drawImage(sprite as never, x - size / 2, y - size / 2, size, size)
+      }
       return
     }
 
