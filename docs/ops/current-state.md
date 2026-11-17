@@ -996,6 +996,44 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 33.4 交付与边界
 
 - 本轮两提交 0d69705e6、323e9cf83 及本现量文档 §33 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十四、第25轮：移动端session竞态 + R175日期越界 + 复活币文案契约（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r175 桌面日期 / lybug-r25 laiyipao 复活币）+ 主线程独立侦察并修复移动端 session 竞态（写范围 oa4rust/mobile，与子代理不重叠）。所有修复均主线程独立复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 34.1 oa4rust 移动端 init(force) 在途竞态（提交 6ed75c6cb）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | oa4rust/mobile/src/store/session.ts 注释称「与桌面 @oa4rust/sdk 语义对齐」，但漏了桌面 R172 的代际守卫：init(force) 无令牌，在途普通 init() 与 force init(true) 并发时，旧 /who 响应晚到会覆盖 login/refresh 后的新身份（用户已登录却被判匿名或渲染旧身份） | 与桌面 R172 同构，移动端此前未修 |
+| 修复 | 加 initTicket 代际令牌，force 发起新 /who 读取并递增；restoreCurrentUser(ticket)/finally 收尾仅当前代执行 | 对齐桌面实现，保留原幂等语义 |
+| 门禁 | 新增竞态行为测试（deferred 两请求，旧响应晚到）RED（期望 u-new 实收 null）→GREEN 16/16；mobile pnpm test 262 passed、tsc 0；oa4rust 全量通过 | — |
+
+### 34.2 oa4rust R175 parseServerDate 时/分/秒越界静默进位（提交 efb7dac4b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | desktop/src/utils/date.ts parseServerDate 仅回读校验年/月/日溢出，未校验时/分/秒范围；JS Date 构造对越界字段静默进位（10:61→11:01、10:30:60→10:31、25:00→次日01:00），服务端脏时间被当合法时刻展示/排序。同仓库 views/timerStart.ts 已显式拒绝 24/60/60，行为不一致 | 用户可感知边界错误，不在 R155-R174 清单 |
+| 修复 | 加 hh>23||mm>59||ss>59 返回 null 最小校验（负值由正则 \d 保证不可能） | 最小改动，保留年月日回读校验 |
+| 门禁 | date.test.ts 越界行为测试 RED（10:61 被进位）→GREEN 12/12；主代理独立复跑 12 passed；pnpm test 1321 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 34.3 laiyipao 复活币文案承诺无效的基础血量 +50%（提交 cd21d507b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | bag.vue 复活币描述写「本关基础血量 +50%」，但服务端 revive.go 明确语义是额外当前血量绝对值（BaseHP*3/10、baseHpMax 不变）= 多扛 3 次漏怪；+50% 倍率是第 148 轮已证明无效的设计（漏怪伤害随 baseHpMax 同步缩放、倍率不改变可扛次数）；bag.test.ts 还把错误文案锁成断言 | api/client.ts:1049/battle.vue:650 实现正确，仅背包页展示陈旧 |
+| 修复 | 文案改「当前血量 +30%（约多扛 3 次漏怪）」，测试改服务端契约行为断言（含多扛 3 次/30%、不含 +50%） | 不碰战斗逻辑，只改展示与测试 |
+| 门禁 | 复活币文案行为测试 RED→GREEN；主代理独立复跑 1 passed；全量 pnpm test 1466 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 34.4 主线程侦察（记账，未改动）
+
+- 复核 oa4rust/mobile 业务模块 processList/chatHistory/chatPolling/chatScroll/meetingList/pendingCount/auth-guard/networkStatus/latest 的分页去重、错误文案、轮询退避与生命周期计数、网络离线判定、只认最新请求令牌等，均有成熟守卫与既有契约测试，未发现新的可确证用户可感知缺口（session 竞态除外，已修）。
+
+### 34.5 交付与边界
+
+- 本轮三提交 6ed75c6cb、efb7dac4b、cd21d507b 及本现量文档 §34 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
