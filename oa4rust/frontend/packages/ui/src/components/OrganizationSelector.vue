@@ -89,6 +89,7 @@ import {
   type OrganizationSelectorType,
   searchOrganizationSelector,
 } from './organization-selector'
+import { createOrganizationSearchSession } from './organizationSearchSession'
 
 const props = withDefaults(
   defineProps<{
@@ -131,13 +132,14 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const errorMessage = ref('')
 const results = ref<OrganizationSelectorItem[]>([])
-let searchSequence = 0
+const searchSession = createOrganizationSearchSession()
 
 watch(selectableTypes, (types) => {
   if (!types.includes(activeType.value)) activeType.value = types[0]
 })
 
-watch(activeType, () => {
+watch(activeType, (type) => {
+  searchSession.switchType(type)
   results.value = []
   hasSearched.value = false
   errorMessage.value = ''
@@ -182,20 +184,20 @@ function itemDetail(item: OrganizationSelectorItem): string {
 }
 
 async function search(): Promise<void> {
-  const sequence = ++searchSequence
+  const attempt = searchSession.begin(activeType.value)
   loading.value = true
   hasSearched.value = true
   errorMessage.value = ''
   try {
     const found = await props.searcher(activeType.value, keyword.value.trim())
-    if (sequence === searchSequence) results.value = found
+    if (searchSession.shouldApply(attempt)) results.value = found
   } catch (error) {
-    if (sequence !== searchSequence) return
+    if (!searchSession.isLatest(attempt)) return
     results.value = []
     errorMessage.value = error instanceof Error ? error.message : '搜索失败，请稍后重试'
     emit('error', error)
   } finally {
-    if (sequence === searchSequence) loading.value = false
+    if (searchSession.isLatest(attempt)) loading.value = false
   }
 }
 
