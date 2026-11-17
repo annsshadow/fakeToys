@@ -107,7 +107,7 @@ function isFirstGroup(key: string): boolean {
 const groupedByMonth = computed(() => {
   const m = new Map<string, typeof items.value>()
   for (const a of filteredItems.value) {
-    const key = (a.published_at ?? '').slice(0, 7) || '未标注日期'
+    const key = monthKey(a.published_at)
     const arr = m.get(key) ?? []
     arr.push(a)
     m.set(key, arr)
@@ -130,6 +130,20 @@ const filteredItems = computed(() => {
   if (!kw) return list
   return list.filter((a) => a.title.toLowerCase().includes(kw) || a.body.toLowerCase().includes(kw))
 })
+
+/**
+ * 归档分组键必须和 formatDate 用同一套（本地）日历。
+ * 服务端 published_at 是 UTC 的 RFC3339 字符串，直接 slice(0,7) 取到的
+ * 是 UTC 年月；UTC 月末在本地已是下月初时，组标题会和卡片日期自相矛盾。
+ */
+function monthKey(iso: string | null): string {
+  if (!iso) return '未标注日期'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 7) || '未标注日期'
+  const y = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${mm}`
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return ''
