@@ -462,7 +462,7 @@ const DefenseStolenLimit = 2
 
 // ListDefenses 返回候选防线（不含自己）与自己的防线。
 func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *DefenseView, candidates []DefenseView, err error) {
-	attempts, _, err := s.dailyChallengeCounters(ctx, userID)
+	attempts, stolen, err := s.dailyChallengeCounters(ctx, userID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -508,6 +508,9 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 	// 否则 GET /api/v1/defenses 的 mine 恒为 0，客户端「今日剩余 N 次」
 	// 永远显示满额，玩家次数用尽后点挑战才被 403 拒绝。
 	own.MyAttemptsToday = attempts
+	// 同一个 dailyChallengeCounters 已经读到 stolen_times：防守方当天被偷了几次。
+	// 不回填则 mine.my_stolen_today 恒为 0，防守方看不到自己当天的损失次数。
+	own.MyStolenToday = stolen
 	own.AttemptLimit = DefenseAttemptLimit
 	err = s.pool.QueryRow(ctx, `
 		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage, d.mastery_done,
