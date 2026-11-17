@@ -55,7 +55,7 @@
         @input="update(module, inputValue(module, $event))"
       />
       <div v-else class="xform-display">{{ stringValue(module) || label(module) }}</div>
-      <p v-if="errors[fieldKey(module)]" class="xform-error">{{ errors[fieldKey(module)] }}</p>
+      <p v-if="errors[fieldKey(module)]" class="xform-error" data-oa-field-error>{{ errors[fieldKey(module)] }}</p>
     </div>
   </div>
 </template>

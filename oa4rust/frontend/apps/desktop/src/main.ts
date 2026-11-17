@@ -7,6 +7,7 @@ import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { installFormErrorA11y } from './utils/formErrorA11y'
 import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
@@ -560,4 +561,6 @@ watchSessionCacheReset(queryClient, () => useSession().state.user?.unique ?? nul
 installViewModalManager()
 // R187：全局跳转到主要内容链接（WCAG 2.4.1），卸载时无需清理（应用生命周期内常驻）。
 installSkipLink()
+// R188：全局表单错误无障碍关联（WCAG 3.3.1 / 4.1.2），观察 v-if 异步插入的错误文本。
+installFormErrorA11y()
 app.mount('#o2-app-root')
