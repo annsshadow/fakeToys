@@ -116,23 +116,23 @@ function newTopic() {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .new-btn {
   padding: 5px 14px;
   border-radius: 15px;
-  background: #2f6bff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 13px;
 }
 .tip {
   text-align: center;
-  color: #8a94a6;
+  color: var(--color-text-muted);
   padding: 40px 0;
   font-size: 14px;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   margin-bottom: 10px;
@@ -145,8 +145,8 @@ function newTopic() {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 13px;
 }
 .error-banner .error-text {
@@ -156,8 +156,8 @@ function newTopic() {
   flex: none;
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
 }
 .topic-list {
@@ -168,21 +168,21 @@ function newTopic() {
 .topic {
   padding: 12px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .topic-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .topic-excerpt {
   margin-top: 4px;
   font-size: 13px;
-  color: #5a6478;
+  color: var(--color-text-secondary);
 }
 .topic-meta {
   margin-top: 6px;
   font-size: 12px;
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 </style>
