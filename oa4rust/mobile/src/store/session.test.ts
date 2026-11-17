@@ -200,3 +200,35 @@ describe('useSession()', () => {
     expect(a).toBe(b)
   })
 })
+
+// ── 第 25 轮：在途 init() 与 force init 的竞态（对齐桌面 R172）──────────────
+describe('init(force) 代际竞态', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (error: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('普通 init 在途时 init(true) 发起新 who，旧响应晚到不得覆盖新身份', async () => {
+    const oldWho = deferred<{ success: boolean; data: unknown }>()
+    const newWho = deferred<{ success: boolean; data: unknown }>()
+    mocked.who.mockReturnValueOnce(oldWho.promise).mockReturnValueOnce(newWho.promise)
+    const session = useSession()
+
+    const guardInit = session.init()
+    const forceInit = session.init(true)
+    expect(mocked.who).toHaveBeenCalledTimes(2)
+
+    newWho.resolve({ success: true, data: makeUser({ unique: 'u-new' }) })
+    await Promise.resolve()
+    oldWho.resolve({ success: true, data: { unique: '' } })
+    await Promise.all([guardInit, forceInit])
+
+    expect(session.user).toMatchObject({ unique: 'u-new' })
+    expect(session.isAuthenticated).toBe(true)
+  })
+})

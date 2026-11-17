@@ -21,29 +21,37 @@ export const useSessionStore = defineStore('mobile-session', () => {
   const user = ref<O2User | null>(null)
   const loading = ref(false)
   const initialized = ref(false)
+  // 代际令牌：force init 发起新 /who 读取时递增，旧代响应晚到不得覆盖新身份（对齐桌面 R172）。
+  let initTicket = 0
 
   setAuthenticationFailureHandler(() => {
     user.value = null
     initialized.value = true
   })
 
-  async function restoreCurrentUser(): Promise<void> {
+  async function restoreCurrentUser(ticket: number): Promise<void> {
     try {
       const resp = await authApi.who()
-      user.value = isAuthenticatedUser(resp.data) ? resp.data : null
+      if (ticket === initTicket) user.value = isAuthenticatedUser(resp.data) ? resp.data : null
     } catch {
-      user.value = null
+      if (ticket === initTicket) user.value = null
     }
   }
 
   async function init(force = false): Promise<void> {
     if (initialized.value && !force) return
+    // force 表示身份已变（login/refresh）：必须发起新的 /who 读取，不能复用
+    // 身份变更前发起的在途普通 init()，否则旧响应会把新身份覆盖回去。
+    const ticket = ++initTicket
     loading.value = true
     try {
-      await restoreCurrentUser()
+      await restoreCurrentUser(ticket)
     } finally {
-      loading.value = false
-      initialized.value = true
+      // 只有当前代才收尾：被 force 取代的旧请求后完成不得提前解锁或覆盖状态。
+      if (ticket === initTicket) {
+        loading.value = false
+        initialized.value = true
+      }
     }
   }
 
