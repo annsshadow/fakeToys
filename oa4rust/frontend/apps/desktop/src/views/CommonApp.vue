@@ -148,27 +148,25 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
-    saving.value = true
-    try {
-      // 后端 spec 按 TEXT 列写入：布尔以 'true'/'false' 字符串传递，与列表 bool 读取兼容（PG text→bool）。
-      const payload: Record<string, string> = {
-        systemName: form.value.systemName ?? '',
-        version: form.value.version ?? '',
-        maintenanceMode: String(Boolean(form.value.maintenanceMode)),
-        allowRegistration: String(Boolean(form.value.allowRegistration)),
-      }
-      if (editingId.value) return api.post(`/api/general/assemble/control/save/${editingId.value}`, payload)
-      return api.post(createEp, payload)
-    } finally {
-      saving.value = false
+    // 后端 spec 按 TEXT 列写入：布尔以 'true'/'false' 字符串传递，与列表 bool 读取兼容（PG text→bool）。
+    const payload: Record<string, string> = {
+      systemName: form.value.systemName ?? '',
+      version: form.value.version ?? '',
+      maintenanceMode: String(Boolean(form.value.maintenanceMode)),
+      allowRegistration: String(Boolean(form.value.allowRegistration)),
     }
+    if (editingId.value) return api.post(`/api/general/assemble/control/save/${editingId.value}`, payload)
+    return api.post(createEp, payload)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
 const deletingId = ref('')

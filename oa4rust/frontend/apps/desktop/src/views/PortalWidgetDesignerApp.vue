@@ -133,20 +133,18 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (payload: Item) => {
-    saving.value = true
-    try {
-      if (editingId.value) return api.post(`/api/portal/assemble/designer/widget/save/${editingId.value}`, payload)
-      return api.post(createEp, payload)
-    } finally {
-      saving.value = false
-    }
+    if (editingId.value) return api.post(`/api/portal/assemble/designer/widget/save/${editingId.value}`, payload)
+    return api.post(createEp, payload)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate(form.value as Item)
 }
 const deletingId = ref('')

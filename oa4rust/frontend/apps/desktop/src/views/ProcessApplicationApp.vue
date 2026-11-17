@@ -156,29 +156,27 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
-    saving.value = true
-    try {
-      // 后端 typed request 用 snake_case app_id（无 serde rename），payload 按此口径发送。
-      const payload: Record<string, unknown> = {
-        name: form.value.name ?? '',
-        app_id: form.value.appId ?? '',
-        description: form.value.description ?? '',
-      }
-      if (editingId.value) {
-        payload.disable = Boolean(form.value.disable)
-        return api.post(`/api/program_center/application/save/${editingId.value}`, payload)
-      }
-      return api.post(createEp, payload)
-    } finally {
-      saving.value = false
+    // 后端 typed request 用 snake_case app_id（无 serde rename），payload 按此口径发送。
+    const payload: Record<string, unknown> = {
+      name: form.value.name ?? '',
+      app_id: form.value.appId ?? '',
+      description: form.value.description ?? '',
     }
+    if (editingId.value) {
+      payload.disable = Boolean(form.value.disable)
+      return api.post(`/api/program_center/application/save/${editingId.value}`, payload)
+    }
+    return api.post(createEp, payload)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
 const deletingId = ref('')

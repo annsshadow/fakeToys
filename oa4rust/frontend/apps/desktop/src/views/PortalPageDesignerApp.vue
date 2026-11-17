@@ -250,28 +250,26 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
-    saving.value = true
-    try {
-      // U2 类型化 handler：create 收 {name, category, content:JSON}；save 收 {content:JSON}。
-      // 内容为空时用 {} 兜底，避免 save 的 UPDATE content=$1 将列置 NULL 造成降级。
-      const raw = (form.value.content ?? '').trim()
-      const content = raw ? JSON.parse(raw) : {}
-      if (editingId.value) return api.post(`/api/portal/assemble/designer/page/save/${editingId.value}`, { content })
-      return api.post(createEp, {
-        name: form.value.name ?? '',
-        category: form.value.category ?? '',
-        content,
-      })
-    } finally {
-      saving.value = false
-    }
+    // U2 类型化 handler：create 收 {name, category, content:JSON}；save 收 {content:JSON}。
+    // 内容为空时用 {} 兜底，避免 save 的 UPDATE content=$1 将列置 NULL 造成降级。
+    const raw = (form.value.content ?? '').trim()
+    const content = raw ? JSON.parse(raw) : {}
+    if (editingId.value) return api.post(`/api/portal/assemble/designer/page/save/${editingId.value}`, { content })
+    return api.post(createEp, {
+      name: form.value.name ?? '',
+      category: form.value.category ?? '',
+      content,
+    })
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
 const deletingId = ref('')

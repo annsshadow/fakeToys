@@ -205,7 +205,9 @@ describe('main.ts executable verification', () => {
     })
 
     test('Imports OA4Rust SDK', () => {
-      expect(mainSource).toContain("import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'")
+      expect(mainSource).toContain(
+        "import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'",
+      )
     })
 
     test('Imports UI components', () => {

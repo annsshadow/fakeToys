@@ -140,25 +140,23 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
-    saving.value = true
-    try {
-      const payload: Record<string, string> = {
-        name: form.value.name ?? '',
-        alias: form.value.alias ?? '',
-        category: form.value.category ?? '',
-      }
-      if (editingId.value) return api.post(`/api/program_center/invoke/save/${editingId.value}`, payload)
-      return api.post(createEp, payload)
-    } finally {
-      saving.value = false
+    const payload: Record<string, string> = {
+      name: form.value.name ?? '',
+      alias: form.value.alias ?? '',
+      category: form.value.category ?? '',
     }
+    if (editingId.value) return api.post(`/api/program_center/invoke/save/${editingId.value}`, payload)
+    return api.post(createEp, payload)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
 const deletingId = ref('')
