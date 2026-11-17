@@ -65,6 +65,8 @@
           <view class="ann-head">
             <text class="ann-title">{{ a.title }}</text>
             <text class="dim mono">{{ formatAnnDate(a.published_at) }}</text>
+            <!-- R64 展开态指示：此前只能靠正文有没有截断点来猜 -->
+            <text class="ann-toggle" :class="{ open: expanded.has(a.id) }">⌄</text>
           </view>
           <text class="ann-body" :class="{ clamped: !expanded.has(a.id) }">{{ a.body }}</text>
         </view>
@@ -114,6 +116,8 @@
           <text class="action-kicker">当前关卡</text>
           <text class="action-title">第 {{ store.unlockedLevel }} 关</text>
           <text class="action-sub">守住防线，清完全部波次</text>
+          <!-- R62 已通关进度：让玩家感到「在往前走」 -->
+          <text v-if="store.maxStage > 0" class="action-progress">已通关 {{ store.maxStage }} 关</text>
         </view>
         <view class="action-go">
           <text>开始</text>
@@ -154,7 +158,13 @@
       <view class="card">
         <text class="card-title">5 种元素</text>
         <view class="elem-row">
-          <view v-for="e in elements" :key="e.key" class="elem-chip">
+          <!-- R61 元素 chip 可点下钻到反应图鉴：说明里提到反应链却不给入口 -->
+          <view
+            v-for="e in elements"
+            :key="e.key"
+            class="elem-chip tap"
+            @click="go('/pages/reactions/reactions')"
+          >
             <view class="dot" :style="{ background: e.color }" />
             <text class="elem-name">{{ e.name }}</text>
           </view>
@@ -632,6 +642,14 @@ onShareAppMessage(() => indexShare())
   margin-top: 8rpx;
 }
 
+/* R62 通关进度提示 */
+.action-progress {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--ok);
+}
+
 .action-go {
   flex-shrink: 0;
   display: inline-flex;
@@ -711,6 +729,13 @@ onShareAppMessage(() => indexShare())
 
 .grid-icon {
   color: var(--text-2);
+  transition: transform 0.14s, color 0.14s;
+}
+
+/* R63 入口图标按下微抬，强化「点到了」 */
+.grid-item:active .grid-icon {
+  transform: translateY(-4rpx) scale(1.08);
+  color: var(--fire);
 }
 
 .grid-label {
@@ -773,6 +798,18 @@ onShareAppMessage(() => indexShare())
   font-weight: 600;
   color: var(--text);
   flex: 1;
+}
+
+/* R64 公告展开指示箭头 */
+.ann-toggle {
+  font-size: 28rpx;
+  color: var(--dim);
+  transition: transform 0.2s;
+}
+
+.ann-toggle.open {
+  transform: rotate(180deg);
+  color: var(--fire);
 }
 
 /* 全部公告入口（2026-11-01 新一轮第 42 轮） */

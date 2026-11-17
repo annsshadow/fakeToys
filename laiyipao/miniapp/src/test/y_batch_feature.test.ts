@@ -66,4 +66,12 @@ describe('Y 批结构守卫', () => {
       expect(read(file), `${file}:${marker}`).toContain(marker)
     }
   })
+
+  it('R61–R64 首页导航与反馈', () => {
+    const src = read('../pages/index/index.vue')
+    expect(src).toContain('@click="go(\'/pages/reactions/reactions\')"')
+    expect(src).toContain('action-progress')
+    expect(src).toContain('.grid-item:active .grid-icon')
+    expect(src).toContain('ann-toggle')
+  })
 })

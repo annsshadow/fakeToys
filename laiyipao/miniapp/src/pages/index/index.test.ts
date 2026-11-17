@@ -339,6 +339,39 @@ describe('index.vue 首页', () => {
     expect(bumped.length).toBe(1)
     expect(bumped[0]!.text()).toContain('999')
   })
+
+  // ── Y4 R61–R64 ─────────────────────────────────────────────────────
+  it('R61 元素 chip 可点下钻到反应图鉴', async () => {
+    mountPage()
+    await flushPromises()
+    const chip = wrapper.findAll('.elem-chip')[0]!
+    expect(chip.classes()).toContain('tap')
+    await chip.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/reactions/reactions' })
+  })
+
+  it('R62 已通关关数有进度提示', async () => {
+    mountPage()
+    await flushPromises()
+    const store = useGameStore()
+    store.setMaxStage(7)
+    await flushPromises()
+    expect(wrapper.find('.action-progress').text()).toContain('已通关 7 关')
+  })
+
+  it('R64 公告展开态箭头翻转', async () => {
+    mockApi.fetchAnnouncements.mockResolvedValue({
+      items: [{ id: 1, title: '公告标题', body: '正文', published_at: '2026-11-17T00:00:00Z' }],
+    })
+    mountPage()
+    await flushPromises()
+    const toggle = wrapper.find('.ann-toggle')
+    expect(toggle.exists()).toBe(true)
+    expect(toggle.classes()).not.toContain('open')
+    await wrapper.find('.ann-item').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.ann-toggle').classes()).toContain('open')
+  })
 })
 
 // ==================== 构筑评分空维补导（2026-11-17 100 轮打磨 R14）====================
