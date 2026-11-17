@@ -234,10 +234,16 @@ interface ShopItem {
 
 /** 类目分组。顺序即展示顺序。 */
 const CATEGORY_ORDER = [
+  { key: 'currency', label: '货币补给' },
   { key: 'gem', label: '宝石' },
   { key: 'boost', label: '强化道具' },
+  { key: 'starter', label: '新手礼包' },
+  { key: 'equipment', label: '装备' },
   { key: '', label: '其他' },
 ] as const
+
+/** 服务端 ShopItemView.category 的已知取值；未知类目一律归到「其他」，不再静默丢弃。 */
+const KNOWN_CATEGORY_KEYS = new Set<string>(CATEGORY_ORDER.map((c) => c.key))
 
 const groups = ref<{ key: string; label: string; items: ShopItem[] }[]>([])
 
@@ -340,7 +346,10 @@ async function load() {
   groups.value = CATEGORY_ORDER.map((c) => ({
     key: c.key,
     label: c.label,
-    items: items.value.filter((x) => (x.category || '') === c.key),
+    items: items.value.filter((x) => {
+      const key = x.category || ''
+      return (KNOWN_CATEGORY_KEYS.has(key) ? key : '') === c.key
+    }),
   })).filter((g) => g.items.length > 0)
   loading.value = false
 }
