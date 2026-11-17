@@ -169,7 +169,7 @@ describe('battles.vue 筛选下的加载更多必须沿用服务端 result 过�
 
   it('胜利筛选下加载更多：请求带 result=win，列表不出现失败战报', async () => {
     // 模拟服务端：只有带 result='win' 才过滤；缺失则回混合页（当前 bug 现状）。
-    mockApi.myBattleHistory.mockImplementation((limit: number, offset: number, result?: string) => {
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, offset = 0, result?: string) => {
       const wins = Array.from({ length: 20 }, (_, i) => win(100 + offset + i))
       if (result === 'win') return Promise.resolve({ items: wins } as any)
       // 未过滤的第二页混入一场失败，模拟服务端不过滤的结果
