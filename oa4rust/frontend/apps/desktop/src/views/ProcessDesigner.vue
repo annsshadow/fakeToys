@@ -2781,6 +2781,7 @@ import {
   serializeProcessDefinition,
 } from '../contracts/process-definition'
 import { downloadBlob } from '../utils/download'
+import { computeExecutionProgress } from '../utils/executionProgress'
 import { formatPercent } from '../utils/formatNumber'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
@@ -3628,24 +3629,24 @@ function simulateNext() {
     execState.value.status = 'finished'
     return
   }
-  // Animate progress
+  // Animate progress：以已完成节点为基线映射到整体进度，避免节点推进时进度倒退（R165）
   const totalNodes = processDef.value.nodes.length
-  let progress = 0
+  const completedBefore = new Set(execState.value.completedNodes).size
+  let nodePct = 0
   execAnimTimer = setInterval(() => {
-    progress += 5
-    if (progress >= 100) {
+    nodePct = Math.min(100, nodePct + 5)
+    execState.value.progress = computeExecutionProgress(completedBefore, totalNodes, nodePct)
+    if (nodePct >= 100) {
       clearInterval(execAnimTimer)
       execAnimTimer = null
       execState.value.currentNodeIdx = nextIdx
       execState.value.completedNodes.push(nextId)
-      execState.value.progress = Math.round((execState.value.completedNodes.length / totalNodes) * 100)
       if (processDef.value!.nodes[nextIdx].type === 'end') {
+        execState.value.progress = 100
         execState.value.status = 'finished'
       } else {
         execAnimDelay = setTimeout(() => simulateNext(), 300)
       }
-    } else {
-      execState.value.progress = progress
     }
   }, 50)
 }
