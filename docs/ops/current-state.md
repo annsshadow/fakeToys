@@ -1256,6 +1256,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 42.4 交付与边界
 
 - 本轮一提交 5d3375e79 及本现量文档 §42 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十三、第34轮：双线诚实负结果 + 策略调整提示（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r184 / lybug-r34）经穷尽排查均**未发现能写出行为级 RED 测试并确证的真实缺陷**，双双如实报负结果、未改任何文件。工作树干净，HEAD 仍为 da22c3290，本轮无代码提交。
+
+### 43.1 oaopt-r184 桌面/SDK（负结果）
+
+- 逐一审阅 oa4rust/frontend 全部 50 个非测试 TS 源及关键 .vue 调用链，未发现满足「用户可感知行为错误/竞态/状态残留/边界或单位错误/类型错配」且能写真实行为级 RED 的缺陷。
+- 主要排除项：imPaging.ts:62 / imMessagePaging.ts:74 的 hasMore 满页末页守卫属后端无 total 下的有意启发式（已被测试固化）；contracts/xform.ts key/name 优先级不一致只影响设计器预览校验、运行时口径一致且往返测试覆盖；resultPagination.ts pageSize 异常入参不可达（唯一调用传常量 50）；i18n.ts registerMessages 实例未创建时 no-op 是既有预期行为。其余 20+ 已加固模块复核无缺口。
+
+### 43.2 laiyipao（lybug-r34，负结果）
+
+- 逐字段对照 DefenseView/TaskView/AnnouncementView/ShopItemView/SignInStatus/VerifyResult/ReplayInfo/OfflineRewardStatus 与 miniapp 消费方，全部对齐或属已修项。
+- 疑点「mine=null 时 attackLeft 显满额」不成立：API 契约 05-api-reference.md:659-676 只在 mine 内定义 attempts，顶层无此字段，按契约返回不构成违背，强修需扩 API 契约且方案不唯一。
+- 已修清单各项均有测试守卫；wins/losses 记账方向、ChallengedToday 语义、B3 auth_person 按 R152/语义歧义不动。
+
+### 43.3 目标二与主线程侦察
+
+- 目标二 augmentor：本地实例稳定（health ok v3.0.0、根页 200、匿名 POST 401），进程监听 127.0.0.1:8000（PID 存在）；远程部署仍卡 GitHub Secrets DEPLOY_*（本会话 gh CLI 不可用），维持 §33.3/§36.3/§39.4/§42.3 交付边界，本地交付完备不臆造。
+- 主线程侦察移动端 App.vue 全局样式：仅语义 token、无 transition/animation（0 处），无 prefers-reduced-motion 落点（对比桌面 R181 的 136 处动效），不强行造改动。
+
+### 43.4 策略调整提示（供后续轮次参考）
+
+- 连续第 31、34 轮双线负结果，第 32/33 轮也仅桌面各有 1 项实质修复；laiyipao 自第 30 轮起连续多轮无可确证新 bug，oa4rust 易发现的逻辑缺陷也趋于枯竭。
+- 后续轮次应把重心从「逐个找小 bug」转向目标一明确要求的**系统性样式/性能现代化**与**统一设计标准**落地（R181 的 reduced-motion 全局守卫是该类升级的样板：可验证标准驱动、全局统一生效、契约测试防回归），以及在有真实口径缺口时才做定点 bug 修复；对已穷尽的子系统保持诚实负结果，不为凑轮次强造改动。
+
+### 43.5 交付与边界
+
+- 本轮无代码提交；本现量文档 §43 为唯一变更，SSH 推送后核验远端 HEAD=本地 HEAD 再 update-ref。
+- B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
