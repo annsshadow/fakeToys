@@ -419,3 +419,48 @@ describe('index.vue 构筑评分空维补导（R14）', () => {
     expect(wrapper.findAll('.dim-empty-hint').length).toBe(0)
   })
 })
+
+// ==================== 第七批 G61 构筑五维雷达图 ====================
+describe('index.vue 构筑五维雷达图（第七批 G61）', () => {
+  it('G61 渲染五边形雷达：三圈网格 + 五轴 + 实际多边形 + 五标签', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null,
+      build_rating: {
+        total: 50, element_coverage: 3, reaction_coverage: 4,
+        mastery_done: 2, equipment_synergy: 9, mechanic_depth: 5, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    // 3 圈参考网格
+    expect(wrapper.findAll('.radar-ring').length).toBe(3)
+    // 5 条轴线
+    expect(wrapper.findAll('.radar-axis').length).toBe(5)
+    // 5 个顶点标签
+    expect(wrapper.findAll('.radar-label').length).toBe(5)
+    // 实际多边形存在且 points 含 5 组坐标
+    const shape = wrapper.find('.radar-shape')
+    expect(shape.exists()).toBe(true)
+    const pts = shape.attributes('points') ?? ''
+    expect(pts.split(' ').length).toBe(5)
+  })
+
+  it('G61 雷达多边形随五维数值变化（偏科形状可辨）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null,
+      build_rating: {
+        total: 5, element_coverage: 5, reaction_coverage: 0,
+        mastery_done: 0, equipment_synergy: 0, mechanic_depth: 0, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    const pts = (wrapper.find('.radar-shape').attributes('points') ?? '').split(' ')
+    // 第 1 维（元素覆盖满 5/5）顶点应落在半径最大处 ≈ (100, 20)
+    expect(pts[0]).toBe('100,20')
+    // 第 2 维（反应链 0）顶点应落在中心 (100, 90)
+    expect(pts[1]).toBe('100,90')
+  })
+})

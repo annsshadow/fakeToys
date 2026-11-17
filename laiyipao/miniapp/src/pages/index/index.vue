@@ -86,6 +86,37 @@
           <text class="score mono">{{ store.buildRating?.total ?? 0 }}</text>
         </view>
 
+        <!-- R61 构筑五维雷达图（实质可视化）：进度条只能逐行读，雷达图把
+             「偏科」形状一眼画出来 —— 哪个方向凹进去就是短板。数据直接复用 dims.pct。 -->
+        <view class="radar-wrap">
+          <svg class="radar-svg" viewBox="0 0 200 180" aria-label="构筑五维雷达图">
+            <!-- 三圈参考网格（20%/60%/100%） -->
+            <polygon
+              v-for="ring in radarRings"
+              :key="ring"
+              class="radar-ring"
+              :points="radarPolygon(ring)"
+            />
+            <!-- 五个顶点轴线 -->
+            <line
+              v-for="(pt, i) in radarAxisEnds"
+              :key="'ax' + i"
+              class="radar-axis"
+              x1="100" y1="90" :x2="pt.x" :y2="pt.y"
+            />
+            <!-- 实际构筑多边形（五维 pct 决定顶点） -->
+            <polygon class="radar-shape" :points="radarPolygonActual" />
+            <!-- 五个顶点标签 -->
+            <text
+              v-for="(lb, i) in radarLabels"
+              :key="'lb' + i"
+              class="radar-label"
+              :x="lb.x" :y="lb.y"
+              :text-anchor="lb.x < 92 ? 'end' : lb.x > 108 ? 'start' : 'middle'"
+            >{{ lb.text }}</text>
+          </svg>
+        </view>
+
         <!-- 五维进度条：明确告诉玩家"缺什么"。
              每行尾部的「权重」是服务端 rating_weights 下发的份额（第 150 轮），
              让玩家知道补哪一维对总分的边际收益最大。 -->
@@ -395,6 +426,49 @@ const dims = computed(() => {
 
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
+/* -------------------------------------------------------------------------- */
+/* R61 构筑五维雷达图                                                           */
+/* 五边形：中心 (100,90)，半径 70；从正上方起顺时针五个维度。                    */
+/* 纯前端几何，数据来自 dims[].pct，不改任何 api/store 契约。                    */
+/* -------------------------------------------------------------------------- */
+const RADAR_CX = 100
+const RADAR_CY = 90
+const RADAR_R = 70
+/** 五个顶点方向（从正上方起，顺时针每 72°）。 */
+const radarDirs = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
+  return { dx: Math.cos(a), dy: Math.sin(a) }
+})
+/** 参考网格圈（比例 0.35 / 0.7 / 1）。 */
+const radarRings = [0.35, 0.7, 1]
+/** 轴线端点。 */
+const radarAxisEnds = radarDirs.map((d) => ({
+  x: RADAR_CX + d.dx * RADAR_R,
+  y: RADAR_CY + d.dy * RADAR_R,
+}))
+/** 顶点标签（放在轴线外侧一点）。 */
+const radarLabels = computed(() =>
+  radarDirs.map((d, i) => ({
+    x: RADAR_CX + d.dx * (RADAR_R + 12),
+    y: RADAR_CY + d.dy * (RADAR_R + 12) + 4,
+    text: (dims.value[i]?.label ?? '').replace('覆盖', '').replace('投入', '').replace('契合', '').replace('深度', ''),
+    // text-anchor 由 x 相对中心决定
+  })),
+)
+function radarPolygon(scale: number): string {
+  return radarDirs
+    .map((d) => `${RADAR_CX + d.dx * RADAR_R * scale},${RADAR_CY + d.dy * RADAR_R * scale}`)
+    .join(' ')
+}
+const radarPolygonActual = computed(() =>
+  radarDirs
+    .map((d, i) => {
+      const pct = Math.max(0, Math.min(100, dims.value[i]?.pct ?? 0)) / 100
+      return `${RADAR_CX + d.dx * RADAR_R * pct},${RADAR_CY + d.dy * RADAR_R * pct}`
+    })
+    .join(' '),
+)
+
 /**
  * 五维 → 补导入口（100 轮打磨 R14）。
  *
@@ -527,6 +601,37 @@ onShareAppMessage(() => indexShare())
   font-size: 48rpx;
   font-weight: 700;
   color: var(--fire);
+}
+
+/* R61 构筑五维雷达图 */
+.radar-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8rpx 0 24rpx;
+}
+.radar-svg {
+  width: 400rpx;
+  height: 360rpx;
+  overflow: visible;
+}
+.radar-ring {
+  fill: none;
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.radar-axis {
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.radar-shape {
+  fill: rgba(255, 107, 53, 0.22);
+  stroke: var(--fire);
+  stroke-width: 2;
+  transition: all 0.3s ease;
+}
+.radar-label {
+  fill: var(--muted);
+  font-size: 11px;
 }
 
 .dim-row {

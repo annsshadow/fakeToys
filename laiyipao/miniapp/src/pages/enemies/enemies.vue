@@ -40,9 +40,12 @@
             <view class="icon-badge" :class="en.is_boss ? 'badge-fire' : ''" style="width: 64rpx; height: 64rpx">
               <DefIcon :name="'enemy:' + en.category" :size="40" />
             </view>
-            <text class="rxn-name">{{ en.name }}</text>
+            <text class="rxn-name tap" @click="toggleEnemy(en.id)">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
             <text v-if="en.is_boss" class="chip hit">Boss</text>
+            <text class="resist-toggle" @click="toggleEnemy(en.id)">
+              {{ expandedEnemy === en.id ? '收起抗性图 ▲' : '抗性图 ▼' }}
+            </text>
           </view>
           <text class="rxn-descr">{{ en.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
@@ -70,6 +73,30 @@
             </text>
           </view>
           <text v-else class="muted">无元素抗性</text>
+
+          <!-- G73 抗性雷达图：点名字/「抗性图」展开。五维形状把「怕什么、抗什么」一眼画出 -->
+          <view v-if="expandedEnemy === en.id" class="resist-radar-wrap">
+            <svg class="resist-radar" viewBox="0 0 200 180" aria-label="敌人抗性雷达图">
+              <polygon class="rr-ring" points="100,88 100,20 153,50 153,126 47,126 47,50" />
+              <polygon class="rr-ring" points="100,88 100,44 138,63 138,113 62,113 62,63" />
+              <line
+                v-for="(pt, i) in resistDirs"
+                :key="'ax' + i"
+                class="rr-axis"
+                x1="100" y1="88"
+                :x2="100 + pt.dx * 62" :y2="88 + pt.dy * 62"
+              />
+              <polygon class="rr-shape" :points="enemyResistPoints(en)" />
+              <text
+                v-for="(lb, i) in resistLabels"
+                :key="'lb' + i"
+                class="rr-label"
+                :x="lb.x" :y="lb.y"
+                text-anchor="middle"
+              >{{ lb.text }}</text>
+            </svg>
+            <text class="dim">外圈=减伤（抗性高）· 内缩=易伤（抗性负）</text>
+          </view>
         </view>
         <text v-if="!enemies.length" class="muted">敌人表为空（配置未加载？）</text>
         <!-- R23 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
@@ -85,7 +112,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -148,9 +175,84 @@ function elementName(e: Element): string {
 function resistEntries(en: { resist?: Record<string, number> }): [string, number][] {
   return Object.entries(en.resist ?? {}).filter(([, v]) => v !== 0)
 }
+
+/* -------------------------------------------------------------------------- */
+/* G73 敌人抗性雷达图（第七批）                                                 */
+/* 五元素抗性 -500..500 → 半径：0 落在中圈，正抗性（减伤）外扩、负抗性（易伤）内缩。 */
+/* 数据全部来自 en.resist，不改 api/store 契约。                                */
+/* -------------------------------------------------------------------------- */
+const expandedEnemy = ref<number | null>(null)
+function toggleEnemy(id: number) {
+  expandedEnemy.value = expandedEnemy.value === id ? null : id
+}
+const RADAR_CX = 100
+const RADAR_CY = 88
+const RADAR_R = 62
+/** 抗性千分比 → 半径比例（0→0.5，-500→0.16，+500→0.84）。 */
+function resistScale(v: number): number {
+  return 0.5 + Math.max(-500, Math.min(500, v)) / 1000 * 0.68
+}
+/** 五元素方向的单位向量（正上方起顺时针）。 */
+const resistDirs = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
+  return { dx: Math.cos(a), dy: Math.sin(a) }
+})
+function enemyResistPoints(en: { resist?: Record<string, number> }): string {
+  return resistDirs
+    .map((d, i) => {
+      const el = ELEMENT_ORDER[i]
+      const v = Number(en.resist?.[el] ?? 0)
+      const s = resistScale(v)
+      return `${(RADAR_CX + d.dx * RADAR_R * s).toFixed(1)},${(RADAR_CY + d.dy * RADAR_R * s).toFixed(1)}`
+    })
+    .join(' ')
+}
+/** 五元素标签（正上方起顺时针，与 resistDirs 同序）。 */
+const resistLabels = resistDirs.map((d, i) => ({
+  x: RADAR_CX + d.dx * (RADAR_R + 14),
+  y: RADAR_CY + d.dy * (RADAR_R + 14) + 4,
+  text: ELEMENT_NAME[ELEMENT_ORDER[i]!] ?? '',
+}))
 </script>
 
 <style scoped>
+/* G73 敌人抗性雷达图 */
+.rxn-name.tap { color: var(--accent); }
+.resist-toggle {
+  margin-left: 12rpx;
+  font-size: 20rpx;
+  color: var(--ice);
+}
+.resist-radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12rpx;
+}
+.resist-radar {
+  width: 400rpx;
+  height: 360rpx;
+  overflow: visible;
+}
+.rr-ring {
+  fill: none;
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.rr-axis {
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.rr-shape {
+  fill: rgba(88, 166, 255, 0.22);
+  stroke: #58a6ff;
+  stroke-width: 2;
+}
+.rr-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
 /* 条目分隔线走共享的 .rxn（styles/common.css） */
 /* R65 抗性正负色分 */
 .res-up { color: var(--bad); }
