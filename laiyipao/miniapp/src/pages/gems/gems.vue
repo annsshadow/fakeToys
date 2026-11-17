@@ -94,7 +94,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
-import { gemAttrBadge, affixName } from '@/utils/labels'
+import { gemAttrBadge, affixName, qualityName as labelQualityName } from '@/utils/labels'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -203,25 +203,19 @@ function bestQualityOf(gemId: number): string {
   'gray')
 }
 
+/**
+ * 图鉴译名统一走共享表 utils/labels —— 与背包页（bag.vue）同源。
+ * 此前这里各写了一份：gold 显示「传说」而背包显示「金」、crit 显示「暴击率」
+ * 而背包显示「暴击」，同一颗宝石在两个页面像两种东西。
+ * 保留包装名（qualityName / attrLabel）而不改模板，是为了让依赖这些标识符
+ * 的源码守卫（gems_search_feature.test.ts）继续成立。
+ */
 function qualityName(q: string): string {
-  const map: Record<string, string> = {
-    gray: '普通', blue: '稀有', purple: '史诗', red: '焰金', gold: '传说',
-  }
-  return map[q] ?? q
+  return labelQualityName(q)
 }
 
 function attrLabel(a: string): string {
-  const map: Record<string, string> = {
-    attack: '攻击',
-    element_coef: '元素系数',
-    crit: '暴击率',
-    reaction_mult: '反应倍率',
-    element_cap: '元素层数上限',
-    heat_cap: '热量上限',
-    armor: '护甲',
-    skill_damage: '技能伤害',
-  }
-  return map[a] ?? a
+  return affixName(a)
 }
 
 onShow(() => {
