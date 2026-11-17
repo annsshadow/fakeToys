@@ -462,7 +462,7 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T> 
                       )
                     }
                   },
-                  fail: (e) => reject(new ApiError(0, 'network_error', e.errMsg)),
+                  fail: (e) => reject(new ApiError(0, 'network_error', `无法连接服务器：${e.errMsg}`)),
                 })
                 return
               } catch {

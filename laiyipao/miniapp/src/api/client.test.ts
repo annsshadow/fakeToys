@@ -371,6 +371,9 @@ describe('request：401 刷新与重试', () => {
     const err = (await request('/me').catch((e) => e)) as ApiError
     expect(err.status).toBe(0)
     expect(err.code).toBe('network_error')
+    // 与首请求(487)、配置请求(784)同口径：弱网文案必须归一化，
+    // 不能把 'request:fail abort' 这类技术串直接透给玩家。
+    expect(err.message).toBe('无法连接服务器：request:fail abort')
   })
 
   it('重试时新 access token 缺失 → 重试头不带 Authorization（if (t) 假分支）', async () => {
