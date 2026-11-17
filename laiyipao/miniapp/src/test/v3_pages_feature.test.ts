@@ -44,6 +44,11 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G122 出战热量预算 + G123 反应强度排行', () => {
+    expect(read('../pages/bag/bag.vue')).toContain('heatBudget')
+    expect(read('../pages/reactions/reactions.vue')).toContain('strengthRank')
+  })
+
   it('G119 血量分布 + G120 解锁分布 + G121 稀有度被动矩阵', () => {
     expect(read('../pages/enemies/enemies.vue')).toContain('hpDistribution')
     expect(read('../pages/equipment/equipment.vue')).toContain('unlockDist')

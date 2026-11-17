@@ -54,6 +54,14 @@
             >移除</text>
           </view>
         </view>
+        <!-- G122 出战热量预算 -->
+        <view class="heat-budget">
+          <view class="hb-head">
+            <text class="dim">出战热量 {{ heatBudget.used }} / {{ heatBudget.cap }}</text>
+            <text v-if="heatBudget.pct >= 100" class="hb-warn">会过热！</text>
+          </view>
+          <view class="hb-track"><view class="hb-fill" :style="{ width: heatBudget.pct + '%' }" /></view>
+        </view>
       </view>
 
       <!-- 熔炼：两个已拥有的材料技能 → 高阶技能。
@@ -478,6 +486,21 @@ function tabCount(key: BagTab): number {
 }
 
 const selected = ref<number[]>([0, 0, 0, 0])
+
+/** G122 出战热量预算：4 个已选技能的热量总和 vs 上限，配装当屏就知道会不会过热。 */
+const heatBudget = computed(() => {
+  const skills = selected.value
+    .map((id) => allSkills.value.find((s) => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s)
+  const used = skills.reduce((sum, s) => sum + (s.heat_cost ?? 0), 0)
+  const cap = Number((store.attacker as any).heatCapPermille ?? 1000) / 10
+  return {
+    used,
+    cap,
+    pct: cap > 0 ? Math.min(100, Math.round(used / cap * 100)) : 0,
+    skills: skills.map((s) => ({ id: s.id, name: s.name, heat: s.heat_cost ?? 0, element: s.element })),
+  }
+})
 /** 保存中：保存期间禁用操作，避免连点产生竞态 */
 const saving = ref(false)
 
@@ -1203,6 +1226,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G122 出战热量预算 */
+.heat-budget { margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx solid var(--border); }
+.hb-head { display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 8rpx; }
+.hb-warn { color: var(--bad); font-weight: 600; }
+.hb-track { height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.hb-fill { height: 100%; background: var(--fire); border-radius: 999rpx; }
+
 /* G100 已佩戴宝石词条总加成 */
 .gem-affix-total { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
 .gat-chip {

@@ -67,6 +67,16 @@
         </view>
       </view>
 
+      <!-- G123 反应基础强度排行 -->
+      <view class="card">
+        <view class="card-title">反应强度<text class="dim">基础强度，非实战伤害</text></view>
+        <view v-for="r in strengthRank" :key="r.key" class="sr-row">
+          <text class="sr-name">{{ r.name }}</text>
+          <view class="sr-track"><view class="sr-fill" :style="{ width: r.pct + '%' }" /></view>
+          <text class="mono sr-val">{{ r.label }}</text>
+        </view>
+      </view>
+
       <!-- 反应图鉴（服务端下发的权威表） -->
       <view class="card stagger-in">
         <text class="card-title">反应图鉴</text>
@@ -186,6 +196,17 @@ interface MatrixCell {
   reachable: boolean
   self: boolean
 }
+/** G123 反应基础强度排行：按 base_coef × 增幅 排（口径是基础强度，非实战伤害）。 */
+const strengthRank = computed(() => {
+  const arr = allReactions.value.map((r) => ({
+    key: r.key,
+    name: r.name,
+    score: Number(r.base_coef ?? 0) * (1 + Number(r.amplify_pct ?? 0) / 100),
+  })).sort((a, b) => b.score - a.score)
+  const max = Math.max(1, ...arr.map((a) => a.score))
+  return arr.map((a) => ({ ...a, pct: Math.round(a.score / max * 100), label: Math.round(a.score * 100) / 100 }))
+})
+
 /** G105 反应机制对照表：7 种反应 × 5 种效果，有则点亮 —— 搭配前的速查表。 */
 const mechanismTable = computed(() =>
   allReactions.value.map((r) => ({
@@ -263,6 +284,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* G123 反应强度排行 */
+.sr-row { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin: 8rpx 0; }
+.sr-name { width: 160rpx; flex-shrink: 0; font-size: 22rpx; }
+.sr-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.sr-fill { height: 100%; background: var(--corrosion); border-radius: 999rpx; }
+.sr-val { width: 80rpx; text-align: right; font-size: 22rpx; color: var(--corrosion); }
+
 /* G105 反应机制对照表 */
 .mech-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
 .mech-name { flex: 1.4; font-size: 22rpx; }
