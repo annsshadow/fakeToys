@@ -570,6 +570,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 19.4 交付与边界
 
 - 本轮两提交 33e6c2ef5、e09b2e238 及本现量文档 §19 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 二十、第11轮：R161移动端设计token化 + 公告归档时区修复 + typecheck回归修复（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r161 / lybug-r11）+ 主线程回归审查。三个修复经独立复跑与门禁验证后提交。
+
+### 20.1 oa4rust 移动端 R161 语义设计 token 化试点（提交 f6f48dbf1）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | uni.scss 仅 2 个未使用变量、19 页全纯 CSS、硬编码色 361 处、同语义多色值（主蓝 #2d8cf0 vs #2f6bff、错误红 3 种、文字灰阶 6 种），与桌面成熟 CSS 变量体系反差明显 | 全量 token 化风险高，本轮先做可控试点 |
+| 修复 | App.vue 全局 <style> 定义 9 个 --color-* 语义 token（取全端最高频色值，H5/小程序均支持 CSS 变量，不引 sass）；bbs/login 两页 20 处硬编码色替换为 var() 引用，视觉严格等价或同语义归一 | 改后两页硬编码色 0 处 |
+| 门禁 | 新增 design-tokens.contract.test.ts 10 例（按选择器+属性断言 var() 引用，非无脑字符串扫描）；RED 9 failed→GREEN 10 passed | 主代理独立复跑 10 passed；pnpm test 248 passed、typecheck EXIT=0、uni build 真实成功（Compiler 5.26，仅 Appid 未配置提示） |
+
+### 20.2 laiyipao 公告归档月份分组时区错位（提交 c1d077215）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 published_at 是 UTC RFC3339（announcement.go:22-28 + routes.go:1106-1115 直接 c.JSON 序列化，无格式化）；前端 groupedByMonth 用 slice(0,7) 取 UTC 年月，formatDate 用 new Date().getFullYear/getMonth 取本地年月。UTC+8 用户遇 published_at=2026-10-31T17:00:00Z，卡片显示 2026-11-01 01:00（本地 11 月）却被归入 2026-10 组，归档标题与卡片自相矛盾；纽约时区反向同理 | 前端展示与服务端时间契约 + 时区边界的真实不一致 |
+| 修复 | 新增 monthKey(iso) 用与 formatDate 同一本地 Date 派生 yyyy-mm；null 回退未标注日期、非法日期回退 slice(0,7)；groupedByMonth 改调 monthKey | 最小改动，保留排序/回退语义 |
+| 门禁 | announcements_month_group.test.ts 2 例（运行时改 TZ，UTC+8 正向 + America/New_York 反向，挂组件断言分组标签与卡片一致）；RED 1 failed（expected 2026-10 to include 2026-11）→GREEN 2 passed | 主代理独立复跑 2 passed；全量 pnpm test 1447 passed｜2 skipped EXIT=0；未改 server，无 go test baseline |
+
+### 20.3 laiyipao 战报测试 mock 类型回归修复（提交 8ee937cd6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 第 9 轮提交 130add509 新增的 mockImplementation 参数写为必填 (limit: number, offset: number, result?: string)，与 myBattleHistory 实际签名 (limit?: number, offset?: number, result?: string) 不兼容（TS2345），且 limit 未使用（TS6133）。vitest 用 esbuild 不做类型检查故长期未暴露，但 tsc --noEmit 失败 | 主线程回归审查时发现并确认为本仓第 9 轮引入的 regression |
+| 修复 | 参数改 (_limit?: number, offset = 0, result?: string) | 保持行为不变 |
+| 门禁 | tsc --noEmit EXIT=0（此前 2 处 error TS 消除）；battles.test.ts 4 passed | 主代理独立复跑确认 |
+
+### 20.4 交付与边界
+
+- 本轮三提交 f6f48dbf1、c1d077215、8ee937cd6 及本现量文档 §20 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（唯一 "design token" 注释命中非真值）；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
