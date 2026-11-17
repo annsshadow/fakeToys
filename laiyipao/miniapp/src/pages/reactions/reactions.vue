@@ -37,6 +37,7 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
         </text>
+        <text class="result-count">显示 {{ filteredReactions.length }} / 共 {{ allReactions.length }} 条</text>
         <view v-for="r in filteredReactions" :key="r.key" class="rxn">
           <view class="rxn-head">
             <!-- 反应图标：双环交叠（两个元素圈相碰的隐喻） -->
@@ -72,6 +73,11 @@
           </view>
         </view>
         <text v-if="!allReactions.length" class="muted">反应表为空（配置未加载？）</text>
+        <!-- R28 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && allReactions.length && filteredReactions.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的反应</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>

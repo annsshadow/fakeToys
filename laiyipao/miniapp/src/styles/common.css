@@ -343,6 +343,30 @@ page,
   margin-bottom: 12rpx;
 }
 
+/* 图鉴搜索结果计数 + 无结果引导（R23–R28 六个图鉴页共用） */
+.result-count {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  margin: 0 0 12rpx;
+}
+
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 48rpx 0 32rpx;
+}
+
+.clear-search {
+  font-size: var(--fs-sm);
+  color: var(--fire);
+  border: 1rpx solid var(--fire);
+  border-radius: 999rpx;
+  padding: 8rpx 32rpx;
+}
+
 .ph {
   color: var(--dim);
 }

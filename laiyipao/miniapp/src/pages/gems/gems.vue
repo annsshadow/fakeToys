@@ -22,6 +22,7 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值与描述直接来自服务端 /config。共 {{ ownedCount }} 颗已拥有。
         </text>
+        <text class="result-count">显示 {{ filteredGems.length }} / 共 {{ gems.length }} 条</text>
         <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
           <view class="rxn-head">
             <!-- 宝石切面图标：颜色按属性映射（共享表见 utils/labels.gemAttrBadge） -->
@@ -35,6 +36,11 @@
           <text class="rxn-descr">{{ g.descr || '（服务端未提供说明）' }}</text>
         </view>
         <text v-if="!gems.length" class="muted">宝石表为空（配置未加载？）</text>
+        <!-- R27 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && gems.length && filteredGems.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的宝石</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>

@@ -23,6 +23,7 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           抗性为千分比：正值减伤、负值易伤。
         </text>
+        <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
             <!-- 敌型图标座：形状与战斗画布里的敌型一一对应（圆/菱/三角/六边/八边+冠） -->
@@ -55,6 +56,11 @@
           <text v-else class="muted">无元素抗性</text>
         </view>
         <text v-if="!enemies.length" class="muted">敌人表为空（配置未加载？）</text>
+        <!-- R23 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && enemies.length && filteredEnemies.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的敌人</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>

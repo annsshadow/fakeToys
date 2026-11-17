@@ -23,6 +23,7 @@
           数值与说明直接来自服务端 /config。皮肤被动是<strong>机制型词条</strong>，
           改变战斗方式而非只加数值。
         </text>
+        <text class="result-count">显示 {{ filteredSkins.length }} / 共 {{ skins.length }} 条</text>
         <view v-for="s in filteredSkins" :key="s.id" class="rxn skin">
           <view class="rxn-head">
             <!-- 皮肤图标座：稀有度决定底座配色（传说带金色描边） -->
@@ -40,6 +41,11 @@
           </view>
         </view>
         <text v-if="!skins.length" class="muted">皮肤表为空（配置未加载？）</text>
+        <!-- R26 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && skins.length && filteredSkins.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的皮肤</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>

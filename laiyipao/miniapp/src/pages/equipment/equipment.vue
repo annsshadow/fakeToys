@@ -23,6 +23,7 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ items.length }} 件已拥有。
         </text>
+        <text class="result-count">显示 {{ filteredItems.length }} / 共 {{ items.length }} 条</text>
         <view v-for="e in filteredItems" :key="e.id" class="rxn equip">
           <view class="rxn-head">
             <!-- 部位图标座：装备的类别锚点（武器/头盔/胸甲…各有专属线性图标） -->
@@ -42,6 +43,11 @@
           </view>
         </view>
         <text v-if="!items.length" class="muted">装备表为空（配置未加载？）</text>
+        <!-- R24 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && items.length && filteredItems.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的装备</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>

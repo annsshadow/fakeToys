@@ -23,6 +23,7 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ skills.length }} 个已解锁（背包可查看拥有状态）。
         </text>
+        <text class="result-count">显示 {{ filteredSkills.length }} / 共 {{ skills.length }} 条</text>
         <view v-for="s in filteredSkills" :key="s.id" class="rxn skill">
           <view class="rxn-head">
             <view class="icon-badge" :class="'badge-' + s.element" style="width: 64rpx; height: 64rpx">
@@ -47,6 +48,11 @@
           </view>
         </view>
         <text v-if="!skills.length" class="muted">技能表为空（配置未加载？）</text>
+        <!-- R25 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
+        <view v-if="keyword && skills.length && filteredSkills.length === 0" class="search-empty">
+          <text class="muted">没有匹配「{{ keyword }}」的技能</text>
+          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+        </view>
       </view>
     </view>
   </view>
