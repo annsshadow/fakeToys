@@ -238,7 +238,30 @@ describe('confirmMsg', () => {
     ok2.onclick!()
     await expect(p2).resolves.toBe(true)
     expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
-    void p1 // 旧弹窗已被新调用抢占移除，允许其永久挂起
+    // 旧弹窗被新调用抢占后必须以「取消」落地；await 它的调用方不能永远等不到结果。
+    let settled = false
+    p1.then(() => (settled = true))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(settled, '被抢占的确认框不得永久挂起').toBe(true)
+    await expect(p1).resolves.toBe(false)
+  })
+
+  it('re-entrant confirmMsg cancels the old dialog and leaves exactly one keydown handler', async () => {
+    const p1 = toast.confirmMsg('first')
+    const firstOverlay = dom.doc.getElementById('oa4-confirm-overlay')
+    expect(dom.keydownListeners).toHaveLength(1)
+
+    const p2 = toast.confirmMsg('second')
+    // 旧弹窗被取代时必须同步以 false 落地，并注销它自己的 keydown 处理器；
+    // 否则叠加的幽灵处理器会在新弹窗按 Esc 时重复 resolve，且旧 Promise 永远悬挂。
+    expect(dom.keydownListeners, '重入后只能有一个存活的 keydown 处理器').toHaveLength(1)
+    expect(dom.doc.getElementById('oa4-confirm-overlay')).not.toBe(firstOverlay)
+    await expect(p1).resolves.toBe(false)
+
+    // 唯一存活的处理器属于新弹窗：Esc 关闭它，监听器归零。
+    fireKey('Escape')
+    await expect(p2).resolves.toBe(false)
+    expect(dom.keydownListeners).toHaveLength(0)
   })
 
   it('toggles hover styling on both buttons (mouseover brightens, mouseout restores)', () => {

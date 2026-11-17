@@ -140,11 +140,21 @@ export async function copyText(text: string): Promise<boolean> {
 }
 
 /**
+ * 当前打开的确认框的关闭钩子。confirmMsg 是单例遮罩：重入时旧调用会被新调用抢占，
+ * 必须让它的 Promise 以 false 落地并注销 keydown 监听，否则 await 的调用方会永久悬挂，
+ * 且幽灵处理器会叠加在新弹窗上重复响应 Esc。
+ */
+let dismissOpenConfirm: (() => void) | null = null
+
+/**
  * Sci-fi themed confirm dialog — replaces native window.confirm.
  * Returns true if user clicked "确认", false if "取消".
  */
 export function confirmMsg(message: string, title = '确认操作'): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
+
+  // 抢占式重入：先关闭仍打开的旧弹窗（false + 清理），再创建新的。
+  dismissOpenConfirm?.()
 
   // Remember the element that triggered the dialog so focus can be restored on close.
   const opener = document.activeElement as HTMLElement | null
@@ -213,13 +223,18 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       cancelBtn.style.color = '#94a3b8'
     }
     let onKeyDown: (e: KeyboardEvent) => void
+    let finished = false
     const finish = (result: boolean) => {
+      if (finished) return
+      finished = true
       document.removeEventListener('keydown', onKeyDown)
+      if (dismissOpenConfirm === dismiss) dismissOpenConfirm = null
       overlay.remove()
       // Give focus back to the control that opened the dialog.
       if (opener && typeof opener.focus === 'function' && document.body.contains(opener)) opener.focus()
       resolve(result)
     }
+    const dismiss = () => finish(false)
 
     cancelBtn.onclick = () => finish(false)
 
@@ -273,5 +288,6 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       }
     }
     document.addEventListener('keydown', onKeyDown)
+    dismissOpenConfirm = dismiss
   })
 }
