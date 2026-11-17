@@ -241,6 +241,7 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { businessTodayYM, businessTodayYMD, monthEndYMD, parseServerDate } from '../utils/date'
+import { clampPage } from '../utils/paging'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -294,6 +295,10 @@ useQuery({
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
+        // 切换月份/删除记录后结果集可能缩小，页码越过末页会显示空列表+「第N/1页」；
+        // 夹取到合法范围。clampPage 幂等，最多触发一次自纠正重取。
+        const safePage = clampPage(page.value, totalPages.value)
+        if (safePage !== page.value) page.value = safePage
         return r
       }),
 })
