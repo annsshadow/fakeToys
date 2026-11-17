@@ -14,6 +14,10 @@
           每层只能选 2 个节点（4 选 2），且第 2、3 层必须先点亮前一层 ——
           专精点不够点满任何一系，<b>必须做方向选择</b>。这是"专精点有限"之外的第二重约束。
         </text>
+        <!-- R57 点数从哪来：此前界面只显示一个数字，玩家不知道怎么变多 -->
+        <text class="dim" style="display: block; margin-top: 8rpx">
+          初始 3 点，每提升 10 级 +1 点（随战斗经验成长）。
+        </text>
         <!-- 重铸入口（第 150 轮）。
              没有它，`mastery_reset` 就是商店里一件「买了不知道干嘛」的商品 ——
              服务端这个端点从第 74 轮起就存在，客户端从来没接过。 -->
@@ -24,6 +28,7 @@
             :class="{ 'link-off': resetting || selected.length === 0 || resetTokens <= 0 }"
             @click="resetMastery"
           >
+            <view v-if="resetting" class="spinner" style="display: inline-block" />
             {{ resetting ? '重铸中…' : '重铸' }}
           </text>
         </view>

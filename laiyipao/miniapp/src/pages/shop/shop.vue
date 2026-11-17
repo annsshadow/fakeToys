@@ -31,7 +31,8 @@
           </view>
           <view class="flex-1">
             <text class="skill-name">{{ it.name }}</text>
-            <text class="price-text block">{{ priceText(it) }}</text>
+            <!-- R59 价格是「值不值」判断的核心，加「花费」标签并加重 -->
+            <text class="price-text block">花费 {{ priceText(it) }}</text>
             <!-- 每日限购进度（2026-11-01 新一轮第 49 轮；2026-11-17 R17 改进度条）：
                  纯文字「今日已购 x/y」看不出还剩多少，做成 mini 条 + 文案。 -->
             <view v-if="it.limit_per_day > 0" class="limit-wrap">
@@ -316,7 +317,8 @@ onMounted(async () => {
 }
 .price-text {
   color: var(--warn);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  font-weight: 700;
   margin-top: 4rpx;
   font-variant-numeric: tabular-nums;
 }

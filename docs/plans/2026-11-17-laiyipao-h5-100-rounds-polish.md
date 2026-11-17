@@ -38,7 +38,7 @@
 | V | 关卡页信息密度与状态化 | R11–R13 ✅ |
 | W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30 ✅ |
 | X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50 ✅ |
-| Y | 第二轮探索收敛（新取证驱动） | R51–R70（进行中，当前 R56） |
+| Y | 第二轮探索收敛（新取证驱动） | R51–R70（进行中，当前 R60） |
 | Z | 收尾审计与回归 | R71–R100 |
 
 ## 三、轮次台账
@@ -101,3 +101,7 @@
 | R54 | 11-17 | 关卡·章节星级进度条 | 星级数字下方加可扫读的进度条（chapterStars/chapterTotal） | stage.test R54 + 源码守卫 |
 | R55 | 11-17 | 我的·防线候选空态 | candidates 为空时整块此前直接消失，现给解释卡 + 先设自己防线的引导 | y_batch_feature.test R55 |
 | R56 | 11-17 | 我的·挑战结果弹入 | 最近一次挑战结果卡 pop-in，胜负结论成看得见的事件 | y_batch_feature.test R56 |
+| R57 | 11-17 | 专精·点数来源说明 | 页面此前只显示数字，补「初始 3 点、每 10 级 +1」（口径取自服务端 playerlevel.go） | y_batch_feature.test R57 |
+| R58 | 11-17 | 专精·重铸在途反馈 | 重铸中显示 spinner，避免连点 | y_batch_feature.test R58 |
+| R59 | 11-17 | 商城·价格强调 | 价格加「花费」标签并加粗放大（R0 取证「价格弱」） | y_batch_feature.test R59 |
+| R60 | 11-17 | Y 批收尾审计 | 6 个第二轮取证关键标记全量扫描 | y_batch_feature.test R60 |

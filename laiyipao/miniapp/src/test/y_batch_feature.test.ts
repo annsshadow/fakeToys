@@ -37,4 +37,33 @@ describe('Y 批结构守卫', () => {
     expect(src).toContain('class="card pop-in"')
     expect(src).toContain('lastChallenge.won')
   })
+
+  it('R57 专精点来源说明', () => {
+    const src = read('../pages/mastery/mastery.vue')
+    expect(src).toContain('初始 3 点，每提升 10 级 +1 点')
+  })
+
+  it('R58 重铸在途 spinner', () => {
+    expect(read('../pages/mastery/mastery.vue')).toContain('resetting')
+  })
+
+  it('R59 商城价格标签与加重', () => {
+    const src = read('../pages/shop/shop.vue')
+    expect(src).toContain('花费 {{ priceText(it) }}')
+    expect(src).toContain('font-weight: 700')
+  })
+
+  it('R60 Y 批收尾审计：关键标记齐全', () => {
+    const markers: Array<[string, string]> = [
+      ['../pages/bag/bag.vue', '去商城买一颗'],
+      ['../pages/bag/bag.vue', '已定位到上方输入框'],
+      ['../pages/stage/stage.vue', 'chapter-star-fill'],
+      ['../pages/me/me.vue', '暂时没有其他玩家的防线'],
+      ['../pages/mastery/mastery.vue', '初始 3 点'],
+      ['../pages/shop/shop.vue', '花费 {{ priceText(it) }}'],
+    ]
+    for (const [file, marker] of markers) {
+      expect(read(file), `${file}:${marker}`).toContain(marker)
+    }
+  })
 })
