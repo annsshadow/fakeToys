@@ -327,16 +327,24 @@ type ScopeKey = (typeof SCOPES)[number]['key']
 
 const scope = ref<ScopeKey>('daily')
 
+// 任务列表按周期切换存在「陈旧响应覆盖」竞态：快速 daily→weekly 时两个
+// fetchTasks 并发，先发慢到的旧响应会用旧周期数据覆盖当前选中 tab 的列表。
+// 用序号只认最后一次请求的结果（与 rank.vue 的 loadSeq 守卫同类）。
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     // ⚠️ 传当前 scope，而不是写死 'daily'。
     const res = await api.fetchTasks(scope.value)
+    if (seq !== loadSeq) return // 已被更新的请求取代，丢弃陈旧响应
     tasks.value = res.items ?? []
   } catch (e) {
+    if (seq !== loadSeq) return
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

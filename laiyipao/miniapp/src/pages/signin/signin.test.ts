@@ -379,4 +379,41 @@ describe('signin.vue 签到页', () => {
     await wrapper.find('.offline-claim').trigger('click')
     expect(mockApi.claimOfflineReward).not.toHaveBeenCalled()
   })
+
+  it('竞态：切到每周任务后，先发后到的每日任务响应不得覆盖列表', async () => {
+    // 构造两个可控响应：daily 请求先发但慢到，weekly 请求后发但先到。
+    type Res = { items: any[] }
+    let resolveDaily!: (value: Res) => void
+    let resolveWeekly!: (value: Res) => void
+    const dailyPromise = new Promise<Res>((r) => { resolveDaily = r })
+    const weeklyPromise = new Promise<Res>((r) => { resolveWeekly = r })
+    const dailyItem = { id: 91, name: '每日-慢到任务', progress: 0, target: 1, done: false, claimed: false, reward: { coin: 1 } }
+    const weeklyItem = { id: 92, name: '每周-当前任务', progress: 1, target: 1, done: false, claimed: false, reward: { coin: 2 } }
+    mockApi.fetchTasks.mockImplementation((scope?: string) => {
+      if (scope === 'daily') return dailyPromise as any
+      if (scope === 'weekly') return weeklyPromise as any
+      return Promise.resolve({ items: [] }) as any
+    })
+
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    // 初始 daily 请求已发出，尚未返回
+    expect(mockApi.fetchTasks).toHaveBeenCalledWith('daily')
+
+    // 用户切到「每周」：发出 weekly 请求（后发）
+    const weeklyTab = wrapper.findAll('text').find((t) => t.text().startsWith('每周'))!
+    await weeklyTab.trigger('click')
+    expect(mockApi.fetchTasks).toHaveBeenCalledWith('weekly')
+
+    // weekly 先返回 → 当前选中 tab 应展示每周任务
+    resolveWeekly({ items: [weeklyItem] })
+    await flushPromises()
+    expect(wrapper.text()).toContain('每周-当前任务')
+
+    // daily 后返回（陈旧响应）→ 不得覆盖当前选中的每周任务
+    resolveDaily({ items: [dailyItem] })
+    await flushPromises()
+    expect(wrapper.text()).toContain('每周-当前任务')
+    expect(wrapper.text()).not.toContain('每日-慢到任务')
+  })
 })
