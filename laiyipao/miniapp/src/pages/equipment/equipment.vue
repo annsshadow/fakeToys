@@ -73,7 +73,7 @@
           <text class="rxn-descr">{{ e.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
             <text v-if="e.base_armor > 0" class="stat">护甲 {{ e.base_armor }}</text>
-            <text v-if="e.base_bonus_pct > 0" class="stat">加成 {{ e.base_bonus_pct }}%</text>
+            <text v-if="e.base_bonus_pct > 0" class="stat">加成 {{ e.base_bonus_pct }}‰</text>
             <!-- 第六批 R48：与技能图鉴口径统一，「需 Lv.N」 -->
             <text class="stat">需 Lv.{{ e.unlock_level }}</text>
           </view>
