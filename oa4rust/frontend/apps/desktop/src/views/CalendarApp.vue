@@ -146,6 +146,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { calendarBusinessToday, calendarCellKey, shiftCalendarMonth } from '../utils/calendarGrid'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -160,9 +161,9 @@ interface CalendarEvent {
   calendarId?: string
 }
 
-const today = new Date()
-const currentYear = ref(today.getFullYear())
-const currentMonth = ref(today.getMonth() + 1)
+const initialToday = calendarBusinessToday()
+const currentYear = ref(initialToday.year)
+const currentMonth = ref(initialToday.month)
 const selectedDate = ref<{ year: number; month: number; day: number } | null>(null)
 
 interface CalItem {
@@ -499,15 +500,16 @@ const calendarCells = computed(() => {
     events?: CalendarEvent[]
   }> = []
 
-  // 上个月的尾部
-  const prevMonthLastDay = new Date(year, month - 1, 0).getDate()
+  // 上个月的尾部（跨年用真实年月，键补零）
+  const prev = shiftCalendarMonth(year, month, -1)
+  const prevMonthLastDay = new Date(prev.year, prev.month, 0).getDate()
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const d = prevMonthLastDay - i
     cells.push({
-      key: `${year}-${month - 1}-${d}`,
+      key: calendarCellKey(prev.year, prev.month, d),
       day: d,
-      month: month - 1,
-      year: month === 1 ? year - 1 : year,
+      month: prev.month,
+      year: prev.year,
       isToday: false,
     })
   }
@@ -518,24 +520,26 @@ const calendarCells = computed(() => {
     const dayEvents = allEvents.value.filter(
       (e: CalendarEvent) => e.startTime?.startsWith(dateStr) || e.startTime?.includes(dateStr),
     )
+    const businessToday = calendarBusinessToday()
     cells.push({
-      key: `${year}-${month}-${d}`,
+      key: calendarCellKey(year, month, d),
       day: d,
       month,
       year,
-      isToday: d === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear(),
+      isToday: d === businessToday.day && month === businessToday.month && year === businessToday.year,
       events: dayEvents,
     })
   }
 
-  // 下个月的头部
+  // 下个月的头部（跨年用真实年月，键补零）
+  const next = shiftCalendarMonth(year, month, 1)
   const remaining = (7 - (cells.length % 7)) % 7
   for (let d = 1; d <= remaining; d++) {
     cells.push({
-      key: `${year}-${month + 1}-${d}`,
+      key: calendarCellKey(next.year, next.month, d),
       day: d,
-      month: month + 1,
-      year: month === 12 ? year + 1 : year,
+      month: next.month,
+      year: next.year,
       isToday: false,
     })
   }
@@ -569,8 +573,9 @@ function nextMonth(): void {
 }
 
 function goToday(): void {
-  currentMonth.value = today.getMonth() + 1
-  currentYear.value = today.getFullYear()
+  const businessToday = calendarBusinessToday()
+  currentMonth.value = businessToday.month
+  currentYear.value = businessToday.year
   selectedDate.value = null
 }
 
