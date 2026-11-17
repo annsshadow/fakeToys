@@ -42,6 +42,22 @@ describe('第七批 战斗画面实质优化守卫', () => {
     expect(src).toContain('R9 击杀地面残留')
   })
 
+  it('R11 行走摆动 + R23 受击击退（只改绘制坐标，零额外 draw call）', () => {
+    const src = canvas()
+    expect(src).toContain('const gait =')
+    expect(src).toContain('const kb = Number(e.knockback)')
+    expect(src).toContain('R11 行走摆动 + R23 受击击退')
+    expect(src).toContain('ctx.drawImage(body as never, bx - size / 2, by - size / 2')
+  })
+
+  it('R16 BOSS 顶部独立血条 + R20 状态图标 + R21 潜地动画', () => {
+    const src = canvas()
+    expect(src).toContain('drawBossBar')
+    expect(src).toContain('R16 BOSS 顶部独立血条')
+    expect(src).toContain('R20 状态标记升级为可辨认符号')
+    expect(src).toContain('R21 潜地动画')
+  })
+
   it('R6 出生门双环旋转 + R7 防线警戒区', () => {
     const src = canvas()
     expect(src).toContain('R6 出生门双环')

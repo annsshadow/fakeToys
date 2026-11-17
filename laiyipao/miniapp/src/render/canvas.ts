@@ -1422,6 +1422,17 @@ export class BattleRenderer {
 
     const r = (e.isBoss ? 26 : e.category === 'normal' ? 14 : 18) * vp.scale
 
+    // R21 潜地动画：burrow 敌人周期性下浮（半个身位）、整体降透明，
+    // 并在身位处留一圈土色涟漪 —— 「它会钻地、直线弹打不到」一眼可见。
+    if (e.burrow) {
+      const phase = 0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 500 + e.uid)
+      ctx.globalAlpha *= 0.55 + 0.35 * phase
+      ctx.fillStyle = 'rgba(120,96,64,0.35)'
+      ctx.beginPath()
+      ctx.arc(x, y + r * 0.5, r * 0.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
     // 第六批 R3：每个敌种独立配色 + 徽记；受击闪白仍优先（保留既有判据）。
     const style = enemyVisual(e.defId, e.category, e.isBoss)
     const bodyColor = e.hitFlashMs > 0 ? '#ffffff' : style.body
@@ -1431,13 +1442,22 @@ export class BattleRenderer {
     const strokeColor = e.isBoss ? '#ff6b35' : '#0d1117'
     const lineWidth = 2 * vp.scale * 0.5
 
+    // R11 行走摆动 + R23 受击击退：两者都只改本体绘制坐标，零额外 draw call。
+    // 摆动用 tick 相位（确定性），击退用 e.knockback（定点→画布）。
+    const gait = e.flyHeight > 0
+      ? 0 // 飞行单位不做地面行走摆动
+      : 2.2 * vp.scale * Math.sin((this.engine.elapsedMs || 0) / 130 + e.uid)
+    const kb = Number(e.knockback) / 1000 * vp.scale
+    const bx = x + kb
+    const by = y + gait
+
     // 主体：形状 + 描边 + 高光 + 徽记整副烘焙成位图，多次提交 → 1 次 drawImage
     const body = this.enemySprite(e.category, bodyColor, strokeColor, r, e.defId, style.mark, e.isBoss, e.flyHeight)
     if (body) {
       const size = Math.max(2, Math.ceil(r * 2 + 6))
-      ctx.drawImage(body as never, x - size / 2, y - size / 2, size, size)
+      ctx.drawImage(body as never, bx - size / 2, by - size / 2, size, size)
     } else {
-      this.paintEnemyBody(ctx, x, y, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
+      this.paintEnemyBody(ctx, bx, by, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
     }
 
     // 护盾环
@@ -1449,17 +1469,65 @@ export class BattleRenderer {
       ctx.stroke()
     }
 
-    // 状态标记：冻结/眩晕
+    // R20 状态标记升级为可辨认符号：冻结=冰蓝环+霜点，眩晕=黄环+顶星，减速=青色下箭头
+    // 此前三态都是「半透明色块覆盖」，玩家分不清敌人到底中了什么状态。
     if (e.frozenMs > 0) {
+      // 保留原有半透明覆盖（既有测试断言该色值，且它给本体统一的冷色调）
       ctx.fillStyle = 'rgba(88,166,255,0.35)'
       ctx.beginPath()
       ctx.arc(x, y, r, 0, Math.PI * 2)
       ctx.fill()
+      ctx.strokeStyle = 'rgba(88,166,255,0.7)'
+      ctx.lineWidth = Math.max(1.5, 2 * vp.scale)
+      ctx.beginPath()
+      ctx.arc(x, y, r + 2 * vp.scale, 0, Math.PI * 2)
+      ctx.stroke()
+      // 六角霜点（单 path）
+      ctx.fillStyle = 'rgba(200,235,255,0.9)'
+      ctx.beginPath()
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI * 2 * i) / 6
+        const px = x + Math.cos(a) * r * 0.5
+        const py = y + Math.sin(a) * r * 0.5
+        ctx.moveTo(px, py)
+        ctx.arc(px, py, Math.max(1, 1.4 * vp.scale), 0, Math.PI * 2)
+      }
+      ctx.fill()
     }
     if (e.stunnedMs > 0) {
+      // 保留原有半透明覆盖（既有测试断言该色值）
       ctx.fillStyle = 'rgba(255,211,61,0.3)'
       ctx.beginPath()
       ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(255,211,61,0.7)'
+      ctx.lineWidth = Math.max(1.5, 2 * vp.scale)
+      ctx.beginPath()
+      ctx.arc(x, y, r + 2 * vp.scale, 0, Math.PI * 2)
+      ctx.stroke()
+      // 头顶旋转星（眩晕的经典符号），单 path 四角星
+      const sy = y - r - 8 * vp.scale
+      ctx.fillStyle = 'rgba(255,211,61,0.95)'
+      ctx.beginPath()
+      ctx.moveTo(x, sy - 5 * vp.scale)
+      ctx.lineTo(x + 2 * vp.scale, sy - 2 * vp.scale)
+      ctx.lineTo(x + 5 * vp.scale, sy)
+      ctx.lineTo(x + 2 * vp.scale, sy + 2 * vp.scale)
+      ctx.lineTo(x, sy + 5 * vp.scale)
+      ctx.lineTo(x - 2 * vp.scale, sy + 2 * vp.scale)
+      ctx.lineTo(x - 5 * vp.scale, sy)
+      ctx.lineTo(x - 2 * vp.scale, sy - 2 * vp.scale)
+      ctx.closePath()
+      ctx.fill()
+    }
+    if (e.slowedMs > 0 && e.frozenMs <= 0) {
+      // 减速：青色下三角（速度被压制）
+      ctx.fillStyle = 'rgba(126,231,135,0.75)'
+      ctx.beginPath()
+      ctx.moveTo(x - 4 * vp.scale, y - r - 8 * vp.scale)
+      ctx.lineTo(x + 4 * vp.scale, y - r - 8 * vp.scale)
+      ctx.lineTo(x, y - r - 2 * vp.scale)
+      ctx.closePath()
       ctx.fill()
     }
 
@@ -2084,8 +2152,34 @@ export class BattleRenderer {
    *
    * ⚠️ 文本与档位色是测试断言（canvas.test.ts HUD 分支），只增不改。
    */
+  /** R16 BOSS 顶部独立血条：仅场上有存活首领时绘制，平时零成本。 */
+  private drawBossBar(ctx: CanvasRenderingContext2D): void {
+    let boss: Enemy | null = null
+    for (const e of this.engine.enemies) {
+      if (e.isBoss && !e.dead) { boss = e; break }
+    }
+    if (!boss) return
+    const vp = this.vp
+    const barW = vp.width * 0.7
+    const x = (vp.width - barW) / 2
+    const y = vp.offsetY - 8
+    if (y < 4) return
+    const pct = Math.max(0, Math.min(1, Number(boss.hp) / Number(boss.maxHp)))
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+    ctx.fillRect(x, y, barW, 9)
+    ctx.fillStyle = '#ff6b35'
+    ctx.fillRect(x, y, barW * pct, 9)
+    ctx.fillStyle = '#e6edf3'
+    ctx.font = this.fontOf(12, true)
+    ctx.textAlign = 'center'
+    ctx.fillText(boss.name, vp.width / 2, y - 3)
+  }
+
   private drawHud(ctx: CanvasRenderingContext2D): void {
     const vp = this.vp
+    // R16 BOSS 顶部独立血条：场上有首领时，在顶部空带画一条醒目长血条，
+    // 玩家不必在混战里找那只大怪的血量。
+    this.drawBossBar(ctx)
     const heat = this.engine.heat
     const barW = vp.width * 0.6
     const barH = 10
