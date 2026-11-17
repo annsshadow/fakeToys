@@ -560,9 +560,12 @@ function doRefresh(): Promise<void> {
       timeout: 20000,
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          const d = res.data as { access_token: string; refresh_token: string }
-          set(TOKEN_KEY, d.access_token)
-          set(REFRESH_KEY, d.refresh_token)
+          // /auth/refresh 与登录共用 service.TokenPair，响应里带回的是
+          // **本次新签发 access token** 的 expires_at。必须一起落盘，
+          // 否则旧的（快到期的）expiry 留着 → tokenExpiringSoon() 每次都判
+          // 「快过期」→ 每请求刷一次，撞上 /auth/refresh 的限流。
+          const d = res.data as { access_token: string; refresh_token: string; expires_at?: string }
+          setTokenInternal(d.access_token, d.refresh_token, d.expires_at)
           resolve()
         } else {
           reject(new Error('刷新失败'))
