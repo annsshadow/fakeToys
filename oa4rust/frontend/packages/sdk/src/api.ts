@@ -41,6 +41,22 @@ const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 const FORBIDDEN_MESSAGE = '没有权限执行该操作'
 const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
 
+/**
+ * R155 / B1：传输层网络失败文案归一化。
+ * fetch/XHR 的底层错误是英文技术串（Failed to fetch / Network error / Timeout /
+ * Request aborted），直接透到页面会变成「加载失败：Failed to fetch」。
+ * 与移动 services/http.ts（R136）同口径，在这里换成中文可读文案；
+ * status 保持 0，使 shouldRetryQuery 的不重试判定不变。
+ */
+const NETWORK_FAILURE_MESSAGE = '网络连接失败，请检查网络后重试'
+const UPLOAD_FAILURE_MESSAGE = '上传失败，请检查网络后重试'
+const UPLOAD_TIMEOUT_MESSAGE = '上传超时，请检查网络后重试'
+
+/** fetch/XHR 网络失败 → 归一化的 ApiError(status 0)。 */
+function networkFailure(message: string): ApiError {
+  return new ApiError(message, 0)
+}
+
 function httpStatusError(status: number, statusText?: string): ApiError {
   if (status === 404) return new ApiError(NOT_FOUND_MESSAGE, 404)
   return new ApiError(statusText ? `HTTP ${status}: ${statusText}` : `HTTP ${status}`, status)
@@ -213,7 +229,7 @@ export class ApiClient {
       if (bridge.cancelled()) throw new RequestCancelledError()
       // 超时映射成 status 0：上层（vue-query 重试策略）据此识别「不会自己好」的失败并停止重试。
       if ((err as { name?: string } | null)?.name === 'AbortError') throw new ApiError('请求超时', 0)
-      throw err
+      throw networkFailure(NETWORK_FAILURE_MESSAGE)
     } finally {
       clearTimeout(timeoutId)
       bridge.dispose()
@@ -284,9 +300,9 @@ export class ApiClient {
         credentials: 'include',
         signal: controller.signal,
       })
-    } catch (err) {
+    } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
-      throw err
+      throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
       bridge.dispose()
@@ -388,9 +404,9 @@ export class ApiClient {
           settleReject(new ApiError('malformed JSON response', xhr.status))
         }
       }
-      xhr.onerror = () => settleReject(new ApiError('Network error', 0))
-      xhr.onabort = () => settleReject(cancelled ? new RequestCancelledError() : new ApiError('Request aborted', 0))
-      xhr.ontimeout = () => settleReject(new ApiError('Timeout', 0))
+      xhr.onerror = () => settleReject(networkFailure(UPLOAD_FAILURE_MESSAGE))
+      xhr.onabort = () => settleReject(cancelled ? new RequestCancelledError() : networkFailure(UPLOAD_FAILURE_MESSAGE))
+      xhr.ontimeout = () => settleReject(networkFailure(UPLOAD_TIMEOUT_MESSAGE))
       xhr.send(formData)
     })
   }
@@ -422,9 +438,9 @@ export class ApiClient {
         credentials: 'include',
         signal: controller.signal,
       })
-    } catch (err) {
+    } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
-      throw err
+      throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
       bridge.dispose()
@@ -532,7 +548,10 @@ export class ApiClient {
       if (bridge.cancelled()) throw new RequestCancelledError()
       // 只有「我们自己的空闲看门狗」超时才改写错误；其余（401/403/网络/解析）原样抛。
       if (idleTimedOut) throw new ApiError('流式响应超时', 0)
-      throw err
+      // stream 的 try 块包住了状态判定：认证/权限/HTTP 状态/无 body 等语义错误
+      // 都已是 ApiError（含子类），必须原样透传；这里只归一化传输层原始网络异常。
+      if (err instanceof ApiError) throw err
+      throw networkFailure(NETWORK_FAILURE_MESSAGE)
     } finally {
       clearIdle()
       bridge.dispose()
