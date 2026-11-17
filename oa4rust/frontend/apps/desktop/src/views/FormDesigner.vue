@@ -724,6 +724,7 @@ import {
 import { downloadBlob } from '../utils/download'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume this import.
 import { formatPercent } from '../utils/formatNumber'
+import { validateFieldValue } from '../utils/formFieldValidation'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -1250,17 +1251,9 @@ function validatePreview(): boolean {
   previewErrors.value = {}
   for (const field of currentForm.value.fields) {
     if (['section', 'section_end', 'divider', 'spacer'].includes(field.type)) continue
-    if (field.required && !previewData.value[field.key]) previewErrors.value[field.key] = `${field.label} 不能为空`
-    if (field.pattern && previewData.value[field.key] && !new RegExp(field.pattern).test(previewData.value[field.key]))
-      previewErrors.value[field.key] = `${field.label} 格式错误`
-    if (field.minLength && previewData.value[field.key] && previewData.value[field.key].length < field.minLength)
-      previewErrors.value[field.key] = `${field.label} 至少${field.minLength}字符`
-    if (field.maxLength && previewData.value[field.key] && previewData.value[field.key].length > field.maxLength)
-      previewErrors.value[field.key] = `${field.label} 最多${field.maxLength}字符`
-    if (field.min !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) < field.min)
-      previewErrors.value[field.key] = `${field.label} 不能小于${field.min}`
-    if (field.max !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) > field.max)
-      previewErrors.value[field.key] = `${field.label} 不能大于${field.max}`
+    // R168: 预览与设计态共用同一边界校验；0/false/'0' 不再误报，0 不再绕过 min。
+    const err = validateFieldValue(field, previewData.value[field.key])
+    if (err) previewErrors.value[field.key] = err
   }
   return Object.keys(previewErrors.value).length === 0
 }
@@ -1813,24 +1806,9 @@ function removeConditionNode(nodeId: string) {
   remove(conditionTreeRoot.value)
 }
 function validateField(field: FormField): string[] {
-  const errors: string[] = []
-  if (field.validation?.required && (!field.defaultValue || field.defaultValue === '')) {
-    errors.push(`${field.label || field.key} 不能为空`)
-  }
-  if (field.validation?.minLength && field.defaultValue && field.defaultValue.length < field.validation.minLength) {
-    errors.push(`${field.label || field.key} 长度不能少于 ${field.validation.minLength}`)
-  }
-  if (field.validation?.maxLength && field.defaultValue && field.defaultValue.length > field.validation.maxLength) {
-    errors.push(`${field.label || field.key} 长度不能超过 ${field.validation.maxLength}`)
-  }
-  if (
-    field.validation?.pattern &&
-    field.defaultValue &&
-    !new RegExp(field.validation.pattern).test(field.defaultValue)
-  ) {
-    errors.push(field.validation.patternMsg || `${field.label || field.key} 格式不正确`)
-  }
-  return errors
+  // R168: 统一走 validateFieldValue，避免与预览口径分叉；返回空数组表示通过。
+  const err = validateFieldValue({ ...field.validation, label: field.label, key: field.key }, field.defaultValue)
+  return err ? [err] : []
 }
 function validateAllFields(): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {}
