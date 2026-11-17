@@ -287,6 +287,37 @@ describe('bag.vue 背包页', () => {
       expect(wrapper.text()).toContain('还没有宝石')
     })
 
+    // 品质档位表与「我的宝石」必须说同一种语言：
+    // 服务端 /config 下发的是英文 key（gray/blue/.../gold），但持有宝石走
+    // qualityName 显示中文。若档位表直出 q.name，玩家会看到「金」和「gold」
+    // 指同一档 —— 判断宝石价值的关键说明反而像两套体系。
+    it('品质档位表把服务端英文 key 翻译成中文，与持有宝石同名', async () => {
+      mockApi.fetchConfigIfVersion.mockResolvedValue({
+        status: 'modified',
+        config: bagConfig({
+          gem_qualities: [
+            { name: 'gray', affix_count: 1, mult: 1000 },
+            { name: 'gold', affix_count: 3, mult: 2000 },
+            { name: 'newkey', affix_count: 4, mult: 2500 },
+          ],
+        }),
+        serverTimeMs: 0,
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+
+      const table = wrapper.findAll('.gem-name').map((n) => n.text()).join(' | ')
+      // 已知档位必须走中文映射；未知档位保留原 key（不吞掉服务端新增）
+      expect(table).toContain('灰')
+      expect(table).toContain('金')
+      expect(table).toContain('newkey')
+      // 同一页两处不能再各说各话：已知档位的裸英文 key 不许上屏
+      expect(table).not.toContain('gray')
+      expect(table).not.toContain('gold')
+      // 倍率仍来自服务端，未被中文化替换掉（行为断言，不是源码扫描）
+      expect(table).toContain('×2.00')
+    })
+
     it('洗练：成功后就地替换该颗宝石并刷新余额（以服务端为准）', async () => {
       mockApi.fetchGems.mockResolvedValue({
         gems: [

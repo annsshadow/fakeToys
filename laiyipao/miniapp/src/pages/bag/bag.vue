@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="page-root">
     <view class="pad safe-bottom">
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
@@ -669,7 +669,7 @@ const gems = computed<any[]>(() => store.config?.gems ?? [])
  * 而这恰恰是玩家判断「这颗宝石值不值」的唯一依据。
  */
 const gemQualities = computed<{ name: string; affix_count: number; mult: number }[]>(
-  () => (store.config?.gem_qualities ?? []) as any[],
+  () => (store.config?.gem_qualities ?? []).map((q) => ({ ...q, name: qualityName(q.name) })),
 )
 
 /** 合成配方（`recipes`）：A + B → output(out_tier)。 */
