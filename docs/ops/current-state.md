@@ -476,3 +476,38 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - 本轮两提交 5291472bf、25a777390 及本现量文档 §16 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
 - B3（auth_person id≠uid）按 R152 仍不可确证，继续不动；A1/A2/A5 安全候选维持既有记账不擅动。
 - 当前分支 feat/h5-battle-substantive-100，工作树仅含本轮三提交，无真值入库。
+
+## 十七、第8轮：R158异形表单重入守卫 + laiyipao刷新风暴修复 + augmentor部署链路复核（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r158 / lybug-r8）+ 主线程 augmentor 交付链核查。两修复均经 RED→GREEN 与主代理独立复跑确认后提交。
+
+### 17.1 oa4rust R158 异形表单提交重入守卫（提交 c018ba825）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | R157 遗留的异形面（形态不同、不能照搬标准补丁）：9 处提交函数是同步函数，mutate 立即返回且不 await，按钮 disabled 依赖从未被占用的 ref → 双击发重复非幂等 POST/上传。涉及 BBSForum 发帖/回复、QueryManager/Deep 建查询、MeetingApp 建会议、Personal 头像上传、ProgramCenter 建 Agent/字典、QueryStatementDesigner 保存语句 | 对比 R157 的 return+同步 finally 陷阱，守卫须在 mutate 前同步获取、复位交 onSettled |
+| 修复 | 每处加 xxxSaving ref + 提交前同步守卫/占位 + mutation onSettled 复位 + 按钮 disabled 与视觉态；ProgramCenter Agent 按钮原无 disabled 已补 | 抽查 Personal.vue:253 守卫→256 占位→259 mutate→263 onSettled、BBSForum createTopic 同序，正确 |
+| 门禁 | 新增 abnormalFormGuards.test.ts 9 例（源码切片断言顺序/onSettled/disabled，非纯字符串扫描）；RED 9 failed→GREEN | 主代理在 desktop 包复跑 9 passed；子代理全量 pnpm test 78 文件/1261 passed、typecheck 6 包、lint 338 文件 0 error |
+
+未修同族面（取证判定非缺口，不动）：BBSForum saveSection/deleteSection/toggleMod 已有 busy+await+finally；ProgramCenter saveAgentEdit/saveDictData/saveScript 已有守卫+await，saveConfig 为幂等写；Personal savePassword 正确、saveSignature 幂等覆盖、uploadSignatureImage 无连点入口；QueryStatementDesigner saveByFlag 为幂等 PUT、saveNewTemplate 等纯客户端 push；模板头 saveStatement 是不存在的函数（既有 B3 死绑定，未动）；会议/查询管理面板 B3 不可确证。
+
+### 17.2 laiyipao 刷新令牌漏写 expires_at（刷新风暴，提交 bd1bdee76）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | refresh handler 与登录共用 service.TokenPair（service.go:354-369 ExpiresAt json:expires_at；routes.go:496-508），但前端 doRefresh 成功分支只 set(TOKEN_KEY)+set(REFRESH_KEY)，漏写 TOKEN_EXP_KEY(lyp_token_exp)；旧 expiry 留着致 tokenExpiringSoon() 每次判快过期→每请求刷一次撞 /auth/refresh 500ms 限流(routes.go:66)；冷启动 hasUsableToken 误判可能误建游客号 | git log 确认历史提交 492a1b6c8/61edb1778 等均未修 |
+| 修复 | client.ts:561 成功分支改 setTokenInternal(d.access_token, d.refresh_token, d.expires_at)，expires_at 设为可选兼容异常响应（空串删键退回 401 兜底） | 与登录路径 store/game.ts:341/376 的 setTokenInternal 用法对齐 |
+| 门禁 | client.test.ts 新增 2 例行为测试（uni-mock 内存 storage，断言第二次请求直连不刷新 + 401 刷新后 expiry 落盘）：RED 2 failed→GREEN | 主代理独立复跑 2 passed；全量 pnpm test 125 文件/1444 passed｜2 skipped EXIT=0；只改 miniapp 未动 server，go test 非必需（baseline FAIL 同 §16.2） |
+
+### 17.3 augmentor 测试环境部署链路复核（未改代码）
+
+- 交付已成立：deploy/README.md 与 deploy/nginx/augmentor-test.conf 前轮已建，本轮逐项核实属实——vite.config.ts:9 base=process.env.VITE_BASE||/ 确认消费子路径变量；web/src/services/api.ts:170 消费 VITE_API_BASE；鉴权为 AUGMENTOR_API_KEY→X-API-Key 头常量时间比对（deps.py:61 secrets.compare_digest）。
+- 访问地址模板：前端 http://<YOUR_TEST_DOMAIN>/augmentor/，API http://<YOUR_TEST_DOMAIN>/augmentor-api/api，health /augmentor-api/api/health；无传统用户名密码，写操作在前端配置页填 X-API-Key（口令即 AUGMENTOR_API_KEY 值，本地注入不入库）。
+- 本地测试环境：http://127.0.0.1:8000/ 可访问，health=200、根页面=200、无 key POST /api/config→401（写鉴权已启用）、带 key→200；口令随机 52 字符仅存 gitignored Temp/aug-key.txt 从不回显；当前 dist 为根路径构建（对应本地同源形态），远程子路径部署按 README 步骤 A 以 VITE_BASE=/augmentor/ 重建。
+- 远程部署边界：CD workflow .github/workflows/ai-platform-cd.yml 需 vars.AI_PLATFORM_DEPLOY_ENABLED=true + secrets DEPLOY_HOST/USER/SSH_KEY/PATH，访问地址取 vars.AI_PLATFORM_URL；gh CLI 本环境 command not found，无法读仓库 Secrets/Variables，远程部署超出本会话边界。
+
+### 17.4 交付与边界
+
+- 本轮两提交 c018ba825、bd1bdee76 及本现量文档 §17 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
