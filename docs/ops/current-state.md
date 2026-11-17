@@ -1177,6 +1177,29 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 39.4 交付与边界
 
 - 本轮两提交 4df9fcfe0、866ea7252 及本现量文档 §39 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十、第31轮：双线诚实负结果——无可确证新缺口/新bug（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r181 / lybug-r31）经深入排查均**未发现能写出行为级 RED 测试并确证的真实缺陷**，双双如实报告负结果、未强造改动。遵循「不滥竽充数」原则，本轮不提交任何代码修复。工作树干净（DIRTY=0），HEAD 仍为 7198620a4。
+
+### 40.1 oa4rust 桌面/SDK（oaopt-r181）：无可确证新缺口
+
+- 复核 7 类候选均排除：①ProcessDesigner.vue:1915 perfProfiles 成功率面板全文件只有 .get 无 .set，属未接线死面板非运行时行为错误（主线程独立 grep 佐证）；②:7239 simulateNextEnhanced 进度另算与主执行 R165 computeExecutionProgress 是互斥路径、按节点索引算自洽不倒退，无用户可见错误行为确证；③contracts/xform.ts defaultValue round-trip 有测试覆盖且属设计器固有表示；④router.ts openApp 非字符串参数 stringify 属无调用方的死代码；⑤ScriptWorkbench 三域 adapter 状态流转完整；⑥通用 CRUD openCreate/editItem 每次重置 form/editingId 无跨次残留；⑦其余隔离 helper（date/calendarGrid/executionProgress/simulationProgress/sandbox/paging/formatNumber/csv/toast/requestGuard/latestOnly/listQuery/searchRunner/imPaging/session/api/websocket 等）均已加固且有行为测试。
+- 门禁复跑全绿：pnpm test 90 文件 / 1330 用例 passed、typecheck 6 项目 Done、lint 360 文件 0 error（8 条既有 info）。
+
+### 40.2 laiyipao（lybug-r31）：无可确证新 bug
+
+- 深入排查最后活跃候选「防线 wins/losses 记账方向」（progression.go:1150/1163）：Won 字段语义明确（挑战者是否获胜），但 wins/losses 列本身无权威定义（migration 仅 DEFAULT 0 无注释），defense_service_test.go:239-247 已把 Won=false→losses+1 固化为有意实现；me.vue:175「X 胜/Y 负」与 :350「won=true 被攻破」表面口径不一但缺服务端契约佐证该翻转哪个字段，强改会与 admin DefensesView 胜率列冲突，属语义歧义不可确证，按 R152 不动。
+- 主线程独立排除候选「消费总账·累计订单金额」：模板 me.vue:455-458 实为「订单 N 笔 · 共 X 元」无「累计」字样（累计只在内部注释），服务端 myOrders/myRedemptions 明确只返回最近 20 条且无 total 字段，属已加载小计非错误。
+- 其余 10 类候选（双端公式/引擎契约、分享路径、零分母守卫、订单状态映射、宝石品质 legend 仅测试 fixture、敌人图鉴抗性/排行、商城幂等、排行榜双键口径、复活币/经验/签到/护盾、API 类型逐字比对）逐项核对均有测试/契约佐证，无 bug。
+- DefenseView.ChallengedToday 全树无赋值无消费者（语义歧义）、B3 auth_person id≠uid（R152）维持不动。
+
+### 40.3 主线程侦察与交付边界
+
+- 主线程独立侦察移动端与桌面同构缺口：calendar.vue 日历网格用本地 Date+setDate 正确处理跨月跨年（无桌面 R169 字符串键问题）、业务日无 UTC 混用（无桌面 R167 缺口）、datetime.ts 已含 R175 同构的时分秒越界校验、feed 类模块与 format 工具守卫成熟——无可确证新缺口，未造改动。
+- 目标二 augmentor 维持 §33.3/§36.3 交付边界（本地完备、远程卡 GitHub secrets 超会话边界）。
+- 本轮无代码提交；本现量文档 §40 为唯一变更，SSH 推送后核验远端 HEAD=本地 HEAD 再 update-ref。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（新 Go 测试已 gofmt 规范化）；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（服务端测试连接串为本地回环+占位，无真值）；工作树仅含本轮改动。
