@@ -888,6 +888,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import SqlEditor from '../components/SqlEditor.vue'
 import { formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
+import { formatPercent } from '../utils/formatNumber'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -1206,9 +1207,9 @@ const maxDuration = computed(() =>
   execHistory.value.length ? Math.max(...execHistory.value.map((h) => h.duration)) : 0,
 )
 const successRate = computed(() => {
-  if (!execHistory.value.length) return '100%'
+  if (!execHistory.value.length) return formatPercent(undefined, 0)
   const ok = execHistory.value.filter((h) => h.success).length
-  return `${Math.round((ok / execHistory.value.length) * 100)}%`
+  return formatPercent(ok / execHistory.value.length, 0)
 })
 const totalRows = computed(() => execHistory.value.reduce((a, h) => a + h.rows, 0))
 const errCount = computed(() => execHistory.value.filter((h) => !h.success).length)

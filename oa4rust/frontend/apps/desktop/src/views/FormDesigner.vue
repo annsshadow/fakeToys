@@ -468,7 +468,7 @@
       <div v-if="simResult" class="sim-result">
         <div class="sim-metric"><span class="sim-val">{{simResult.avgResponseMs.toFixed(1)}}</span><span class="sim-label">平均响应(ms)</span></div>
         <div class="sim-metric"><span class="sim-val">{{simResult.p99Ms.toFixed(1)}}</span><span class="sim-label">P99响应(ms)</span></div>
-        <div class="sim-metric"><span class="sim-val">{{(simResult.errorRate*100).toFixed(2)}}%</span><span class="sim-label">错误率</span></div>
+        <div class="sim-metric"><span class="sim-val">{{formatPercent(simResult.errorRate, 2)}}</span><span class="sim-label">错误率</span></div>
         <div class="sim-metric"><span class="sim-val">{{simResult.throughput.toFixed(0)}}</span><span class="sim-label">吞吐量(req/s)</span></div>
       </div>
     </div>
@@ -722,6 +722,8 @@ import {
   type XformLayout,
 } from '../contracts/xform'
 import { downloadBlob } from '../utils/download'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume this import.
+import { formatPercent } from '../utils/formatNumber'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'

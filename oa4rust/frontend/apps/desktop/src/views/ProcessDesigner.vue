@@ -1912,7 +1912,7 @@
         <div v-if="perfProfiles.has(String(perfProfileNodeIdx))" class="ppp-stats">
           <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.callCount || 0 }}</span><span class="ppp-lbl">调用次数</span></div>
           <div class="ppp-stat"><span class="ppp-val">{{ (perfProfiles.get(String(perfProfileNodeIdx))?.avgDuration||0).toFixed(0) }}ms</span><span class="ppp-lbl">平均耗时</span></div>
-          <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.successRate?.toFixed(1) || 0 }}%</span><span class="ppp-lbl">成功率</span></div>
+          <div class="ppp-stat"><span class="ppp-val">{{ formatPercent((perfProfiles.get(String(perfProfileNodeIdx))?.successRate ?? 0) / 100) }}</span><span class="ppp-lbl">成功率</span></div>
           <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.maxDuration?.toFixed(0) || 0 }}ms</span><span class="ppp-lbl">最大耗时</span></div>
         </div>
         <div class="ppp-chart"><div class="ppp-bar"><div class="ppp-fill" :style="{width:'70%', background:getPerfStatusColor(70)}"></div></div></div>
@@ -2781,6 +2781,7 @@ import {
   serializeProcessDefinition,
 } from '../contracts/process-definition'
 import { downloadBlob } from '../utils/download'
+import { formatPercent } from '../utils/formatNumber'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -7160,10 +7161,10 @@ function getEdgeDirections(): EdgeDirection[] {
   }
   const total = edges.length
   return [
-    { direction: '→ 右', count: rightCount, percentage: `${((rightCount / total) * 100).toFixed(1)}%` },
-    { direction: '← 左', count: leftCount, percentage: `${((leftCount / total) * 100).toFixed(1)}%` },
-    { direction: '↓ 下', count: downCount, percentage: `${((downCount / total) * 100).toFixed(1)}%` },
-    { direction: '↑ 上', count: upCount, percentage: `${((upCount / total) * 100).toFixed(1)}%` },
+    { direction: '→ 右', count: rightCount, percentage: formatPercent(rightCount / total) },
+    { direction: '← 左', count: leftCount, percentage: formatPercent(leftCount / total) },
+    { direction: '↓ 下', count: downCount, percentage: formatPercent(downCount / total) },
+    { direction: '↑ 上', count: upCount, percentage: formatPercent(upCount / total) },
   ].filter((e) => e.count > 0)
 }
 // ── Path Length Analysis ───────────────────────────────────────────
