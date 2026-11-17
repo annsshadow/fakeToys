@@ -404,6 +404,20 @@ export class BattleRenderer {
   private bgKey = ''
 
   /**
+   * R1 远景山脊视差层。
+   * 比视口宽 160CSS，绘制时按波次相位左右平移而不露出边缘；
+   * 山脊折线一次性烘焙，每帧只 1 次 drawImage。
+   */
+  private farLayer: { canvas: unknown } | null = null
+  private farKey = ''
+  private farFailed = false
+
+  /** R5 波次地面脉冲剩余寿命（ms），仅开波后短暂 >0，平时零绘制成本 */
+  private groundPulseMs = 0
+  /** R9 击杀地面残留（逻辑坐标 + 寿命），上限 12 个，单 path 批量绘制 */
+  private killScars: Array<{ x: number; y: number; life: number }> = []
+
+  /**
    * 渐变精灵缓存（key → 精灵）。
    *
    * 见 `makeRadialSprite`：这些都是「每帧都在重建的不变量」。
@@ -538,6 +552,9 @@ export class BattleRenderer {
           break
         }
         case 'kill':
+          // R9 击杀地面残留：在死亡点留一枚短暂暗痕，战斗会「留下痕迹」
+          this.killScars.push({ x: Number(e.x) / 1000, y: Number(e.y) / 1000, life: e.boss ? 4200 : 2600 })
+          if (this.killScars.length > 12) this.killScars.shift()
           // 死亡爆散：环形消散 + 少量碎片。BOSS 已有震屏，这里补视觉终点。
           this.spawnFx({
             x: Number(e.x) / 1000,
@@ -568,6 +585,8 @@ export class BattleRenderer {
           this.shake = Math.max(this.shake, 8)
           break
         case 'wave_start':
+          // R5 开波时触发地面脉冲：从出生侧扫过战场的扩散环
+          this.groundPulseMs = 900
           this.popups.push({ text: `第 ${e.index + 1} 波`, color: '#58a6ff', lifeMs: 1400, x: 500, y: 220 })
           break
         case 'terrain':
@@ -745,6 +764,9 @@ export class BattleRenderer {
     ctx.translate(sx, sy)
 
     this.drawBackground(ctx)
+    this.drawKillScars(ctx, dtMs)
+    this.drawGroundPulse(ctx, dtMs)
+    this.drawAmbientParticles(ctx)
     this.drawFieldDecor(ctx)
     this.drawTerrain(ctx)
     this.drawBase(ctx)
@@ -781,9 +803,155 @@ export class BattleRenderer {
     const layer = this.ensureBackgroundLayer()
     if (layer) {
       ctx.drawImage(layer as never, 0, 0, this.vp.width, this.vp.height)
-      return
+    } else {
+      this.paintBackground(ctx)
     }
-    this.paintBackground(ctx)
+    // R1 远景山脊视差：静态背景之上叠一层随波次缓慢平移的剪影，给战场纵深
+    this.drawFarParallax(ctx)
+  }
+
+  /**
+   * R9 击杀地面残留：死亡点留下短暂暗痕（压实泥土/焦痕），战斗会「留下痕迹」。
+   * 单 path 合并所有残留，一次 fill；寿命耗尽即剔除，平时空数组零成本。
+   */
+  private drawKillScars(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    if (this.killScars.length === 0) return
+    const vp = this.vp
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'
+    ctx.beginPath()
+    let w = 0
+    for (let i = 0; i < this.killScars.length; i++) {
+      const s = this.killScars[i]
+      s.life -= dtMs
+      if (s.life <= 0) continue
+      this.killScars[w++] = s
+      const px = vp.offsetX + s.x * vp.scale
+      const py = vp.offsetY + s.y * vp.scale
+      const r = (6 + 4 * (s.life / 4200)) * vp.scale
+      ctx.moveTo(px, py)
+      ctx.arc(px, py, r, 0, Math.PI * 2)
+    }
+    this.killScars.length = w
+    ctx.fill()
+  }
+
+  /** R5 波次地面脉冲：开波时一道从右向左扫过的扩散弧，仅活跃帧绘制。 */
+  private drawGroundPulse(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    if (this.groundPulseMs <= 0) return
+    this.groundPulseMs = Math.max(0, this.groundPulseMs - dtMs)
+    const t = 1 - this.groundPulseMs / 900
+    const vp = this.vp
+    const left = vp.offsetX
+    const right = left + FIELD_W * vp.scale
+    const px = right - (right - left) * t
+    ctx.strokeStyle = `rgba(88,166,255,${(0.5 * (1 - t)).toFixed(3)})`
+    ctx.lineWidth = Math.max(2, 5 * vp.scale)
+    ctx.beginPath()
+    ctx.moveTo(px, vp.offsetY)
+    ctx.lineTo(px, vp.offsetY + FIELD_H * vp.scale)
+    ctx.stroke()
+  }
+
+  /**
+   * R4 氛围粒子：缓慢飘落的灰烬 + 上浮的火星，给静止战场「空气在流动」的感觉。
+   * 确定性位置（按时间相位推进，不用 Math.random），两组各 1 次 fill，共 2 次提交。
+   */
+  private drawAmbientParticles(ctx: CanvasRenderingContext2D): void {
+    const vp = this.vp
+    const t = (this.engine.elapsedMs || 0) / 1000
+    const left = vp.offsetX
+    const top = vp.offsetY
+    const fw = FIELD_W * vp.scale
+    const fh = FIELD_H * vp.scale
+
+    // 全部粒子合并进单条 path，一次 stroke 提交 ——
+    // 18 个 fillRect 会让 L100 的 draw call 从 88 跳到 135，突破 120 预算；
+    // 也避免用 arc 污染「特效封顶」用例的 arc 计数判据。
+    ctx.strokeStyle = 'rgba(205,190,175,0.14)'
+    ctx.lineWidth = Math.max(1, 2.4 * vp.scale)
+    ctx.beginPath()
+    // 灰烬：缓慢下落
+    for (let i = 0; i < 10; i++) {
+      const seed = i * 1.618
+      const drift = (t * (7 + (i % 3) * 3) + seed * 40) % fh
+      const px = left + fw * (0.08 + 0.84 * Math.abs(Math.sin(seed)))
+      const py = top + drift + 6 * Math.sin(t + seed)
+      ctx.moveTo(px, py)
+      ctx.lineTo(px, py + 2.4 * vp.scale)
+    }
+    // 火星：底部上浮
+    for (let i = 0; i < 8; i++) {
+      const seed = i * 2.414
+      const rise = (t * (10 + (i % 4) * 4) + seed * 33) % fh
+      const px = left + fw * (0.1 + 0.8 * Math.abs(Math.cos(seed)))
+      const py = top + fh - rise
+      ctx.moveTo(px, py)
+      ctx.lineTo(px, py - 2.4 * vp.scale)
+    }
+    ctx.stroke()
+  }
+
+  /** R1 远景视差层：3 层山脊剪影，一次性烘焙，每帧 1 次平移 drawImage。 */
+  private drawFarParallax(ctx: CanvasRenderingContext2D): void {
+    const far = this.ensureFarLayer()
+    if (!far) return
+    const extra = 160 // 比视口多出的宽度（CSS px）
+    const phase = this.engine.waveIndex % 8
+    // 波次推进时山脊缓慢左移，形成「向前推进」的视差错觉
+    const offsetX = -(phase / 7) * extra
+    ctx.drawImage(
+      far as never,
+      offsetX,
+      0,
+      this.vp.width + extra,
+      this.vp.height * 0.42,
+    )
+  }
+
+  private ensureFarLayer(): unknown | null {
+    if (this.farFailed) return null
+    const dpr = this.dpr
+    const key = `${this.vp.width}x${this.vp.height}x${dpr}`
+    if (this.farLayer && this.farKey === key) return this.farLayer.canvas
+    const wCss = this.vp.width + 160
+    const hCss = this.vp.height * 0.42
+    const pw = Math.max(1, Math.round(wCss * dpr))
+    const ph = Math.max(1, Math.round(hCss * dpr))
+    const layer = acquireLayer(pw, ph)
+    if (!layer) {
+      this.farFailed = true
+      return null
+    }
+    const c = layer.ctx
+    c.save()
+    c.scale(dpr, dpr)
+    // 三层山脊：远→近，颜色由浅到深，制造大气透视
+    const ridges = [
+      { base: hCss * 0.55, amp: hCss * 0.20, step: wCss / 9, color: 'rgba(40,52,68,0.55)', seed: 3 },
+      { base: hCss * 0.72, amp: hCss * 0.16, step: wCss / 6, color: 'rgba(28,38,52,0.75)', seed: 7 },
+      { base: hCss * 0.92, amp: hCss * 0.12, step: wCss / 4, color: 'rgba(16,23,34,0.92)', seed: 11 },
+    ]
+    for (const r of ridges) {
+      c.fillStyle = r.color
+      c.beginPath()
+      c.moveTo(0, hCss)
+      let x = 0
+      let i = 0
+      while (x <= wCss) {
+        // 确定性伪随机折线（不依赖 Math.random，保证每次烘焙一致）
+        const h = r.base - r.amp * (0.35 + 0.65 * Math.abs(Math.sin(r.seed + i * 1.7)))
+        c.lineTo(x, h)
+        x += r.step
+        i++
+      }
+      c.lineTo(wCss, hCss)
+      c.closePath()
+      c.fill()
+    }
+    c.restore()
+    this.farLayer = layer
+    this.farKey = key
+    return layer.canvas
   }
 
   /**
@@ -847,8 +1015,59 @@ export class BattleRenderer {
     }
     ctx.stroke()
 
+    // R2 地面战损纹理：裂纹 / 焦痕 / 血迹一次性烘焙进静态背景层，
+    // 让战场像「打过仗的地面」而非空白网格；零每帧开销。
+    this.paintBattleScars(ctx)
+
+    // R7 防线警戒区：左缘防线前方一条斜纹警戒带，标识「越线即漏怪」（烘焙，零每帧开销）
+    this.paintDefenseZone(ctx)
+
     // 边缘暗角（vignette）：聚焦中心战场，与网格一起营造纵深
     this.drawVignette(ctx)
+  }
+
+  /** R7 防线警戒带：左缘约 46 逻辑宽的斜线填充，一次性烘焙。 */
+  private paintDefenseZone(ctx: CanvasRenderingContext2D): void {
+    const { offsetX, offsetY, scale } = this.vp
+    const fh = FIELD_H * scale
+    const bandW = 46 * scale
+    ctx.strokeStyle = 'rgba(255,107,53,0.13)'
+    ctx.lineWidth = Math.max(1, scale)
+    ctx.beginPath()
+    for (let yy = 0; yy < fh; yy += 12 * scale) {
+      ctx.moveTo(offsetX, offsetY + yy)
+      ctx.lineTo(offsetX + bandW, offsetY + yy + 12 * scale)
+    }
+    ctx.stroke()
+  }
+
+  /** R2 地面战损纹理：确定性分布的裂纹、焦痕、暗血迹。 */
+  private paintBattleScars(ctx: CanvasRenderingContext2D): void {
+    const { offsetX, offsetY, scale } = this.vp
+    const fw = FIELD_W * scale
+    const fh = FIELD_H * scale
+    // 焦痕：若干半透明暗圆（确定性伪随机）
+    for (let i = 0; i < 7; i++) {
+      const cx = offsetX + fw * (0.15 + 0.7 * Math.abs(Math.sin(i * 2.3)))
+      const cy = offsetY + fh * (0.2 + 0.6 * Math.abs(Math.cos(i * 1.9)))
+      const r = (18 + 14 * Math.abs(Math.sin(i * 3.1))) * scale
+      ctx.fillStyle = 'rgba(0,0,0,0.16)'
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // 裂纹：折线，单 path 一次 stroke
+    ctx.strokeStyle = 'rgba(8,10,14,0.28)'
+    ctx.lineWidth = Math.max(1, scale)
+    ctx.beginPath()
+    for (let i = 0; i < 9; i++) {
+      const sx = offsetX + fw * (0.1 + 0.8 * Math.abs(Math.sin(i * 4.7)))
+      const sy = offsetY + fh * (0.15 + 0.7 * Math.abs(Math.cos(i * 2.6)))
+      ctx.moveTo(sx, sy)
+      ctx.lineTo(sx + 8 * scale, sy + 5 * scale)
+      ctx.lineTo(sx + 3 * scale, sy + 13 * scale)
+    }
+    ctx.stroke()
   }
 
   /** 边缘暗角（径向渐变，透明到半透明黑） */
@@ -1619,6 +1838,28 @@ export class BattleRenderer {
     ctx.arc(right, (top + bottom) / 2, (bottom - top) / 2 - 4, -Math.PI / 3, Math.PI / 3)
     ctx.stroke()
 
+    // R6 出生门双环 + 旋转刻度：内环随战局时间反向旋转，门「活」起来，
+    // 刷怪点从一道静态弧升级为可辨认的传送门。2 次 stroke。
+    const midY0 = (top + bottom) / 2
+    const outerR = (bottom - top) / 2 - 4
+    const rot = (this.engine.elapsedMs || 0) / 1400
+    ctx.strokeStyle = `rgba(255,107,53,${(portalPulse * 0.7).toFixed(3)})`
+    ctx.lineWidth = Math.max(1, 2 * vp.scale)
+    // 内环
+    ctx.beginPath()
+    ctx.arc(right, midY0, outerR * 0.72, -Math.PI / 2.2, Math.PI / 2.2)
+    ctx.stroke()
+    // 旋转刻度（单 path 多条短线）
+    ctx.beginPath()
+    for (let i = 0; i < 5; i++) {
+      const a = rot + i * 0.5
+      const r1 = outerR * 0.78
+      const r2 = outerR * 0.92
+      ctx.moveTo(right + Math.cos(a) * r1, midY0 + Math.sin(a) * r1)
+      ctx.lineTo(right + Math.cos(a) * r2, midY0 + Math.sin(a) * r2)
+    }
+    ctx.stroke()
+
     // 推进方向：两枚向左的浅色箭头（单个 path 一次 stroke）
     const midY = (top + bottom) / 2
     ctx.strokeStyle = 'rgba(139,148,158,0.16)'
@@ -1631,6 +1872,25 @@ export class BattleRenderer {
       ctx.moveTo(cx0 + s, midY - s)
       ctx.lineTo(cx0 - s, midY)
       ctx.lineTo(cx0 + s, midY + s)
+    }
+    ctx.stroke()
+
+    // R3 边界能量栅栏：敌人从右缘进入、防线在左缘，两道竖向能量带
+    // 把「战场范围」框出来。刻度横杠随波次相位呼吸，单个 path 一次 stroke。
+    const fencePulse = 0.20 + 0.12 * (0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 900))
+    ctx.strokeStyle = `rgba(88,166,255,${fencePulse.toFixed(3)})`
+    ctx.lineWidth = Math.max(1.5, 3 * vp.scale)
+    ctx.beginPath()
+    ctx.moveTo(right - 2, top)
+    ctx.lineTo(right - 2, bottom)
+    ctx.moveTo(left + 2, top)
+    ctx.lineTo(left + 2, bottom)
+    for (let i = 1; i < 8; i++) {
+      const yy = top + ((bottom - top) * i) / 8
+      ctx.moveTo(right - 8, yy)
+      ctx.lineTo(right + 2, yy)
+      ctx.moveTo(left - 2, yy)
+      ctx.lineTo(left + 8, yy)
     }
     ctx.stroke()
   }
