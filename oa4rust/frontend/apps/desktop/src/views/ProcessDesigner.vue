@@ -2784,6 +2784,7 @@ import { downloadBlob } from '../utils/download'
 import { computeExecutionProgress } from '../utils/executionProgress'
 import { formatPercent } from '../utils/formatNumber'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
+import { computeSimulationProgress } from '../utils/simulationProgress'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -8310,6 +8311,8 @@ function detectConflicts(): ConnectionConflict[] {
   return conflicts
 }
 function startSimulation() {
+  // 重复启动前先摘掉旧 timer，避免多个 interval 抢写进度、重复弹「模拟完成」
+  if (simTimer) clearInterval(simTimer)
   simRunning.value = true
   simProgress.value = 0
   simEvents.value = []
@@ -8322,8 +8325,10 @@ function startSimulation() {
     simEvents.value.push({ time: t, nodeId: n.id, event: 'complete', label: n.label || n.type })
   })
   const totalDuration = t + 500
+  // 以启动时刻为基准累计已运行时间，取代 Date.now() 取模（会回绕归零、永不结束）
+  const startedAt = Date.now()
   simTimer = setInterval(() => {
-    simProgress.value = Math.min(100, ((Date.now() % totalDuration) / totalDuration) * 100)
+    simProgress.value = computeSimulationProgress(Date.now() - startedAt, totalDuration)
     if (simProgress.value >= 100) {
       clearInterval(simTimer)
       simTimer = null
