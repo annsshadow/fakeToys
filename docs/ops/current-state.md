@@ -691,6 +691,32 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 
 - R164 未修面（如实记账）：ProcessDesigner.vue:1928 进度 toFixed(0)%（getSimulationProgress 恒返回 0）、:8626 局部 formatDuration、:10930 局部 formatNumber(K/M 缩写)、:11265 评分 toFixed(1)、FormDesigner :469/470/472 毫秒/吞吐局部格式化、toLocaleString 16 处（多为时间戳）——均非百分比，留后续单独轮次。
 - 本轮两提交 5479447f1、ff8d3c998 及本现量文档 §23 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 二十四、第15轮：R165执行模拟进度倒退修复 + laiyipao图鉴译名统一（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r165 / lybug-r15），均经主线程独立复跑确认 GREEN 后提交。
+
+### 24.1 oa4rust R165 执行模拟进度跨节点倒退横跳（提交 4888b346b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | ProcessDesigner.vue simulateNext(:3603) 中 progress 是每次调用重置为 0 的局部变量(原:3633)，动画每帧直接写全局 execState.value.progress(原:3648)，节点完成又用 completedNodes.length/totalNodes 覆盖(原:3641)；3 节点流程读数 5→95→33→5→95→66→…反复从高位掉回，进度条横跳用户可见。同文件 simulateNextEnhanced(:7237) 用单调递增，证明整体进度本应单调，基础版实现走偏 | 可达路径（顶部▶模拟按钮→startExecution→simulateNext），非死代码 |
+| 修复 | 新增 utils/executionProgress.ts computeExecutionProgress(completedBefore,totalNodes,nodeAnimationPct)：以已完成节点为基线把节点动画进度映射到 [基线,下一里程碑] 单调区间、封顶 100、异常输入 0；simulateNext 改用它写进度，终点节点直接置 100% | 顺带避免流程环 completedNodes 重复导致 >100% |
+| 门禁 | executionProgress.test.ts 4 例行为测试（跨节点不回退/从基线起步/全程单调复现横跳/异常不 NaN 或>100）；RED 复刻旧缺陷 4 failed→GREEN | 主代理从 oa4rust 根复跑 4 passed；pnpm test 1291 passed、typecheck 6 包、lint 347 文件 0 error |
+
+### 24.2 laiyipao 图鉴宝石译名与背包不一致（提交 c0c5b2480）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | gems.vue 自带两份本地译名表与权威共享表 labels.ts（背包 bag.vue 已用）冲突：品质 gold 图鉴显示「传说」背包「金」，crit 图鉴「暴击率」背包「暴击」，element_cap 图鉴「元素层数上限」权威「元素层数」。labels.ts 文件头注释明确其存在目的即消灭「同一东西多页面叫不同名字」；服务端 content.go 五档品质 key、gems.go 词条池均有真实数据 | 组件实测 RED：gold 宝石图鉴行「锐锋石#gem_crit暴击率…最佳 传说」与背包「金」「暴击」对不上 |
+| 修复 | gems.vue:97 import 增 qualityName as labelQualityName；:206-219 本地 qualityName()/attrLabel() 委托 labelQualityName()/affixName()，保留函数名（gems_search_feature.test.ts 等源码守卫依赖 attrLabel 标识符），模板未动 | 最小改动，复用权威映射 |
+| 门禁 | gems.test.ts jsdom 真实挂载 + triggerUniHook(onShow) 注入 owned gem，2 例行为断言；RED 2 failed→GREEN | 主代理独立复跑 2 passed；全量 pnpm test 1452 passed｜2 skipped；tsc/vue-tsc 双 exit0（子代理中途导入路径错误 TS2305 已从 ../../test/uni-app-stub 修正） |
+
+### 24.3 交付与边界
+
+- 本轮两提交 4888b346b、c0c5b2480 及本现量文档 §24 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用，并以 git ls-remote 核验远端真实 HEAD（SSH 出口抖动教训：推送失败时绝不能先更新追踪引用）。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- 未修面记账：ProcessDesigner enhanced/基础版两套模拟并存、stepForward(:634) 自动模拟中可再触发 simulateNext 造成并发 interval（交互设计问题，非本轮范围）。B3、A1/A2/A5 维持既有记账不擅动。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
