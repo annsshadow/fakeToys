@@ -279,7 +279,11 @@
           <text class="dim" style="display: block; margin-bottom: 8rpx">
             我的宝石（已佩戴 {{ equippedGemCount }}/6）
           </text>
-          <text v-if="ownedGems.length === 0" class="dim">还没有宝石，去商城买一颗。</text>
+          <!-- R51 空态给可点入口：此前只说「去商城买一颗」却不能点 -->
+          <view v-if="ownedGems.length === 0" class="row" style="gap: 8rpx">
+            <text class="dim">还没有宝石。</text>
+            <text class="link" @click="goShop">去商城买一颗 →</text>
+          </view>
           <view
             v-for="g in ownedGems"
             :key="g.id"
@@ -335,11 +339,14 @@
             class="preset-input"
             placeholder="预设名（最多 20 字）"
             maxlength="20"
+            :focus="presetFocus"
           />
           <text class="link" @click="doSavePreset">保存当前构筑</text>
         </view>
+        <!-- R52 空态可直接聚焦输入框，少一次手动寻找 -->
         <view v-if="presets.length === 0" class="dim" style="margin-top: 8rpx">
-          还没有预设，先保存一套。
+          还没有预设，<text class="link" @click="focusPreset">点这里填名字保存一套</text>。
+          <text v-if="presetFocus" class="link">已定位到上方输入框</text>
         </view>
         <view v-for="p in presets" :key="p.id" class="equip-row preset-item">
           <view class="flex-1">
@@ -1004,6 +1011,14 @@ async function clearSlot(idx: number) {
 // ---- 阵型预设（第 49 轮） ----
 const presets = ref<api.PresetView[]>([])
 const presetName = ref('')
+/** Y 批 R51/R52：空态可执行化。 */
+const presetFocus = ref(false)
+function focusPreset() {
+  presetFocus.value = true
+}
+function goShop() {
+  uni.navigateTo({ url: '/pages/shop/shop' })
+}
 const presetBusyId = ref(0)
 
 async function loadPresets() {

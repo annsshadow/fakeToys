@@ -892,4 +892,27 @@ describe('bag.vue 背包可用性（100 轮打磨）', () => {
     // 收起文案切换
     expect(wrapper.text()).toContain('收起，只看可熔炼')
   })
+
+  // ── Y 批 R51/R52：空态可执行化 ─────────────────────────────────────
+  it('R51 没有宝石时空态给「去商城」入口', async () => {
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const goShop = wrapper.findAll('.link').find((l) => l.text().includes('去商城买一颗'))
+    expect(goShop).toBeDefined()
+    await goShop!.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/shop/shop' })
+  })
+
+  it('R52 没有预设时空态可一键聚焦输入框', async () => {
+    // 前一个用例的 fetchPresets 实现会残留（clearAllMocks 不清实现），显式覆盖为空
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const hint = wrapper.findAll('.link').find((l) => l.text().includes('点这里填名字保存一套'))
+    expect(hint).toBeDefined()
+    expect(wrapper.text()).not.toContain('已定位到上方输入框')
+    await hint!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('已定位到上方输入框')
+  })
 })
