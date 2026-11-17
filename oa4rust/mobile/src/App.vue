@@ -24,6 +24,10 @@ page {
   --color-primary-soft: #f0f7ff;
   --color-error-tint: #fdf2f0;
   --color-border-strong: #dcdfe6;
+  --color-warning: #ff9900;
+  --color-success: #67c23a;
+  --color-warning-bg: #fff4e5;
+  --color-warning-text: #b26a00;
   --color-text-body: #5b6572;
   --color-placeholder: #c0c4cc;
 

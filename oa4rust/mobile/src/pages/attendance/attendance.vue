@@ -249,7 +249,7 @@ function statText(): string {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 32rpx;
   box-sizing: border-box;
 }
@@ -260,12 +260,12 @@ function statText(): string {
 .date {
   font-size: 40rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .group {
   margin-top: 10rpx;
   font-size: 26rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .buttons {
   display: flex;
@@ -274,22 +274,22 @@ function statText(): string {
 }
 .btn {
   flex: 1;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 14rpx;
   font-size: 30rpx;
 }
 .btn[disabled] {
-  background: #c0c4cc;
+  background: var(--color-placeholder);
 }
 .out-buttons {
   margin-top: -24rpx;
 }
 .btn-out {
-  background: #ff9900;
+  background: var(--color-warning);
 }
 .leave-input {
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   border-radius: 10rpx;
   padding: 16rpx 20rpx;
   font-size: 26rpx;
@@ -299,13 +299,13 @@ function statText(): string {
   margin-top: 8rpx;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 40rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -316,26 +316,26 @@ function statText(): string {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  background: #fdf2f0;
+  background: var(--color-error-tint);
   border-radius: 12rpx;
   margin-bottom: 20rpx;
 }
 .section {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 28rpx;
 }
 .section-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 16rpx;
 }
 .rec {
@@ -343,7 +343,7 @@ function statText(): string {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .rec:last-child {
   border-bottom: none;
@@ -355,26 +355,26 @@ function statText(): string {
 }
 .rec-type {
   font-size: 28rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 .rec-result {
   font-size: 24rpx;
-  color: #67c23a;
+  color: var(--color-success);
 }
 .rec-meta {
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .ver {
   margin-left: 12rpx;
   font-size: 22rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-weight: 400;
 }
 .stat-line {
   font-size: 26rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   margin-bottom: 16rpx;
 }
 </style>

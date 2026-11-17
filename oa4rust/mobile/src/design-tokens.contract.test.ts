@@ -17,6 +17,9 @@ const process = src('pages/process/process.vue')
 const meeting = src('pages/meeting/meeting.vue')
 const calendar = src('pages/calendar/calendar.vue')
 const contacts = src('pages/contacts/contacts.vue')
+const attendance = src('pages/attendance/attendance.vue')
+const index = src('pages/index/index.vue')
+const chat = src('pages/chat/chat.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -43,6 +46,10 @@ const tokens: Record<string, string> = {
   '--color-text-body': '#5b6572',
   '--color-placeholder': '#c0c4cc',
   '--color-border-strong': '#dcdfe6',
+  '--color-warning': '#ff9900',
+  '--color-success': '#67c23a',
+  '--color-warning-bg': '#fff4e5',
+  '--color-warning-text': '#b26a00',
 }
 
 describe('移动端设计 token 语义落地契约', () => {
@@ -200,6 +207,41 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(styleValue(calendar, '.error-banner', 'background')).toBe('var(--color-error-tint)')
     expect(styleValue(calendar, '.c-submit', 'background')).toBe('var(--color-primary)')
     expect(calendar).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('attendance 页面：21 处硬编码色全部归一到语义 token（含状态色）', () => {
+    expect(styleValue(attendance, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(attendance, '.btn', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(attendance, '.btn-out', 'background')).toBe('var(--color-warning)')
+    expect(styleValue(attendance, '.tip-error', 'color')).toBe('var(--color-error)')
+    expect(styleValue(attendance, '.error-banner', 'background')).toBe('var(--color-error-tint)')
+    expect(styleValue(attendance, '.section', 'background')).toBe('var(--color-surface)')
+    expect(attendance).toContain('color: var(--color-success)')
+    expect(attendance).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('index 首页：21 处硬编码色全部归一到既有语义 token', () => {
+    expect(styleValue(index, '.hello', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(index, '.sub', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(index, '.stat-card', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(index, '.cell', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(index, '.cell-text', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(index, '.sec-title', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(index, '.sec-error', 'color')).toBe('var(--color-error)')
+    expect(styleValue(index, '.notice', 'border-bottom')).toBe('1px solid var(--color-divider)')
+    expect(index).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('chat 页面：20 处硬编码色全部归一到语义 token（含离线提示色）', () => {
+    expect(styleValue(chat, '.chat', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(chat, '.new-msg', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(chat, '.head', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(chat, '.offline-banner', 'background')).toBe('var(--color-warning-bg)')
+    expect(styleValue(chat, '.offline-banner', 'color')).toBe('var(--color-warning-text)')
+    expect(styleValue(chat, '.tip-error', 'color')).toBe('var(--color-error)')
+    expect(styleValue(chat, '.load-older', 'color')).toBe('var(--color-primary)')
+    expect(styleValue(chat, '.input', 'border')).toBe('1px solid var(--color-border)')
+    expect(chat).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
   it('两页面 style 仍为 scoped 纯 CSS，未偷偷引入 sass/lang', () => {

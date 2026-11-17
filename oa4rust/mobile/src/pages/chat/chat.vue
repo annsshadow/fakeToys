@@ -271,7 +271,7 @@ async function send() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .bottom-anchor {
   height: 1rpx;
@@ -283,24 +283,24 @@ async function send() {
   transform: translateX(-50%);
   padding: 12rpx 28rpx;
   border-radius: 32rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 26rpx;
   box-shadow: 0 4rpx 16rpx rgba(45, 140, 240, 0.35);
   z-index: 2;
 }
 .head {
   padding: 24rpx 32rpx;
-  background: #fff;
+  background: var(--color-surface);
   font-size: 32rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   text-align: center;
 }
 .offline-banner {
   padding: 16rpx 24rpx;
-  background: #fff4e5;
-  color: #b26a00;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
   font-size: 26rpx;
   text-align: center;
 }
@@ -312,14 +312,14 @@ async function send() {
 .tip {
   padding: 80rpx 0;
   text-align: center;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .tip-end {
-  color: #b0b7bf;
+  color: var(--color-placeholder);
 }
 .error-text {
   margin-bottom: 12rpx;
@@ -329,14 +329,14 @@ async function send() {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .load-older {
   padding: 24rpx 0;
   text-align: center;
-  color: #4a90d9;
+  color: var(--color-primary);
   font-size: 26rpx;
 }
 .row {
@@ -350,28 +350,28 @@ async function send() {
   max-width: 70%;
   padding: 16rpx 24rpx;
   border-radius: 16rpx;
-  background: #fff;
-  color: #263238;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   font-size: 28rpx;
   word-break: break-all;
 }
 .row.me .bubble {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
 }
 .composer {
   display: flex;
   align-items: center;
   gap: 16rpx;
   padding: 16rpx 24rpx;
-  background: #fff;
+  background: var(--color-surface);
 }
 .input {
   flex: 1;
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 32rpx;
   padding: 14rpx 24rpx;
   font-size: 28rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 </style>
