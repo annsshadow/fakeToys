@@ -177,6 +177,45 @@ describe('createSearchRunner：输入驱动搜索的防抖（R145）', () => {
     expect(calls).toEqual([])
   })
 
+  it('防抖等待中被后续触发取代：旧 run 必须立即以 undefined 结束，不能悬挂', async () => {
+    vi.useFakeTimers()
+    const runner = createSearchRunner({ debounceMs: 300 })
+    const first = runner.run(async () => 'A')
+    let settled = false
+    void first.then(() => {
+      settled = true
+    })
+
+    // 第二次触发发生在防抖窗口内，first 尚未进入实际请求。
+    const second = runner.run(async () => 'B')
+
+    // 先验证 first 已结束，再 await（避免缺陷版本直接挂到测试超时）。
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(settled).toBe(true)
+    await expect(first).resolves.toBeUndefined()
+
+    await vi.advanceTimersByTimeAsync(300)
+    expect(await second).toBe('B')
+  })
+
+  it('cancel() 打断防抖等待：等待中的 run 必须以 undefined 结束，不能悬挂', async () => {
+    vi.useFakeTimers()
+    const runner = createSearchRunner({ debounceMs: 300 })
+    const first = runner.run(async () => 'A')
+    let settled = false
+    void first.then(() => {
+      settled = true
+    })
+
+    runner.cancel()
+
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(settled).toBe(true)
+    await expect(first).resolves.toBeUndefined()
+  })
+
   it('负的防抖值按 0 处理，立即发起', async () => {
     const runner = createSearchRunner({ debounceMs: -100 })
     const calls: number[] = []
