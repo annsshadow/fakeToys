@@ -107,6 +107,13 @@ page,
 .page-root {
   min-height: 100vh;
   box-sizing: border-box;
+  /* R44 页面进入淡入：路由切换不再是硬切 */
+  animation: page-in 0.24s ease-out both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /*
@@ -747,6 +754,18 @@ page,
 .res-pill .mono {
   font-weight: 600;
   color: var(--text);
+}
+
+/* R42 资源变动高亮 */
+.res-pill.res-bump {
+  animation: res-bump 0.6s ease-out;
+  border-color: var(--fire);
+}
+
+@keyframes res-bump {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.16); background: var(--fire-soft); }
+  100% { transform: scale(1); }
 }
 
 /* 加载 / 空 / 错误 三态块 */

@@ -325,6 +325,20 @@ describe('index.vue 首页', () => {
     // 失败不能变成「0 条公告」这种看起来正常的状态
     expect(wrapper.text()).not.toContain('全部 0 条')
   })
+
+  // ── R42 资源变动高亮（X 批）────────────────────────────────────────
+  it('R42 钱包数值变化时对应资源胶囊高亮', async () => {
+    mountPage()
+    await flushPromises()
+    // 首次载入钱包也会触发一次高亮（可接受：像「资源到账」），这里只关心后续变化
+
+    const store = useGameStore()
+    store.wallet.coin = 999
+    await flushPromises()
+    const bumped = wrapper.findAll('.res-pill.res-bump')
+    expect(bumped.length).toBe(1)
+    expect(bumped[0]!.text()).toContain('999')
+  })
 })
 
 // ==================== 构筑评分空维补导（2026-11-17 100 轮打磨 R14）====================

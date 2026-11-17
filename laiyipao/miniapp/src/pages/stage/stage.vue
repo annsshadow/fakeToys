@@ -49,6 +49,8 @@
           <Icon v-if="lv.id > store.unlockedLevel" name="lock" :size="36" class="lock-glyph" />
           <text class="level-no">{{ lv.id }}</text>
           <text v-if="lv.id === store.unlockedLevel" class="level-badge current-badge">当前</text>
+          <!-- R41 当前关的「可以打」提示：呼吸播放键，比只有描边更明确 -->
+          <text v-if="lv.id === store.unlockedLevel" class="play-glyph">▶</text>
           <text v-else-if="lv.is_boss" class="level-badge">BOSS</text>
           <text v-else-if="lv.terrain && lv.terrain.length > 0" class="level-badge terrain">
             地形
@@ -476,6 +478,21 @@ onMounted(() => {
 .level-badge.current-badge {
   color: var(--fire);
   font-weight: 600;
+}
+
+/* R41 当前关播放键：呼吸提醒「这关可打」 */
+.play-glyph {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  font-size: 20rpx;
+  color: var(--fire);
+  animation: play-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes play-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 .level-cell.cleared {

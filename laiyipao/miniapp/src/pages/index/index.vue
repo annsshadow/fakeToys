@@ -10,15 +10,15 @@
         </view>
       </view>
       <view class="res-row">
-        <view class="res-pill">
+        <view class="res-pill" :class="{ 'res-bump': bump.coin }">
           <Icon name="coin" :size="26" />
           <text class="mono">{{ store.wallet.coin }}</text>
         </view>
-        <view class="res-pill">
+        <view class="res-pill" :class="{ 'res-bump': bump.gem }">
           <Icon name="gemcurrency" :size="26" />
           <text class="mono">{{ store.wallet.gem }}</text>
         </view>
-        <view class="res-pill">
+        <view class="res-pill" :class="{ 'res-bump': bump.energy }">
           <Icon name="bolt" :size="26" />
           <text class="mono">{{ store.wallet.energy }}</text>
         </view>
@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 import { useStatusBarPad } from '@/utils/statusBar'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
@@ -181,6 +181,26 @@ import { ELEMENT_ORDER, ELEMENT_NAME, ELEMENT_COLOR } from '@/game/elements'
 import Icon from '@/components/Icon.vue'
 
 const store = useGameStore()
+
+/** R42 资源数值变化高亮：钱包变动的胶囊短促放大，玩家能确认「奖励到账了」。 */
+const bump = ref<Record<string, boolean>>({ coin: false, gem: false, energy: false })
+let bumpTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => [store.wallet.coin, store.wallet.gem, store.wallet.energy],
+  (nv, ov) => {
+    const keys = ['coin', 'gem', 'energy']
+    const changed = keys.filter((_, i) => nv[i] !== ov[i])
+    if (!changed.length) return
+    const next: Record<string, boolean> = { coin: false, gem: false, energy: false }
+    for (const k of changed) next[k] = true
+    bump.value = next
+    if (bumpTimer) clearTimeout(bumpTimer)
+    bumpTimer = setTimeout(() => {
+      bump.value = { coin: false, gem: false, energy: false }
+      bumpTimer = null
+    }, 700)
+  },
+)
 
 /**
  * 公告（2026-10-23）。

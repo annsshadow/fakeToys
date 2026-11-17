@@ -350,10 +350,13 @@ describe('stage.vue 关卡页状态化（100 轮打磨）', () => {
     expect(cells[0]!.classes()).toContain('current')
     expect(cells[0]!.find('.current-badge').exists()).toBe(true)
     expect(cells[0]!.find('.lock-glyph').exists()).toBe(false)
+    // R41 当前关才出播放键
+    expect(cells[0]!.find('.play-glyph').exists()).toBe(true)
     // 第 2 关锁定：锁图标 + locked 类
     expect(cells[1]!.classes()).toContain('locked')
     expect(cells[1]!.find('.lock-glyph').exists()).toBe(true)
     expect(cells[1]!.find('.stars').exists()).toBe(false)
+    expect(cells[1]!.find('.play-glyph').exists()).toBe(false)
   })
 
   it('R13 开始按钮吸底：sticky 类常驻，不可进入仍走 btn-disabled 降透明', async () => {

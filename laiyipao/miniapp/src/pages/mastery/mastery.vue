@@ -69,6 +69,8 @@
               <!-- 已点亮勾选标（100 轮打磨 R15）：三态此前只有底色差别，
                    已选与可选在深色背景下几乎不可分。加角标一眼可辨。 -->
               <view v-if="selected.includes(n.id)" class="node-check">✓</view>
+              <!-- R43 可选未点亮节点给「+」脉冲，强调这里还能点 -->
+              <text v-else-if="!isLocked(n)" class="node-plus">+</text>
               <text class="node-name">{{ n.name }}</text>
               <text class="node-value">+{{ n.value }}</text>
             </view>
@@ -341,6 +343,22 @@ onMounted(async () => {
 
 .node.selectable:active {
   transform: scale(0.97);
+}
+
+/* R43 可选节点「+」脉冲 */
+.node-plus {
+  position: absolute;
+  top: 3rpx;
+  right: 8rpx;
+  font-size: 22rpx;
+  line-height: 1;
+  color: var(--epic);
+  animation: node-plus-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes node-plus-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 /* 已点亮勾选角标 */

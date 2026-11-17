@@ -93,4 +93,28 @@ describe('微交互与加载反馈守卫', () => {
     expect(src).toContain('streak-fill')
     expect(src).toContain('streakPct')
   })
+
+  it('R41 当前关播放键提示', () => {
+    const src = read('../pages/stage/stage.vue')
+    expect(src).toContain('play-glyph')
+    expect(src).toContain('@keyframes play-pulse')
+  })
+
+  it('R42 首页资源变动高亮', () => {
+    const src = read('../pages/index/index.vue')
+    expect(src).toContain('res-bump')
+    expect(src).toContain('bump.coin')
+    expect(CSS()).toContain('@keyframes res-bump')
+  })
+
+  it('R43 专精可选节点加号脉冲', () => {
+    const src = read('../pages/mastery/mastery.vue')
+    expect(src).toContain('node-plus')
+    expect(src).toContain('@keyframes node-plus-pulse')
+  })
+
+  it('R44 页面进入淡入', () => {
+    expect(CSS()).toContain('animation: page-in')
+    expect(CSS()).toContain('@keyframes page-in')
+  })
 })
