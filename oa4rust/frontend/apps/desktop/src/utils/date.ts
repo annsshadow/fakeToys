@@ -67,17 +67,33 @@ export function parseServerDate(value: unknown): Date | null {
   return Number.isNaN(parsed.valueOf()) ? null : parsed
 }
 
+const DATETIME_LOCALE = 'zh-CN'
+const DEFAULT_DATETIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+}
+let defaultDateTimeFormatter: Intl.DateTimeFormat | undefined
+
 /**
  * 格式化服务端时间（R154）：列表页 `fmtTime` 的统一实现。
  * 解析失败时回落原始值，避免 iOS 上把 `Invalid Date` 直接渲染到界面。
+ *
+ * 未提供 options 是绝对热路径 —— 27 个列表视图每行的 fmtTime 都走这里。
+ * `Date.prototype.toLocaleString` 每次调用都会新建 `Intl.DateTimeFormat`，
+ * 这里把默认 formatter 缓存为单例，构造成本从「每行一次」摊薄为「全局一次」。
+ * 显式带 options 的调用极少（仓库仅 1 处），保留 toLocaleString 原语义不缓存，
+ * 避免改变边界选项（如 `{}` 会带时间）的输出契约。
  */
 export function formatServerDateTime(value: unknown, options?: Intl.DateTimeFormatOptions): string {
   const date = parseServerDate(value)
   if (!date) return String(value)
-  return date.toLocaleString(
-    'zh-CN',
-    options ?? { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
-  )
+  if (options === undefined) {
+    defaultDateTimeFormatter ??= new Intl.DateTimeFormat(DATETIME_LOCALE, DEFAULT_DATETIME_OPTIONS)
+    return defaultDateTimeFormatter.format(date)
+  }
+  return date.toLocaleString(DATETIME_LOCALE, options)
 }
 
 /**
