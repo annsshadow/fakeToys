@@ -8,6 +8,7 @@ import type { O2User, SessionState } from './types.js'
 
 const LEGACY_STORAGE_KEYS = ['oa4rust_session']
 let initPromise: Promise<void> | null = null
+let initTicket = 0
 let legacyStorageCleared = false
 
 function clearLegacyStorage(): void {
@@ -40,27 +41,35 @@ export const useSessionStore = defineStore('session', () => {
     state.value.initialized = true
   })
 
-  async function restoreCurrentUser(): Promise<void> {
+  async function restoreCurrentUser(ticket: number): Promise<void> {
     try {
       const resp = await api.get<O2User>('/api/authentication/who', { requireAuth: false })
-      state.value.user = isAuthenticatedUser(resp.data) ? resp.data : null
+      // 旧请求（被 force 取代）即使后返回，也不得覆盖新身份。
+      if (ticket === initTicket) state.value.user = isAuthenticatedUser(resp.data) ? resp.data : null
     } catch {
-      state.value.user = null
+      if (ticket === initTicket) state.value.user = null
     }
   }
 
   async function init(force = false): Promise<void> {
     clearLegacyStorage()
-    if (state.value.initialized && !force) return
-    if (!initPromise) {
-      state.value.loading = true
-      initPromise = restoreCurrentUser().finally(() => {
+    if (state.value.initialized && !force && !initPromise) return
+    // force 表示身份已变（登录/SSO/OAuth/切用户/刷新）：必须发起新的 who 读取，
+    // 不能复用身份变更前发起的 in-flight 普通 init()，否则会拿到旧身份。
+    if (initPromise && !force) return await initPromise
+    const ticket = ++initTicket
+    state.value.loading = true
+    const current = restoreCurrentUser(ticket).finally(() => {
+      // 只有当前这次才收尾：被 force 取代的旧请求后完成时既不能覆盖身份，
+      // 也不能提前解锁 loading 或清掉新的强制请求。
+      if (ticket === initTicket) {
         state.value.loading = false
         state.value.initialized = true
         initPromise = null
-      })
-    }
-    await initPromise
+      }
+    })
+    initPromise = current
+    await current
   }
 
   async function login(
