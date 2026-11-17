@@ -29,6 +29,7 @@ vi.mock('@/api/client', () => ({
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),

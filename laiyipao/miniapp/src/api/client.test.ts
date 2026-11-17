@@ -14,6 +14,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   request,
+  onAuthFailure,
   ApiError,
   getToken,
   getGuestToken,
@@ -115,6 +116,60 @@ describe('本地存储封装（uni storage 容错）', () => {
       throw new Error('remove failed')
     })
     expect(() => clearTokens()).not.toThrow()
+  })
+})
+
+describe('鉴权失败信号（onAuthFailure）', () => {
+  it('刷新也失败的 401 → 通知订阅者一次；刷新成功的 401 → 不通知', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    try {
+      // 刷新失败路径：无 refresh token → 直接 unauthorized + 信号
+      setTokenInternal('expired', '')
+      queueResponses([{ statusCode: 401, data: {} }])
+      const err = (await request('/me').catch((e) => e)) as ApiError
+      expect(err.code).toBe('unauthorized')
+      expect(onFailure).toHaveBeenCalledTimes(1)
+
+      // 刷新成功路径：换到新令牌重试 200 —— 会话恢复，不该报失败
+      setTokenInternal('expired', 'refresh-1')
+      queueResponses([
+        { statusCode: 401, data: {} },
+        { statusCode: 200, data: { access_token: 'new-acc', refresh_token: 'r' } },
+        { statusCode: 200, data: { ok: true } },
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(onFailure).toHaveBeenCalledTimes(1) // 没有新增
+    } finally {
+      unsub()
+    }
+  })
+
+  it('取消订阅后不再收到通知', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    setTokenInternal('expired', '')
+    queueResponses([{ statusCode: 401, data: {} }])
+    await request('/me').catch(() => {})
+    expect(onFailure).toHaveBeenCalledTimes(1)
+
+    unsub()
+    setTokenInternal('expired', '')
+    queueResponses([{ statusCode: 401, data: {} }])
+    await request('/me').catch(() => {})
+    expect(onFailure).toHaveBeenCalledTimes(1) // 仍是 1
+  })
+
+  it('auth:false 的 401 不触发信号（登录接口的失败是调用方的事）', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    try {
+      queueResponses([{ statusCode: 401, data: { error: { code: 'bad_token' } } }])
+      await request('/public', { auth: false }).catch(() => {})
+      expect(onFailure).not.toHaveBeenCalled()
+    } finally {
+      unsub()
+    }
   })
 })
 

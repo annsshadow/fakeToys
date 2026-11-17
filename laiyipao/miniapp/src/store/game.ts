@@ -289,6 +289,25 @@ export const useGameStore = defineStore('game', () => {
     uni.reLaunch({ url: '/pages/login/login' })
   }
 
+  /**
+   * 鉴权失败兜底（统一在 api 层识别，见 client.ts 的 onAuthFailure）。
+   *
+   * 令牌在「取数途中」才被确认失效（密钥轮换 / refresh 过期 / 账号停用）时，
+   * 请求层清了令牌并发信号。过去这里没有订阅，refreshProfile 只 console.warn，
+   * 页面停在「已登录但零数据」且不跳登录页 —— 正是最难自查的形态。
+   *
+   * ⚠️ 只在「本会话以为自己已登录」时才跳：
+   *   - 杂散的公开请求 401（auth:false）不会走到信号通道，但保险起见再挡一层；
+   *   - 并发 N 个 401 会各发一次信号，第一次就把 loggedIn 置 false，
+   *     后续直接 return —— 天然幂等，不会连跳（gotoLoginPage 另有防重）。
+   */
+  api.onAuthFailure(() => {
+    if (!loggedIn.value) return
+    needLogin.value = true
+    loggedIn.value = false
+    gotoLoginPage()
+  })
+
   async function login(): Promise<boolean> {
     if (loginInflight) return loginInflight
     loginInflight = doLogin()

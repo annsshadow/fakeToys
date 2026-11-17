@@ -31,6 +31,7 @@ vi.mock('@/api/client', () => ({
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   saveLastUsername: vi.fn(),
+  onAuthFailure: vi.fn(() => () => {}),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -191,6 +192,49 @@ describe('账号登录闸门', () => {
     expect(ok).toBe(false)
     expect(store.loggedIn).toBe(false)
     expect(store.loginError).toBe('用户名或密码错误')
+  })
+})
+
+describe('鉴权失败兜底（api.onAuthFailure → 跳登录页）', () => {
+  /** 拿出 store 注册给 api 层的那个 handler（factory 里 onAuthFailure 是 vi.fn）。 */
+  function registeredHandler(): () => void {
+    const call = mockApi.onAuthFailure.mock.calls.at(-1)
+    expect(call, 'store 初始化时应订阅 onAuthFailure').toBeTruthy()
+    return call![0] as () => void
+  }
+
+  it('已登录时收到鉴权失败 → needLogin、清登录态、跳登录页', () => {
+    const handler = registeredHandler()
+    // 制造「本地以为已登录」的状态（低频用直接置位，避免依赖登录网络流程）
+    ;(store as any).loggedIn = true
+    expect(store.loggedIn).toBe(true)
+
+    handler()
+
+    expect(store.needLogin).toBe(true)
+    expect(store.loggedIn).toBe(false)
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/login/login' })
+  })
+
+  it('并发 N 次信号只跳一次（第一次即清 loggedIn → 后续 handler 直接 return）', () => {
+    const handler = registeredHandler()
+    ;(store as any).loggedIn = true
+
+    handler()
+    handler()
+    handler()
+
+    expect(uni.reLaunch).toHaveBeenCalledTimes(1)
+  })
+
+  it('未登录时收到信号 → 不跳登录页（挡住杂散 401 误跳）', () => {
+    const handler = registeredHandler()
+    expect(store.loggedIn).toBe(false)
+
+    handler()
+
+    expect(uni.reLaunch).not.toHaveBeenCalled()
+    expect(store.needLogin).toBe(false)
   })
 })
 
