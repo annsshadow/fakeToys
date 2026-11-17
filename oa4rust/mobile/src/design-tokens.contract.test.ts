@@ -11,6 +11,7 @@ const src = (relative: string): string => readFileSync(resolve(import.meta.dirna
 const app = src('App.vue')
 const bbs = src('pages/bbs/bbs.vue')
 const login = src('pages/login/login.vue')
+const mine = src('pages/mine/mine.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -31,6 +32,7 @@ const tokens: Record<string, string> = {
   '--color-error-bg': '#fdecea',
   '--color-surface': '#ffffff',
   '--color-border': '#e3e6eb',
+  '--color-divider': '#f0f2f5',
 }
 
 describe('移动端设计 token 语义落地契约', () => {
@@ -98,6 +100,26 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(styleValue(login, '.submit', 'color')).toBe('var(--color-surface)')
     expect(login).not.toContain('background: #fff')
     expect(login).not.toContain('border: 1px solid #e3e6eb')
+  })
+
+  it('mine 页面：22 处硬编码色全部归一到语义 token', () => {
+    expect(styleValue(mine, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(mine, '.card', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(mine, '.avatar', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(mine, '.avatar', 'color')).toBe('var(--color-surface)')
+    expect(styleValue(mine, '.name', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(mine, '.sub', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(mine, '.row', 'border-bottom')).toBe('1px solid var(--color-divider)')
+    expect(styleValue(mine, '.k', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(mine, '.v', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(mine, '.push-desc', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(mine, '.logout', 'color')).toBe('var(--color-error)')
+    expect(styleValue(mine, '.logout', 'border')).toBe('1px solid var(--color-error)')
+    expect(styleValue(mine, '.pwd-input', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(mine, '.pwd-btn', 'background')).toBe('var(--color-primary)')
+    expect(mine).not.toMatch(/color: #[0-9a-fA-F]{3,6}/)
+    expect(mine).not.toMatch(/background: #[0-9a-fA-F]{3,6}/)
+    expect(mine).not.toMatch(/border: 1px solid #[0-9a-fA-F]{3,6}/)
   })
 
   it('两页面 style 仍为 scoped 纯 CSS，未偷偷引入 sass/lang', () => {

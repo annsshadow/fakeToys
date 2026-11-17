@@ -158,7 +158,7 @@ async function changePassword() {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 32rpx;
   box-sizing: border-box;
 }
@@ -166,7 +166,7 @@ async function changePassword() {
   display: flex;
   align-items: center;
   gap: 24rpx;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 20rpx;
   padding: 40rpx;
   margin-bottom: 24rpx;
@@ -175,8 +175,8 @@ async function changePassword() {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -189,34 +189,34 @@ async function changePassword() {
 .name {
   font-size: 36rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .sub {
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .rows {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 20rpx;
   margin-bottom: 40rpx;
 }
 .row {
   display: flex;
   padding: 28rpx 32rpx;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .row:last-child {
   border-bottom: none;
 }
 .k {
   width: 160rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .v {
   flex: 1;
-  color: #263238;
+  color: var(--color-text-primary);
   font-size: 28rpx;
 }
 .entry-card {
@@ -227,11 +227,11 @@ async function changePassword() {
 }
 .entry-k {
   font-size: 28rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 .entry-arrow {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 32rpx;
 }
 .push-card {
@@ -248,16 +248,16 @@ async function changePassword() {
 .push-desc {
   flex: 1;
   font-size: 26rpx;
-  color: #60676f;
+  color: var(--color-text-secondary);
 }
 .push-btn {
   margin: 0;
   flex-shrink: 0;
 }
 .logout {
-  background: #fff;
-  color: #f56c6c;
-  border: 1px solid #f56c6c;
+  background: var(--color-surface);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
   border-radius: 12rpx;
   font-size: 30rpx;
 }
@@ -268,20 +268,20 @@ async function changePassword() {
 .pwd-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 20rpx;
 }
 .pwd-input {
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   border-radius: 10rpx;
   padding: 18rpx 24rpx;
   font-size: 28rpx;
   margin-bottom: 18rpx;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .pwd-btn {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 10rpx;
   font-size: 28rpx;
   margin-top: 8rpx;
