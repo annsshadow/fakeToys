@@ -175,7 +175,11 @@ const ownerId = ref<number | undefined>(undefined)
 // 护盾状态筛选（2026-11-01 新一轮第 100 轮）。
 const shieldedFilter = ref<boolean | undefined>(undefined)
 
+// 请求序号守卫（第 76 轮）：快速切换筛选时，丢弃旧筛选的慢响应，避免覆盖新结果。
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE, {
@@ -183,12 +187,14 @@ async function load() {
       owner_id: ownerId.value,
       shielded: shieldedFilter.value,
     })
+    if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
