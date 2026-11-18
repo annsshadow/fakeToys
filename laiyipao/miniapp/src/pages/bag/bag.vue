@@ -640,6 +640,9 @@ async function equip(id: number) {
     next.push(id)
     const res = await api.saveEquippedEquipment(next)
     myEquipments.value = res.items ?? myEquipments.value
+    // 第 102 轮：装备加成经服务端 attackerFromParts 计入 build.attacker，
+    // 穿戴后必须同步 store 的战力/构筑与已装备 id（同页其它写均已刷新）。
+    await Promise.all([store.refreshProfile(), store.loadEquipment()])
   } catch (e) {
     equipError.value = `装备失败：${(e as Error).message}`
   } finally {
@@ -656,6 +659,8 @@ async function unequip(id: number) {
     const next = myEquipments.value.filter((e) => e.equipped && e.id !== id).map((e) => e.id)
     const res = await api.saveEquippedEquipment(next)
     myEquipments.value = res.items ?? myEquipments.value
+    // 第 102 轮：卸下后同步 store 的战力/构筑与已装备 id（同 equip）。
+    await Promise.all([store.refreshProfile(), store.loadEquipment()])
   } catch (e) {
     equipError.value = `卸下失败：${(e as Error).message}`
   } finally {
