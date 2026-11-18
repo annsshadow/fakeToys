@@ -169,7 +169,7 @@
     <div v-if="refPanel.open" class="ref-panel glass-card">
       <div class="ref-head">
         <span>我的文件引用类型（{{ refPanel.types.length }}）</span>
-        <button class="icon-action" @click="refPanel.open = false">✕</button>
+        <button class="icon-action" aria-label="关闭引用面板" @click="refPanel.open = false">✕</button>
       </div>
       <div v-if="refPanel.types.length === 0" class="empty-state"><p>暂无引用文件</p></div>
       <div v-else class="ref-chips">
@@ -182,7 +182,7 @@
       <div class="upload-dialog glass-card">
         <div class="ref-head">
           <h3>文件详情</h3>
-          <button class="icon-action" @click="detail.open = false">✕</button>
+          <button class="icon-action" aria-label="关闭文件详情" @click="detail.open = false">✕</button>
         </div>
         <div v-if="detail.loading" class="loading-state"><p>加载中…</p></div>
         <template v-else>
