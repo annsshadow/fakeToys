@@ -3112,3 +3112,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 117.4 门禁与四目标
 - 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 46 文件/333 passed + OA 6 项目 typecheck 0 + lint 458 文件 0 error(29 info)；miniapp/admin 本轮零改动沿用上轮门禁（miniapp 142 文件/1488 passed(2 skipped)、admin 497 passed）。R258 oaopt 源码 SPDX 双头、LF 保持、diff --check 0。
 - 四目标：①目标一 R258 doc 上传刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R258 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 最终定性为测试环境时序非产品 bug。凭证仅存仓库外临时文件+env，真值不入库。
+
+## 118. 第109轮：移动端发消息落库确认守卫
+
+### 118.1 oa4rust/mobile 发消息 HTTP 200 业务失败被当成功（R259，oaopt-r259）
+- 缺口：chat.vue send() 原 await messageApi.send() 后不看 resp，无条件 push local- 占位行并清输入框。后端 im/msg 在 HTTP 200 下仍可能返回业务错误信封（lib.rs:90-92 非会话成员 → ActionResult::error、data=None）或 sent=false（:127 Bool(result>0)）；移动传输层 performRequest 对 2xx 一律完整 resolve 不检查信封（http.ts:167-173）。结果为假成功气泡（轮询永不回显）+ 草稿丢失 + 无失败提示。
+- 关键防误杀核实：mapi 来自移动 ./http（非 SDK ApiClient，send 未传 discardResponse），成功信封 data.sent 确实保留；messageWasSent 仅在 sent===true 时放行，正常发送不受影响。
+- 修复：chatHistory.ts 新增纯函数 messageWasSent(resp)（仅 data.sent===true）；chat.vue send() 接住 resp 并在写占位行/清输入框前守卫，失败复用既有 catch/toast 反馈。
+- 测试：新增 chat.sendAck.test.ts（SPDX 双头），2 行为例（error信封/data缺失、sent=false/缺失/字符串不算送达）+ 1 源码契约（守卫早于占位行与清空）。
+- 主线程独立 RED→GREEN：备份三文件到 /d/tmp→git checkout 还原两源文件→vitest 同文件 RED 3 failed（2×TypeError messageWasSent is not a function + 1×AssertionError expected -1 to be greater than or equal to 0，:36）→恢复 GREEN 3 passed。
+
+### 118.2 laiyipao 全项目查修负结果（R259，lybug-r259）
+- 6 大方向普查（写后同步/竞态守卫/CSV筛选参数口径/账号写操作/服务端权威路径/候选证伪）全部到位，未发现可达真 bug；零改动、不触发 RED→GREEN，符合「宁可负结果不滥竽充数」。
+- 证伪候选（勿重复）：doApplyPreset 不刷 store.equipment（消费者 defenseBuild 经 ensureBuildLoaded 重拉权威构筑、onShow 亦刷新）、doRedeem 不刷任务（服务端 Redeem 本就不 bumpTasks，设计如此）。
+- 后续线索（未达真 bug 阈值）：存档/回放 build_snapshot 哈希两端一致性、buyTx/SaveDefense 部分写入事务边界、readonly 角色写端点鉴权覆盖、game.ts:517-519 saveProfile 未 await 落盘竞态。
+
+### 118.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 47 文件/336 passed + OA 6 项目 typecheck 0 + lint 459 文件 0 error(29 info)；miniapp/admin 本轮零改动沿用上轮门禁（miniapp 142 文件/1488 passed(2 skipped)、admin 497 passed）。R259 oaopt 源码 SPDX 双头、LF 保持、diff --check 0。
+- 四目标：①目标一 R259 发消息落库守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R259 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。凭证仅存仓库外临时文件+env，真值不入库。

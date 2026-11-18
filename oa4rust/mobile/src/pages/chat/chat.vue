@@ -17,7 +17,7 @@ import {
   shouldMarkOffline,
   watchNetworkStatus,
 } from '@/utils/networkStatus'
-import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
+import { describeChatError, loadChatHistoryPage, mergeOlderMessages, messageWasSent } from './chatHistory'
 import { CHAT_POLL_INTERVAL_MS, type ChatPollHandle, mergeNewerMessages, startChatPolling } from './chatPolling'
 import { isNearBottom, pendingAfterAppend, type ScrollMetrics, shouldFollowToLatest } from './chatScroll'
 
@@ -203,7 +203,10 @@ async function send() {
   if (!content || !conversationId.value || sending.value) return
   sending.value = true
   try {
-    await messageApi.send(conversationId.value, content, myUnique.value || 'me')
+    const resp = await messageApi.send(conversationId.value, content, myUnique.value || 'me')
+    // R259：HTTP 200 不代表落库——非成员等业务错误信封、sent=false 都表示没发出去。
+    // 只在服务端确认 sent===true 时才落本地占位行并清输入框，避免留下永不回显的假成功气泡。
+    if (!messageWasSent(resp)) throw new Error('消息未送达，请重试')
     msgs.value = [
       ...msgs.value,
       {

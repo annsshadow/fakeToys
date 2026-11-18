@@ -68,3 +68,15 @@ export function describeChatError(prefix: string, error: unknown): string {
   const detail = typeof message === 'string' && message.trim() ? message.trim() : '未知错误'
   return `${prefix}：${detail}`
 }
+
+/**
+ * R259：发消息是否真被服务端确认落库。
+ *
+ * 后端 im/msg 在 HTTP 200 下仍可能返回业务错误信封（type=error、无 data，
+ * 例如「非会话成员」），或 data.sent=false；两者都表示消息没写进库。移动传输层
+ * 对 2xx 一律 resolve、不检查信封，页面若只看「await 没抛错」就会把失败当成功，
+ * 并留下一条轮询永远不会回显的本地占位行。唯一可靠的成功证据是 data.sent===true。
+ */
+export function messageWasSent(resp: { data?: { sent?: unknown } } | undefined): boolean {
+  return resp?.data?.sent === true
+}
