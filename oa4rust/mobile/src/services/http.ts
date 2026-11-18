@@ -107,7 +107,16 @@ function transportFailureMessage(raw: string | undefined, timeoutMessage: string
   return raw && /timeout/i.test(raw) ? timeoutMessage : fallbackMessage
 }
 
-function authenticationFailed(): AuthenticationError {
+/**
+ * 认证失败的唯一出口。
+ *
+ * refreshSession() 内部走的是 performRequest，refresh 自身 401 时已经调用过
+ * 本方法并抛出了 AuthenticationError。外层 catch 若再调一次，同一次失败
+ * 会通知上层两次（会话存储重复清用户、toast 弹两条）。传入 cause 后，
+ * 已经通知过的错误原样透传，只有「refresh 因非认证原因失败」才补一次通知。
+ */
+function authenticationFailed(cause?: unknown): AuthenticationError {
+  if (cause instanceof AuthenticationError) return cause
   authFailureHandler?.()
   return new AuthenticationError('Session expired, please login again')
 }
@@ -167,7 +176,7 @@ function performRequest<T>(
           if (options.requireAuth !== false && !options.retried && !isRefreshRequest(path)) {
             refreshSession()
               .then(() => performRequest<T>(method, path, body, { ...options, retried: true }).then(resolve, reject))
-              .catch(() => reject(authenticationFailed()))
+              .catch((err) => reject(authenticationFailed(err)))
             return
           }
           reject(authenticationFailed())
@@ -224,7 +233,7 @@ function performUpload<T>(
           if (options.requireAuth !== false && !retried) {
             refreshSession()
               .then(() => performUpload<T>(path, filePath, options, true).then(resolve, reject))
-              .catch(() => reject(authenticationFailed()))
+              .catch((err) => reject(authenticationFailed(err)))
             return
           }
           reject(authenticationFailed())
