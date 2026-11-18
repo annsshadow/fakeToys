@@ -28,8 +28,10 @@ page {
   --color-warning: #ff9900;
   --color-success: #67c23a;
   --color-warning-bg: #fff4e5;
-  --color-warning-text: #b26a00;
+  --color-warning-text: #8a5200;
   --color-text-body: #5b6572;
+  /* WCAG 2.1 AA 1.4.3：状态文字色与填充色分离，填充色仅用于背景/按钮。 */
+  --color-success-text: #1e7e34;
   --color-placeholder: #c0c4cc;
 
   background-color: var(--color-bg-page);

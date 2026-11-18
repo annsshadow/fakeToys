@@ -24,6 +24,7 @@ const recycle = src('pages/recycle/recycle.vue')
 const topic = src('pages/bbs/topic.vue')
 const browse = src('pages/browse/browse.vue')
 const bbsNew = src('pages/bbs/new.vue')
+const message = src('pages/message/message.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -53,7 +54,8 @@ const tokens: Record<string, string> = {
   '--color-warning': '#ff9900',
   '--color-success': '#67c23a',
   '--color-warning-bg': '#fff4e5',
-  '--color-warning-text': '#b26a00',
+  '--color-warning-text': '#8a5200',
+  '--color-success-text': '#1e7e34',
 }
 
 describe('移动端设计 token 语义落地契约', () => {
@@ -220,7 +222,7 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(styleValue(attendance, '.tip-error', 'color')).toBe('var(--color-error)')
     expect(styleValue(attendance, '.error-banner', 'background')).toBe('var(--color-error-tint)')
     expect(styleValue(attendance, '.section', 'background')).toBe('var(--color-surface)')
-    expect(attendance).toContain('color: var(--color-success)')
+    expect(attendance).toContain('color: var(--color-success-text)')
     expect(attendance).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
@@ -282,6 +284,57 @@ describe('移动端设计 token 语义落地契约', () => {
       expect(page).toContain('<style scoped>')
       expect(page).not.toContain('lang="scss"')
       expect(page).not.toContain('lang="sass"')
+    }
+  })
+})
+
+/** WCAG 2.1 相对亮度（sRGB）。 */
+function relLum(hex: string): number {
+  const n = parseInt(hex.replace('#', ''), 16)
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+}
+
+function contrast(a: string, b: string): number {
+  const l1 = relLum(a)
+  const l2 = relLum(b)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
+
+describe('移动端状态文字对比度契约（WCAG 2.1 AA / 1.4.3）', () => {
+  const AA_TEXT = 4.5
+
+  it('作为文字使用的状态 token 对页面/卡片/浅色提示底均≥4.5:1', () => {
+    const textTokens: Record<string, string[]> = {
+      '--color-success-text': ['#f5f7fa', '#ffffff', '#fdf2f0'],
+      '--color-warning-text': ['#f5f7fa', '#ffffff', '#fff4e5'],
+    }
+    for (const [name, backgrounds] of Object.entries(textTokens)) {
+      const match = app.match(new RegExp(name.replace(/-/g, '\\-') + '\\s*:\\s*(#[0-9a-fA-F]{6})'))
+      expect(match, 'App.vue 缺少文字状态 token ' + name).not.toBeNull()
+      const color = match![1]
+      for (const bg of backgrounds) {
+        const ratio = contrast(color, bg)
+        expect(
+          ratio,
+          name + ' ' + color + ' 对 ' + bg + ' = ' + ratio.toFixed(2) + ':1 (< ' + AA_TEXT + ')',
+        ).toBeGreaterThanOrEqual(AA_TEXT)
+      }
+    }
+  })
+
+  it('attendance 的打卡结果文字走 success-text token，不再直接用低对比填充色', () => {
+    expect(styleValue(attendance, '.rec-result', 'color')).toBe('var(--color-success-text)')
+  })
+
+  it('chat / message 离线横幅背景一致，且无 var() 后拼接的无效 CSS', () => {
+    expect(styleValue(chat, '.offline-banner', 'background')).toBe('var(--color-warning-bg)')
+    expect(styleValue(message, '.offline-banner', 'background')).toBe('var(--color-warning-bg)')
+    for (const page of [chat, message]) {
+      expect(page).not.toMatch(/var\(--color-[a-z-]+\)[0-9a-fA-F]{3,8}/)
     }
   })
 })

@@ -360,7 +360,7 @@ function statText(): string {
 }
 .rec-result {
   font-size: 24rpx;
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 .rec-meta {
   font-size: 24rpx;

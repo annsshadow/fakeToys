@@ -95,7 +95,7 @@ function openConversation(row: Record<string, unknown>) {
 }
 .offline-banner {
   padding: 16rpx 24rpx;
-  background: var(--color-surface)4e5;
+  background: var(--color-warning-bg);
   color: var(--color-warning-text);
   font-size: 26rpx;
   text-align: center;
