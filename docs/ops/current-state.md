@@ -3238,3 +3238,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 125.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 160 文件/1651 passed + pnpm typecheck 6 项目 0 + biome lint 466 文件 0 error(29 info 既有)；miniapp 144 文件/1493 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。三处新文件 SPDX 双头、格式（LF/CRLF-BOM）保持、真值不入库。
 - 四目标：①目标一 R266 会议状态权威态渲染复核完成，持续找缺口②目标二 §99 已交付③目标三 R266 删除防线弹窗期双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 126. 第117轮：系统设置保存并发覆盖守卫 + 退出登录弹窗期守卫
+
+### 126.1 oa4rust/desktop 系统设置并发写覆盖（R267，oaopt-r267）
+- 缺口：Settings.vue 被 R157 保存守卫批次遗漏（crudSaveGuards.test.ts 29 页无此文件）。三个保存按钮 @click saveCfg/saveToggles 无 :disabled，persistConfigs() 直接 await api.post(/api/config,{configs:buildConfigs()}) 无 saving 占用与 finally 复位。buildConfigs() 一次提交全部 cfg+toggles（全量 UPSERT，POST /api/config 按 name 逐条覆盖）。可达性：改基础配置点保存（请求 A 慢未归）→切通知配置改开关点保存（请求 B），两个全量 POST 并发 last-write-wins，携带旧值的 A 后到会回滚 B 的开关，用户以为成功但服务端权威态被旧值覆盖。
+- 修复：新增 const saving=ref(false)（含 R267 注释说明全量 UPSERT 并发覆盖原因），persistConfigs() 开头同步 if(saving.value) return + saving.value=true，finally 中复位；三个保存按钮各加 :disabled="saving"；新增 .save-btn:disabled 视觉态。LF 无 BOM 保持。
+- 测试：新增 Settings.saveGuard.test.ts（双头）2 例源码契约（守卫/占用/finally 复位顺序且复位仅一次、三个按钮全绑定 :disabled="saving"）。主线程独立 RED→GREEN（备份→checkout 还原源文件保留新测试；oa4rust 下 pnpm exec vitest run src/views/Settings.saveGuard.test.ts --root frontend/apps/desktop）：RED exit1 2 failed（expected source to contain const saving = ref(false) @:20、按钮 to contain :disabled="saving" @:40）→恢复 GREEN 2 passed。
+- 负结果（勿重复）：mobile attendance 下班按钮 canCheckIn 后端确无 canCheckOut 非缺口、mobile 5 处 showModal 写操作守卫完备、mobile auth/session/chat 守卫已覆盖，未改 mobile。
+
+### 126.2 laiyipao/miniapp 退出登录弹窗期双请求（R267，lybug-r267）
+- 缺口：me.vue confirmLogout() 先 await uni.showModal 再 api.logout()，弹窗挂起期无守卫，是 7 处异步确认入口唯一遗漏（battle/shop/deleteDefense 已修，showActionSheet 全项目 0 处）。双击退出登录弹两确认框、两次都确认发两次 api.logout()；服务端 /me/logout 每次轮换 guest_token（client.ts:320-360 注释明确旧 token 覆盖风险），并发回写时旧 token 覆盖新 token→下次冷启动 GuestLogin 匹配失败建新号→进度丢失。
+- 修复：新增 const loggingOut=ref(false)，confirmLogout 入口 if(loggingOut.value) return + 置位（showModal 前同步占用），取消分支复位后 return，完成分支结尾复位（+8/-1，CRLF 保持）。新增 me_logout_modal_guard.test.ts（双头 2 例：弹窗期双击只弹一次只登出一次、取消后守卫复位可再登出）。
+- 主线程独立 RED→GREEN（仅还原 me.vue 保留新测试；laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/me/me_logout_modal_guard.test.ts）：RED exit1 expected "vi.fn()" to be called 1 times, but got 2 times（:160）→恢复 GREEN 2 passed。
+- 后续线索：shop/battle 弹窗守卫是否对所有 return/异常路径逐路径复位（本轮仅确认存在）；confirmLogout 若 api.logout() 抛异常当前守卫不复位（沿用项目风格，失败后重试登出需独立增强）；confirmLogout 语义（本地登出 vs 服务端吊销提示）属产品语义非缺陷。
+
+### 126.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 161 文件/1653 passed + pnpm typecheck 6 项目 0 + biome lint 467 文件 0 error(29 info 既有)；miniapp 145 文件/1495 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R267 设置保存并发守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R267 退出登录弹窗期双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

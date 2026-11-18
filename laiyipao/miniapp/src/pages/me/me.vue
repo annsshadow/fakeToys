@@ -1146,7 +1146,10 @@ async function submitNickname() {
  * 谎称「已完全登出」会让用户以为风险已消除 ——
  * 而安全相关的提示一旦撒谎就再也不会被相信。
  */
+const loggingOut = ref(false)
 async function confirmLogout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
       title: '退出登录',
@@ -1157,7 +1160,10 @@ async function confirmLogout() {
       fail: () => resolve(false),
     })
   })
-  if (!confirmed) return
+  if (!confirmed) {
+    loggingOut.value = false
+    return
+  }
 
   const { serverNotified } = await api.logout()
   if (serverNotified) {
@@ -1179,6 +1185,7 @@ async function confirmLogout() {
   } else {
     uni.reLaunch({ url: '/pages/index/index' })
   }
+  loggingOut.value = false
 }
 
 
