@@ -2592,3 +2592,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 92.3 负结果、目标二与交付边界
 - lybug-r233 除 CORS Date 外未发现其他可确证 bug；主线程本轮 admin/mobile 面未引入新改动。目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R233 完成（CSV 表头引号转义，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 server CORS Date 真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 93. 第 84 轮现量：R234 PWA theme-color 跟随主题 + mobile 浏览详情竞态
+
+### 93.1 R234 浏览器/PWA 外壳 theme-color 跟随明暗主题（现代一致性）
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/index.html 的 <meta name="theme-color"> 与 manifest.json 的 theme_color 都写死深色 #060913，但应用已支持 dark/light 切换（theme.ts + dark.css）。安装为 PWA 或 Android Chrome 切到 light 主题后，任务切换器/标题栏仍是深色，刺眼且与页面不一致（R201–R233 未覆盖）。 |
+| 修复 | packages/sdk/src/theme.ts 新增模块级 syncBrowserThemeColor(mode)：dark→#060913、light→#f0f4f8（与 dark.css --bg-base 一致），带 typeof document 守卫与可选链（SSR/无 meta 安全）。所有改主题路径收口到该函数：createThemeProvider().applyTheme()（覆盖 setTheme/toggleTheme/init/系统 matchMedia 跟随）+ 模块级 storage 监听器（跨标签页同步，避免只改 data-theme 漏掉外壳）。静态 meta/manifest 不动（默认 dark 与静态值一致，运行时由 meta 动态覆盖）。新增 theme.themeColor.contract.test.ts 7 例（静态2 + setTheme/init/系统/跨标签页/SSR/结构统一入口5）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退 theme.ts→契约 4 failed/3 passed→恢复→7 passed）；主题全量 4 文件 22 passed；格式化两新测试后 oa4rust 根 145 文件/1582 passed、typecheck 6 项目 Done、lint 0 error（29 info 既有）、diff --check OK。 |
+
+### 93.2 mobile 只读浏览详情只认最新一次（竞态守卫）
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/browse/browse.vue 的 open(r) 详情加载（portal pageDetail / queryview execute / cms documentSearch 三数据源）无请求序号守卫：快速点不同行时旧响应晚到覆盖新行详情，且旧请求错误弹 toast、finally 提前清 loading，与 R151 起 listGate/createLatestGate 的「只认最新一次」约定不一致。 |
+| 修复 | 复用 @/utils/latest 的 createLatestGate()，新增 detailGate；open() 开头 token=detailGate.begin()，三分支取 fetched 后 if (!detailGate.isLatest(token)) return 才写 detail.value；catch/finally 同样按 isLatest 守卫（过期错误不弹 toast、不提前清 loading）。新增 browse.detailRace.contract.test.ts 3 例（源码级：令牌创建/守卫早于赋值/catch+finally 守卫）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退 browse.vue→3 failed→恢复→3 passed）；mobile typecheck（tsc --noEmit）exit 0、全量 33 文件/274 passed。 |
+
+### 93.3 负结果、目标二与交付边界
+- lybug-r234 负结果零改动：写范围 laiyipao/miniapp+server 核对 304/data 字段（确认为误报，game.ts:425 用 status==='unmodified' 分支 + serverTimeMs 校准，client.ts:759 返回体无 data 字段）、登录/续期单飞、battle settled 守卫 + battle_token RowsAffected 互斥、签到连点 PK 23505 条件 UPDATE（仅 UI 提示非资金 bug）、定时器短存活无实质危害、路由/DTO/keyset/幂等双向一致，均无新 bug 不强造，写范围 git status 干净。主线程 admin 第 84 轮侦察全负结果：12 视图成功提示后处理（Object.assign 就地更新行 / 删除切档 load）与表单校验完备。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R234 完成（PWA theme-color 跟随主题，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
