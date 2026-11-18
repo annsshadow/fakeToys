@@ -7,6 +7,14 @@ export type ThemeMode = 'dark' | 'light'
 
 const _theme = ref<ThemeMode>('dark')
 
+/**
+ * R196：所有 createThemeProvider() 实例共享同一份 _theme 状态，系统明暗跟随的
+ * 销毁闭包也必须共享。真实链路里 init() 跑在 main.ts 的临时实例上，而用户选色走
+ * useTheme() 单例；若把 stopFollowing 放在实例闭包里，单例 setTheme() 看不到它，
+ * 就拆不掉临时实例安装的 matchMedia change 监听器，OS 切换会覆盖用户的显式主题。
+ */
+let stopFollowing: (() => void) | null = null
+
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 const THEME_KEY = 'oa4rust_theme'
 
@@ -15,9 +23,6 @@ const THEME_KEY = 'oa4rust_theme'
  * o2web 不支持主题切换，这是新栈的增强能力
  */
 export function createThemeProvider() {
-  /** 取消跟随系统偏好的闭包；用户显式选择后调用，之后不再自动联动。 */
-  let stopFollowing: (() => void) | null = null
-
   /** 只更新内存与 <html> 属性，不落盘（系统跟随是隐式的）。 */
   function applyTheme(mode: ThemeMode): void {
     _theme.value = mode
@@ -36,6 +41,9 @@ export function createThemeProvider() {
   }
 
   function init(): void {
+    // 重新初始化先拆掉旧的系统跟随监听，避免 stopFollowing 被覆盖后旧监听残留。
+    stopFollowing?.()
+    stopFollowing = null
     const stored = localStorage.getItem(THEME_KEY) as ThemeMode | null
     if (stored) {
       applyTheme(stored)
