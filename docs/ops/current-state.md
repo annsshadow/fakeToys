@@ -1564,3 +1564,31 @@ lybug-r41 逐字段对照复活局全链路（ExtraBaseHp/replay_hash |X 段/Rev
 - 两提交 e0eeb756e、586599b2b + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 及 laiyipao 固定不动项维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界（本轮复核本地 health=200）。
 - 新契约测试文件按仓库规范补 Copyright/SPDX 头与自解释说明；biome 374 文件 0 error（17 infos baseline 不阻塞）。
+
+## 五十一、第42轮：R192语义色/同色底色叠放对比度 + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r192 完成 R192（R191 遗漏的「同色半透明底色 + 同色文字」组合对比度缺口）；lybug-r42 深查 laiyipao 逐字段契约后如实报负结果、零改动。主线程复核 diff + 复跑全量门禁后提交 R192。
+
+### 51.1 oa4rust R192 语义文字/同色底色叠放对比度 WCAG 2.1 AA / 1.4.3（提交 37510913d）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | R191 只保证语义色文字对 base/surface/elevated 裸背景达 AA，遗漏全仓 16 处徽章/迟到/审核/删除按钮把同一前景叠在该语义色 glow/soft 半透明底上（如 .badge.rejected{background:var(--color-error-glow);color:var(--color-error)}）。light 块未定义 success/warning/error 的 glow，按 CSS 级联继承 dark 深色 glow → 亮色语义文字叠底仅 3.48~3.73:1、dark error 低至 2.93:1，低视力用户读不清错误/迟到/审核状态 | 16 处真实用法取证，客观 WCAG 失败非审美 |
+| 修复 | 主题层一处调 token：dark accent #a855f7→#c084fc、success-glow alpha 0.3→0.2、warning-glow 0.3→0.24、error #ef4444→#ff8080；light accent-glow alpha 0.2→0.08、success #15803d→#166534、warning #b45309→#92400e、error #b91c1c→#991b1b。16 处视图零改动，加深后 light 色对裸背景仍满足 R191 | 2 文件（1 改 + 1 新契约测试）|
+| 门禁 | semanticTintContrast.contract.test.ts 解析两主题块、按 CSS 级联处理继承 tint、sRGB alpha 合成后实算 8 组文字/底色在 3 背景上的对比度，RED(8 全失败，最低 2.93)→GREEN(8/8，最低 4.55)；全量 pnpm test 101 files 1386 passed、typecheck 6 包、biome 375 文件 0 error | — |
+
+### 51.2 laiyipao 第42轮诚实负结果
+
+lybug-r42 逐字段核对签到周期与 day_index 状态机(economy.go:463-653 vs signin.vue:218-273)、放弃战斗退款幂等(battleabandon.go:48-116)、战绩分页游标、战力/评分(game.go:913-999 / progression.go:41,726-727 vs store/game.ts:475-488)、防线种子、千分比单位族、排行榜三方类型(routes.go:1042-1057 vs rank.vue:125-129)、订单分转元、商城限购、时钟校准共 11 类，全部一致或属已修/固定项。疑点「装备战力未计入」经查 domain.ComputePower 的 EquipmentLvls/ElementCap 本就不从 build 快照填，属既有设计取舍非新增偏差。无可写真实 RED 的新 bug，如实报负结果、零文件改动（git status --porcelain -- laiyipao 为空），未跑无意义门禁。连续第 31/34/41/42 轮负结果，印证 43.4 策略提示。
+
+### 51.3 主线程侦察与目标二复核
+
+- 移动端无障碍/对比度/动效/utils 全面侦察为负结果：12 个 .vue 含 button、19 个含 @click/@tap 但 0 处 aria-label/role（图标按钮均有可见文字标签）；.vue 硬编码色文字=0（全 token 化）；移动端零 animation/transition 与 prefers-reduced-motion（R181 守卫无落点）；App.vue 文字 token sRGB 实算全部达 AA（primary 12.26/13.16、secondary 4.80/5.16、muted 4.61/4.95、body 5.51/5.92、error 5.07/5.44、warningText 5.95/6.39、successText 4.79/5.14，page/card），唯一不达标 --color-placeholder #c0c4cc=1.63/1.75 为死 token（无 placeholder-style 消费者），加深无用户可见效果属强造不做。
+- laiyipao/admin（不在 lybug-r42 写范围）千分比字段复核：EquipmentView.vue:104 用 ‰ 标签、LevelsView.vue:362 difficulty‰、RecomputesView.vue:127 pct() 用 (permille/10).toFixed(1) 整数除法、WikiView.vue:543 amplifyPctText=v/10（第39轮修）、:580 攻击权重 v/10 helper，未见新单位 bug。
+- 目标二 augmentor 本地复核 health=200、根页=200（http://127.0.0.1:8000）；远程部署仍卡 GitHub Secrets（gh CLI 不可用）超会话边界，维持 33.3 交付边界不臆造。
+
+### 51.4 交付与边界
+
+- 提交 37510913d + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 及 laiyipao 固定不动项维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界。
+- 推送教训复用：管道 tail 后 $? 是 tail 退出码须用 ${PIPESTATUS[0]}；Connection closed by 198.18.0.46 出口抖动重试即可，绝不先 update-ref。
