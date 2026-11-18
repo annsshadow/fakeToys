@@ -2890,3 +2890,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r246 排除清单（逐一核实未改）：bag.vue equip/unequip/doEquipGem/doUnequipGem/doUpgrade/doWash/doSynthesize/preset CRUD/doApplyPreset（已修）、me.vue challenge（已修）/shielded_until 读写（R133）/changePassword/upgrade、signin.vue doSignIn/claimOffline/doRedeem、mastery.vue allocate/reset、verify.vue submit、battle.vue abandon/settle、shop.vue doBuy、store.refreshProfile（game.ts:475-525）钱包同步；server AdminListUsersPage/AdminExportUsers 与 AdminListDefenseChallenges/AdminExportDefenseChallenges 同口径、SaveDefense 本身正确。
 - 门禁（主线程全量）：oa4rust 153 文件/1632 passed + typecheck 6 项目 Done + lint 449 文件 0 error（29 info 既有）+ mobile 41 文件/309 passed；miniapp 138 文件/1480 passed（2 skipped 既有）+ type-check:test + type-check 均 0；admin 37 文件/496 passed + vue-tsc 0；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R246 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复护盾切换本地取反真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 107. 第 97 轮：R247 mobile 首屏加载判据 + server 商城写后缓存失效与归属守卫（2026-11-19）
+
+### 107.1 R247（oa4rust/mobile）硬编码 loaded:true 页面首屏不再闪虚假空态
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/utils/loadList.ts:33 listState 首判据 if (input.loading && !input.loaded) return 'loading'。三个真实调用点把 loaded 写死为 true：meeting.vue:36、recycle/recycle.vue:23、contacts/contacts.vue:75。首屏/刷新 loading=true、rows 尚空、error 为空时，!loaded=false 使首判据不成立，count===0 直接落 'empty'，用户短暂看到「暂无数据」而非「加载中」。meeting 首屏 onShow→ensureAuthenticated→load 异步拉取，无 disabled/遮罩阻断。 |
+| 修复 | loadList.ts:33 单行 → if (input.loading && (input.count === 0 || !input.loaded)) return 'loading'：加载中且一行都没有时无论 loaded 取值均判 loading；已有 8 条断言全兼容（:70 count:2 仍 'list'）。 |
+| 测试 | 在 loadList.test.ts（已有双头）新增 1 条 it：listState({loading:true,loaded:true,count:0,error:''})==='loading'。主线程独立 RED：实收 AssertionError「expected 'empty' to be 'loading' // Object.is equality」（:84）→恢复→9 passed；三调用点 grep 复核可达。门禁：oa4rust 153 文件/1632 passed、6 项目 typecheck、lint 449 文件 0 error（29 info 既有）、mobile 41 文件/310 passed、diff --check 0。 |
+
+### 107.2 laiyipao/server 商城商品写后两处读缓存未失效（真 bug）
+- 缺口：laiyipao/server/internal/service/adminapi.go:1103 AdminUpdateShopItem 写库成功后从不 flush shopCache / economyCache。LoadShop（玩家商城，economy.go）与 AdminEconomy（后台经济看板含 Shop 配置）各把 shop_items 静态部分缓存 30s（config.go:593-595 ShopCacheTTL/EconomyCacheTTL）；Buy 却实时读库按新价扣钱——运营调价/上下架后玩家展示价与后台看板仍为旧值、实付却是新价，有用户损害。对照公告写路径写后均显式 flush announcementsCache，商品写路径同口径应 flush；全仓 shopCache.flush / economyCache.flush 写路径 0 处。商品写唯一服务端写函数即 AdminUpdateShopItem（无 AdminCreate/DeleteShop）。
+- 修复（adminapi.go:1202 成功 return 前 +4 行，LF 保持）：s.shopCache.flush() 与 s.economyCache.flush() 加两行机理注释。
+- 测试：新增 shop_write_cache_invalidate_test.go（双头 + 标准库断言，testify 非 go.mod 直接依赖未引入）。TestAdminUpdateShopItemInvalidatesReadCaches：openScratchService→newUser→LoadShop/AdminEconomy 装载旧值→真库 UPDATE 改名→AdminUpdateShopItem 写库→先断言真库新值→再分别断言写后玩家商城与后台看板均见新值（两条独立 t.Errorf）。主线程独立 RED：两条断言均报「写后玩家商城/后台经济看板仍返回旧名称「金币袋」而非「金币袋_r97sync」」→恢复→GREEN PASS。
+
+### 107.3 主线程额外修复：常驻归属守卫暴露的 battle_tokens  UPDATE 缺归属过滤
+- 全量 go test ./internal/service 曾报预存失败 TestUserScopedQueriesMustFilterByOwner（ownership_scan_test.go:622）：internal/service/game.go:145 StartBattle 复活路径 `UPDATE battle_tokens SET revived = TRUE WHERE id = $1` 只有 id 没有归属过滤。核实：tokenID 是同一事务内用已认证的 userID INSERT 的，当下不可越权；但该守卫的文档（ownership_scan_test.go:113-127）明确说明它管辖的就是「调用点保证、语句自己不保证」的 SELECT/UPDATE/DELETE 形态——加归属谓词是行为不变（id 与 user_id 必然匹配）的纵深防御，也让常驻守卫转绿。非代理改动、非迎合测试。
+- 修复（game.go:145 单行 +1/-1，LF）：WHERE id = $1 → WHERE id = $1 AND user_id = $2，Exec 参数 (tokenID, userID)。验证：归属守卫转绿；复活链路 4 例（复活额外血量/落库往返/结算闭环/每次扣一枚）全绿；go vet + go build ./... 0。
+
+### 107.4 负结果、门禁与目标状态
+- lybug-r247 排除清单（核实未改）：miniapp/admin 全写路径页内状态同步已到位（verify/shop/mastery/me、admin LevelsView/UsersView/EconomyView/DefensesView/ContentView）无同族新 bug；TTL 内缓存陈旧经测试确认为设计意图，只有「写后应失效」才是缺陷。oaopt-r247 负结果：frontend 端未找到 loaded:true+loading+count=0 同构缺口（桌面视图各自维护 loaded），format/latest/networkStatus/datetime、frontend formatNumber/formatSize/paging、listRace/detailRace 竞态族、导出链路、三个 payload DTO、bbsApi id、mobile form.ts 纯空白均核实勿重复。
+- 门禁（主线程全量）：service 包全量 go test 694s exit 0、缓存设计意图回归组（AdminEconomyServedFromCache/AdminUsersTotalCacheBoundedStaleness/ShopServedFromCache/新测试）全绿、go vet + go build ./... 0；miniapp 138 文件/1480 passed（2 skipped 既有）+ type-check:test + type-check 0；admin 37 文件/496 passed + vue-tsc 0；OA 153 文件/1632 passed + 6 项目 typecheck + lint 449 文件 0 error（29 info 既有）+ mobile 41 文件/310 passed；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R247 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复商城写后缓存失效真 bug 并让常驻归属守卫转绿，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
