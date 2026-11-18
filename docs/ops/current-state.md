@@ -2237,3 +2237,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 / 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 主线程侦察负结果：admin 9 个导出 API 参数拼 query 与列表口径一致、创建提交防重/筛选竞态/日期区间 nextDay 开区间均就位、无裸 div @click；mobile 无重复 id、无 viewport 缩放禁用、chatPolling 定时器配对清理、Promise.allSettled 部分失败均显式报错，无可确证新缺口。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R214 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+## 74. 第 65 轮现量：R215 加载状态可访问性（WCAG 4.1.3）
+
+### 74.1 R215 全局加载指示器 role=status 与读屏文案
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend 全仓 .vue 中 role="status" 为 0 次；约 68 处加载容器是纯骨架 DOM（如 AnnApp.vue:19、AppInfoApp.vue:29 的 <div v-if="loading" class="loading-state"><div class="skel">…），无可见文本也无语义角色；另有部分写了「加载中...」文本但缺活动区域角色。读屏用户数据加载期间听不到状态变化，属 WCAG 2.1 AA 4.1.3 Status Messages 真实违背，与历史已做点不重合。 |
+| 修复 | 新增 oa4rust/frontend/apps/desktop/src/utils/loadingA11y.ts：installLoadingA11y(root) 用 MutationObserver 给 .loading-state/.loading-indicator/.loading-spinner/.skeleton-loader 容器补 role="status"；无文本容器注入视觉可见的「加载中...」span；尊重作者已有 role/文案；dispose 断开观察并还原注入的属性与文本。main.ts 挂载前安装。 |
+| 门禁 | 新 loadingA11y.contract.test.ts 6 例 jsdom DOM 行为（含 vue v-if 异步插入与 dispose 还原）；主线程独立 RED（临时移走实现模块）模块解析失败确证守卫有效，恢复后 GREEN 6/6；独立复跑全量 oa4rust 124 文件/1484 passed、typecheck 6 项目 Done、lint 404 文件 0 error（20 info 既有）。 |
+
+### 74.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r65 负结果零改动：逐类核对 laiyipao/miniapp+server 的 8 大类（路由端点 1:1 / DTO 响应字段 / keyset 分页 / 周期时区 / 定点数值 / 错误码重试并发 / 边界白名单 / 历史固定不动项）全一致或历史已修，无可复现用户可见差异，不强造 RED→GREEN；miniapp 133 文件/1474 passed|2 skipped、vue-tsc 0、server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
+- 主线程侦察负结果：admin 危险操作（清空/重置/删除）均有 ElMessageBox.confirm 或 uni.showModal，日期区间 nextDay 用 UTC 墙钟与业务口径一致；mobile 回收站彻底删除/清空有 uni.showModal 确认、定时器配对清理，无可确证新缺口。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R215 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果，继续找但不强造。laiyipao 固定不动项维持记账。
