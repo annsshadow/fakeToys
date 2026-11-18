@@ -197,6 +197,8 @@ const signedToday = ref(false)
 const lastResult = ref('')
 const code = ref('')
 const redeemMsg = ref('')
+/** R268 兑换在途守卫：防止网络慢时双击重复提交，二次请求的错误覆盖首次成功提示。 */
+const redeeming = ref(false)
 /** R34 成功反馈：刚签到/刚领奖的目标短暂高亮，随后自动熄灭。 */
 const justSigned = ref(false)
 const justClaimedTask = ref(0)
@@ -411,7 +413,8 @@ async function claim(id: number) {
 }
 
 async function doRedeem() {
-  if (!code.value.trim()) return
+  if (redeeming.value || !code.value.trim()) return
+  redeeming.value = true
   try {
     const res = await api.redeem(code.value.trim())
     redeemMsg.value = `兑换成功：${rewardText(res.reward)}`
@@ -419,6 +422,8 @@ async function doRedeem() {
     await store.refreshWallet()
   } catch (e) {
     redeemMsg.value = (e as Error).message
+  } finally {
+    redeeming.value = false
   }
 }
 

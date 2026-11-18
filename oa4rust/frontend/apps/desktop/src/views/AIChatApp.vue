@@ -45,7 +45,7 @@
       <!-- 左侧: 对话列表 -->
       <div class="sidebar glass-card">
         <div class="sidebar-header">
-          <button class="btn-new" @click="createNewChat">+ 新对话</button>
+          <button class="btn-new" @click="createNewChat" :disabled="creatingChat">+ 新对话</button>
           <button class="btn-config" title="MCP 配置" aria-label="MCP 配置" @click="openConfig">⚙</button>
         </div>
         <div class="chat-list">
@@ -159,7 +159,7 @@
       <div v-if="showAddMcp" class="mcp-add">
         <input v-model="mcpForm.name" placeholder="名称（必填）" class="mcp-input" />
         <input v-model="mcpForm.url" placeholder="服务地址 URL" class="mcp-input" />
-        <button class="btn-mcp" @click="addMcp">保存</button>
+        <button class="btn-mcp" @click="addMcp" :disabled="savingMcp">保存</button>
         <button class="btn-mcp" @click="showAddMcp = false">取消</button>
       </div>
       <div class="config-actions">
@@ -201,6 +201,7 @@ const currentChat = ref<ChatItem | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const loading = ref(false)
+const creatingChat = ref(false)
 const streamMode = ref(true)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
@@ -503,6 +504,8 @@ function retryMessages() {
 }
 
 async function createNewChat() {
+  if (creatingChat.value) return
+  creatingChat.value = true
   try {
     const r = await api.post('/api/ai_assemble_control/chat/completion', { title: '新对话' })
     const newChat = r.data ?? { id: 'new', title: '新对话' }
@@ -510,6 +513,8 @@ async function createNewChat() {
     selectChat(newChat as ChatItem)
   } catch {
     toast.info('创建对话失败')
+  } finally {
+    creatingChat.value = false
   }
 }
 
@@ -658,6 +663,7 @@ const mcpLoading = ref(false)
 const mcpError = ref('')
 const showAddMcp = ref(false)
 const mcpForm = ref({ name: '', url: '' })
+const savingMcp = ref(false)
 
 async function loadMcps() {
   mcpLoading.value = true
@@ -736,12 +742,14 @@ async function delMcp(id: string) {
 }
 
 async function addMcp() {
+  if (savingMcp.value) return
   const name = mcpForm.value.name.trim()
   const url = mcpForm.value.url.trim()
   if (!name) {
     toast.info('请填写名称')
     return
   }
+  savingMcp.value = true
   try {
     await api.post('/api/ai_assemble_control/config/create/mcp', { name, url, enabled: true })
     mcpForm.value = { name: '', url: '' }
@@ -749,6 +757,8 @@ async function addMcp() {
     await loadMcps()
   } catch (e: any) {
     toast.info(`添加失败: ${e?.message ?? ''}`)
+  } finally {
+    savingMcp.value = false
   }
 }
 // rev478（用户裁定放宽双计口径）：AI alias 轨同 handler 镜像真注册路由 3 条（主轨 /api/ai/* 已消费，alias 轨逐注册路由计；arity 已校验）

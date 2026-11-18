@@ -3255,3 +3255,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 126.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 161 文件/1653 passed + pnpm typecheck 6 项目 0 + biome lint 467 文件 0 error(29 info 既有)；miniapp 145 文件/1495 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R267 设置保存并发守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R267 退出登录弹窗期双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 127. 第118轮：AI 对话/MCP 新建写守卫 + 兑换码在途守卫
+
+### 127.1 oa4rust/desktop AIChatApp 直接新建写操作无在途守卫（R268，oaopt-r268）
+- 缺口：AIChatApp.vue 两个直接写服务端的新建操作无守卫——createNewChat() 直接 POST /chat/completion 创建对话（模板 btn-new「+ 新对话」:48 无 disabled），双击产生两个空对话；addMcp() 直接 POST /config/create/mcp 新增 MCP 服务（模板 :162 保存按钮无 disabled），双击产生两条同名服务。清单中 IMChat 发送在途守卫(R263)属 mobile 发消息路径，不覆盖此桌面新建流程。
+- 修复：新增 creatingChat/savingMcp 两个 ref，createNewChat 与 addMcp 各加函数级在途守卫 + finally 复位，两个按钮加 :disabled（addMcp 占位放在 name/url 非空校验之后、POST 之前）。6 处精确 edit，LF 无 BOM 保持。
+- 测试：新增 AIChatApp.writeGuard.contract.test.ts（SPDX 双头+node）4 例源码契约（两函数 guard<acquire<post<release 顺序且 release 前有 finally、两按钮 disabled 绑定；MCP 保存按钮按 @click="addMcp" 精确定位避免误匹配 btn-mcp toggle）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/AIChatApp.writeGuard.contract.test.ts --root frontend/apps/desktop）：RED exit1 4 failed（两函数 expected -1 to be greater than -1 缺守卫 + 两按钮未匹配 disabled）→恢复 GREEN 4 passed。
+- 负结果（勿重复）：CRUD 页 deleteItem 弹窗期双删被 confirmMsg 抢占式重入抵消（新调用令旧 promise resolve(false)，第二击只取消第一击），不构成双删，放弃该方向。后续线索：其他直接写端点的新建/提交类按钮（admin create 页）需逐页可达性论证。
+
+### 127.2 laiyipao/miniapp 兑换码重复提交覆盖成功提示（R268，lybug-r268）
+- 缺口：signin.vue doRedeem() 是整个经济写操作族（doBuy/abandon/equip/doUpgrade 等均有守卫）唯一无 in-flight 守卫的写操作，模板 :173 @click="doRedeem" 无禁用态。网络慢时双击并发两次 api.redeem；服务端 economy.go 一用户一码只能用一次（唯一键占位+条件写互斥，审计正确无需改），第二次必后台报「已经使用过该兑换码」，其 catch 把 redeemMsg 改写成错误文案，覆盖首次「兑换成功」提示，玩家误判失败。
+- 修复：新增 const redeeming=ref(false)（含 R268 注释），doRedeem 开头 if(redeeming.value || !code.value.trim()) return + 置位，catch 后 finally 复位（+4/-1，CRLF 保持）。signin.test.ts 新增 1 例回归（可控 Promise 模拟在途，断言双击只发 1 次、首次成功提示正确、守卫复位后可再次兑换）。
+- 主线程独立 RED→GREEN（仅还原 signin.vue 保留新测试；laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/signin/signin.test.ts）：RED exit1 26 测试中 1 失败 expected "vi.fn()" to be called 1 times, but got 2 times（:303）→恢复 GREEN 26 passed。
+- 证伪方向：弹窗守卫异常路径（logout/deleteDefense/shop buy/battle abandon/settle/login submit/mastery reset/claimOffline/fetchReplay 全「守卫前置+try/finally 复位」完备；logout 无 try/finally 但 api/client.ts:334-360 logout() 内部 try/catch 吞异常且 clearTokens 同步不抛，生产不可达 reject）、表单日期倒序（服务端 queryTimeRange 成对解析+middleware 补 24:00）、筛选分页越界（offsetPager MAX_OFFSET=25000+服务端 clampLimit+page=1 重置）、兑换码数值边界（未知币种拒绝+MaxUses 夹取）全到位。后续线索：signin claim(id) 无局部守卫仅按钮三态保护、verify.vue submit(hash) 由调用方守卫兜底。
+
+### 127.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 162 文件/1657 passed + pnpm typecheck 6 项目 0 + biome lint 468 文件 0 error(29 info 既有)；miniapp 145 文件/1496 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF+BOM）保持、真值不入库。
+- 四目标：①目标一 R268 AI 对话/MCP 写守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R268 兑换码重复提交真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

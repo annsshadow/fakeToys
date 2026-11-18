@@ -285,6 +285,35 @@ describe('signin.vue 签到页', () => {
     expect(wrapper.text()).toContain('兑换码无效')
   })
 
+  // ── R268 兑换在途守卫（第 118 轮）─────────────────────────────────
+  it('R268 兑换在途守卫：网络慢时双击只发一次请求，成功后可再次兑换', async () => {
+    type Res = { reward: Record<string, number> }
+    let resolveFirst!: (v: Res) => void
+    const first = new Promise<Res>((r) => { resolveFirst = r })
+    mockApi.redeem.mockImplementationOnce(() => first as any)
+    mockApi.redeem.mockResolvedValueOnce({ reward: { gem: 200 } } as any)
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const input = wrapper.find('input')
+    ;(input.element as HTMLInputElement).value = 'LYP2026'
+    await input.trigger('input')
+    const redeemBtn = wrapper.findAll('.btn').find((b) => b.text() === '兑换')!
+    await redeemBtn.trigger('click') // 第一次：发出请求，在途未 resolve
+    await redeemBtn.trigger('click') // 第二次：在途，应被守卫拦截
+    expect(mockApi.redeem).toHaveBeenCalledTimes(1)
+
+    resolveFirst({ reward: { gem: 100 } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('兑换成功：钻石 100')
+
+    // 守卫复位后可再次兑换
+    ;(input.element as HTMLInputElement).value = 'LYP2027'
+    await input.trigger('input')
+    await redeemBtn.trigger('click')
+    await flushPromises()
+    expect(mockApi.redeem).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('兑换成功：钻石 200')
+  })
   // ── R20 签到三态 + 任务进度完成态（2026-11-17 100 轮打磨 W 批）─────
   it('R20 签到三态：已签有对勾、今日脉冲、未来天降权', async () => {
     mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 2, signed_today: false, can_sign: true })
