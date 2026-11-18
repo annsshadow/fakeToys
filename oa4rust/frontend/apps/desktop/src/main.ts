@@ -10,6 +10,7 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { installFormErrorA11y } from './utils/formErrorA11y'
 import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'
 import { installLabelA11y } from './utils/labelA11y'
+import { installLoadingA11y } from './utils/loadingA11y'
 import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
@@ -570,6 +571,8 @@ installFormErrorA11y()
 installTableA11y()
 // R213：全局孤儿表单标签关联（WCAG 1.3.1 / 4.1.2），观察 v-if 异步插入的表单。
 installLabelA11y()
+// R215：加载指示器补 role=status 与读屏可见文案（WCAG 4.1.3），观察 v-if 异步插入。
+installLoadingA11y()
 // R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须在应用任意位置可用。
 installGlobalSearchShortcut()
 app.mount('#o2-app-root')
