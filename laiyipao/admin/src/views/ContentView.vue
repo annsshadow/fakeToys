@@ -131,16 +131,21 @@ function nextDay(day: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+// 使用记录请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let redeemUsageReqSeq = 0
 async function loadRedeemUsages() {
+  const seq = ++redeemUsageReqSeq
   try {
     const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE, {
       // 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）
       code_keyword: redeemCodeKeyword.value || undefined,
       user_id: redeemUserId.value,
     })
+    if (seq !== redeemUsageReqSeq) return
     redeemUsages.value = res.items
     redeemUsageTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== redeemUsageReqSeq) return
     ElMessage.error(`使用记录加载失败：${(e as Error).message}`)
   }
 }
@@ -189,37 +194,50 @@ function openRedeemUsages() {
 }
 
 /** 只加载公告（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 公告请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let annReqSeq = 0
 async function loadAnnouncements() {
+  const seq = ++annReqSeq
   try {
     const a = await fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
       published: annPublished.value,
       date_from: annDateRange.value?.[0] || undefined,
       date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
     })
+    if (seq !== annReqSeq) return
     announcements.value = a.items
     annTotal.value = a.total ?? a.items.length
   } catch (e) {
+    if (seq !== annReqSeq) return
     ElMessage.error(`公告加载失败：${(e as Error).message}`)
   }
 }
 
 /** 只加载兑换码（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 兑换码请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let codeReqSeq = 0
 async function loadCodes() {
+  const seq = ++codeReqSeq
   try {
     const c = await fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
       keyword: codeKeyword.value || undefined,
       enabled: codeEnabled.value,
       expired: codeExpired.value,
     })
+    if (seq !== codeReqSeq) return
     codes.value = c.items
     codeTotal.value = c.total ?? c.items.length
   } catch (e) {
+    if (seq !== codeReqSeq) return
     ElMessage.error(`兑换码加载失败：${(e as Error).message}`)
   }
 }
 
 /** 只加载审计日志（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 审计日志请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let logReqSeq = 0
 async function loadLogs() {
+  const seq = ++logReqSeq
   try {
     const l = await fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
       action: logAction.value || undefined,
@@ -227,9 +245,11 @@ async function loadLogs() {
       date_from: logDateRange.value?.[0] || undefined,
       date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
     })
+    if (seq !== logReqSeq) return
     logs.value = l.items
     logTotal.value = l.total ?? l.items.length
   } catch (e) {
+    if (seq !== logReqSeq) return
     ElMessage.error(`审计日志加载失败：${(e as Error).message}`)
   }
 }

@@ -976,3 +976,43 @@ describe('ContentView CSV 导出条数真值（第 58 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('ContentView 公告筛选竞态（第 59 轮）', () => {
+  function deferred<T>() {
+    let resolve!: (v: { items: Row[] }) => void
+    const promise = new Promise<{ items: Row[] }>((r) => { resolve = r })
+    return { promise, resolve }
+  }
+
+  it('旧筛选慢响应后到，不得覆盖新筛选的公告列表', async () => {
+    const oldResp = deferred()
+    const newResp = deferred()
+    fetchAnnouncements.mockReset()
+    fetchAnnouncements
+      .mockImplementationOnce(() => Promise.resolve({ items: [] }))
+      .mockImplementationOnce(() => oldResp.promise)
+      .mockImplementationOnce(() => newResp.promise)
+    fetchRedeemCodes.mockResolvedValue({ items: [] })
+    fetchAuditLogs.mockResolvedValue({ items: [] })
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [], total: 0 })
+
+    const router = await makeRouter()
+    const wrapper = mount(ContentView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { loadAnnouncements: () => Promise<void> }
+    const pOld = vm.loadAnnouncements()
+    const pNew = vm.loadAnnouncements()
+
+    // 新筛选响应先到，旧筛选响应后到
+    newResp.resolve({ items: [{ id: 99, title: '新筛选结果', body: '新正文', published: true }] })
+    await pNew
+    await flushPromises()
+    oldResp.resolve({ items: [{ id: 1, title: '旧筛选结果', body: '旧正文', published: true }] })
+    await pOld
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('新筛选结果')
+    expect(wrapper.text()).not.toContain('旧筛选结果')
+    wrapper.unmount()
+  })
+})
