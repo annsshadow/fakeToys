@@ -65,12 +65,14 @@
                 placeholder="请输入验证码"
                 :disabled="loading"
               />
-              <img
-                :src="captchaUrl"
-                alt="验证码"
-                class="captcha-img"
+              <button
+                type="button"
+                class="captcha-refresh"
+                aria-label="刷新验证码"
                 @click="refreshCaptcha"
-              />
+              >
+                <img :src="captchaUrl" alt="验证码" class="captcha-img" />
+              </button>
             </div>
           </div>
 
@@ -444,12 +446,26 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
+.captcha-refresh {
+  display: block;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.captcha-refresh:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .captcha-img {
+  display: block;
   width: 100px;
   height: 40px;
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 1px solid var(--border-subtle);
   object-fit: cover;
 }
 
