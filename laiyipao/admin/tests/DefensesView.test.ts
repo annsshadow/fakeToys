@@ -376,3 +376,44 @@ describe('DefensesView 筛选竞态（第 76 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('DefensesView 挑战记录加载竞态（第 90 轮）', () => {
+  function deferred<T>() {
+    let resolve!: (v: T) => void
+    const promise = new Promise<T>((r) => { resolve = r })
+    return { promise, resolve }
+  }
+
+  it('旧挑战记录响应后到不得覆盖新筛选结果', async () => {
+    type Resp = { items: Record<string, unknown>[]; total: number }
+    const dChallenges: Array<{ promise: Promise<Resp>; resolve: (v: Resp) => void }> = []
+    fetchAdminDefenseChallenges.mockReset()
+    fetchAdminDefenseChallenges.mockImplementation(() => {
+      const d = deferred<Resp>()
+      dChallenges.push(d)
+      return d.promise
+    })
+
+    const router = await makeRouter()
+    const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { openChallenges: () => void; applyChallengeFilter: () => void }
+    vm.openChallenges()
+    await flushPromises()
+    vm.applyChallengeFilter()
+    await flushPromises()
+
+    expect(dChallenges.length).toBe(2)
+
+    dChallenges[1].resolve({ items: [{ id: 2, challenger_nickname: '新筛选玩家' }], total: 1 })
+    await flushPromises()
+    dChallenges[0].resolve({ items: [{ id: 1, challenger_nickname: '旧筛选玩家' }], total: 1 })
+    await flushPromises()
+
+    const dialog = wrapper.find('.el-dialog')
+    expect(dialog.exists(), '找不到挑战记录对话框').toBe(true)
+    expect(dialog.text()).toContain('新筛选玩家')
+    expect(dialog.text()).not.toContain('旧筛选玩家')
+    wrapper.unmount()
+  })
+})

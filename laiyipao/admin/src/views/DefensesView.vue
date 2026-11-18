@@ -56,15 +56,20 @@ const challengePage = ref(1)
 const challengeDefenseId = ref<number | undefined>(undefined)
 const challengeChallengerId = ref<number | undefined>(undefined)
 
+// 挑战记录筛选/翻页可连续触发：旧响应晚到会覆盖新筛选的列表与总数，只认最新一次。
+let challengeReqSeq = 0
 async function loadChallenges() {
+  const seq = ++challengeReqSeq
   try {
     const res = await fetchAdminDefenseChallenges(50, (challengePage.value - 1) * 50, {
       defense_id: challengeDefenseId.value,
       challenger_id: challengeChallengerId.value,
     })
+    if (seq !== challengeReqSeq) return
     challenges.value = res.items
     challengeTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== challengeReqSeq) return
     ElMessage.error(`挑战记录加载失败：${(e as Error).message}`)
   }
 }
