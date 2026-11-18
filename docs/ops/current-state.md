@@ -2746,3 +2746,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### 99.4 三目标状态
 - 目标二本轮完成交付；目标一（oa4rust 双前端 100+ 轮实质优化）与目标三（laiyipao 真 bug 查修）保持 active，下轮继续。
+
+## 100. 第 90 轮：R240 关闭按钮可访问名 + 挑战记录竞态（2026-11-18）
+
+### 100.1 R240（oa4rust 前端）
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/BBSForum.vue:198/229/290/313 四个弹窗关闭按钮仅含字形 ✕、无 aria-label/title（WCAG 4.1.2），读屏只念「乘号按钮」，发帖弹窗/帖子详情/版块编辑/版块详情四个语义被压成同一无名按钮；现有 labelA11y/formErrorA11y/modalFocus/glyphButtonA11y 均不覆盖。 |
+| 修复 | 四处各补语义化 aria-label（关闭发帖弹窗/关闭帖子详情/关闭版块编辑弹窗/关闭版块详情）；新增 BBSForum.closeA11y.contract.test.ts 源码契约 6 例（按 @click handler 定位按钮 + 所有 ✕ 必须可读名兜底）。 |
+| 门禁 | 独立 RED（cp 备份→git checkout HEAD 回退组件→契约 5 failed/1 passed→恢复→6 passed）；全量 oa4rust 150 文件/1610 passed、typecheck 6 项目 Done、lint 441 文件 0 error（29 info 既有）。 |
+
+### 100.2 laiyipao/admin 挑战记录竞态
+- 缺口：DefensesView.vue loadChallenges 无序号守卫；openChallenges/applyChallengeFilter/分页 @current-change 三个入口均可连续触发且无 loading 守卫（与 search.vue 假竞态不同，旧新请求可真实并发），旧响应晚到覆盖新筛选的 challenges/challengeTotal。
+- 修复：新增模块级 challengeReqSeq，loadChallenges 开头 const seq=++challengeReqSeq，await 后与 catch 内各加 if (seq!==challengeReqSeq) return。
+- 测试：DefensesView.test.ts 末尾加 describe「挑战记录加载竞态（第 90 轮）」1 例 deferred 两请求（新先回、旧后回），DOM 断言对话框含「新筛选玩家」不含「旧筛选玩家」。独立 RED（cp 备份→回退组件→RED 实收旧筛选玩家→恢复→GREEN）；admin 全量 37 文件/487 passed、vue-tsc 0。
+
+### 100.3 负结果、目标状态
+- lybug-r240 异常退出无 closing message、零改动，写范围 laiyipao/miniapp+server git status 空，未采信其结论；主线程 admin/mobile 本轮无其他可确证新 bug，不强造。
+- 提交 5088a1d8d（R240）、7b2d6cef1（admin 竞态）；三目标：目标一累计 100+ 轮持续，目标二已于 §99 完成交付，目标三继续找真 bug。
+- laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
