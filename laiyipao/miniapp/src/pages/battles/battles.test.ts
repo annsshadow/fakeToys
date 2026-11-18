@@ -351,3 +351,75 @@ describe('battles.vue 切换筛选时丢弃在飞的旧 loadMore 响应', () => 
     expect(badges).toEqual(['胜'])
   })
 })
+
+/**
+ * 第106轮：切换筛选作废在飞的旧 loadMore 后，必须复位加载更多忙标志。
+ * 场景：旧 loadMore 在飞 → 切筛选触发 reload → reload 先回且新筛选仍有下一页
+ * （按钮保留）→ 旧 loadMore 后回被丢弃。
+ * 修复前：旧 loadMore 的 finally 因 seq 已过期不复位 loadingMore，按钮永久停在
+ * 「加载中…」，后续点击又被 `if (loadingMore.value) return` 拦掉，再也不能翻页。
+ * 修复后：reload 重新拉第一页时复位 loadingMore，按钮恢复「加载更多」且可点。
+ */
+describe('battles.vue 切换筛选作废在飞 loadMore 后必须复位加载更多忙标志', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+  const row = (id: number) => ({
+    id, result: 'win' as const, stars: 3, level_id: 4,
+    score: 100 + id, kills: 10, leaked: 0,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('新筛选仍有下一页时，加载更多按钮恢复可点、能继续翻页', async () => {
+    const d1 = deferred() // 首屏 reload
+    const d2 = deferred() // 旧筛选的加载更多
+    const d3 = deferred() // 切筛选后的 reload
+    const seen: Array<{ result?: string; cursor?: number }> = []
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, _offset = 0, result?: string, cursor?: number) => {
+      seen.push({ result, cursor })
+      if (seen.length === 1) return d1.promise
+      if (seen.length === 2) return d2.promise
+      if (seen.length === 3) return d3.promise
+      return Promise.resolve({ items: [row(9)], next_cursor: 0 } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    d1.resolve({ items: [row(1)], next_cursor: 50 })
+    await flushPromises()
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    // 点「加载更多」→ 旧请求在飞，按钮进入「加载中…」
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.load-more').text()).toContain('加载中')
+
+    // 切筛选 → watch(filter) 触发 reload 重新拉第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // reload（新筛选）先回，且新筛选仍有下一页 → 按钮应保留
+    d3.resolve({ items: [row(3)], next_cursor: 99 })
+    await flushPromises()
+    // 在飞的旧 loadMore 后回，被 seq 守卫丢弃
+    d2.resolve({ items: [row(2)], next_cursor: 0 })
+    await flushPromises()
+
+    expect(seen[2]?.result).toBe('win')
+
+    // 行为断言 1：按钮不能永久卡在「加载中…」
+    const btn = wrapper.find('.load-more')
+    expect(btn.exists()).toBe(true)
+    expect(btn.text()).not.toContain('加载中')
+    expect(btn.text()).toContain('加载更多')
+
+    // 行为断言 2：再点一次能真正发起新请求（忙标志已复位）
+    const before = mockApi.myBattleHistory.mock.calls.length
+    await btn.trigger('click')
+    await flushPromises()
+    expect(mockApi.myBattleHistory.mock.calls.length).toBe(before + 1)
+  })
+})

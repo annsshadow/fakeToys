@@ -264,6 +264,10 @@ watch(filter, () => {
 
 async function reload(): Promise<void> {
   const seq = ++listReqSeq
+  // 第106轮：reload 重建整个列表（重新拉第一页），任何在飞的旧 loadMore 都随之作废。
+  // 这里必须复位 loadingMore —— 否则旧 loadMore 被 seq 守卫丢弃时，它的 finally
+  // 因 seq 已过期不会复位忙标志，按钮会永久停在「加载中…」且后续无法再翻页。
+  loadingMore.value = false
   loading.value = true
   try {
     const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)
