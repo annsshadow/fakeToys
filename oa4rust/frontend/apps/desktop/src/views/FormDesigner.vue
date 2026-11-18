@@ -512,7 +512,7 @@
     <div class="modal-header"><span>JSON Schema 导出</span><button class="btn-close" @click="showJsonSchemaPanel=false">×</button></div>
     <div class="modal-body">
       <pre class="js-schema">{{jsonSchemaText}}</pre>
-      <button class="btn-sm" @click="navigator.clipboard.writeText(jsonSchemaText);showToast('已复制','success')">复制</button>
+      <button class="btn-sm" @click="copyText(jsonSchemaText)">复制</button>
     </div>
   </div>
 </div>
@@ -523,7 +523,7 @@
     <div class="modal-header"><span>字段文档</span><button class="btn-close" @click="showFieldDocsPanel=false">×</button></div>
     <div class="modal-body">
       <pre class="fd-docs">{{fieldDocsText}}</pre>
-      <button class="btn-sm" @click="navigator.clipboard.writeText(fieldDocsText);showToast('已复制','success')">复制</button>
+      <button class="btn-sm" @click="copyText(fieldDocsText)">复制</button>
     </div>
   </div>
 </div>
@@ -725,7 +725,7 @@ import { downloadBlob } from '../utils/download'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume this import.
 import { formatPercent } from '../utils/formatNumber'
 import { validateFieldValue } from '../utils/formFieldValidation'
-import { toast } from '../utils/toast'
+import { copyText, toast } from '../utils/toast'
 import { applyBuilderRules } from '../utils/validationRuleApply'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -1878,9 +1878,8 @@ function generateHTMLForm(): string {
   html += '</form>'
   return html
 }
-function copyExportResult() {
-  navigator.clipboard.writeText(exportResult.value)
-  showToast('已复制到剪贴板', 'success')
+async function copyExportResult() {
+  await copyText(exportResult.value)
 }
 function mapFieldType(type: string): string {
   const map: Record<string, string> = {
@@ -2185,8 +2184,8 @@ function generateFieldDocumentation(): string {
   })
   return doc
 }
-function copyToClipboard(text: string): void {
-  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'))
+async function copyToClipboard(text: string) {
+  await copyText(text)
 }
 
 // -- Advanced Interfaces

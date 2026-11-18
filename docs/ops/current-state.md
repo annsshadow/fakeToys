@@ -2912,3 +2912,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r247 排除清单（核实未改）：miniapp/admin 全写路径页内状态同步已到位（verify/shop/mastery/me、admin LevelsView/UsersView/EconomyView/DefensesView/ContentView）无同族新 bug；TTL 内缓存陈旧经测试确认为设计意图，只有「写后应失效」才是缺陷。oaopt-r247 负结果：frontend 端未找到 loaded:true+loading+count=0 同构缺口（桌面视图各自维护 loaded），format/latest/networkStatus/datetime、frontend formatNumber/formatSize/paging、listRace/detailRace 竞态族、导出链路、三个 payload DTO、bbsApi id、mobile form.ts 纯空白均核实勿重复。
 - 门禁（主线程全量）：service 包全量 go test 694s exit 0、缓存设计意图回归组（AdminEconomyServedFromCache/AdminUsersTotalCacheBoundedStaleness/ShopServedFromCache/新测试）全绿、go vet + go build ./... 0；miniapp 138 文件/1480 passed（2 skipped 既有）+ type-check:test + type-check 0；admin 37 文件/496 passed + vue-tsc 0；OA 153 文件/1632 passed + 6 项目 typecheck + lint 449 文件 0 error（29 info 既有）+ mobile 41 文件/310 passed；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R247 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复商城写后缓存失效真 bug 并让常驻归属守卫转绿，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 108. 第 98 轮：R248 三处复制失败误报成功 + miniapp 熔炼幽灵槽（2026-11-19）
+
+### 108.1 R248（oa4rust/desktop）三处裸 clipboard 复制统一走 copyText
+| 项 | 内容 |
+|---|---|
+| 缺口 | ConfigDesignerApp.vue:99 复制按钮可达，原 :335-338 copyConfig 裸 navigator.clipboard.writeText 无 await/catch 且无条件 toast.info('已复制')；FormDesigner.vue:515/526 JSON Schema/Field Docs 面板「复制」按钮模板内联 writeText(...);showToast('已复制','success')；ProcessDesigner.vue:293 fv-export 面板「📋 复制JSON」按钮同型。复制失败（权限/CSP/非安全上下文）时用户被误报成功并产生 unhandledrejection。 |
+| 修复 | 三文件统一复用 utils/toast.ts:133-142 copyText(text)（await writeText；成功 toast.success、失败 toast.error 并返回 boolean）。ConfigDesignerApp copyConfig 改 async + await copyText；FormDesigner :728 import 改为 import { copyText, toast }，:515/:526 按钮 @click 改 copyText(...)，copyExportResult/copyToClipboard helper 一并改 async；ProcessDesigner :2795 import 同样补 copyText，:293 改 copyText(exportFlowVars())，copySvg/copyExportJson helper 一并改。两处本地 showToast helper 保留（另有 16 处合法使用）。 |
+| 测试 | ConfigDesignerApp.error-handling.test.ts 5 例（首轮 4 + 补齐后 +1）、FormDesigner.copy.test.ts 1 例、ProcessDesigner.copy.test.ts 1 例（均双头、LF、源码结构契约）。主线程三处独立 RED→GREEN：CFG RED exit1「expect(source).toContain('async function copyConfig()')」(:42)→5 passed；FORM RED exit1「expect(source).toContain("import { copyText, toast } ...")」(:14)→1 passed；PROC 同断言 RED→1 passed。门禁：oa4rust 155 文件/1635 passed、typecheck 6 项目、lint 451 文件 0 error（29 info 既有）、diff --check 0。 |
+| 负结果 | 其余裸 writeText 调用（FormDesigner:1882 等已改、QueryDesigner:737、QueryStatementDesigner:1325/1697/1880/2213 等）无无条件成功 toast（2189 是 .then 成功提示无 catch）→属 unhandledrejection 风险非误报成功，登记后续候选未扩张。 |
+
+### 108.2 laiyipao/miniapp 熔炼消耗的技能留在出战槽（幽灵槽）
+- 缺口：laiyipao/miniapp/src/pages/bag/bag.vue:1026 doSynthesize 成功后只 await store.refreshProfile()，未重拉 loadout、未同步页内 selected（:497，出战槽 UI 与 heatBudget 数据源）。服务端 synthesis.go:148-153 事务第 6 步 DELETE FROM user_skill_slots WHERE user_id=$1 AND skill_id IN ($2,$3)，熔炼材料技能被移出槽位；onMounted 与 doApplyPreset 成功后都有 selected.value = [...store.loadout]，唯独 doSynthesize 缺失→玩家把材料技能放槽位熔炼后 UI 仍显示已消耗技能。synthesizeSkills 响应仅 {output, build}（api/client.ts:1034），不带 slot_ids，必须额外 GET /me/loadout（store.loadLoadout()，game.ts:549）。
+- 修复（bag.vue:1038-1039，5+/2-，LF 保持）：await Promise.all([store.refreshProfile(), store.loadLoadout()]) + selected.value = [...store.loadout] + 三行机理注释。
+- 测试：新增 bag_synthesize_slot_sync.test.ts 1 例行为测试（双头+jsdom；挂载槽位[燃烧弹,冰霜弹,空,空]→熔炼材料 1,2→服务端权威 loadout=[0,0,0,0]→期望 UI 全空）。主线程独立 RED：AssertionError「expected [ 燃烧弹, 冰霜弹, 空槽, 空槽 ] to deeply equal [ 空槽, 空槽, 空槽, 空槽 ]」(:137)→GREEN 1 passed。
+
+### 108.3 负结果、门禁与目标状态
+- 门禁（主线程独立全量）：miniapp 139 文件/1481 passed（2 skipped 既有）+ type-check:test + type-check 0；admin 37 文件/496 passed + vue-tsc 0；OA 155 文件/1635 passed + 6 项目 typecheck + lint 451 文件 0 error（29 info 既有）+ diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R248 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复熔炼幽灵槽真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。

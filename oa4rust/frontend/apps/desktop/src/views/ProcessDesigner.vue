@@ -290,7 +290,7 @@
           </div>
         </div>
         <div class="fv-export">
-          <button class="btn-sm" @click="() => { navigator.clipboard.writeText(exportFlowVars()) }">📋 复制JSON</button>
+          <button class="btn-sm" @click="copyText(exportFlowVars())">📋 复制JSON</button>
         </div>
       </div>
     </div>
@@ -2792,7 +2792,7 @@ import { computeExecutionProgress } from '../utils/executionProgress'
 import { formatPercent } from '../utils/formatNumber'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { computeSimulationProgress } from '../utils/simulationProgress'
-import { toast } from '../utils/toast'
+import { copyText, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -4676,9 +4676,9 @@ function downloadSvg() {
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   downloadBlob(blob, `${currentProcess.value?.flag || 'process'}.svg`)
 }
-function copySvg() {
+async function copySvg() {
   const svg = exportAsSvg()
-  if (svg) navigator.clipboard.writeText(svg)
+  if (svg) await copyText(svg)
 }
 // ── Resize ────────────────────────────────────────────────────────────
 type ResizeDir = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -6148,8 +6148,8 @@ function exportJson(): string {
   if (!processDef.value) return '{}'
   return JSON.stringify({ nodes: processDef.value.nodes, edges: processDef.value.edges }, null, 2)
 }
-function copyExportJson() {
-  navigator.clipboard.writeText(exportJson())
+async function copyExportJson() {
+  await copyText(exportJson())
 }
 function downloadJson() {
   const blob = new Blob([exportJson()], { type: 'application/json' })
