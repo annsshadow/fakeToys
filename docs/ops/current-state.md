@@ -2683,3 +2683,32 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 三代码提交：2cad88a7a(R237 前端 tab 激活态)、06d2b2023(mobile 流程表单竞态)，docs §96 本提交。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R237 完成（tab 激活态 a11y，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 97. 第 88 轮现量：R238 列定义表格控件可访问名 + miniapp 战报详情竞态 + admin 看板图等价文本
+
+### 97.1 R238 列定义表格行内控件可访问名
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/QueryTableDesignerApp.vue:22 列定义表格 v-for 行内三个控件（列名 input placeholder lower_snake_case、类型 select、可空 checkbox）在 td 内无 aria-label/aria-labelledby，读屏无法对应列序号与属性（WCAG 4.1.2/3.3.2）；searchFieldA11y/labelA11y/tableA11y/formErrorA11y 均不覆盖。 |
+| 修复 | 三个控件各补 :aria-label 含「第 N 列列名/列类型/列可空」；新增 utils/queryTableDesignerA11y.contract.test.ts（vitest+readFileSync 源码契约 3 例）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退组件→契约 3 failed→恢复→3 passed）；全量 oa4rust 148 文件/1600 passed、typecheck 6 项目、lint 439 文件 0 error（29 info 既有）、diff --check OK。 |
+
+### 97.2 miniapp 我的页战报详情竞态
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/miniapp/src/pages/me/me.vue 的 toggleBattleDetail(b) 详情加载无请求序号守卫：单一 battleDetail ref 被 await 结果写入，快速点战报 A→B 时 A 的慢响应晚到覆盖 B 的详情（掉落/命中/峰值热量串味），与 stage(第69轮)/rank/signin 同构。 |
+| 修复 | 新增模块级 battleDetailReqSeq，函数开头 const seq=++battleDetailReqSeq，先 await 得 fresh、判 seq 一致才写回，catch 同守卫；新增 src/pages/me/me_battle_detail_race.test.ts（jsdom 真渲染 1 例 deferred 旧慢响应），旧 feature test 字面量断言改 intent-preserving 正则。 |
+| 门禁 | 独立 RED（备份→回退 me.vue→race test 1 failed 实收 11/111 覆盖 22/222→恢复→1 passed）；miniapp 135 文件/1476 passed（另 2 skipped）、tsc exit 0；me 相关 6 文件 36 passed。 |
+
+### 97.3 admin 看板三张 ECharts Canvas 图等价文本
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/DashboardView.vue 三张 ECharts CanvasRenderer 图容器（dauRef/reactionRef/funnelRef）是裸 div，无 role/可访问名称/等价文本数据（WCAG 1.1.1，与第82轮 oa4rust EChartsView 同族）。 |
+| 修复 | 新增 utils/chartA11y.ts 的 describeDashboardChart（空态/前5项样例/共N unit）；三容器改 class=chart-canvas + role=img + :aria-label=描述，每卡片加 sr-only table.chart-data-sr（caption + th scope=col/row）；computed 从 daily_active/reaction_usage(labelOf)/stage_funnel 生成 rows。 |
+| 门禁 | 独立 RED（备份→git checkout HEAD 回退→契约 2 failed 实收 chart 0→恢复→2 passed）；admin 37 文件/486 passed、vue-tsc exit 0。 |
+
+### 97.4 负结果、目标二与交付边界
+- lybug-r238 找到并修复 1 个真 bug（miniapp me 战报详情竞态），非纯负结果：52 request↔routes.go 116 路由、401 单飞、keyset 分页、幂等键、permille 单位、19 处定时器清理、错误码全核对一致；排除 battles.vue 按 id 存 map（不互覆）、verify.vue fetching 守卫、gems.vue 弱竞态。主线程 admin 第 88 轮侦察全负结果（无 selection/index 列、img 无缺 alt、纯图形仅星级第81轮已修）。
+- 三代码提交：8d6a64eae(R238 前端)、bf0513bfb(miniapp 战报详情竞态)、3e8205525(admin 看板图 a11y)，docs §97 本提交。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R238 完成（列定义表格控件可访问名，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 找到 miniapp 战报详情竞态真 bug 并修、admin 主线程找到看板图 a11y 缺口并修。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
