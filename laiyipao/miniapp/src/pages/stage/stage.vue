@@ -386,16 +386,23 @@ function enemyName(id: number): string {
   return enemyNameMap.value.get(id) ?? `#${id}`
 }
 
+// 第 69 轮：切关竞态守卫。快速点选关卡时，先发请求可能晚到；
+// 没有序号守卫时旧关的 waves 会覆盖新关预览（「击杀金币（约 N 只）」显示成上一关）。
+// 与 battles.vue 的 listReqSeq / signin.vue 的 loadSeq 同一策略。
+let detailReqSeq = 0
 watch(selected, async (lv) => {
+  const seq = ++detailReqSeq
   if (!lv) {
     detailWaves.value = []
     return
   }
   try {
     const detail = await api.fetchLevel(lv.id)
+    if (seq !== detailReqSeq) return
     detailWaves.value = detail.waves ?? []
   } catch {
     // 敌人预览是辅助信息，拉取失败不阻塞选关
+    if (seq !== detailReqSeq) return
     detailWaves.value = []
   }
 }, { immediate: true })
