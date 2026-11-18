@@ -1199,6 +1199,10 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 	}); err != nil {
 		return AdminShopUpdateResp{}, err
 	}
+	// 商品写后必须失效两处读缓存，否则后台重拉与玩家商城仍见旧商品，
+	// 而 Buy 实时按新价扣钱，造成显示价与实付价不一致。
+	s.shopCache.flush()
+	s.economyCache.flush()
 	return AdminShopUpdateResp{ID: id, Updated: fields}, nil
 }
 
