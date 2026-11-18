@@ -2221,3 +2221,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - RED 验证教训：labelA11y.ts 未跟踪时 git stash push 报 pathspec did not match、git stash pop 误弹旧条目引入 UU 冲突（已恢复并保留 stash），改用 mv 改名做 RED 且须手工恢复（tail 管道改变 exit 致 trap 不触发）；docs/assets/architecture.svg 的居中改动经并行会话合法提交为 HEAD=24fb3c72e，予以保留。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R213 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮两个真 bug 修复（admin 创建防重、miniapp 公告计数），继续找但不强造。laiyipao 固定不动项维持记账。
+## 73. 第 64 轮现量：R214 设计中心图标按钮可访问名
+
+### 73.1 R214 纯图标按钮/搜索框可访问名称（WCAG 2.1 AA / 4.1.2）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | DesignCenterApp.vue 两个关闭按钮只有字形 ✕（L24 关闭统计、L61 关闭设计器清单），可访问名只有「乘号」，读屏器无法区分用途；设计器搜索框只有 placeholder（L31），不能作为可靠可访问名。属 4.1.2 Name/Role/Value 真实违背，不在历史已做清单。 |
+| 修复 | 两按钮各加 aria-label（关闭统计 / 关闭设计器清单），搜索框加 aria-label=搜索设计器（3 处最小改动）。 |
+| 门禁 | 新增 DesignCenterApp.iconA11y.contract.test.ts（源码级契约，动态扫描纯图标按钮 + 搜索框断言）；RED 2 failed（精确命中 L24/L61 两违规按钮 + 搜索框无 aria-label）→GREEN 2 passed；主线程独立复跑 2 passed；全量 oa4rust 123 文件/1478 passed、typecheck 6 项目 Done、lint 0 error（402 文件 20 info 既有，均非本轮）。 |
+
+### 73.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r64 负结果零改动：逐类核对 miniapp+server 的 6 大类（请求竞态 listReqSeq/annInflight、数值定点对齐 engine.ts↔engine_card.go、周期时区周一起点、keyset 分页、商城/离线/熔炼并发与边界、错误信封）全一致或历史已修，无可复现用户可见差异，不强造 RED→GREEN。全量门禁 miniapp 133 文件/1474 passed|2 skipped、vue-tsc 0、server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 / 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 主线程侦察负结果：admin 9 个导出 API 参数拼 query 与列表口径一致、创建提交防重/筛选竞态/日期区间 nextDay 开区间均就位、无裸 div @click；mobile 无重复 id、无 viewport 缩放禁用、chatPolling 定时器配对清理、Promise.allSettled 部分失败均显式报错，无可确证新缺口。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R214 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果，继续找但不强造。laiyipao 固定不动项维持记账。
