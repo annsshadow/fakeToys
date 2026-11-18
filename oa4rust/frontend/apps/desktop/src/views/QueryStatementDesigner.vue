@@ -106,7 +106,7 @@
           <table v-else class="res-table">
             <thead>
               <tr>
-                <th v-for="h in resultHeaders" :key="h" @click="sortResult(h)">{{ h }}</th>
+                <th v-for="h in resultHeaders" :key="h" tabindex="0" role="button" :aria-sort="sortCol !== h ? 'none' : sortAsc ? 'ascending' : 'descending'" @click="sortResult(h)" @keydown.enter="sortResult(h)" @keydown.space.prevent="sortResult(h)">{{ h }}</th>
               </tr>
             </thead>
             <tbody>

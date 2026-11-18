@@ -232,7 +232,7 @@
               <table v-else class="res-table" :class="['tc-' + tableConfig.theme, { sortable: tableConfig.sortable }]">
                 <thead>
                   <tr>
-                    <th v-for="h in viewHeaders" :key="h" @click="toggleSort(h)">
+                    <th v-for="h in viewHeaders" :key="h" tabindex="0" role="button" :aria-sort="sortState?.key !== h ? 'none' : sortState.dir === 'asc' ? 'ascending' : 'descending'" @click="toggleSort(h)" @keydown.enter="toggleSort(h)" @keydown.space.prevent="toggleSort(h)">
                       {{ h }}<span v-if="sortState?.key === h" class="th-sort">{{ sortState.dir === 'asc' ? ' ▲' : ' ▼' }}</span>
                     </th>
                   </tr>
