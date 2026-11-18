@@ -2765,3 +2765,34 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r240 异常退出无 closing message、零改动，写范围 laiyipao/miniapp+server git status 空，未采信其结论；主线程 admin/mobile 本轮无其他可确证新 bug，不强造。
 - 提交 5088a1d8d（R240）、7b2d6cef1（admin 竞态）；三目标：目标一累计 100+ 轮持续，目标二已于 §99 完成交付，目标三继续找真 bug。
 - laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 101. 第 91 轮：R241 三族浮层焦点 + mobile 详情竞态 + admin 五视图加载竞态（2026-11-18）
+
+### 101.1 R241（oa4rust 前端）全屏浮层焦点陷阱补三族
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/utils/modalFocus.ts 的 OVERLAY_SELECTOR 原仅 '.modal-overlay,.upload-overlay'，漏掉三族同构全屏浮层：IMChat.vue:182 paging-overlay（消息分页）、PortalDesigner.vue:96 modal-mask（新建门户）、FormDesigner.vue:120 preview-overlay（表单预览）。三者均有 @click.self 关闭 + 可见标题 + 独立焦点上下文，却不被焦点陷阱/aria 增强覆盖（WCAG 2.1.2 键盘陷阱 / 2.4.3 焦点顺序 / 4.1.2 Name/Role/Value）。 |
+| 修复 | OVERLAY_SELECTOR 扩为 '.modal-overlay,.upload-overlay,.paging-overlay,.modal-mask,.preview-overlay'；新增 modalFocus.overlayFamilies.contract.test.ts（vitest+jsdom describe.each 三族×4=12 例：role=dialog+aria-modal+aria-labelledby 指向可见标题、Esc 触发 @click.self 关闭并归还焦点、Tab 限浮层内、打开背景 aria-hidden 关闭恢复）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退 modalFocus.ts→12 failed→恢复→12 passed）；oa4rust 根 151 文件/1622 passed、typecheck 6 项目 Done、lint 443 文件 0 error（29 info 既有）。 |
+
+### 101.2 oa4rust/mobile process 详情浮层竞态
+- 缺口：oa4rust/mobile/src/pages/process/process.vue openDetail 并发拉附件/流转记录/工作日志三节，无 latest 守卫；快速切换不同工作项详情或关闭后重开，旧请求晚到覆盖新 detailAttachments/Records/Worklogs，且单节失败把过期 detailError 写进新浮层。
+- 修复：新增 detailGate=createLatestGate()（与既有 pageGate 同 utils/latest）；openDetail 开头 token=detailGate.begin()，三节 settle 后 if(!detailGate.isLatest(token)) return 才写回，catch 内 detailError 也加 isLatest 守卫；closeDetail 先 detailGate.begin() 作废在途请求再清状态。
+- 测试：新增 process.detailRace.contract.test.ts 3 例（源码契约：detailGate 声明/openDetail begin+isLatest/closeDetail begin）。门禁 GREEN 3 passed；mobile 38 文件/294 passed，类型检查由 oa4rust -r typecheck 的 mobile 项目覆盖。
+
+### 101.3 laiyipao/admin 五视图加载竞态（同族真 bug）
+- 共性缺口：五个视图的 load()/loadStats() 无序号守卫，且 keep-alive onActivated 重拉（首次跳过）与在途请求可真实并发——v-loading 只罩 .page 内容，侧栏导航在遮罩外，慢网下「切走→切回」或写后重拉即触发旧快照晚到覆盖新数据。与第 90 轮 DefensesView、既有 LevelsView/BattlesView/UsersView 守卫同族；非 search.vue 式假竞态（那里有 loading+:disabled 阻断并发，已否决）。
+| 视图 | 触发路径 | 修复 |
+|---|---|---|
+| EconomyView.vue load | 写后整页重拉（patchShop/moveShopItem/toggleOnSale await load()）+ onActivated | loadSeq 守卫，await 后/catch/finally 各判 seq |
+| RecomputesView.vue loadStats | 统计窗口下拉 @change（无 :disabled）+ 刷新按钮 + onActivated reloadAll | statsLoadSeq 守卫（load 已有 loadSeq） |
+| DashboardView.vue load | onActivated 重拉 + 在途 load | loadSeq 守卫，含 30ms 图表延迟后二次判 seq 防过期 renderCharts |
+| EquipmentView.vue load | onActivated 重拉 + 在途 load | loadSeq 守卫 |
+| SkillsView.vue load | onActivated 重拉 + 在途 load | loadSeq 守卫 |
+- 测试：五测试文件各加 describe「…竞态（第 91 轮）」1 例 deferred 两请求（新先回、旧后回），断言新快照留存（Dashboard 另断言 chartStub.setOption 只增 3 次=新 load 一次 renderCharts，过期 load 不重渲染；echarts init 经 ??= 复用故数 setOption 不数 init）。
+- 门禁：每视图独立 RED（cp 备份→git checkout HEAD 回退→对应 race test failed 实收旧快照→恢复→passed）；admin 全量 37 文件/492 passed、vue-tsc exit 0；DashboardView.vue 保持 CRLF，五测试 LF，SPDX 头齐全，git diff --check exit 0。
+
+### 101.4 负结果、目标状态
+- lybug-r241 负结果零改动（task-173 complete）：写范围 laiyipao/miniapp+server git status 空；lead 指定三项 payload DTO 逐字段核对全对齐——SaveLoadout（loadout.go:32 SaveLoadoutInput.skill_ids ↔ client.ts:998/store game.ts:562 slice(0,4) 补 0）、SaveDefense（progression.go:583 六字段 ↔ me.vue:1229 defenseBuild，works=DEFENSE_WORK_CODES slow_belt/block_wall/tesla_grid，shield_hours 0/24）、ChallengeDefense（progression.go:827 六字段 ↔ game/defense.ts:94 seed 用 seedBig.toString() 第132轮已修 bigint 失精）；错误码双向对齐（not_found→404、login_required→403）。miniapp 135 文件/1476 passed、tsc 0；server domain/httpapi 两条 FAIL 属环境（TestNoRealSecretsInRepo 命中工作树 Temp 残留 dist-backup 外部目录、httpapi 600s 超时系四门禁并发资源竞争），与零改动无关。
+- admin 加载器守卫普查收官：WikiView load 仅 onMounted 单次、goTo 不重取数据 → 无重叠，负结果不修；RecomputesView loadMode 仅 reloadAll 调用、switchMode 有 modeSaving 守卫 → 无真实并发，负结果。Dashboard/Equipment/Skills 经核实有 onActivated 重拉 + 遮罩外侧栏 → 真 bug 已修。
+- SPDX 普查负结果（既有债非本轮引入，不修）：scripts/check-license-headers.mjs 报 4 个 IN_HEAD 文件缺头（miniapp stage_detail_race.test.ts、desktop tabStateA11y.contract.test.mjs、ui LoginScreen.labelA11y/OrganizationSelector.ariaState contract.test.ts）；本轮新增测试头齐全。
+- 三目标仍 active：目标一 R241 完成（三族浮层焦点 + mobile 详情竞态，累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮 admin 五视图加载竞态真 bug 已修、lybug 字段核对负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。

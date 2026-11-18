@@ -1,9 +1,12 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// FileManager reuses the same hand-written overlay pattern with a different
-// class for its detail/upload dialogs, so both families need dialog semantics.
-const OVERLAY_SELECTOR = '.modal-overlay,.upload-overlay'
+// Several views reuse the same hand-written full-screen overlay pattern under
+// different class names: FileManager detail/upload, IMChat message paging,
+// PortalDesigner create dialog and FormDesigner preview. All expose @click.self
+// close, a visible heading and an isolated focus context, so every family needs
+// the same dialog semantics (WCAG 2.1.2 / 2.4.3 / 4.1.2).
+const OVERLAY_SELECTOR = '.modal-overlay,.upload-overlay,.paging-overlay,.modal-mask,.preview-overlay'
 const CONFIRM_OVERLAY_ID = 'oa4-confirm-overlay'
 const FOCUSABLE_SELECTOR = [
   'a[href]',

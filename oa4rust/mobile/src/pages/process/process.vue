@@ -26,6 +26,7 @@ const loadingMore = ref(false)
 const busy = ref(false)
 // 页签/加载更多的在途请求只认最新一次，见 utils/latest。
 const pageGate = createLatestGate()
+const detailGate = createLatestGate()
 
 // 详情浮层：附件 / 流转记录 / 工作日志（按 work 维度拉取真实后端能力）
 const detailOpen = ref(false)
@@ -48,6 +49,7 @@ function workIdOf(row: Record<string, unknown>): string {
 async function openDetail(row: Record<string, unknown>, i: number) {
   const id = workIdOf(row)
   if (!id) return
+  const token = detailGate.begin()
   detailOpen.value = true
   detailTitle.value = titleOf(row, i)
   detailTarget.value = { row, i }
@@ -61,7 +63,7 @@ async function openDetail(row: Record<string, unknown>, i: number) {
       return (await p).data ?? []
     } catch (e) {
       // 单节失败置空不该静默：记下第一条错误，详情浮层顶部统一展示。
-      if (!detailError.value) detailError.value = describeLoadError(label, e)
+      if (!detailError.value && detailGate.isLatest(token)) detailError.value = describeLoadError(label, e)
       return []
     }
   }
@@ -70,6 +72,7 @@ async function openDetail(row: Record<string, unknown>, i: number) {
     settle(processApi.records(id), '流转记录加载失败'),
     settle(processApi.worklogs(id), '工作日志加载失败'),
   ])
+  if (!detailGate.isLatest(token)) return
   detailAttachments.value = att
   detailRecords.value = rec
   detailWorklogs.value = log
@@ -82,7 +85,9 @@ function retryDetail() {
 }
 
 function closeDetail() {
+  detailGate.begin()
   detailOpen.value = false
+  detailLoading.value = false
   detailError.value = ''
   detailTarget.value = null
 }
