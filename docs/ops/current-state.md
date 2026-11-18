@@ -2725,3 +2725,24 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r239 负结果零改动：写范围 laiyipao/miniapp+server git status 空；双向核对约 50 request↔routes.go、DTO 逐字段、竞态序号守卫、幂等键、定时器清理、错误码、定点单位、战斗核心事务全一致，按约束不强造；主线程 admin 第 89 轮侦察全负结果（12 视图 @change/@current-change/watch 分布、RecomputesView loadSeq 守卫就位、详情守卫就位、无 selection/index 列、纯图形仅星级第81轮已修）。
 - 关键决策：mobile search.vue 曾试加 createLatestGate 竞态守卫（RED→GREEN 通过），复核发现 doSearch 有 loading 守卫 + 按钮 :disabled="loading" + retry 仅 loading=false 出现，旧新请求无法真实并发，属防御性冗余非真 bug，已 git checkout HEAD 完全撤销——写竞态守卫前必须验证旧新请求能否真实并发，否则构成滥竽充数。
 - 三目标仍 active：目标一 R239 完成（文件关闭按钮可访问名，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 99. 目标二部署收官：augmentor 上共用测试服（2026-11-18）
+
+### 99.1 部署模式纠正（关键决策）
+- 旧记忆误判「gh CLI 不可用 → 远程卡 GitHub Secrets DEPLOY_* → 33.3 交付边界」，经实测推翻：gh 2.102.0 已装且已登录（correction 已入库 hindsight）。
+- 用户澄清「测试环境服务器跟 oa4rust 共用」——部署不走 GitHub Actions，而走 SSH 别名 oa4rust-test 直连 + scp 上传 + nginx location 片段 include 进 ccy.conf 的模式（与 .workbuddy/oa4rust_nginx_subpath.sh、laiyipao/deploy/README.md 同构）。gh 可用性对本目标无关紧要。
+
+### 99.2 部署步骤（真值全部不入库）
+- 前端：augmentor/web 用 VITE_BASE=/augmentor/ + VITE_API_BASE=/augmentor-api/api（同源相对路径，避免硬编码域名）重新构建，校验 index.html 引用 /augmentor/assets/ 且 api chunk 烘焙相对基址。
+- 后端：tar 打包 api/ augmentor/ config.yaml requirements-core.txt cli.py + web/dist（剔除 __pycache__/pyc），scp 到远端解压至 /usr/local/augmentor/。
+- 环境：远端 python3.12 -m venv + pip（清华镜像）装 requirements-core.txt（最小依赖集，可选重依赖自动降级）；核心依赖 fastapi/uvicorn/pydantic/httpx/yaml/ruamel.yaml/numpy 全部 import OK。
+- 鉴权：X-API-Key 明文只写远端 /usr/local/augmentor/etc/config.env（chmod 600，由部署环境注入，仓库不存真值）；systemd unit augmentor.service（EnvironmentFile 指向该 config.env，ExecStart=venv/bin/python -m uvicorn api.main:app --host 127.0.0.1 --port 8000，Restart=on-failure，enable+active）。
+- nginx：写 /etc/nginx/conf.d/augmentor/10-test.conf（= /augmentor 301、^~ /augmentor/assets/ alias、/augmentor/ alias try_files、/augmentor-api/ proxy_pass http://127.0.0.1:8000/），python3 幂等把 include 插进 ccy.conf 443 server 的 oa4rust include 锚点后（备份 ccy.conf.bak-augmentor-<ts>），nginx -t + systemctl reload nginx。
+
+### 99.3 端到端验证（真值不回显）
+- 公网 HTTPS：/augmentor/ = 200、首页 index js 资源 = 200、/augmentor-api/api/health 返回 status ok/version 3.0.0、docs 子路径按 FastAPI 路由规则工作。
+- 鉴权：匿名 POST /api/config = 401、带正确 X-API-Key = 200；服务 systemd enabled+active，开机自启就位。
+- 交付：前端/健康/API 三地址与 X-API-Key 已在会话中直接告知用户（目标二明确要求）；域名、key 真值不写入任何仓库文件。
+- 回滚：systemctl stop/disable augmentor、mv /usr/local/augmentor{,.old}、mv ccy.conf.bak-augmentor-<ts> 回 ccy.conf 后 reload nginx。
+
+### 99.4 三目标状态
+- 目标二本轮完成交付；目标一（oa4rust 双前端 100+ 轮实质优化）与目标三（laiyipao 真 bug 查修）保持 active，下轮继续。
