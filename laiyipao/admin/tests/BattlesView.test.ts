@@ -835,3 +835,19 @@ describe('BattlesView 详情抽屉竞态（第 60 轮）', () => {
   })
 })
 
+describe('BattlesView 星级非文本替代（第 81 轮）', () => {
+  it('星级列给读屏提供可读文本，而非仅靠数星形（WCAG 1.1.1）', async () => {
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, stars: 3 }),
+      battleFixture({ id: 2, result: 'lose', stars: 0 }),
+    ])
+    const rows = wrapper.findAll('.el-table__row')
+    const starCell = rows[0].findAll('.el-table__cell').find((c) => c.text().includes('★'))
+    expect(starCell).toBeDefined()
+    const img = starCell!.find('[role="img"]')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('aria-label')).toBe('3 星')
+    wrapper.unmount()
+  })
+})
+

@@ -403,7 +403,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <el-table-column label="星" width="60">
-          <template #default="{ row }">{{ '★'.repeat(row.stars) }}</template>
+          <template #default="{ row }"><span role="img" :aria-label="row.stars + ' 星'">{{ '★'.repeat(row.stars) }}</span></template>
         </el-table-column>
         <el-table-column prop="score" label="分数" width="100" />
         <el-table-column prop="kills" label="击杀" width="70" />
