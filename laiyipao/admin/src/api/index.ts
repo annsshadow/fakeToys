@@ -692,8 +692,16 @@ export function deleteAnnouncement(id: number) {
  * 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
  * 运营需要把公告清单带走做归档。readonly 可导出。
  */
-export function exportAnnouncementsCsv() {
-  return api.getBlob('/admin/announcements/export')
+export function exportAnnouncementsCsv(params: {
+  published?: boolean
+  date_from?: string
+  date_to?: string
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.published !== undefined) q.set('published', params.published ? '1' : '0')
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.getBlob(`/admin/announcements/export?${q}`)
 }
 
 export function fetchRedeemCodes(
@@ -789,8 +797,16 @@ export function updateRedeemCode(id: number, payload: {
  * 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
  * 运营需要把已生成码的清单带走做线下核对/客服分发。readonly 可导出。
  */
-export function exportRedeemCodesCsv() {
-  return api.getBlob('/admin/redeem-codes/export')
+export function exportRedeemCodesCsv(params: {
+  keyword?: string
+  enabled?: boolean
+  expired?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.keyword) q.set('keyword', params.keyword)
+  if (params.enabled !== undefined) q.set('enabled', params.enabled ? '1' : '0')
+  if (params.expired !== undefined) q.set('expired', params.expired ? '1' : '0')
+  return api.getBlob(`/admin/redeem-codes/export?${q}`)
 }
 
 export function fetchAuditLogs(

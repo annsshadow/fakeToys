@@ -308,7 +308,11 @@ async function onExportAuditLogs() {
  */
 async function onExportRedeemCodes() {
   try {
-    const blob = await exportRedeemCodesCsv()
+    const blob = await exportRedeemCodesCsv({
+      keyword: codeKeyword.value || undefined,
+      enabled: codeEnabled.value,
+      expired: codeExpired.value,
+    })
     const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -455,7 +459,11 @@ async function onDeleteAnn(a: AdminAnnouncementView) {
  */
 async function onExportAnnouncements() {
   try {
-    const blob = await exportAnnouncementsCsv()
+    const blob = await exportAnnouncementsCsv({
+      published: annPublished.value,
+      date_from: annDateRange.value?.[0] || undefined,
+      date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+    })
     const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

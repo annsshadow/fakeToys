@@ -1016,3 +1016,51 @@ describe('ContentView 公告筛选竞态（第 59 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('ContentView 导出与列表筛选同口径（第 62 轮）', () => {
+  const csv = '\uFEFFid,name\n1,one\n'
+
+  type ExportVm = {
+    annPublished: boolean | undefined
+    annDateRange: [string, string] | null
+    codeKeyword: string
+    codeEnabled: boolean | undefined
+    codeExpired: boolean | undefined
+    onExportAnnouncements: () => Promise<void>
+    onExportRedeemCodes: () => Promise<void>
+  }
+
+  it('公告：筛选发布状态与日期后导出须把同口径参数传给服务端（当前无参=导出全量）', async () => {
+    exportAnnouncementsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as ExportVm
+    vm.annPublished = true
+    vm.annDateRange = ['2026-01-01', '2026-01-31']
+    await flushPromises()
+    await vm.onExportAnnouncements()
+    await flushPromises()
+    expect(exportAnnouncementsCsv).toHaveBeenCalledWith({
+      published: true,
+      date_from: '2026-01-01',
+      date_to: '2026-02-01',
+    })
+    wrapper.unmount()
+  })
+
+  it('兑换码：筛选后导出须把 keyword/enabled/expired 传给服务端（当前无参=导出全量）', async () => {
+    exportRedeemCodesCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as ExportVm
+    vm.codeKeyword = 'LYP'
+    vm.codeEnabled = true
+    vm.codeExpired = false
+    await flushPromises()
+    await vm.onExportRedeemCodes()
+    await flushPromises()
+    expect(exportRedeemCodesCsv).toHaveBeenCalledWith({
+      keyword: 'LYP',
+      enabled: true,
+      expired: false,
+    })
+    wrapper.unmount()
+  })
+})
