@@ -2612,3 +2612,32 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r234 负结果零改动：写范围 laiyipao/miniapp+server 核对 304/data 字段（确认为误报，game.ts:425 用 status==='unmodified' 分支 + serverTimeMs 校准，client.ts:759 返回体无 data 字段）、登录/续期单飞、battle settled 守卫 + battle_token RowsAffected 互斥、签到连点 PK 23505 条件 UPDATE（仅 UI 提示非资金 bug）、定时器短存活无实质危害、路由/DTO/keyset/幂等双向一致，均无新 bug 不强造，写范围 git status 干净。主线程 admin 第 84 轮侦察全负结果：12 视图成功提示后处理（Object.assign 就地更新行 / 删除切档 load）与表单校验完备。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R234 完成（PWA theme-color 跟随主题，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 94. 第 85 轮现量：R235 搜索框 a11y 扩面 + mobile 通讯录详情竞态 + admin 路由播报
+
+### 94.1 R235 搜索/筛选框可访问名称覆盖 9 类
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/utils/searchFieldA11y.ts 的 SEARCH_SELECTOR 原仅 2 类，R217 全局增强器漏掉 7 类 placeholder-only 搜索/筛选框（input.search / .sb-input / .qs-input / .ra-filter / .result-filter / .list-input / .fi2）：键入首字符后 placeholder 消失，读屏仅念「编辑文本」，WCAG 4.1.2/3.3.2。主线程核验 7 个真实视图缺口全部确证（ScriptWorkbench.vue、ConfigDesignerApp.vue、QueryManagerDeep.vue 两处、QueryStatementDesigner.vue、FormDesigner.vue、QueryManager.vue）。 |
+| 修复 | SEARCH_SELECTOR 由 2 类扩为 9 类（含上述 7 类 + 原 2 类），.tmp-input 数据录入值提示故意不纳入；增强器逻辑零改动。新增 searchFieldA11y.searchVariants.contract.test.ts 8 例（6 参数化真实视图 + ra-filter 多行 + tmp-input 负例）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退源文件→契约 7 failed/1 passed→恢复→GREEN 8 passed）；oa4rust 根 146 文件/1590 passed、typecheck 6 项目 Done、lint 0 error（29 info 既有）、diff --check OK。 |
+
+### 94.2 mobile 通讯录详情只认最新一次（竞态守卫）
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/contacts/contacts.vue 的 openPerson()/openUnit() 两处异步详情加载无序号守卫：快速点不同人员/单位时旧响应晚到覆盖新详情（与第 84 轮 browse.vue 同构）。 |
+| 修复 | 复用 @/utils/latest 的 createLatestGate()，新增模块级 personDetailGate/unitPeopleGate；openPerson() 令牌 begin()→Promise.allSettled 后 isLatest 守卫才写 identities/roles，finally 同守卫清 detailLoading（无 flag 分支也补 detailLoading=false）；openUnit() 同理守卫 unitPeople。新增 contacts.detailRace.contract.test.ts 源码级 4 例。 |
+| 门禁 | 主线程独立 RED（cp 备份→回退→4 failed→恢复→4 passed）；mobile 34 文件/278 passed、tsc --noEmit exit 0。 |
+
+### 94.3 admin 路由切换播报与焦点迁移
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/router/index.ts 的 afterEach 只同步 document.title，键盘焦点仍停在侧栏导航项、读屏不播报页面切换（WCAG 2.4.3/4.1.3，与 oa4rust R231 同族）。 |
+| 修复 | 新增 laiyipao/admin/src/utils/routeAnnouncer.ts 的 createRouteAnnouncer(doc=document)：sr-only role=status aria-live=polite aria-atomic=true 区域播报「已切换到：<title>」+焦点移 #main-content 补 tabindex=-1，50ms×10 有限重试，dispose 清理，无 main 仅播报；router/index.ts 加惰性单例 + afterEach 追加 getRouteAnnouncer()?.announce(to)。新增 routeAnnouncer.test.ts 4 例 + routeAnnouncer.router.test.ts 1 例（jsdom 钉住 router 接线）。 |
+| 门禁 | 主线程独立 RED（cp 备份 router→git checkout HEAD 回退→集成测试 1 failed→恢复→GREEN）；admin 35 文件/483 passed、vue-tsc exit 0。 |
+
+### 94.4 负结果、目标二与交付边界
+- lybug-r235 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 46 个 request 端点↔routes.go、请求/响应 DTO 逐字段、查询参数、历史已修项（401 单飞/304 时钟/keyset/settle/IDOR/定点/错误码/CORS/定时器）全一致；唯一候选 /me/battles?result= 无枚举白名单但客户端只传空|win|lose 属良性超集非真 bug，不强造，写范围 git status 干净。主线程 admin 第 85 轮侦察全负结果（图标按钮全带文字、placeholder-only 输入框全在 el-form-item label 内、星级列第 81 轮已修、document.title 已同步）。
+- 三提交：3335264c1(R235)、3a1b3c2d9(mobile contacts)、a549bbe29(admin 路由播报)，docs §94 本提交。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R235 完成（搜索框 a11y 扩面，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
