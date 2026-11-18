@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import { router } from './router'
+import { installSkipLink } from './utils/skipLink'
 
 // ⚠️ 必须先于 main.css 引入：Element Plus 的深色变量定义在
 // `html.dark` 下，而 main.css 要在它之后把品牌色板映射回 `--el-*`。
@@ -31,4 +32,6 @@ import './styles/main.css'
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
+// WCAG 2.4.1：跳转链接装在 #app 之外，路由切换不会移除；须早于 mount。
+installSkipLink()
 app.mount('#app')

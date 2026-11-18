@@ -481,3 +481,25 @@ body {
   color: var(--lyp-dim);
   line-height: 1.5;
 }
+
+/* ── WCAG 2.4.1 跳转到主要内容 ──────────────────────────────────────── */
+
+.skip-link {
+  position: fixed;
+  top: -1000px;
+  left: 12px;
+  z-index: 2000;
+  padding: 10px 16px;
+  border-radius: var(--lyp-radius);
+  background: var(--lyp-panel-3);
+  color: var(--lyp-text);
+  border: 1px solid var(--lyp-accent);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+#main-content:focus:not(:focus-visible) {
+  outline: none;
+}
