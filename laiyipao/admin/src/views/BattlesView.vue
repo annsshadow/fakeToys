@@ -206,16 +206,23 @@ async function onExportCsv() {
   }
 }
 
+// 详情请求序号（第 60 轮）：先点 A 再点 B 时，A 的迟到响应不得覆盖 B 的详情。
+// UsersView.openDetail 早已用同款 detailReqSeq 守卫，这里补上。
+let detailReqSeq = 0
+
 async function openDetail(row: AdminBattleView) {
+  const seq = ++detailReqSeq
   // 换一条战报就把上一次的输入与结果清掉 —— 否则会把 A 的比对结果
   // 看成 B 的结论，而两个都是合法的界面状态。
   verifyHashInput.value = ''
   verifyResult.value = null
   try {
     const res = await fetchBattleDetail(row.id)
+    if (seq !== detailReqSeq) return
     detail.value = res.battle
     detailDrawer.value = true
   } catch (e) {
+    if (seq !== detailReqSeq) return
     ElMessage.error((e as Error).message)
   }
 }

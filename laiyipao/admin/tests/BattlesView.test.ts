@@ -779,3 +779,59 @@ describe('BattlesView 筛选竞态', () => {
   })
 })
 
+/**
+ * 第 60 轮：详情抽屉的请求序号守卫。
+ * UsersView.openDetail 早有 detailReqSeq 守卫，BattlesView.openDetail 却没有：
+ * 先点战报 A 的详情（慢请求），关闭抽屉再点战报 B（快请求），B 先渲染后
+ * A 的迟到响应把 detail 改回 A —— 抽屉标题/上下文是 B，内容却是 A。
+ */
+describe('BattlesView 详情抽屉竞态（第 60 轮）', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('旧详情响应后到不得覆盖新打开的战报详情', async () => {
+    const d1 = deferred() // 第一次点详情（战报 1），慢响应
+    const d2 = deferred() // 关闭后打开战报 2，快响应
+    let call = 0
+    fetchBattleDetail.mockImplementation(() => {
+      call += 1
+      return call === 1 ? d1.promise : d2.promise
+    })
+
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, nickname: '旧战报玩家' }),
+      battleFixture({ id: 2, nickname: '新战报玩家' }),
+    ])
+    const detailBtns = () => wrapper.findAll('button').filter((b) => b.text() === '详情')
+    expect(detailBtns().length).toBeGreaterThanOrEqual(2)
+
+    // 打开战报 1：请求在飞
+    await detailBtns()[0].trigger('click')
+    await flushPromises()
+    expect(call).toBe(1)
+
+    // 关闭抽屉，紧接着打开战报 2
+    await wrapper.findComponent(ElDrawer).vm.$emit('update:modelValue', false)
+    await flushPromises()
+    await detailBtns()[1].trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 新详情（战报 2）先回
+    d2.resolve({ battle: { ...detailBase, id: 2, nickname: '新战报玩家' } })
+    await flushPromises()
+    // 旧详情（战报 1）后回：不得覆盖新详情
+    d1.resolve({ battle: { ...detailBase, id: 1, nickname: '旧战报玩家' } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { detail: { id: number; nickname: string } | null }
+    expect(vm.detail?.id).toBe(2)
+    expect(vm.detail?.nickname).toBe('新战报玩家')
+    wrapper.unmount()
+  })
+})
+
