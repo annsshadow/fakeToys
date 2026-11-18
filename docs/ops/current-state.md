@@ -2293,3 +2293,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r67 负结果零改动：逐类核对条件GET/304、并发幂等、数值边界与时钟、日期周期时区、权限校验与错误码、状态回填与 keyset 分页、config require_login 翻转共 7 大类全一致或历史已修；miniapp 133 文件/1474 passed|2 skipped、vue-tsc 0，server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R217 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程 admin 订单筛选竞态已修，继续找但不强造。laiyipao 固定不动项维持记账。
+## 77. 第 68 轮现量：R218 上传超时文案一致性（SDK 契约）
+
+### 77.1 R218 fetch 版 upload/uploadBytes 超时文案归一化
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/packages/sdk/src/api.ts 的 ApiClient.upload()/uploadBytes() 接受 options.timeoutMs，到期时 setTimeout 直接 controller.abort()，catch {} 只区分「调用方主动取消（bridge.cancelled）」与「其它任何错误」，把超时 AbortError 一并归一化成 UPLOAD_FAILURE_MESSAGE（「上传失败，请检查网络后重试」）。而同类的 XHR 版 uploadWithProgress() 的 ontimeout 早已用 UPLOAD_TIMEOUT_MESSAGE（「上传超时，请检查网络后重试」），SDK 顶部也本就定义了该常量。结果：调用方显式传 timeoutMs 后用户看到误导性的「上传失败」，与 XHR 路径文案不一致，无法判断该重试还是该等待。现有 api.test.ts:380 的 mock 在 abort 时 resolve 而非 reject，从不检查 message，故漏掉。 |
+| 修复 | 在 upload()/uploadBytes() 各加一个 timeoutElapsed 标志：定时器触发时先置 true 再 abort；catch 中在「调用方取消」之后、UPLOAD_FAILURE_MESSAGE 之前插入 if (timeoutElapsed) throw networkFailure(UPLOAD_TIMEOUT_MESSAGE)。调用方主动取消语义与非超时网络错误文案均保持不变。 |
+| 门禁 | 新增 api.upload-timeout.contract.test.ts 2 例（vi.stubGlobal(fetch) 造真实 abort reject AbortError，断言 ApiError.status=0 且 message=上传超时文案）RED 2 failed（实收「上传失败」）→GREEN；主线程独立 RED（临时移除两处守卫）复现 2 failed 后恢复；全量 oa4rust 128 文件/1501 passed、typecheck 6 项目 Done、lint 410 文件 0 error（23 info 既有）。diff --check 0、敏感扫描无命中。 |
+
+### 77.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r218 负结果零改动：逐类交叉核验 server 权威契约↔miniapp 消费面（TaskView/SignIn/OfflineReward/Wallet/MyRank/BattleDetail 字段与 json tag 逐字对齐、state 回填、keyset 分页与 loadSeq 竞态守卫、数值单位与 permille 兜底、日界周期、错误信封、幂等指纹）全一致或历史已修。曾排查并排除三处可疑点：签到模板 signed_today 时 claimedCount+1 标 today（有第 141 轮用例显式断言为预期）、rank.vue 行号 i+1（不在前 50 时 chaseGap 回退 null 无错误数据）、Buy 无幂等（R134-B 已知决策且客户端 buyingId+二次确认+新 key）。无可复现用户可见差异，不强造 RED→GREEN；miniapp pnpm test/vue-tsc 0、server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
+- 主线程侦察负结果：admin 12 视图 load 竞态守卫/分页重置已就位（BattlesView/UsersView/ContentView/EconomyView/LevelsView），DefensesView/RecomputesView/SkillsView/EquipmentView 属低频筛选或纯只读不强造；9 个导出 API 参数拼 query 与列表口径一致、布尔筛选 1/0 与服务端一致、创建提交防重就位、nextDay UTC 开区间正确、15 处确认守卫覆盖破坏性操作、regenerateLevels confirm 与服务端护栏一致、parsePriceMap/onGrant 校验完整、千分比/percent 单位正确；LevelsView 编辑表单用独立 editForm 对象不直接引用表格行、取消编辑不污染列表；WikiView 失焦延迟关闭定时器 clearTimeout 配对、搜索索引 computed 派生无陈旧；offsetPager cappedTotal/canGoNext 与后端 maxQueryOffset=25000 对齐；reactions 取数失败清缓存不固化、fetchReactionLabels 兜底原始 key；无空 catch 吞错误。未发现可确证新 bug。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health）、根页 / 与 /docs /openapi.json 均 200、匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R218 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
