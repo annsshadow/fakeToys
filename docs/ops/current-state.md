@@ -2309,3 +2309,24 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程侦察负结果：admin 12 视图 load 竞态守卫/分页重置已就位（BattlesView/UsersView/ContentView/EconomyView/LevelsView），DefensesView/RecomputesView/SkillsView/EquipmentView 属低频筛选或纯只读不强造；9 个导出 API 参数拼 query 与列表口径一致、布尔筛选 1/0 与服务端一致、创建提交防重就位、nextDay UTC 开区间正确、15 处确认守卫覆盖破坏性操作、regenerateLevels confirm 与服务端护栏一致、parsePriceMap/onGrant 校验完整、千分比/percent 单位正确；LevelsView 编辑表单用独立 editForm 对象不直接引用表格行、取消编辑不污染列表；WikiView 失焦延迟关闭定时器 clearTimeout 配对、搜索索引 computed 派生无陈旧；offsetPager cappedTotal/canGoNext 与后端 maxQueryOffset=25000 对齐；reactions 取数失败清缓存不固化、fetchReactionLabels 兜底原始 key；无空 catch 吞错误。未发现可确证新 bug。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health）、根页 / 与 /docs /openapi.json 均 200、匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R218 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+## 78. 第 69 轮现量：R219 AIChat 图标按钮可访问名 + miniapp 切关竞态守卫
+
+### 78.1 R219 AIChat 图标按钮可访问名（WCAG 4.1.2）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/AIChatApp.vue 侧栏与输入区四个图标按钮无可访问名称：btn-del-sm 删对话（✕，零名称，多个列表项读屏器均念「x / 按钮」无法区分）、attach-x 移除附件（✕，零名称）、btn-config 打开 MCP 配置（⚙，仅 title 弱兜底）、btn-attach 上传附件（📎，仅 title）。 |
+| 修复 | 四处补 aria-label：btn-config/attach-x/btn-attach 固定值，btn-del-sm 用动态 :aria-label 带对话标题（c.title 或 c.name 或 未命名对话）区分列表项；纯字形未改，title 保留。新增 AIChatApp.iconA11y.contract.test.ts 源码级正则扫描 5 例，钉住 class 到 aria-label 的对应关系。 |
+| 门禁 | 新测试 RED 5 failed（四处缺失）→GREEN 5/5；主线程独立 RED（备份→编辑移除四处 aria-label→RED 5 failed→恢复→GREEN 5 passed）；全量 oa4rust 129 文件/1506 passed、typecheck 6 项目 Done、lint 411 文件 0 error（24 info 既有）。 |
+
+### 78.2 miniapp 关卡敌人预览切关竞态（lybug-r219 真 bug）
+
+- 真 bug：laiyipao/miniapp/src/pages/stage/stage.vue 的 watch(selected, ...) 关卡敌人预览无请求序号守卫，快速切关时旧关慢到 /levels/{id} 响应覆盖新关 detailWaves，导致当前关预览显示上一关敌人组成、击杀金币（约 N 只）与 killCoin 估算错误。同仓 battles.vue 的 listReqSeq / signin.vue 的 loadSeq 已有同类守卫，唯独此处遗漏；server 契约本身正确，是 miniapp 消费面 bug。
+- 修复：加 let detailReqSeq=0，watch 每次 ++seq，await fetchLevel 后与 catch 内 if (seq!==detailReqSeq) return 丢弃陈旧响应。新增 stage_detail_race.test.ts 行为测试 1 例（关卡 1 请求挂起→切关卡 2→关卡 1 迟到，断言仍显示约 2 只而非约 8 只）。主线程独立 RED（备份→移除守卫→RED 实收「击杀金币（约 8 只）+160」证明旧关覆盖新关→恢复 BOM→GREEN）。
+- 门禁：miniapp 134 文件/1475 passed|2 skipped、vue-tsc 0；server internal/domain go test -skip TestNoRealSecretsInRepo ok（本轮 server 零改动）。stage.vue 的 BOM（EF BB BF）经文本编辑丢失已用 node Buffer 恢复，diff 为纯 7 行新增。
+
+### 78.3 laiyipao 负结果、目标二与交付边界
+
+- 主线程 admin 第 69 轮侦察全负结果：订单金额 amount/100 与服务端分单位一致、netFlow 读 f.delta、所有分页 @current-change 绑定 load 系列、UsersView 封禁 Object.assign 回填与 isCancel 分离、9 个导出 handler 传筛选参数、数字单位与零除保护正确、CSV objectURL 配对、复制 try/catch 完整、ContentView 提交防重就位；无可确证新 bug 不强造。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health）、根页 / 与 /docs /openapi.json 均 200、匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R219 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理找到 miniapp 切关竞态真 bug 已修，主线程 admin 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
