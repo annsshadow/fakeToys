@@ -342,6 +342,10 @@ async function load() {
   }
   if (walletResult.ok) {
     wallet.value = walletResult.wallet
+    // 全局钱包也必须以服务端为准：商城是洗练石/续战令/专精重置券的唯一发放途径，
+    // 不同步的话从商城 navigateBack 回背包（无 onShow）后，doWash 读的
+    // store.wallet.tokens.gem_wash_token 仍是旧值 —— 买了券却被提示「没有洗练券」。
+    store.wallet = { ...store.wallet, ...wallet.value }
   }
   groups.value = CATEGORY_ORDER.map((c) => ({
     key: c.key,
