@@ -2505,3 +2505,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 78 轮侦察全负结果：日期区间 nextDay UTC 开区间、关键词/表单 trim、各 applyXxxFilter 重置 page=1、事件处理器交叉检查（NO MISSING HANDLERS DETECTED）、offsetPager 上界对齐、onActivated 首次跳过刷新、api/index.ts 布尔参数 1/0 转换、广义模板孤儿标识符扫描（3 处命中均属 v-for 作用域变量误报）均正确；mobile 面 latest 令牌/listState 三分支/轮询退避/网络状态可见化均完备。本轮唯一可确证新成果为 87.1 R228（oa4rust 面）。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R228 完成（登录失败状态消息可播报，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 88. 第 79 轮现量：R229 主题跨标签页同步 + admin/lybug 全负结果
+
+### 88.1 R229 主题选择在标签页之间同步（真功能 bug）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/packages/sdk/src/theme.ts 通过 localStorage.setItem(THEME_KEY=oa4rust_theme, mode) 持久化主题，但从不监听浏览器 storage 事件：A 标签页切到 dark 后，B 标签页内存里的共享 _theme 与 <html data-theme> 仍是 light，界面不跟随；更严重的是 B 页随后再点一次切换，会把同步前的旧值 light 写回 localStorage，直接覆盖 A 页刚选的 dark。R196 theme.cross-instance.contract.test.ts 只覆盖同页跨实例 matchMedia 监听拆除，未覆盖跨标签页同步，为确证新缺口。 |
+| 修复 | THEME_KEY 之后加模块级 storage 监听器（typeof addEventListener 守卫，SSR/node 安全）：只处理 event.key===THEME_KEY 且 newValue 为 dark/light 的事件，收到后 stopFollowing?.() 拆掉本页系统跟随监听（避免 OS 明暗变化覆盖显式选择），再更新共享 _theme.value 与 document.documentElement data-theme。storage 事件只在其他标签页改动时触发，不自写自收无抖动。新增 theme.storage-sync.contract.test.ts 2 例（node 环境 + vi.resetModules + 桩 document/localStorage/addEventListener 派发 storage 事件）。 |
+| 门禁 | 契约 RED 2 failed→GREEN 2/2（失败断言实收 light，expected dark）；主线程独立 RED（cp 备份→git checkout HEAD 回退→RED 2 failed 实收 light→cp 恢复→GREEN 2 passed）；全量 oa4rust 140 文件/1552 passed、typecheck 6 项目 Done、lint 423 文件 0 error（29 info 既有）、diff --check OK、改动敏感扫描无命中。 |
+
+### 88.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r229 负结果零改动：写范围 laiyipao/miniapp+server 双向核对客户端约 60 个 API 与服务端路由/方法、请求体与查询参数、响应 DTO 逐字段、401 单飞与幂等键/expires_at 续期/304 时钟校准/登出 guest_token 轮换等机制类契约全一致；排查并排除 resetMastery 动态 map 三键非 bug（有 mastery_reset_shape_test.go 钉住）、leaderboard type 默认值与战报 result 空串不过滤均两侧一致。无新 bug 不强造，写范围 git status 干净。
+- 主线程 admin 第 79 轮侦察全负结果：无 size-change/sortable/resetFields；表单校验规则完备（ContentView/EconomyView/LevelsView/SkillsView/UsersView 各字段）；EconomyView moveShopItem 两次 updateShopItem 非原子属设计权衡不强造；RecomputesView loadStats 无序号守卫但属低频手动刷新不强造；UsersView 负数回收有二次确认+净变化文案完整。本轮唯一可确证新成果为 88.1 R229（oa4rust 面）。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R229 完成（主题跨标签页同步，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
