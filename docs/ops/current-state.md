@@ -1677,3 +1677,30 @@ lybug-r45 读服务端权威契约（domain/service/httpapi）与 miniapp 消费
 
 - 提交 b7d870dae + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R195 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
+
+## 五十五、第46轮：R196主题系统跨实例状态污染 + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r196 修复一个真实跨实例状态污染缺陷（系统明暗跟随监听拆不掉、覆盖用户显式选色）；lybug-r46 逐类核对全契约后如实报负结果、零改动。主线程独立复核 RED/GREEN、跑全量门禁后提交 R196。
+
+### 55.1 oa4rust R196 主题系统跨实例状态污染（提交 37a461922）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | packages/sdk/src/theme.ts:8 的 _theme 是模块级共享 ref，所有 createThemeProvider() 实例共用；但 stopFollowing 原为每实例闭包局部变量（:19），matchMedia change 监听绑在调用 init() 的实例上。真实链路：main.ts:534-535 用临时实例 init() 装监听，AppShell.vue:126 通过 useTheme() 单例选色，该单例从未 init()、stopFollowing 恒 null。用户显式切换主题后拆不掉临时实例安装的 change 监听，OS 明暗变化仍改写共享 _theme 覆盖用户选择——「选了不生效」是真实行为缺陷+残留监听器。既有 theme.test.ts 全在同一实例、main.test.ts:118-127 只做字符串断言故漏检 | 真实用户可见缺陷；R181-R195 未覆盖 |
+| 修复 | stopFollowing 提为模块级共享闭包；setTheme/toggle 路径照旧先 stopFollowing?.() 再置 null；init() 开头幂等 stopFollowing?.()+置 null 防重复 init 残留。新增 theme.cross-instance.contract.test.ts 钉住真实路径（临时实例 init + 单例 setTheme），可控 matchMedia 桩 count+emit：显式选色后监听器 count=0、OS emit 不再改写主题 | 2 文件（1 改 + 1 新契约测试含 Copyright/SPDX 头），跨实例共享模块级状态与 R159 同族 |
+| 门禁 | 契约测试 RED 精确失败（expected 1 to be +0，第 86 行）→GREEN；主线程独立复跑 theme.cross-instance + theme.test.ts 共 13 passed；从 oa4rust 根 pnpm test 105 files/1399 passed、typecheck 6 包 Done、biome 2 文件 0 error；diff --check 0、敏感扫描无命中 | 契约测试无真值域名/IP/密钥 |
+
+### 55.2 laiyipao 第46轮诚实负结果
+
+lybug-r46 逐类核对 laiyipao/miniapp 与 server 契约面：API 路径/方法全量比对（client.ts 全部 request ↔ routes.go:72-309 注册路由逐条匹配，无幽灵端点/method 错配）、令牌与鉴权（client.ts:407-491 的 401 刷新单飞+refreshInflight:541-549+幂等键复用:444+主动续期:522-526+expires_at 落盘:297-302 ↔ /auth/refresh routes.go:101）、结算契约（settleInput engine.ts:2539-2575 的 17 字段 ↔ domain/battle.go:181-210；SettleResp game.go:214-227 ↔ battle.vue:768-782；胜负判定 resultStr game.go:663-668）、登出凭证轮换（client.ts:334-359 + logout_credentials.test.ts），以及 /me/钱包/任务/装备/宝石/预设/离线收益/签到/诊断/榜单/商城全部一致。零文件改动、未跑无意义门禁。连续第 31/34/41/42/43/45/46 轮负结果，印证 43.4 策略不强造。
+
+### 55.3 主线程侦察与交付边界
+
+- oa4rust/mobile（独占）侦察负结果：全仓 20 个 .vue 仅 new.vue:53 一处 setTimeout，为发帖成功后 600ms 跳转（合理非泄漏）；无 addEventListener/setInterval 生命周期配对缺口，无 R195 同族缺陷。un autocomplete 受 uni-app H5 框架限制（R54.3 已记账），utils 守卫成熟。
+- laiyipao/admin（不在 lybug-r46 写范围）复核负结果：BattlesView.vue 筛选/分页/验真全自洽——result 下拉:343 与筛选按钮:347 均 page=1 复位、分页 total 用 cappedTotal(total,PAGE_SIZE) 封顶且显示真实 total、dateRange 开区间 nextDay 正确、verifyTag 0/0=未验真与 UsersView 同语义、cappedTotal/canGoNext 有行为测试。无可确证新 bug 未强造。
+- 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页200，远程卡 GitHub Secrets 超会话边界）。B3、A1/A2/A5 及 laiyipao 固定不动项维持记账。
+
+### 55.4 交付
+
+- 提交 37a461922 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R196 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
