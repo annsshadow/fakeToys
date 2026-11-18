@@ -3089,3 +3089,26 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 116.4 门禁与负结果
 - 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 45 文件/331 passed + OA 6 项目 typecheck 0 + OA lint 457 文件 0 error(29 info)；miniapp 142 文件/1488 passed(2 skipped) + vue-tsc 0 + type-check:test 0；admin 37 文件/497 passed + vue-tsc 0；diff --check 0。三处源码均 SPDX 双头、格式（LF/CRLF+BOM）保持、外科手术式改动。
 - 四目标：①目标一 R257 双代理交付复核完成，持续找缺口②目标二 §99 已交付③目标三 R257 退体力修复完成④目标四真实 e2e 累计 39 passed，剩余 reject 定性为环境时序不改源码。凭证仅存仓库外临时文件+env，真值不入库。
+
+## 117. 第108轮：doc 上传后列表同步 + task expired 最终定性
+
+### 117.1 oa4rust/mobile 文档页上传后列表同步（R258，oaopt-r258）
+- 缺口：doc.vue doUpload() 上传成功后仅 toast「上传成功」，不刷新列表；上传落点正是本页「我的附件（FILE_FILE）」清单（load()→loadDocLists→attachRows，模板 :194 v-for），新附件要退出重进触发 onShow 才可见，属写后列表失同步。
+- 修复：doUpload 成功 toast 后补 await load()（doc.vue:130-131，含注释）；load() 内部 loadList 全 catch，刷新失败只保留旧行、不误报上传失败。
+- 测试：新增 doc.uploadRefresh.contract.test.ts（SPDX 双头），1 源码契约（刷新位于 upload 之后、catch 之前）+ 1 行为闭环（loadList 失败保留 previousRows）。
+- 主线程独立 RED→GREEN：备份 /d/tmp/doc.vue.r258fixed→git checkout 还原→vitest -t「上传成功后刷新附件列表」RED 1 failed/1 passed（AssertionError expected -1 to be greater than 363，:29）→恢复 GREEN 2 passed（无 skipped）。注：-t 过滤词须与 it 名逐字一致且不含 () 等正则特殊字符，否则 skipped 假绿。
+
+### 117.2 目标四：workflow reject「发起即 expired」最终定性（负结果，不改源码）
+- 正常发起路径 lib.rs:245-250 插入 x_task 不写 task_status → DB 默认 pending，不会立即 expired。
+- 前端无主动 expire 动作（仅 BamApp.vue 的 BAM expired 统计查询路由），DB 中 expired 任务无 x_record 操作记录。
+- task_id_expire（lib.rs:1353-1377）是显式管理路由；u2.rs:2948 的 expired + 48h 写入位于 #[tokio::test] 测试辅助内，非生产路径。
+- 结论：e2e 中 task 发起即 expired 属测试环境历史数据/执行时序，非产品 bug，不改源码。
+
+### 117.3 laiyipao 全项目查修负结果（R258，lybug-r258）
+- 6 大方向普查（写后快照同步/筛选分页复位/异步竞态/服务端权威态幂等/导出表单口径/任务推进）全部到位，未发现可达真 bug；零改动、不触发 RED→GREEN，符合「宁可负结果不滥竽充数」。
+- 证伪候选（勿重复）：槽位换装不刷新 store（服务端战力取 user_skills 全量、无槽位维度）、签到 doRedeem 不刷兑换历史（跨页 me）、signin canSign 两分支均设 false、battles 筛选分页/abandon 钱包/全前端写同步均已修。
+- 后续线索（无充分可达性论证）：/me 快照并发合成（routes.go:510 LoadMeProfile+MyAccount 非同事务）、me.vue onShow(:1483) 多 Promise 并行无序号守卫。
+
+### 117.4 门禁与四目标
+- 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 46 文件/333 passed + OA 6 项目 typecheck 0 + lint 458 文件 0 error(29 info)；miniapp/admin 本轮零改动沿用上轮门禁（miniapp 142 文件/1488 passed(2 skipped)、admin 497 passed）。R258 oaopt 源码 SPDX 双头、LF 保持、diff --check 0。
+- 四目标：①目标一 R258 doc 上传刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R258 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 最终定性为测试环境时序非产品 bug。凭证仅存仓库外临时文件+env，真值不入库。

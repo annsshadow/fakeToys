@@ -127,6 +127,8 @@ async function doUpload(filePath: string, fileName: string): Promise<void> {
     await fileApi.upload(folder, filePath, fileName || 'file')
     uni.hideLoading()
     uni.showToast({ title: '上传成功', icon: 'success' })
+    // 上传落点即本页附件清单：刷新列表让新附件即时可见（失败时 loadList 保留旧行，不误报失败）。
+    await load()
   } catch (e) {
     uni.hideLoading()
     uni.showToast({ title: e instanceof Error ? e.message : '上传失败', icon: 'none' })
