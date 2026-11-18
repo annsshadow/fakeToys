@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSession } from '@oa4rust/sdk'
+import { resolveSafeRedirect, useSession } from '@oa4rust/sdk'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -180,11 +180,8 @@ async function handleLogin(): Promise<void> {
   try {
     await session.login(username.value, password.value, captchaId.value, captchaAnswer.value)
 
-    // 登录后跳转：query 值可能是数组形态；且只允许站内相对路径（防 //host 协议相对开放重定向）
-    const raw = route.query.redirect
-    const candidate = typeof raw === 'string' ? raw : Array.isArray(raw) && typeof raw[0] === 'string' ? raw[0] : ''
-    const redirect = candidate.startsWith('/') && !candidate.startsWith('//') ? candidate : '/app/dashboard'
-    router.replace(redirect)
+    // 登录后跳转：只接受同源站内路径（反斜杠/控制字符/协议相对会被 helper 拦下）
+    router.replace(resolveSafeRedirect(route.query.redirect))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '登录失败，请重试'
     error.value = msg

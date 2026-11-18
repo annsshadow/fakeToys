@@ -17,6 +17,7 @@ export {
 export { createO2App } from './app'
 export { getLocale, registerMessages, type SupportedLocale, setLocale, useI18n, useI18nInstance } from './i18n'
 export { useRouter } from './router'
+export { resolveSafeRedirect } from './safeRedirect'
 export { useSession, useSessionStore } from './session'
 export { createThemeProvider, type ThemeMode, useTheme } from './theme'
 export type { O2Desktop, O2User, O2WebSocket, OrgGroup, SessionState } from './types'
