@@ -2826,4 +2826,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 | 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退→2 failed/1 passed：listGate 声明实收 false、守卫 indexOf 实收 -1；第①例 RED 即 passed 属正确——它证明缺口前提→恢复→3 passed）；mobile 39 文件/297 passed、oa4rust 根 152 文件/1627 passed、typecheck 6 项目 Done、lint 445 文件 0 error（29 info 既有）、diff --check 0。 |
 
 ### 103.2 目标状态
-- 三目标仍 active：目标一 R243 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三第93轮 lybug 普查其余导出链路筛选口径进行中。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+- 三目标仍 active：目标一 R243 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三第93轮 lybug 导出链路普查收官（负结果，见 103.3）。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+### 103.3 第93轮 lybug-r243：admin 全部 10 条导出链路四层对照普查（负结果，零改动）
+- 方法：封装(api/index.ts) vs 视图传参 vs handler 解析 vs service WHERE 四层逐字对照。Users/Battles/Recomputes/DefenseChallenges/Orders/Announcements/RedeemCodes/RedeemUsages/AuditLogs/UserFlows 十条全对齐：Users 七项全同（is_guest 92轮已修，stats.go:669-767 导出 WHERE $3-$7 与列表同判据）；Battles date_to 均 nextDay 开区间、result 两边 TrimSpace；Recomputes 复用同列表 RecomputeFilter（recompute_gate.go:645-667 vs :735-751 逐行同）；DefenseChallenges 两边同缺日期控件属设计；Orders status/provider 同 TrimSpace；RedeemCodes enabled/expired 三态+LIKE 转义同；AuditLogs admin_id 封装支持但视图无控件且列表也不传，两边一致不算漏；UserFlows 抽屉全量导出无筛选属设计。
+- 附带核查判不算真 bug：handlers_admin.go:611 next_cursor 启发式 len(items)==limit 用未夹取 limit（stats.go:1122 clampLimit(limit,50,200)），limit>200 理论误报——但主线程 ops_grep 证实 next_cursor 仅 types.gen.ts:106/:386 类型声明，无视图消费，BattlesView 用 offset 分页，UI 不可达，按纪律不报不修。
+- 结论：92轮 is_guest 是该族最后一个漏项，「列表有、导出漏」同族普查收官。git status 空、task-177 complete、门禁基线不变（admin 37 文件/496 passed）。
