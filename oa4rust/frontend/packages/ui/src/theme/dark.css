@@ -33,9 +33,9 @@
   --bg-overlay: rgba(6, 9, 19, 0.85);
   --bg-glass: rgba(13, 21, 37, 0.65);
 
-  /* 边框 */
-  --border-subtle: rgba(0, 212, 255, 0.12);
-  --border-active: rgba(0, 212, 255, 0.35);
+  /* 边框：WCAG 2.1 AA 1.4.11 非文本对比度，合成到 bg-base/surface/elevated 均 ≥3:1（见 nonTextContrast.contract.test.ts）。 */
+  --border-subtle: rgba(0, 212, 255, 0.5);
+  --border-active: rgba(0, 212, 255, 0.7);
   --border-glow: 0 0 12px rgba(0, 212, 255, 0.15);
   --border-card: 0 1px 0 rgba(255, 255, 255, 0.04);
 
@@ -95,8 +95,9 @@
   --bg-overlay: rgba(240, 244, 248, 0.9);
   --bg-glass: rgba(255, 255, 255, 0.8);
 
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-active: rgba(37, 99, 235, 0.4);
+  /* WCAG 2.1 AA 1.4.11：边框合成到三种背景均 ≥3:1（见 nonTextContrast.contract.test.ts）。 */
+  --border-subtle: rgba(0, 0, 0, 0.44);
+  --border-active: rgba(37, 99, 235, 0.85);
   --border-glow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 
   --text-primary: #0f172a;
