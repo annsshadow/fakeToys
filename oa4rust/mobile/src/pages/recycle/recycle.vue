@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { recycleApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { listState, loadList } from '@/utils/loadList'
 
 type Row = Record<string, unknown>
@@ -73,15 +74,20 @@ async function remove(r: Row): Promise<void> {
 
 // 单条详情（recycle/{id}）
 const detail = ref<Row | null>(null)
+const detailGate = createLatestGate()
 async function showDetail(r: Row): Promise<void> {
   const id = String(r.id ?? '')
   if (!id) {
     detail.value = r
     return
   }
+  const token = detailGate.begin()
   try {
-    detail.value = ((await recycleApi.detail(id)) as { data?: Row }).data ?? r
+    const fetched = ((await recycleApi.detail(id)) as { data?: Row }).data ?? r
+    if (!detailGate.isLatest(token)) return
+    detail.value = fetched
   } catch {
+    if (!detailGate.isLatest(token)) return
     detail.value = r
   }
 }
