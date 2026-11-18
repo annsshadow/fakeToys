@@ -2189,3 +2189,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 成果分三提交（R212 / admin 导出筛选同口径 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R212 应用管理搜索框可访问名完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程有真 bug 修复（admin 导出与列表筛选同口径），继续找但不强造。
+## 72. 第 63 轮现量：R213 孤儿表单标签 + admin 创建防重 + miniapp 公告计数
+
+### 72.1 R213 桌面 162 处孤儿表单标签关联（WCAG 1.3.1 / 4.1.2）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views 下 162 处 <div class=form-group><label>标题</label><input/></div> 的 label 无 for 也不包裹控件，读屏器无法把可见标签关联到输入框，WCAG 1.3.1/4.1.2 真实违背。R155-R212 只覆盖登录框等少数 label，未触及批量工作台视图。 |
+| 修复 | 新增 oa4rust/frontend/apps/desktop/src/utils/labelA11y.ts 的 installLabelA11y(root=A11yRoot=document):()=>void，MutationObserver 给无 for 且未包裹控件的 label 关联紧随的 labelable 控件（最多 3 兄弟），生成稳定 id oa-label-control-NNNNNN，dispose 撤销属性并断开观察；尊重已有 for/aria-label/labelledby 不覆盖；main.ts 挂载前在 installTableA11y 后接入。 |
+| 门禁 | 新增 labelA11y.contract.test.ts 7 例 jsdom DOM 行为；实现中 WeakMap 不可迭代 TypeError 已修为数组+WeakSet；RED（模块不存在）→GREEN 7 passed；全量 oa4rust 122 文件/1476 passed、typecheck 6 项目 Done、lint 0 error（400 文件 20 info 既有）。 |
+
+### 72.2 admin 公告/兑换码创建提交防重
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | ContentView.vue submitAnnouncement/submitCode 无提交防重守卫，双击「创建」发两次 create 请求产生重复公告/兑换码（服务端无唯一约束）；同视图 submitCodeBatch 已有 batchLoading，LoginView 各提交均有 :loading。 |
+| 修复 | 加 annSaving/codeSaving 两个 ref，函数开头守卫 if(saving) return，try 前置 true / finally 复位 false，两处按钮加 :loading。 |
+| 门禁 | ContentView.test.ts 加 describe「ContentView 创建提交防重（第 63 轮）」2 例（deferred 可控 Promise 双击断言 create 只调 1 次）；RED 2 failed（实收 2 times）→GREEN 2 passed；admin 34 文件/472 passed、vue-tsc exit 0。 |
+
+### 72.3 miniapp 首页公告「全部 N 条」真计数（lybug-r63）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | index.vue 首页用 api.fetchAnnouncements(3) 只拉 3 条，模板却用 announcements.length 显示「全部 N 条」——运营发 6 条公告时首页显示「全部 3 条」，点进公告页实际 6 条，用户可见假话（server 上限 20，公告页用 20 视为全量）。既有测试只 mock 2 条故无法发现。 |
+| 修复 | 拉 20 条全量用于计数，新增 computed visibleAnnouncements = announcements.slice(0,3)，v-for 改用它只铺首屏 3 条，计数仍用全量 length。 |
+| 门禁 | index.test.ts:307 加 RED 行为测试（mock 6 条按 limit 截断，断言 .ann-item=3 且含「全部 6 条 →」）；RED 1 failed（实收「全部 3 条 →」）→GREEN 26 passed；miniapp 全量 133 文件/1474 passed|2 skipped、vue-tsc 0；server go test ./internal/domain/... -skip TestNoRealSecretsInRepo ok、go vet 0、gofmt 0。 |
+
+### 72.4 laiyipao 负结果、目标二与交付边界
+
+- lybug-r63 其余 20+ 维度（路由/DTO/错误码/分页 keyset/日期周期/签到/离线收益/商城/结算/千分比/宝石/专精/预设/体力/token/并发/溢出/订单金额/兑换码/战报详情/排行榜/任务）全一致，无新 bug 不强造；已修复项与固定不动项未重复。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- RED 验证教训：labelA11y.ts 未跟踪时 git stash push 报 pathspec did not match、git stash pop 误弹旧条目引入 UU 冲突（已恢复并保留 stash），改用 mv 改名做 RED 且须手工恢复（tail 管道改变 exit 致 trap 不触发）；docs/assets/architecture.svg 的居中改动经并行会话合法提交为 HEAD=24fb3c72e，予以保留。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R213 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮两个真 bug 修复（admin 创建防重、miniapp 公告计数），继续找但不强造。laiyipao 固定不动项维持记账。
