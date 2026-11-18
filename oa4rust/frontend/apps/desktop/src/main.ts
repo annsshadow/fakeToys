@@ -12,6 +12,7 @@ import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'
 import { installLabelA11y } from './utils/labelA11y'
 import { installLoadingA11y } from './utils/loadingA11y'
 import { installViewModalManager } from './utils/modalFocus'
+import { installProgressA11y } from './utils/progressA11y'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
 import { installTableA11y } from './utils/tableA11y'
@@ -573,6 +574,7 @@ installTableA11y()
 installLabelA11y()
 // R215：加载指示器补 role=status 与读屏可见文案（WCAG 4.1.3），观察 v-if 异步插入。
 installLoadingA11y()
+installProgressA11y()
 // R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须在应用任意位置可用。
 installGlobalSearchShortcut()
 app.mount('#o2-app-root')
