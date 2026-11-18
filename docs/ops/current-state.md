@@ -1798,3 +1798,30 @@ lybug-r47 按 lead 要求收敛后报负结果、零改动：逐类核对离线�
 - 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
 - 提交 f3f8fca5b、6de37ef22、d6d3ba128 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R199 完成）；目标二卡外部凭据；目标三本轮 miniapp 昵称码点真 bug 已修，继续找但不强造。
+
+## 五十九、第50轮：admin WCAG 2.4.7 全局焦点环 + 双线诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r200（R200 oa4rust 桌面/SDK）与 lybug-r50（第50轮 laiyipao）均无确证新缺口，如实报负结果、零改动（lybug-r50 长时间不收敛被主线程中断）。主线程在 laiyipao/admin（子代理写范围外）把桌面 R184 已建立的键盘焦点可见标准钉到运营后台，作为本轮唯一实质改动。
+
+### 59.1 laiyipao/admin 键盘焦点可见全局焦点环（提交 4d582d05e）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | admin 用 Element Plus，WikiView.vue:1184 等处有 outline:none 移除浏览器原生焦点轮廓，但项目层从未提供全局 :focus-visible 兜底，键盘用户 Tab 时看不清焦点落在哪个按钮/链接/输入框（WCAG 2.4.7 Focus Visible A 级）。桌面端 R184 已在全局主题层建立该标准，后台口径不一致 | 真实系统性无障碍缺口；属统一设计标准 |
+| 修复 | src/styles/main.css 末尾追加 :where(a, button, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--lyp-accent) !important; outline-offset: 2px; }，!important 覆盖各视图 scoped 的 outline:none，用主题 token 不写死色值，只在键盘交互时出现 | 1 改 css + 1 新契约测试（含 Copyright/SPDX 头）；仅 admin 范围 |
+| 门禁 | focusVisible.contract.test.ts 4 例（规则存在/覆盖可聚焦元素/主题 token+两像素偏移/!important）RED(4 failed，逐字 Error: main.css 缺少全局 :focus-visible 焦点环规则)→GREEN 4/4；admin 全量 31 文件/445 passed、vue-tsc 0；diff --check 0、敏感扫描无命中 | 契约测试仅读 CSS 声明，无真值域名/IP/密钥 |
+
+### 59.2 oa4rust R200 诚实负结果
+
+oaopt-r200 报负结果、零改动：oa4rust 桌面/SDK/UI 在 R181–R199 已连续完成系统性标准升级（reduced-motion 2.3.3、focus-visible 2.4.7、正文/非文本/叠底对比度、color-scheme、登录回跳开放重定向、autocomplete、resize 监听泄漏、主题跨实例污染、prompt 取消吞值、WebSocket 订阅释放、可访问确认框），剩余候选面均有契约测试锁定或属已覆盖路径，写不出自然 RED，按 §43.4 不强造。
+
+### 59.3 laiyipao 第50轮诚实负结果
+
+lybug-r50 多次催促后仍不收敛、无结论，被主线程中断、零文件改动。主线程独立补取证：miniapp 全仓千分比字段渲染复核——reactions.vue:116/123 attack_weight_pct/amplify_pct 已 ÷10、:204 amplify_pct/1000 参与计算、:125 armor_shred_permille 标‰；enemies.vue:107 抗性 ÷10 并标‰；index.vue:533 pm=÷10 + 各 permille 字段标%；verify.vue 各 permille 字段 pm() 换算；bag/equipment 的 base_bonus_pct/base_armor 标‰；stage.vue difficulty 标‰——全部口径正确，无 R24/R26 同族遗漏，未强造改动。
+
+### 59.4 交付边界与审阅记录
+
+- 本轮唯一代码提交 4d582d05e（admin 焦点环）在子代理运行期间由未知进程提交并推送，主线程核验内容正确（2 文件 59 行）、git ls-remote 远端 HEAD=本地 HEAD=4d582d05e、工作树干净；两个子代理均确认未做 git 操作。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页=200，远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R200 诚实负结果，admin 焦点环把 WCAG 2.4.7 扩到第三个前端）；目标二卡外部凭据；目标三本轮负结果，继续找但不强造。
