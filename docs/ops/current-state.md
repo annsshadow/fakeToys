@@ -2851,3 +2851,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r244 负结果：shop.vue（buyingId 防连点+确认弹窗+成功重拉）、gems.vue（纯图鉴无写操作）全读无实质 bug；todaySupply 按次数统计属注释口径不算；bag.vue 其余写路径同步均正确。
 - 门禁（主线程全量）：oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 446 文件 0 error（29 info 既有）；miniapp 1478 passed|2 skipped；admin 496 passed + vue-tsc 0。SPDX 双头齐全，utf8/LF 保持，git diff --check 0。
 - 三目标仍 active：目标一 R244 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复应用预设失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 105. 第 95 轮：R245 mobile 日历倒序日程校验 + miniapp 挑战历史失同步（2026-11-19）
+
+### 105.1 R245（oa4rust/mobile）新建事件拦住结束早于开始
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/calendar/calendar.vue submitEvent（原 :65-90）只校验日历/标题/起止时间必填，不校验起止先后；模板 :257/:258 起止时间为可见 input，:260「保存事件」仅 creating 时加 disabled，无遮罩阻断。填 10:00→09:00 会生成倒序日程。后端 calendar/src/lib.rs:437-490 event_create 同样只校验必填即 INSERT（前端是唯一防线）。 |
+| 修复 | 新增 eventTime.ts（+双头）：validateEventTimeRange(start,end) 复用 parseServerDate 严格解析，任一不合法→invalid-format，end<start→end-before-start，相等（零时长）放行。calendar.vue +9 行：submitEvent 必填校验后、creating=true 前判定并 toast 短路（「结束时间不能早于开始时间」/「时间格式不正确」）。 |
+| 测试 | 新增 eventTime.test.ts 8 例（6 纯函数边界 + 2 接线契约：提交前调用/错误短路/两文案）。主线程独立 RED（cp 备份→checkout HEAD→2 failed/6 passed：接线契约实收源码不含 import/toast→恢复→8 passed）；另核 oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 448 文件 0 error（29 info 既有）、mobile 40 文件/305 passed、diff --check 0。 |
+| 负结果 | bbsApi 主题列表 id 与 bbs.vue openTopic 提取一致性仅登记为候选，未深挖未改。代理取证中曾越界落盘 me.vue.ro245bak，主线程已用 ops_remove 清除，工作树干净。 |
+
+### 105.2 laiyipao/miniapp 挑战成功后挑战历史停在旧快照
+- 缺口：laiyipao/miniapp/src/pages/me/me.vue:1390-1464 challenge(target) 成功上报后只更新 lastChallenge/钱包/防线，不重拉两份挑战历史；服务端 progression.go:1180-1186 在 challengeDefense 成功时写入 defense_challenges 新记录，而 loadChallengeHistory/loadDefenseChallengeHistory（me.vue:809-826）只在 onShow（:1476-1499）调用——挑战是页内动作不触发 onShow，「记录 → 挑战历史」卡片与 challengeStats 胜负统计一直显示进页面时的旧数据（R244 bag.vue 同族失同步）。
+- 修复（me.vue +4 行，CRLF 保持）：await loadDefenses() 之后补 await loadChallengeHistory() / await loadDefenseChallengeHistory() 及两行机理注释。
+- 测试：新增 me_challenge_history_sync.test.ts 1 例行为测试（onShow 建立旧快照 1 条→页内挑战成功→断言 myChallengeHistory 调用 2 次、2 条、新对手出现、0胜1负→1胜1负）。主线程独立 RED：实收 AssertionError「expected vi.fn() to be called 2 times, but got 1 times」（:202）→恢复→1 passed。
+
+### 105.3 负结果、门禁与目标状态
+- lybug-r245 排除清单（核实同步良好/非 bug，未改）：bag.vue doUpgrade/doSynthesize/doWash/doEquipGem/doUnequipGem/doApplyPreset（已修）、mastery.vue allocate/reset、signin 全部写路径、shop buyItem、index/stage/battle settle、me.vue saveDefense/toggleShield/昵称/升级/删除防线、admin Skills/Levels/Users/Economy/Content/Recomputes 各写路径、server 护盾 shielded_until 读写测试。
+- 门禁（主线程全量）：oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 448 文件 0 error（29 info 既有）、mobile 40 文件/305 passed；miniapp 137 文件/1479 passed（2 skipped 既有）+ tsc/vue-tsc 0；admin 37 文件/496 passed + vue-tsc 0；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R245 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复挑战历史失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。

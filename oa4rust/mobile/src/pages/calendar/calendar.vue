@@ -17,6 +17,7 @@ import { ensureAuthenticated } from '@/utils/auth-guard'
 import { parseServerDate } from '@/utils/datetime'
 import { createLatestGate } from '@/utils/latest'
 import { describeLoadError } from '@/utils/loadList'
+import { validateEventTimeRange } from './eventTime'
 
 interface EventRow {
   id?: string
@@ -67,6 +68,14 @@ async function submitEvent(): Promise<void> {
   const f = form.value
   if (!f.calendarId || !f.title || !f.startTime || !f.endTime) {
     uni.showToast({ title: '日历/标题/起止时间必填', icon: 'none' })
+    return
+  }
+  const timeRangeError = validateEventTimeRange(f.startTime, f.endTime)
+  if (timeRangeError) {
+    uni.showToast({
+      title: timeRangeError === 'end-before-start' ? '结束时间不能早于开始时间' : '时间格式不正确',
+      icon: 'none',
+    })
     return
   }
   creating.value = true
