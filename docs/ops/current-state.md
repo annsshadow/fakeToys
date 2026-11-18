@@ -3146,3 +3146,17 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 119.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 vitest 157 文件 passed + pnpm typecheck 6 项目 0 + biome lint 460 文件 0 error(29 info)；miniapp 142 文件/1488 passed(2 skipped)、admin 37 文件/497 passed、server go test 全包 ok（真值守卫清理后复跑 ok）。diff --check 0。
 - 四目标：①目标一 R260 WebSocket 重连状态重放复核完成，持续找缺口②目标二 §99 已交付③目标三 R260 负结果（零改动）+ 清理历史备份真值残留④目标四真实 e2e 39 passed。凭证仅存仓库外临时文件+env，真值不入库。
+## 120. 第111轮：发起流程防重复提交守卫
+
+### 120.1 oa4rust/mobile 发起流程 submit 在途守卫（R261，oaopt-r261）
+- 缺口：process/start.vue submit() 设 submitting.value=true 并在 finally 复位，但函数开头无在途守卫。模板按钮 :disabled="submitting || !selectedProcessId" 的响应式 DOM 更新有时间窗，快速双击第二次 @tap 可在按钮真正 disabled 前进入 submit，两次都 await processApi.startWork(...)→重复 POST /api/processplatform/service/processing/work 创建两个流程实例，并对两个 workId 各 saveWorkData。对照 bbs/new.vue canSubmit、bbs/topic.vue:57、attendance/meeting/collect/chat/calendar 等写路径均有函数级 if(xxx) return，start.vue 是唯一遗漏的写路径。
+- 修复：submit() 开头加 1 行 if (submitting.value) return（start.vue:132，LF）。新增 start.submitGuard.test.ts（SPDX 双头）2 例源码契约：守卫存在性 + 守卫先于 submitting.value=true、首个 await、startWork 调用。
+- 主线程独立 RED→GREEN（严格串行）：备份修复版至仓库外→git checkout 还原→vitest run 同文件 RED 2 failed（AssertionError expected -1 to be greater than or equal to 0 @:28）→恢复修复版 GREEN 2 passed。
+
+### 120.2 laiyipao 全项目查修负结果（R261，lybug-r261）
+- 零改动。覆盖式侦察 6 方向全部到位：幂等键竞态/购买链路（RunIdempotent 同事务查重+PK 冲突阻塞，client.ts 401 重试复用同 key）、跨页 store 状态机（refreshProfile Promise.all 写不同字段、rank.vue seq 守卫）、miniapp 全量写调用点写后刷新、admin 全量写调用点写后刷新、服务端权威态与 SQL user_id 隔离+并发守卫、TODO/FIXME 扫描。
+- 证伪候选（勿重复）：search.vue doSearch loading 吞新词属性能退化非误报写；contacts.vue openUnit 过期响应由末 token 复位竞态不成立。后续线索（未达真 bug 阈值）：admin 公告 published 切换依赖 30s 服务端缓存 TTL（设计取舍）；建议转向服务端引擎重算路径 recompute_gate / loadout_attacker 装配贡献等 contract test 未覆盖的重逻辑分支。
+
+### 120.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 vitest 157 文件 passed + pnpm typecheck 6 项目 0 + biome lint 461 文件 0 error(29 info)；mobile 包 48 文件/338 passed（含 start.formRace.contract.test.ts 6 项）。miniapp/admin 本轮零改动沿用上轮基线。diff --check 0，R261 源码 SPDX 双头、LF 保持、真值不入库。
+- 四目标：①目标一 R261 发起流程连点守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R261 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

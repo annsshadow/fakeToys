@@ -129,6 +129,7 @@ function groupTitle(label: string): string {
 }
 
 async function submit(): Promise<void> {
+  if (submitting.value) return
   if (!selectedProcessId.value || !title.value.trim()) {
     submitTip.value = '请选择流程并填写标题'
     return
