@@ -22,6 +22,9 @@ const createRedeemCode = vi.hoisted(() => vi.fn())
 const createRedeemCodesBatch = vi.hoisted(() => vi.fn())
 const fetchAuditLogs = vi.hoisted(() => vi.fn())
 const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
+const exportAnnouncementsCsv = vi.hoisted(() => vi.fn())
+const exportRedeemCodesCsv = vi.hoisted(() => vi.fn())
+const exportAuditLogsCsv = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchAnnouncements,
@@ -32,6 +35,9 @@ vi.mock('@/api', () => ({
   createRedeemCodesBatch,
   fetchAuditLogs,
   fetchAdminRedeemUsages,
+  exportAnnouncementsCsv,
+  exportRedeemCodesCsv,
+  exportAuditLogsCsv,
 }))
 
 import ContentView from '@/views/ContentView.vue'
@@ -931,6 +937,42 @@ describe('ContentView 公告复制正文（第 98 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('修复若干问题，周末双倍掉落。')
     expect(document.body.textContent).toContain('公告正文已复制')
+    wrapper.unmount()
+  })
+})
+describe('ContentView CSV 导出条数真值（第 58 轮）', () => {
+  const csv = '\uFEFFid,title\n1,公告一\n2,公告二\n3,公告三\n'
+
+  type ExportVm = {
+    onExportAnnouncements: () => Promise<void>
+    onExportRedeemCodes: () => Promise<void>
+    onExportAuditLogs: () => Promise<void>
+  }
+
+  it('公告：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportAnnouncementsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ announcements: [{ id: 1, title: '公告一', body: '正文', published: true }] })
+    await (wrapper.vm as unknown as ExportVm).onExportAnnouncements()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条公告')
+    wrapper.unmount()
+  })
+
+  it('兑换码：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportRedeemCodesCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ codes: [{ id: 1, code: 'ABCDEFGHJKLM' }] })
+    await (wrapper.vm as unknown as ExportVm).onExportRedeemCodes()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条兑换码')
+    wrapper.unmount()
+  })
+
+  it('审计日志：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportAuditLogsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ logs: [{ id: 1, action: 'ban_user' }] })
+    await (wrapper.vm as unknown as ExportVm).onExportAuditLogs()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条审计日志')
     wrapper.unmount()
   })
 })

@@ -24,7 +24,7 @@ import {
   type AdminRedeemCodeView,
   type AdminRedeemUsageView,
 } from '@/api'
-import { auditDetailFull, auditDetailPreview, exportDateLabel, fmtTime } from '@/utils/format'
+import { auditDetailFull, auditDetailPreview, csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const activeTab = ref('announcements')
@@ -266,6 +266,8 @@ async function onExportAuditLogs() {
       date_from: logDateRange.value?.[0] || undefined,
       date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度（第 58 轮）。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -274,7 +276,7 @@ async function onExportAuditLogs() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${logs.value.length} 条审计日志（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条审计日志（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -287,6 +289,7 @@ async function onExportAuditLogs() {
 async function onExportRedeemCodes() {
   try {
     const blob = await exportRedeemCodesCsv()
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -295,7 +298,7 @@ async function onExportRedeemCodes() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${codes.value.length} 条兑换码（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条兑换码（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -433,6 +436,7 @@ async function onDeleteAnn(a: AdminAnnouncementView) {
 async function onExportAnnouncements() {
   try {
     const blob = await exportAnnouncementsCsv()
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -441,7 +445,7 @@ async function onExportAnnouncements() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${announcements.value.length} 条公告（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条公告（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
