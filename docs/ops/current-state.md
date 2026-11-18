@@ -2521,3 +2521,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 79 轮侦察全负结果：无 size-change/sortable/resetFields；表单校验规则完备（ContentView/EconomyView/LevelsView/SkillsView/UsersView 各字段）；EconomyView moveShopItem 两次 updateShopItem 非原子属设计权衡不强造；RecomputesView loadStats 无序号守卫但属低频手动刷新不强造；UsersView 负数回收有二次确认+净变化文案完整。本轮唯一可确证新成果为 88.1 R229（oa4rust 面）。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R229 完成（主题跨标签页同步，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 89. 第 80 轮现量：R230 上传遮罩接入焦点增强器 + laiyipao/admin 全负结果
+
+### 89.1 R230 FileManager 上传/详情遮罩接入模态焦点增强器（真 a11y bug）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/utils/modalFocus.ts 的 installViewModalManager() 只用 OVERLAY_SELECTOR=.modal-overlay 识别手写弹窗；但 FileManager.vue:181/:198 的文件详情与上传弹窗用 .upload-overlay（同样 @click.self 关闭），未被增强器接管，缺 role=dialog/aria-modal/aria-labelledby、Escape 关闭、Tab 焦点陷阱、焦点归还与背景 aria-hidden，键盘用户无法用 Esc 关闭、读屏只播报无名 div（WCAG 2.1.2 / 4.1.2）。main.ts:567 已安装增强器却漏掉这一族弹窗。 |
+| 修复 | OVERLAY_SELECTOR 改为 .modal-overlay,.upload-overlay 并更新注释，增强逻辑零改动（6+/3-），一网打尽所有手写遮罩无需改 90+ 视图文件。新增 modalFocus.uploadOverlay.contract.test.ts 2 例（Escape 关闭+焦点归还、标题命名+Tab 陷阱）。 |
+| 门禁 | 契约 RED 2 failed（实收 aria-labelledby null）→GREEN 2/2；主线程独立 RED（cp 备份→git checkout HEAD 回退→RED 2 failed→cp 恢复→GREEN 新测试2+原 modalFocus 6 共 8 passed）；全量 oa4rust 141 文件/1554 passed、typecheck 6 项目 Done、lint 0 error、diff --check OK。 |
+
+### 89.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r230 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 10 类（请求路径方法、请求体字段、查询参数、响应 DTO 逐字段、keyset 分页、周期与条件请求、幂等键、并发单飞与事务、错误码信封、定点单位）全一致或已修，无新 bug 不强造；写范围 git status 干净，未提交 git。主线程补跑基线 miniapp 134 文件/1475 passed|2 skipped、vue-tsc exit 0、server domain go test -skip TestNoRealSecretsInRepo exit 0。
+- 主线程第 80 轮 admin+mobile 侦察全负结果：admin 12 视图无 sortable/sort-change/resetFields、exportDateLabel 覆盖 6 视图、CSV 由服务端生成前端只下载；mobile 76 文件仅 bbs/new.vue 一处 maxlength=100，BBS 发帖 canSubmit+submitting 守卫完备，系统扫描 4 处疑似提交弱点全为正则误报。未发现可确证新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R230 完成（上传遮罩接入焦点增强器，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
