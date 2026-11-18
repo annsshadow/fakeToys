@@ -12,7 +12,7 @@ import {
   type VerifyResult,
 } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
-import { exportDateLabel, fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -190,6 +190,8 @@ async function onExportCsv() {
       // 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径
       result: result.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -198,7 +200,7 @@ async function onExportCsv() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${battles.value.length} 条战报（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条战报（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }

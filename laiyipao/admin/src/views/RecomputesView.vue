@@ -31,7 +31,7 @@ import {
   type RecomputeModeState,
   type RecomputeSummary,
 } from '@/api'
-import { exportDateLabel, fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -259,6 +259,8 @@ async function onExportCsv() {
       level_id: levelId.value,
       only_mismatch: onlyMismatch.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -267,7 +269,7 @@ async function onExportCsv() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${rows.value.length} 条重算记录（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条重算记录（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }

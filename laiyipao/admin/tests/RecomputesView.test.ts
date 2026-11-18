@@ -348,7 +348,7 @@ describe('筛选参数', () => {
 describe('重算台账 CSV 导出（新一轮第 45 轮）', () => {
   it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
     const wrapper = await mountView()
-    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid,user_id\n1,9\n']))
 
     // 设置用户/关卡筛选
     const vm = wrapper.vm as unknown as { userId: number; levelId: number }

@@ -37,6 +37,47 @@ export function exportDateLabel(now: Date = new Date()): string {
 }
 
 /**
+ * 统计一份 CSV 文本里的数据行数（不含表头）。
+ *
+ * 导出接口返回的是**全量筛选结果**（服务端无分页），而 UI 此前用当前页
+ * 列表长度冒充导出条数，运营会误以为只导出了一页。这里直接按 CSV 文本
+ * 解析行数：跳过 BOM 与表头，逐字符扫描并正确处理引号内的换行、
+ * 转义双引号与 CRLF；末尾换行不额外计行。
+ */
+export function csvDataRowCount(csv: string): number {
+  let i = 0
+  if (csv.charCodeAt(0) === 0xfeff) i = 1 // BOM
+  let rows = 0
+  let inQuotes = false
+  let lineHasContent = false
+  let firstPhysicalLine = true
+  const countLine = () => {
+    // 第一条物理行是表头，不计；其余有内容的行计为数据行
+    if (!firstPhysicalLine && lineHasContent) rows += 1
+    firstPhysicalLine = false
+    lineHasContent = false
+  }
+  for (; i < csv.length; i += 1) {
+    const ch = csv[i]
+    if (ch === '"') {
+      // 引号内的 "" 是一个转义双引号，不改变 inQuotes
+      if (inQuotes && csv[i + 1] === '"') { i += 1 } else { inQuotes = !inQuotes }
+      lineHasContent = true
+    } else if (ch === '\n') {
+      if (!inQuotes) { countLine() }
+    } else if (ch === '\r') {
+      // CRLF 交给 \n 统一处理；单独 \r 也视为换行
+      if (csv[i + 1] !== '\n' && !inQuotes) { countLine() }
+    } else {
+      lineHasContent = true
+    }
+  }
+  // 末行无换行结尾时也要计入
+  if (lineHasContent && !firstPhysicalLine) rows += 1
+  return rows
+}
+
+/**
  * 审计 detail 的表格预览长度。
  *
  * ⚠️ R98：80 字符是**表格列宽**的取舍，不是 detail 的完整内容。

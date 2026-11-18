@@ -336,7 +336,7 @@ describe('EconomyView 商城编辑', () => {
 describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
   it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
     const wrapper = await mountEconomy()
-    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid,status\n1,paid\n']))
 
     // 设置筛选条件（状态 + 日期范围），再点导出
     const selects = wrapper.findAllComponents({ name: 'ElSelect' })
@@ -362,7 +362,7 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
 
   it('无筛选条件时导出参数为 undefined', async () => {
     const wrapper = await mountEconomy()
-    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid,status\n1,paid\n']))
 
     const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
     await btn!.trigger('click')
@@ -373,6 +373,22 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
       date_from: undefined,
       date_to: undefined,
     })
+    wrapper.unmount()
+  })
+
+  it('导出提示条数来自 CSV 全量数据行，而非当前页列表长度（第54轮）', async () => {
+    // 当前页只有 1 条订单，但导出接口是全量筛选（CSV 含 3 行数据）；
+    // 提示必须报真实导出的 3 条，旧实现用 orders.value.length 会误报 1 条。
+    const wrapper = await mountEconomy([], [], [{ id: 1 }])
+    exportOrdersCsv.mockResolvedValue(
+      new Blob(['\uFEFFid,status\n1,paid\n2,paid\n3,refunded\n']),
+    )
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('已导出 3 条订单')
     wrapper.unmount()
   })
 

@@ -3,7 +3,7 @@ import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { exportDateLabel, isCancel, fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, isCancel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 import {
   fetchEconomy,
@@ -170,6 +170,8 @@ async function onExportOrdersCsv() {
       // 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径
       provider: orderProvider.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -178,7 +180,7 @@ async function onExportOrdersCsv() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${orders.value.length} 条订单（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条订单（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }

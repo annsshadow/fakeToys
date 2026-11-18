@@ -975,7 +975,7 @@ describe('UsersView 需核查筛选（第 60 轮）', () => {
 describe('UsersView 导出玩家流水 CSV（第 82 轮）', () => {
   it('详情抽屉点击「导出全部流水 CSV」：按当前玩家 id 调用接口并触发下载', async () => {
     fetchUserDetail.mockResolvedValueOnce(detailFixture())
-    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid,amount\n1,10\n']))
     const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
 
     await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
