@@ -2273,3 +2273,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r66 负结果零改动：逐类核对 laiyipao/miniapp+server 的 10 大类（战报分页/游标与筛选口径、商城限购日界、token 校准与 401 刷新、错误码重试、路由端点覆盖、排行榜白名单与名次、结算上报边界、签到/离线/任务、时区周期、状态回填）全一致或历史已修；miniapp pnpm test/vue-tsc 0、server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R216 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程 admin 关卡搜索竞态已修，继续找但不强造。laiyipao 固定不动项维持记账。
+## 76. 第 67 轮现量：R217 搜索框可访问名称（WCAG 4.1.2/3.3.2）+ admin 订单筛选竞态
+
+### 76.1 R217 全局 placeholder-only 搜索框补可访问名称
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | 桌面端 40+ CRUD 视图搜索框只有 placeholder（class="search-input"/"search-input-lg"，统计 45 处、43 处无 aria-label），如 AnnApp.vue:16、BBSForum.vue:20。placeholder 不是可访问名称——键入首字符即消失，读屏器只读「编辑文本」，视障用户不知用途；WCAG 4.1.2 Name/Role/Value 与 3.3.2 Labels or Instructions 真实违背。R214 等仅修过个别搜索框，无全局增强器。 |
+| 修复 | 新增 oa4rust/frontend/apps/desktop/src/utils/searchFieldA11y.ts 的 installSearchFieldA11y(root)，MutationObserver 给无 aria-label/aria-labelledby/title/关联 label 的搜索框用 placeholder 文本补 aria-label，兼容 Vue v-if 异步插入，dispose 还原注入属性、尊重作者已有名称；main.ts 挂载前安装。 |
+| 门禁 | searchFieldA11y.contract.test.ts 6 例（含真实视图 BBSForum 片段）GREEN；主线程独立 RED（临时移走实现模块）模块解析失败确证，恢复后全量 oa4rust 127 文件/1499 passed、typecheck 6 项目 Done、lint 409 文件 0 error（23 info 既有）。 |
+
+### 76.2 admin 订单列表筛选竞态
+
+- 真 bug：laiyipao/admin/src/views/EconomyView.vue 的 loadOrders()（:137-153）无请求序号守卫，而状态/渠道 el-select 用 @change 自动触发 applyOrderFilter，快速切换时旧筛选慢响应后到覆盖新 orders/orderTotal——与已修 BattlesView/UsersView/LevelsView 同族竞态，这里漏修。
+- 修复：加 let orderLoadSeq=0，loadOrders() 开头 seq=++orderLoadSeq，await fetchAdminOrders 后与 catch 内 if (seq!==orderLoadSeq) return。EconomyView.test.ts 加 1 例 deferred 行为测试（新筛选先回 NEW2、旧筛选后回 OLD1），RED 1 failed（实收页面显示 OLD1 旧筛选玩家）→GREEN；admin 全量 34 文件/474 passed、vue-tsc 0。
+
+### 76.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r67 负结果零改动：逐类核对条件GET/304、并发幂等、数值边界与时钟、日期周期时区、权限校验与错误码、状态回填与 keyset 分页、config require_login 翻转共 7 大类全一致或历史已修；miniapp 133 文件/1474 passed|2 skipped、vue-tsc 0，server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R217 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程 admin 订单筛选竞态已修，继续找但不强造。laiyipao 固定不动项维持记账。
