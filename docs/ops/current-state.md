@@ -2253,3 +2253,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程侦察负结果：admin 危险操作（清空/重置/删除）均有 ElMessageBox.confirm 或 uni.showModal，日期区间 nextDay 用 UTC 墙钟与业务口径一致；mobile 回收站彻底删除/清空有 uni.showModal 确认、定时器配对清理，无可确证新缺口。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R215 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+## 75. 第 66 轮现量：R216 进度条语义（WCAG 4.1.2）+ admin 关卡搜索竞态
+
+### 75.1 R216 全局进度条 progressbar ARIA 语义
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | 桌面端 FileManager.vue:206-208（.progress-bar/.progress-fill + {{ uploadProgress }}%）、FormDesigner.vue:464-466（.sim-progress）、ProcessDesigner.vue:419-421/605-610/1928/2041（.st-progress/.exec-bar/.tr-progress）等进度条是纯视觉 <div>，仅内联 width 与百分比文本，无 role/aria-valuenow，读屏器无法获知进度数值；R215 loadingA11y 选择器不覆盖任何进度条 class，属 WCAG 4.1.2 Name Role Value / 4.1.3 Status Messages 真实违背。 |
+| 修复 | 新增 oa4rust/frontend/apps/desktop/src/utils/progressA11y.ts：installProgressA11y(root) 用 MutationObserver 给五类进度条容器补 role=progressbar + aria-valuemin/max/now/label，数值随 DOM 变化（百分比文本/inline width/ratio）实时更新，逐属性尊重作者已有 role/aria-label/aria-valuenow，dispose 断开观察并还原注入属性；main.ts 挂载前安装。 |
+| 门禁 | progressA11y.contract.test.ts 7 例 + progressA11y.realMarkup.test.ts 2 例（真实视图片段）GREEN 9/9；主线程独立 RED（临时移走实现模块）模块解析失败确证守卫有效，恢复后全量 oa4rust 126 文件/1493 passed、typecheck 6 项目 Done、lint 407 文件 0 error（20 info 既有）。 |
+
+### 75.2 admin 关卡配置页搜索竞态
+
+- 真 bug：laiyipao/admin/src/views/LevelsView.vue 的 load()（:66-99）无请求序号守卫，关键词连续搜索（Enter/查询按钮/章节切换/keep-alive 重激活均触发）时旧请求慢响应后到覆盖新结果的 levels/total，运营看到过期关卡列表——与已修 BattlesView/UsersView/ContentView 同族竞态，这里漏修。
+- 修复：加 let loadSeq=0，load() 开头 seq=++loadSeq，await fetchLevels 后与 catch 内 if (seq!==loadSeq) return，finally 仅最新序号置 loading=false。LevelsView.test.ts 加 1 例行为测试（deferred 两请求，新响应先回旧响应后到），RED 1 failed（实收「旧筛选结果」覆盖「新筛选结果」）→GREEN；主线程独立 RED（临时移除守卫）复现失败后恢复，admin 全量 34 文件/473 passed、vue-tsc 0。
+
+### 75.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r66 负结果零改动：逐类核对 laiyipao/miniapp+server 的 10 大类（战报分页/游标与筛选口径、商城限购日界、token 校准与 401 刷新、错误码重试、路由端点覆盖、排行榜白名单与名次、结算上报边界、签到/离线/任务、时区周期、状态回填）全一致或历史已修；miniapp pnpm test/vue-tsc 0、server go test -skip TestNoRealSecretsInRepo ok/go vet 0/gofmt 0。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health status ok / version 3.0.0、根页 200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R216 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程 admin 关卡搜索竞态已修，继续找但不强造。laiyipao 固定不动项维持记账。
