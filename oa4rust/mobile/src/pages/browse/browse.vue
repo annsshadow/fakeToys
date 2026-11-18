@@ -30,6 +30,8 @@ const loadError = ref('')
 const detail = ref<Row | null>(null)
 const detailLoading = ref(false)
 const detailGate = createLatestGate()
+// 页签切换/刷新的在途列表请求只认最新一次，见 utils/latest。
+const listGate = createLatestGate()
 
 function nameOf(r: Row): string {
   return String(r.name ?? r.title ?? r.flag ?? r.id ?? '未命名')
@@ -47,10 +49,13 @@ function fetchList(): Promise<{ data?: unknown }> {
 }
 
 async function load(previousRows: Row[] = rows.value): Promise<void> {
+  // 页签切得快时旧请求会晚到：只认最新一次，过期响应不写 rows/错误、不提前复位 loading。
+  const token = listGate.begin()
   loading.value = true
   loadError.value = ''
   detail.value = null
   const result = await loadBrowseRows(() => fetchList(), previousRows)
+  if (!listGate.isLatest(token)) return
   rows.value = result.rows
   if (!result.ok) loadError.value = result.error
   loading.value = false

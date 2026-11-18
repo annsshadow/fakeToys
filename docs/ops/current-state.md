@@ -2815,3 +2815,15 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r242 其余排除项：UsersView detailReqSeq/listReqSeq 竞态守卫在位（56轮已修）、onGrant 负数二次确认/正则解析、日期开区间 nextDay、分页 canGoNext 上界均正确；onActivated 首挂载跳过正确。固定不动项未触碰。
 - oaopt-r242 与 R241 无交集：.mo 是第 6 族，R241 三族（paging-overlay/modal-mask/preview-overlay）测试与本轮改动互不重叠。
 - 三目标仍 active：目标一 R242 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮找到并修复导出与筛选口径不一致真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 103. 第 93 轮：R243 mobile browse 列表级竞态（2026-11-18）
+
+### 103.1 R243（oa4rust/mobile）只读浏览页列表请求只认最新一次
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/browse/browse.vue load()（原 49-57 行）无 latest 门：loading=true→await loadBrowseRows(fetchList)→无条件写 rows/loadError/loading=false。三触发源可真实并发：①页签 @tap=switchTab（模板 120 行）无 disabled，switchTab（69-74 行）仅挡同键重复不挡加载中；②onShow void load()；③错误重试 @tap=load()。fetchList 按 tab.value 选 portal/query/cms 三端点，快速 A→B→C 切页签时 B 慢响应晚到覆盖 C 的行（旧页签数据冒充新页签）、旧错误盖新页签、提前复位 loading。同文件 detailGate 只护 open() 详情（R84），列表裸奔；meeting.vue（R151）/process.vue 早已用 listGate/pageGate 修同型问题，browse 是漏网页。非 search.vue 式假竞态（无 loading+:disabled 阻断）。 |
+| 修复 | 新增 const listGate=createLatestGate()（复用 utils/latest，R151 同款）；load() 开头 token=listGate.begin()，await 后 if(!listGate.isLatest(token)) return 先于 rows/loadError/loading 三处赋值。LF 保持，外科手术式。 |
+| 测试 | 新增 browse.listRace.contract.test.ts 3 例（①竞态入口真实开放：页签无 disabled、switchTab 无 loading 挡；②listGate 声明+begin 先于 await；③isLatest 守卫先于三处赋值），风格对齐既有 browse.detailRace 契约。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退→2 failed/1 passed：listGate 声明实收 false、守卫 indexOf 实收 -1；第①例 RED 即 passed 属正确——它证明缺口前提→恢复→3 passed）；mobile 39 文件/297 passed、oa4rust 根 152 文件/1627 passed、typecheck 6 项目 Done、lint 445 文件 0 error（29 info 既有）、diff --check 0。 |
+
+### 103.2 目标状态
+- 三目标仍 active：目标一 R243 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三第93轮 lybug 普查其余导出链路筛选口径进行中。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
