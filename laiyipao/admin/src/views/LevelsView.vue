@@ -33,6 +33,8 @@ const keyword = ref('')
 const waveDrawer = ref(false)
 const waveTarget = ref<AdminLevelView | null>(null)
 const waveRows = ref<Array<{ wave_index: number; spawns: unknown }>>([])
+// 快速连开不同关卡的波次抽屉时，旧关的慢响应不得覆盖新关的波次列表
+let waveReqSeq = 0
 
 /** 关卡难度是否在合理区间。低于 1000‰ 表示比基准还简单，高于 4200‰ 已超设计上限。 */
 function difficultyTone(d: number): 'success' | 'info' | 'warning' | 'danger' {
@@ -259,12 +261,15 @@ async function onRegen() {
 }
 
 async function openWaves(row: AdminLevelView) {
+  const seq = ++waveReqSeq
   waveTarget.value = row
   waveDrawer.value = true
   try {
     const res = await fetchLevelWaves(row.id)
+    if (seq !== waveReqSeq) return
     waveRows.value = res.waves
   } catch (e) {
+    if (seq !== waveReqSeq) return
     ElMessage.error((e as Error).message)
   }
 }
