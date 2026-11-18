@@ -1923,3 +1923,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R203 页面语言同步完成）；目标二卡外部凭据；目标三本轮有真 bug 修复（admin 战报筛选竞态），继续找但不强造。
+
+## 63. 第 54 轮：R204 toast 无 DOM 安全降级 + admin 导出条数真值 + laiyipao 负结果
+
+起点 HEAD=fa4e8f63d，分支 feat/h5-battle-substantive-100。oaopt-r204 负责 oa4rust/frontend（R204），lybug-r54 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 63.1 R204 toast 模块无 DOM 环境安全降级
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | apps/desktop/src/utils/toast.ts 顶层原 :103 直接执行 `document.getElementById('oa4-toast-styles')` 注入 keyframes，无 DOM 环境（原生 App 壳 / SSR）import 该模块即抛 `TypeError: Cannot read properties of undefined (reading 'getElementById')`；同文件 confirmMsg 已处理 `typeof document === 'undefined'`，说明模块本被设计为无 DOM 可加载，但顶层访问让调用方连降级分支都到不了。 |
+| 修复 | showToast 开头加 `if (typeof document === 'undefined') return` 静默降级；顶层 keyframes 守卫改为 `typeof document !== 'undefined' && !document.getElementById(...)`。 |
+| 门禁 | toast.no-dom.contract.test.ts（node 环境 stub document/navigator undefined + resetModules）断言 import 不抛、四个公开 toast API 与 confirmMsg 均降级：RED(1 failed，promise rejected TypeError，caused by toast.ts:103)→GREEN 1/1；连同原 toast.test.ts 共 26 passed；oa4rust 全量 112 文件/1432 passed、typecheck 6 项目 Done、lint 388 文件 0 error（20 info 为既有提示）。 |
+
+### 63.2 admin CSV 导出提示条数：从当前页长度改为真实 CSV 行数
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | BattlesView / UsersView / EconomyView / RecomputesView 四处导出提示写 `已导出 ${rows.value.length} 条…（当前筛选结果）`，用当前页列表长度冒充导出条数；但服务端四个导出 handler（handlers_admin.go:345/621/686/998）均无分页参数、返回全量筛选结果，运营会误以为只导出了一页。 |
+| 修复 | utils/format.ts 新增 `csvDataRowCount(csv: string): number`：逐字符扫描，跳 BOM/表头、正确处理引号内换行与转义双引号、CRLF、末行无换行；四视图导出后 `await blob.text()` 计数，提示改用真实条数。tests/setup.ts 加同步 text() 的 Blob 子类垫片（jsdom Blob 无标准 text()，FileReader/Response 为宏任务 flushPromises 等不到）。 |
+| 门禁 | csvDataRowCount.test.ts 5 例（BOM+表头、引号内换行、仅表头、空文本、CRLF+转义引号）RED(csvDataRowCount is not a function，5 failed)→GREEN 5/5；EconomyView.test.ts 行为测试（当前页 1 条、CSV 3 行，断言提示 3 条）GREEN；admin 全量 34 文件/459 passed、vue-tsc 0。 |
+
+### 63.3 laiyipao 负结果与目标二边界
+
+- lybug-r54 负结果零改动：GameConfig 18 字段、全玩家路由、战报分页、排行榜、结算 SettleResp、复活币/extra_base_hp、签到、钱包刷新、404 token 单飞等逐项按服务端权威契约与 miniapp 消费面交叉核对，全部一致、已修或语义歧义。唯一候选（battle.vue settle 404 重开局会再扣体力与复活币）属已接受设计且无外科式修复，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：本地 health=200/根页=200，远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界；口令存 gitignored 本地文件不回显。
+
+### 63.4 交付边界与审阅记录
+
+- 成果分三提交（R204 / admin 导出条数 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R204 无 DOM 降级完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 导出条数真值），子代理负结果，继续找但不强造。
