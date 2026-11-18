@@ -2559,3 +2559,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r231 除 CORS 外，写范围 laiyipao/miniapp+server 其余双向核对全一致，无新 bug 不强造。全量门禁：miniapp 134 文件/1475 passed|2 skipped、vue-tsc exit 0；server httpapi go test 全包 512s PASS（含新 CORS 用例）、domain 包 PASS、service 包 3 个 DB e2e 因无 DSN（NO_DB_ENV，SQLSTATE 57P01）失败，与 CORS 改动无关，历史记账排除，完整 Go 门禁需 TEST_DATABASE_URL 环境。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R231 完成（路由切换播报+焦点迁移，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 admin 星级文本替代与 server CORS 幂等头两处真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 91. 第 82 轮现量：R232 Canvas 图表文字替代 + laiyipao/admin 全负结果
+
+### 91.1 R232 EChartsView Canvas 图表文字替代（WCAG 1.1.1）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/components/EChartsView.vue 用 ECharts CanvasRenderer 渲染查询分析统计图（QueryManagerDeep「执行分析」非表格路径唯一渲染），容器 <div class="chart-container"> 无 role / 可访问名称 / 等价文字数据，读屏器用户完全无法获取图表内容，违反 WCAG 1.1.1 Non-text Content，前序 R155–R231 未覆盖。 |
+| 修复 | 新增 apps/desktop/src/utils/chartA11y.ts 纯函数 describeChart(rows, columns, chartType, dimension?, metric?)：生成含类型中文名/维度/指标 + 前5项真实数据点 + 总数（>5项时）的文字替代，空数据明示「暂无数据」。EChartsView.vue 图表容器加 role="img" + :aria-label="chartDescription"，新增 sr-only 等价数据表 <table data-oa-chart-data>（caption + scope=col 表头 + scope=row 行头，逐行逐列渲染全部数据），computed 调 describeChart 生成描述。新增 chartA11y.contract.test.ts 10 例（纯函数5 + 源码接线5）。 |
+| 门禁 | 契约 RED（先写测试缺模块 Cannot find module → 补 helper 后精确 RED 5 failed/5 passed：缺 role=img/computed 接线/scope=row/sr-only clip）→GREEN 10/10；主线程独立 RED（cp 备份 EChartsView+chartA11y→git checkout 回退组件并移走 helper→RED 1 failed suite→恢复→GREEN 10 passed）；全量 oa4rust 143 文件/1571 passed、typecheck 6 项目 Done、lint 0 error（29 info 既有）、diff --check OK。 |
+
+### 91.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r232 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 10 类（路由↔客户端调用、响应 DTO 逐字段、keyset 分页 cursor/next_cursor/HasMore、条件请求 304、幂等键白名单与 401 重试复用、周期与日期边界、定点 permille、错误码信封/401 单飞、越权 IDOR/输入边界、defense 挑战 payload）全一致或已由既有测试钉住，无新 bug 不强造，写范围 git status 干净。主线程补跑基线 miniapp 134 文件/1475 passed|2 skipped、vue-tsc exit 0、server domain go test exit 0。
+- 主线程第 82 轮 admin+mobile 侦察全负结果：admin 12 视图竞态守卫覆盖 7 视图、其余 4 视图 onMounted 单次加载无筛选竞态；导出条数全部来自 csvDataRowCount 真值；无 index 作 v-for key；写操作防重/二次确认齐全；日期区间 nextDay UTC 开区间正确。mobile 76 文件定时器/监听器配对清理完备（chatPolling stop 清 timeout、bbs/new setTimeout、main unhandledrejection 常驻合理）。未发现可确证新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R232 完成（Canvas 图表文字替代，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
