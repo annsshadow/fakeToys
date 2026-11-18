@@ -2947,3 +2947,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 109.3 门禁与目标状态
 - 门禁（主线程独立全量）：OA 155 文件/1635 passed + 6 项目 typecheck + lint 452 文件 0 error（29 info 既有）+ mobile 42 文件/313 passed + diff --check 0。laiyipao 本轮零源码变更故未重跑（前序门禁已绿）。SPDX 双头齐全，LF 保持。
 - 三目标仍 active：目标一 R249 完成（累计 100+ 轮实质优化，恰逢第99轮）；目标二已于 §99 完成交付；目标三第99轮全负结果（同族 bug 已被前序修完），继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 110. 第 100 轮：R250 签到列表异常信封归一 + admin 日期筛选双重 +1 天（2026-11-19）
+
+### 110.1 R250（oa4rust/mobile）签到详情列表不再渲染异常信封
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/attendance/attendance.vue:139 loadMine 把 /my/detail/list 的 data 裸 as MyDetailRow[] 塞 myDetails ref，未做 Array.isArray 归一（仓内其它 6 处同类列表消费全部有归一）。异常信封（data=null/{}/非数组）下模板 myDetails.length=undefined、v-for 渲染半截数据，可达。 |
+| 修复 | 新增 detailRows.ts（toMyDetailRows + 接口，双头）：非数组一律返回空数组；attendance.vue 三处改动（import/删本地接口/归一赋值），净 +2/-7，LF 保持。 |
+| 测试 | 新增 detailRows.test.ts 4 例（3 纯函数 + 1 接线契约）。主线程独立 RED 1 failed/3 passed（接线契约 test:34 expected source to contain import...）→GREEN 4/4。门禁：mobile 43 文件/317 passed、oa4rust 155 文件/1635 passed、typecheck 6 项目、lint 454 文件 0 error（29 info 既有）、diff --check 0。 |
+| 负结果 | applyLeave 未校验日期格式留作后续线索（未改）；其它候选均已被历轮覆盖不凑数。 |
+
+### 110.2 laiyipao/admin 日期筛选「双重 +1 天」多算一天（真 bug）
+- 缺口：4 个视图（EconomyView/ContentView/BattlesView/UsersView）各有 nextDay() 把结束日 YYYY-MM-DD 手动 +1 天；而服务端 queryTimeEnd()（middleware.go:612-628）对纯日期已自动 +24h 补成当天 24:00 半开区间（SQL < $to），time_range_test.go:58-70 与 E2E TestE2EAdminBattlesDateToIncludesWholeDay:132-151 固定此契约。前端重复补偿 → 运营选「到 10-31」实统计/导出含 11-01 数据。git blame 四处均在初始导入提交 68c65c909，以服务端 E2E 契约为权威。
+- 修复（仅 laiyipao/，8 文件）：4 视图删 nextDay() + 12 处调用点改原值 xxx?.value?.[1] || undefined + 修正误导注释（源码 18+/39-）；EconomyView CRLF 607/607 保持。4 个测试断言改正确契约 + BattlesView 新增日期筛选行为测试。
+- 测试：主线程独立 RED（源码回 HEAD、测试保持新断言）4 failed/158 passed（实收 date_to:2026-11-01 vs 期望 2026-10-31，last_login_to 同类）→恢复→GREEN 162 passed/4 文件。
+- 类型债务核实：admin pnpm type-check:test 报 11 个预存 TS 错误（代理报告 12 个）。主线程 stash 基线法核实当前与 HEAD 基线错误列表完全一致（IDENTICAL=true），与本次日期字符串改动零交集，属预存债务非本次引入；pnpm test 497 passed、pnpm type-check（vue-tsc）0 均绿。
+
+### 110.3 负结果、门禁与目标状态
+- lybug-r250 排除清单（未改）：bag doApplyPreset/doSynthesize、me challenge 历史/护盾、admin 导出 is_guest、五视图加载竞态、导出链路十项、B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞、server 护盾读写、mastery/signin/shop/index/stage/battle settle、商城写后缓存、game.go 复活归属过滤、shop doBuy 刷新；admin client 令牌缓存、server queryOffset/queryTimeRange 边界、miniapp 令牌刷新/auth/Redeem-SignIn 并发/pagination.go/csv_safe.go/export_limit.go/adminutil.ts/offsetPager.ts/format.ts/adminRole.ts/labels.ts/reactionPairs.ts 均无缺口。
+- 门禁（主线程独立全量）：OA 155 文件/1635 passed + 6 项目 typecheck + lint 454 文件 0 error（29 info 既有）、mobile 43 文件/317 passed；admin 37 文件/497 passed + vue-tsc 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R250 完成（累计 100+ 轮实质优化，恰逢第100轮）；目标二已于 §99 完成交付；目标三本轮修复 admin 日期双重 +1天真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。

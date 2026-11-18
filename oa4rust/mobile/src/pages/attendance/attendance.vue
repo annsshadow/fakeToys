@@ -8,6 +8,7 @@ import { type AttendancePreCheck, attendanceApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { parseServerDate } from '@/utils/datetime'
 import { describeLoadError } from '@/utils/loadList'
+import { type MyDetailRow, toMyDetailRows } from './detailRows'
 
 const pre = ref<AttendancePreCheck | null>(null)
 const loading = ref(false)
@@ -115,12 +116,6 @@ function todayRecords(): AttendancePreCheck['records'] {
 }
 
 // ── 我的月度考勤（v2/my/*，rev102）───────────────────────────────
-interface MyDetailRow {
-  id?: string
-  date?: string
-  status?: string
-  [key: string]: unknown
-}
 const myStat = ref<Record<string, unknown> | null>(null)
 const myDetails = ref<MyDetailRow[]>([])
 const apiVersion = ref('')
@@ -136,7 +131,7 @@ async function loadMine(): Promise<void> {
     attendanceApi.myVersion(),
   ])
   if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
-  if (detailResp.status === 'fulfilled') myDetails.value = (detailResp.value.data ?? []) as MyDetailRow[]
+  if (detailResp.status === 'fulfilled') myDetails.value = toMyDetailRows(detailResp.value.data)
   if (verResp.status === 'fulfilled')
     apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
   const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
