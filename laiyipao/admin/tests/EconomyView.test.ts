@@ -557,3 +557,34 @@ describe('EconomyView 复制商城商品 ID（第 97 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('EconomyView 订单筛选竞态（第 67 轮）', () => {
+  it('旧筛选慢响应后到不得覆盖新筛选结果', async () => {
+    function deferred() {
+      let resolve!: (value: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountEconomy()
+    const vm = wrapper.vm as unknown as { orderProvider: string; applyOrderFilter: () => void }
+    const base = { id: 1, user_id: 1, nickname: '', sku: 'x', amount: 1, status: 'paid', provider: 'mock', created_at: '2026-01-01T00:00:00Z', delivered_at: null }
+    const oldOrder = { ...base, id: 1, nickname: '旧筛选玩家', order_no: 'OLD1' }
+    const newOrder = { ...base, id: 2, nickname: '新筛选玩家', order_no: 'NEW2' }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchAdminOrders.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    vm.orderProvider = 'apple'
+    vm.applyOrderFilter()
+    vm.orderProvider = 'google'
+    vm.applyOrderFilter()
+    dNew.resolve({ items: [newOrder], total: 1 })
+    await flushPromises()
+    dOld.resolve({ items: [oldOrder], total: 1 })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text, '页面应展示新筛选结果').toContain('NEW2')
+    expect(text, '旧筛选慢响应不得覆盖新结果').not.toContain('OLD1')
+    wrapper.unmount()
+  })
+})

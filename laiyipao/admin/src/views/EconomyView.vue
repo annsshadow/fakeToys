@@ -133,7 +133,9 @@ async function load() {
 }
 
 /** 加载订单列表（2026-10-31 实质优化第 33 轮）。 */
+let orderLoadSeq = 0
 async function loadOrders() {
+  const seq = ++orderLoadSeq
   try {
     const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE, {
       // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
@@ -143,9 +145,11 @@ async function loadOrders() {
       // 渠道筛选（2026-11-01 新一轮第 67 轮）
       provider: orderProvider.value || undefined,
     })
+    if (seq !== orderLoadSeq) return
     orders.value = res.items
     orderTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== orderLoadSeq) return
     ElMessage.error(`订单加载失败：${(e as Error).message}`)
   }
 }
