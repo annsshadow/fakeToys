@@ -1891,3 +1891,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R202 表格语义完成）；目标二卡外部凭据；目标三本轮有真 bug 修复（战报切筛选竞态 + 导出业务日），继续找但不强造。
+
+## 62. 第 53 轮：R203 页面语言同步 + admin 战报筛选竞态 + laiyipao 负结果
+
+起点 HEAD=5320b8d42，分支 feat/h5-battle-substantive-100。三条线并行：oaopt-r203 负责 oa4rust/frontend（R203），lybug-r53 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 62.1 R203 界面语言切换同步 <html lang>（WCAG 3.1.1 Language of Page，A 级）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/sdk/src/i18n.ts 的 setLocale() 只更新 i18n 实例与模块 locale ref，从不同步 document.documentElement.lang；桌面 index.html 写死 <html lang="zh-CN">。仓库已存在首组件挂载前 setLocale('en') 的早期入口（i18n.early-locale.test.ts），切到英文/西语后屏幕阅读器仍按 zh-CN 发音朗读，属 WCAG 3.1.1 真实可确证缺口，不在 R181–R202 已修项。 |
+| 修复 | i18n.ts 新增 DOC_LANG_BY_LOCALE 映射（zh-cn/en/es）与 syncDocumentLanguage()（typeof document 守卫兼容 SSR，setAttribute('lang',…)），setLocale 末尾调用。Settings.vue 的语言下拉端到端接线超最小手术范围，未纳入本轮。 |
+| 门禁 | i18n.document-lang.contract.test.ts 4 例行为契约（切 en/es/zh-cn 断言实际 <html lang> + SSR 无 document 不抛错）：RED(3 failed，expected zh-CN to be en 等)→GREEN 4/4；主线程独立复跑 4 passed；oa4rust 全量 111 文件/1431 passed、typecheck 6 项目 Done、lint 387 文件 0 error（20 info 为既有提示）。 |
+
+### 62.2 admin 战报筛选竞态（同族 miniapp 34f6d3289）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/BattlesView.vue 的 load()（约 :149-167）无请求序号守卫，运营快速切筛选时多份 fetchBattles 并发；服务端 result 是全量过滤参数，旧筛选响应后到会覆盖新筛选的 battles/total，页面显示与当前所选矛盾。与 miniapp 战报切筛选竞态（34f6d3289）同族，但此 load() 当时无守卫。 |
+| 修复 | 新增 let loadSeq=0；load() 开头 const seq=++loadSeq；Promise.all 结果与 catch/finally 均加 if (seq !== loadSeq) return 守卫，仅最新请求写 battles/total/reactionLabel 与复位 loading。 |
+| 门禁 | BattlesView.test.ts 新增 describe 筛选竞态（deferred 三请求，新筛选先回含 id99 win、旧筛选后回含 id1 lose，断言只显示 id99 胜）：RED 实证旧响应覆盖新响应（页面显示 id=1 负）→GREEN 1 passed；admin 全量 33 文件/453 passed、vue-tsc 0。 |
+
+### 62.3 laiyipao 负结果与目标二边界
+
+- lybug-r53 负结果零改动：护盾链路、宝石槽位、单位族/费用千分比、掉落/商城/排行/战报、背包装备/预设等逐类按服务端权威契约与 miniapp 消费面交叉核对，全部一致、已修或语义歧义，无满足「真实可确证 + 用户可见 + 非已修项 + 非固定不动项」的新 bug，不强造。连续多轮负结果印证 43.4 策略。
+- 目标二 augmentor 维持 33.3 交付边界：本地 health=200/根页=200，远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界；口令存 gitignored 本地文件不回显。
+
+### 62.4 交付边界与审阅记录
+
+- 三成果分三提交（R203 / admin 竞态 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R203 页面语言同步完成）；目标二卡外部凭据；目标三本轮有真 bug 修复（admin 战报筛选竞态），继续找但不强造。
