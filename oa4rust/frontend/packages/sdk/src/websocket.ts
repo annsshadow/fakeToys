@@ -165,6 +165,11 @@ export class O2WebSocketClient {
     this.ws?.close()
     this.ws = null
     this._connected = false
+    // 主动关闭（组件卸载 / 登出）彻底拆除订阅：IMChat 每次挂载都往单例塞入
+    // 新的匿名 handler，若不清空，旧闭包（持有已卸载组件状态与 queryClient）
+    // 会随消息重复触发。意外断线走 onclose → scheduleReconnect，不经过 close()，
+    // 订阅照常保留。
+    this.handlers.clear()
   }
 
   private dispatch(event: string, data: unknown): void {
