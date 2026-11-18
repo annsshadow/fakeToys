@@ -3023,3 +3023,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程取证教训：RED 复核的备份命令链首条 cp 失败会让后续 checkout 未执行、RED 假通过——必须分步执行 cp/checkout 并核对每步 exitCode；源文件的修复版本始终完整（工作树核查确认）。
 - 门禁（主线程独立全量）：miniapp 141 文件/1485 passed（2 skipped 既有）+ type-check:test + type-check 0；OA 156 文件/1638 passed + 6 项目 typecheck + lint 456 文件 0 error（29 info 既有）+ mobile 44 文件/325 passed + diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R253 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复删除防线后挑战历史失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 114. 第 104 轮：R254 Xform 必填 trim 校验 + miniapp 商城钱包全局同步（2026-11-19）
+
+### 114.1 R254（oa4rust/desktop）表单必填校验不再被纯空格绕过
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/contracts/xform.ts:360 原必填判定只 `value === 空串`，ProcessWork.vue:3420/3450 经 xform 校验必填，而 XformRuntime.vue:126-134 同样不 trim——用户在必填文本框只输入空格即可通过校验并提交空数据。可达且无其它防线。 |
+| 修复 | xform.ts:360-364 改为 `typeof value === string && value.trim() === 空串`（5+/1-，LF）；xform.test.ts:166-185 追加 2 例纯空格必填拦截契约。 |
+| 复核 | 主线程独立 RED：git checkout 还原 xform.ts→`pnpm exec vitest run frontend/apps/desktop/src/contracts/xform.test.ts`，1 failed/18 passed（AssertionError expected {} to deeply equal { subject: 标题为必填项 }，:178）→恢复修复版后 GREEN 19/19。 |
+
+### 114.2 laiyipao/miniapp 商城购买后全局钱包失同步
+- 缺口：laiyipao/miniapp/src/pages/shop/shop.vue load() 只刷新本页 wallet ref，不回写全局 store.wallet；商城是 gem_wash_token 唯一发放途径，买券后 navigateBack 回背包（bag.vue 无 onShow）doWash 读旧 store.wallet.tokens.gem_wash_token，玩家明明买了券却被提示「没有洗练券」；git log -S 确认从未修。
+- 修复（shop.vue +5 行，BOM/CRLF 520 保持）：walletResult.ok 分支加 `store.wallet = { ...store.wallet, ...wallet.value }` + 3 行注释；新增 shop.wallet-sync.test.ts（1 例行为测试，双头+jsdom）。主线程独立 RED：AssertionError expected +0 to be 1（:89）→GREEN 1 passed。
+
+### 114.3 负结果、门禁与目标状态
+- oaopt-r254 负结果：无新增（本轮聚焦单处可达缺口）。lybug-r254 排除清单：admin/server 未改；R94-R103 已修同族写路径不再重复。
+- 门禁（主线程独立全量）：OA 156 文件/1640 passed + 6 项目 typecheck + lint 456 文件 0 error（29 info 既有）、mobile 门禁随 OA 通过；miniapp 142 文件/1486 passed（2 skipped 既有）+ type-check:test + type-check 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R254 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复商城钱包全局失同步真 bug，继续找但不强造。目标四（e2e 真实环境）隔离 PG 已迁移 384 表、admin 测试哈希已注入、后端二进制已重编（详见 §115 起 e2e 执行记录）。

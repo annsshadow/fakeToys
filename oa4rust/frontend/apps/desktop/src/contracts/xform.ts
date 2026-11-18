@@ -357,7 +357,10 @@ export function validateFormValues(
     const required = Boolean(module.required || validation.required)
     if (
       required &&
-      (value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length))
+      (value === undefined ||
+        value === null ||
+        (typeof value === 'string' && value.trim() === '') ||
+        (Array.isArray(value) && !value.length))
     ) {
       errors[key] = String(validation.message || `${module.label || key}为必填项`)
     }
