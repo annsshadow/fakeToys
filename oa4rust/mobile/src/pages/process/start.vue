@@ -15,6 +15,7 @@ import {
   parseMobileForm,
   validateSimpleForm,
 } from '@/utils/form'
+import { createLatestGate } from '@/utils/latest'
 import { describeLoadError, loadList } from '@/utils/loadList'
 
 const session = useSession()
@@ -35,6 +36,8 @@ const groups = ref<MobileFormGroup[]>([])
 const values = ref<Record<string, string>>({})
 const errors = ref<Record<string, string>>({})
 const submitting = ref(false)
+
+const formGate = createLatestGate()
 
 // 附件（FILE_FILE）：fieldKey → 已上传附件 {id,name}[]
 const attachments = ref<Record<string, Array<{ id: string; name: string }>>>({})
@@ -79,10 +82,12 @@ function pickProcess(p: { id: string; name: string }): void {
 }
 
 async function loadBoundForm(processId: string): Promise<void> {
+  const token = formGate.begin()
   formLoading.value = true
   formError.value = ''
   try {
     const detail = await processApi.getProcess(processId)
+    if (!formGate.isLatest(token)) return
     const definition = (detail.data?.processDefinition ?? detail.data) as Record<string, unknown> | undefined
     const begin = definition?.begin as Record<string, unknown> | undefined
     const manualList = definition?.manualList as Array<Record<string, unknown>> | undefined
@@ -97,6 +102,7 @@ async function loadBoundForm(processId: string): Promise<void> {
       return
     }
     const formResp: { data?: unknown } = await processApi.getForm(formFlag)
+    if (!formGate.isLatest(token)) return
     const form = parseMobileForm(formResp.data)
     fields.value = form.fields
     groups.value = form.groups
@@ -104,9 +110,10 @@ async function loadBoundForm(processId: string): Promise<void> {
     showForm.value = form.fields.length > 0
   } catch (e) {
     // 失败保留旧表单字段并显式报错，不能和「这个流程真的没有表单」混成同一种空态。
+    if (!formGate.isLatest(token)) return
     formError.value = describeLoadError('表单加载失败', e)
   } finally {
-    formLoading.value = false
+    if (formGate.isLatest(token)) formLoading.value = false
   }
 }
 
