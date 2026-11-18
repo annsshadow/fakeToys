@@ -2408,3 +2408,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 73 轮侦察全负结果：对话框 open 函数完整回填表单、选择清理 0 处、护盾单位正确；第 82.2 波次竞态为本轮唯一可确证新 bug。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R223 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程 admin 找到波次抽屉竞态真 bug 已修，lybug 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+
+## 83. 第 74 轮现量：R224 沙箱 iframe 无障碍隔离 + laiyipao 负结果
+
+### 83.1 R224 屏幕外沙箱 iframe 无障碍隔离（WCAG 4.1.2 / 2.4.3）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/utils/sandbox.ts 的 getOrCreateFrame() 惰性创建脚本沙箱 iframe，绝对定位 (-9999px,-9999px)、仅 1px×1px，纯脚本执行容器对键盘/读屏用户无可交互内容。但 iframe 天生可聚焦：无 title → 读屏把屏幕外 1px 帧念成无名 frame 遮蔽真实页面（4.1.2）；无 aria-hidden/tabindex → Tab 焦点跳进暗帧「消失」（2.4.3）。此前 R202–R223 未触及此面。 |
+| 修复 | iframe 创建处补 title="脚本沙箱执行帧"、aria-hidden="true"、tabindex="-1"，从读屏树与 Tab 顺序移除并给可访问名称，纯属性增强不改沙箱执行逻辑。新增 sandbox.a11y.contract.test.ts 契约 2 例（node 环境 stub document）。 |
+| 门禁 | 契约测试 RED 2 failed（aria-hidden 实收 null、title 长度 0）→GREEN 2/2；主线程独立 RED（cp 备份 sandbox.ts→git checkout HEAD 回退→RED 2 failed→cp 恢复→GREEN 2 passed，恢复后 diff 6+ 完整）；全量 oa4rust 134 文件/1531 passed、typecheck 6 项目 Done、lint 416 文件 0 error（24 info 既有）。 |
+
+### 83.2 laiyipao 负结果与主线程侦察
+
+- lybug-r224 负结果零改动：写范围 laiyipao/miniapp+server 核对 10 大类（SignInStatus DTO 双向字段、签到周期与日界单一时钟、战报 keyset 分页单字段游标等价、商城限购 BuyIdem 幂等 FOR UPDATE、兑换码唯一键防重、战报详情越权 ErrNotFound 无预言机、挑战/放弃战斗条件更新归属、技能合成装配事务校验、错误码双向字面量、定点 permille 与 token 过期 RFC3339）全一致，git status 写范围为空，不强造。
+- 主线程 admin+mobile 第 74 轮侦察全负结果：导出 API 10 函数 URLSearchParams 与列表同口径、createObjectURL/revokeObjectURL 11 处成对、el-input-number min/max 完整、admin 401 处理（清令牌+验真+redirect）、onReconcile 有 reconcileBusy 防重、onToggleAnnPublished 服务端写目标值语义幂等、admin el-table 无假排序列、mobile 表单提交防重就位；本轮无主线程可确证新 bug。
+
+### 83.3 目标二与交付边界
+
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R224 完成（沙箱 iframe 无障碍隔离，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
