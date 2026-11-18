@@ -1499,3 +1499,38 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
+
+## 四十九、第40轮：R190原生控件color-scheme + 移动端状态文字对比度 + laiyipao复活局哈希同口径（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+主线程独立落地移动端语义色对比度修复；子代理 oaopt-r190 发现并修 R190 全局样式标准缺口、lybug-r40 闭环上轮候选（复活局 replay_hash 两端口径不一致真 bug）。三写范围互斥（oa4rust/mobile / oa4rust/frontend / laiyipao/server），主线程复核 diff + 复跑双全量门禁后分三提交。
+
+### 49.1 oa4rust R190 原生控件配色跟随主题（提交 44d9f4dee）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 全局主题经 data-theme 切换，但全仓从未声明 CSS color-scheme（grep 只命中 prefers-color-scheme 媒体查询，作用不同）；深色主题下 select 下拉、date 日历、autofill 背景、Firefox 滚动条、原生 checkbox/radio 仍按浅色渲染，与自定义主题割裂刺眼 | 真实一致性/可读性缺陷，非主观审美 |
+| 修复 | dark.css 两个主题块各加一行 color-scheme: dark / light（各附注释），一处改全局生效 | 2 文件（dark.css + 新契约测试）|
+| 门禁 | colorScheme.contract.test.ts 3 例取主题块断言 color-scheme 值 RED→GREEN；oa4rust 根 pnpm test 99 files 1369 passed、typecheck 6 包、lint 0 error | — |
+
+### 49.2 oa4rust 移动端状态文字对比度 WCAG 2.1 AA / 1.4.3（提交 82bace632）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | --color-success #67c23a 作文字仅 2.24:1、--color-warning-text #b26a00 对 page 3.95:1，均不达 AA 4.5:1；message.vue:98 background: var(--color-surface)4e5 是无效 CSS（var() 后拼 4e5 浏览器丢弃声明），且与 chat 离线横幅背景不一致 | sRGB 实算确证 + 无效 CSS |
+| 修复 | App.vue 新增 --color-success-text:#1e7e34（4.79~5.14:1），warning-text 加深至 #8a5200（5.88~6.39:1）；attendance .rec-result 走 success-text；message 离线横幅背景改 warning-bg 与 chat 一致 | 4 文件（含契约测试）|
+| 门禁 | design-tokens.contract.test.ts 新增「移动端状态文字对比度契约」3 例 RED（3 失败）→GREEN 26/26；移动端全量 270 passed、tsc --noEmit EXIT=0 | — |
+
+### 49.3 laiyipao 复活局 replay_hash 重算同口径真 bug（提交 5c89cacb2）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 根因 | 客户端 engine.ts:806 把 extraBaseHp 计入 replay_hash 的竖线X段（复活局 X(N)>0）；服务端 domain.Replay 构造 BattleConfig 从不传 ExtraBaseHp，recomputeEngine 修复前直接调 Replay → X 段恒 X0。X(N)≠X0 → enforce 档（默认）合法复活胜利局被误判「重放不符」拒发奖励，并写 settle_recomputes 台账污染熔断；玩家扣复活币反被判作弊 | 上轮 48.4 候选本轮闭环；同源权威 tok.Revived（48.3 ValidateSettle 已用） |
+| 修复 | replay.go 保留 Replay 原签名（内部转调传 0 兼容全部调用点），新增 ReplayWithExtraBaseHp 把值写入 BattleConfig.ExtraBaseHp；recompute_engine.go 按 tok.Revived 换算 ReviveExtraBaseHP 后调新函数。extraBaseHp 只进哈希前缀，不影响伤害/波次与非复活局 | 3 文件（2 改 + 1 新测试）|
+| 门禁 | revive_recompute_test.go 两条真实行为断言（引擎重算复刻客户端哈希 + 真实开局扣币→DB 落库→SettleBattle→重算放行）RED（上报与重算哈希不符、verified=0/mismatch=1、台账+1）→GREEN；域套件 go test ./internal/domain/... -skip TestNoRealSecretsInRepo PASS 17.474s、go vet 0、gofmt clean；完整 service.test 全量套件因集成测试 hang 由 lead 终止，相关测试独立全 PASS、go build ./... EXIT=0 | 前端 miniapp pnpm test 1468 passed / 2 skipped |
+
+### 49.4 交付与边界
+
+- 三提交 5c89cacb2、44d9f4dee、82bace632 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 维持既有记账不擅动（理由同 15.3/16.3）；目标二 augmentor 维持 33.3 交付边界。
+- lint 17 infos 为 baseline + R189/移动端新测试 Math.pow 风格提示（info 级，EXIT=0 不阻塞）。
+- 工具细节：vitest --reporter=basic 本环境报 Failed to load custom Reporter，改默认 reporter；oa4rust/mobile 子目录 pnpm exec vitest 可用（frontend 子目录须从根跑）。
