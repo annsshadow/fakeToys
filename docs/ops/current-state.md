@@ -1825,3 +1825,34 @@ lybug-r50 多次催促后仍不收敛、无结论，被主线程中断、零文�
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页=200，远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R200 诚实负结果，admin 焦点环把 WCAG 2.4.7 扩到第三个前端）；目标二卡外部凭据；目标三本轮负结果，继续找但不强造。
+
+## 六十、第51轮：R201登录表单标签关联 + admin路由标题同步 + 双线收敛（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两条子线：oaopt-r201（oa4rust/frontend）正结果，完成登录页 label 可访问关联；lybug-r51（laiyipao miniapp+server）穷尽 20+ 分钟无写入、经多轮 nudge 不收敛，被主线程中断、零改动，按 §43.4 记负结果不强造。主线程独立在 laiyipao/admin 落地 WCAG 2.4.2 路由标题同步（子代理写范围外）。
+
+### 60.1 R201 登录表单标签程序化关联（提交 84d8cd5c6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | packages/ui/src/components/LoginScreen.vue 三处标签（用户名/密码/验证码）均为裸 label 无 for，对应 input 无 id 也无 aria-label/aria-labelledby：点击标签不聚焦输入框、读屏器拿不到输入框可访问名称（WCAG 1.3.1/3.3.2/4.1.2） | 真实无障碍缺口，属统一设计标准；document.title 方向经查桌面 main.ts:519-523 已覆盖（R181-R193），子代理正确排除不重复 |
+| 修复 | 三处 label 加 for、三个 input 加对应 id（login-username/login-password/login-captcha）；不改逻辑与样式 | 2 文件（1 改 vue + 1 新契约测试） |
+| 门禁 | LoginScreen.labelA11y.contract.test.ts 用 Vite createServer+ssrLoadModule 真实渲染组件到 HTML 再 jsdom 解析，断言每个 input 有可访问名称且 label[for] 指向存在控件（行为测试非字符串扫描）：RED(expected null to be truthy)→GREEN 1/1；oa4rust 根 pnpm test 109 files/1423 passed、typecheck 6 项目、biome 384 文件 0 error | 从 oa4rust 根复跑 1 passed；diff --check 0、敏感扫描命中仅表单字段名 password 非真值 |
+
+### 60.2 laiyipao/admin 路由切换同步标签标题 WCAG 2.4.2（提交 1f71fa181）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | admin 路由表每个页面都有 meta.title（router/index.ts:13-33），但全仓无 document.title 赋值，标签页永远停在 index.html 静态标题；运营多标签切换时无法从标签文字分辨当前页面 | 真实用户可见缺口；与桌面 R193 前的状态同族 |
+| 修复 | router.afterEach 调用 syncDocumentTitle(to)：取 to.meta.title 拼 BASE_TITLE 常量（来一炮 · 运营后台，与 index.html 品牌名一致），无 title 时落成 BASE_TITLE；保留原 afterEach 的令牌兜底清理 | 2 文件（1 改 router + 1 新契约测试）；仅 admin 范围 |
+| 门禁 | documentTitle.contract.test.ts 3 例 jsdom（导航后标题含页面名/切换页面标题变化且不相同/登录页标题不残留）：RED(3 failed，标题停在占位标题)→GREEN 3/3；admin 全量 32 文件/448 passed、vue-tsc 0 | 测试仅断言 document.title 与页面名，无真值域名/IP/口令 |
+
+### 60.3 lybug-r51 负结果与主线程取证
+
+lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工具超时），被主线程 interrupt_agent 中断、零文件改动。主线程独立复核：laiyipao/miniapp 与 server 写范围在中断前无任何改动（git status 为空）。按 §43.4 不强造负结果。
+
+### 60.4 交付边界与审阅记录
+
+- 本轮两成果提交 84d8cd5c6、1f71fa181 + 本现量文档，均 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动重试即可，绝不先 update-ref。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R201 登录表单标签关联完成）；目标二卡外部凭据；目标三本轮负结果，继续找但不强造。
