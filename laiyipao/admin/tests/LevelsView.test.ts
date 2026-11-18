@@ -111,6 +111,36 @@ describe('LevelsView 列表渲染', () => {
     wrapper.unmount()
   })
 
+  // 第 66 轮：快速连续搜索时，旧请求的慢响应不得覆盖新结果（与 BattlesView/UsersView 同族守卫）。
+  it('关键词连续搜索：旧响应后到不得覆盖新结果（第 66 轮）', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    fetchLevels.mockReset()
+    fetchLevels.mockResolvedValue({ items: [], total: 0 })
+    const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const d1 = deferred()
+    const d2 = deferred()
+    fetchLevels.mockReset()
+    fetchLevels.mockImplementationOnce(() => d1.promise)
+    fetchLevels.mockImplementationOnce(() => d2.promise)
+    const vm = wrapper.vm as unknown as { keyword: string; load: () => void }
+    vm.keyword = '旧'
+    vm.load()
+    vm.keyword = '新'
+    vm.load()
+    d2.resolve({ items: [levelFixture({ id: 99, name: '新筛选结果' })], total: 1 })
+    await flushPromises()
+    d1.resolve({ items: [levelFixture({ id: 1, name: '旧筛选结果' })], total: 1 })
+    await flushPromises()
+    expect(wrapper.text()).toContain('新筛选结果')
+    expect(wrapper.text()).not.toContain('旧筛选结果')
+    wrapper.unmount()
+  })
   it('加载失败：错误消息弹条 + 不崩溃', async () => {
     fetchLevels.mockRejectedValueOnce(new Error('数据库不可用'))
     const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
