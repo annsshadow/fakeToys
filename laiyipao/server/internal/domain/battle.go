@@ -157,6 +157,13 @@ type BattleToken struct {
 	IssuedAt  time.Time
 	ExpiresAt time.Time
 	UsedAt    *time.Time
+	// Revived 标记本局开局时是否消耗了复活币。
+	//
+	// 复活币把额外血量加在引擎的「当前血量」上（baseHp = baseHpMax +
+	// extra_base_hp，baseHpMax 不变），所以复活局的 hp_left 上界必须
+	// 比关卡 base_hp 高出 ReviveExtraBaseHP(gl)。不读这个标记，
+	// 合法复活局（漏怪少于 30%）会被 validateHPLeft 无条件拒绝。
+	Revived bool
 }
 
 // IsUsable 判断 token 当前是否可用。
@@ -549,7 +556,15 @@ func ValidateSettle(
 	if in.Leaked < 0 || in.Leaked > maxKills {
 		return SettleResult{}, fmt.Errorf("%w：漏怪 %d > %d", ErrTooManyLeaked, in.Leaked, maxKills)
 	}
-	if err := validateHPLeft(gl, in.HPLeft); err != nil {
+	// 复活局的开局当前血量 = base_hp + ReviveExtraBaseHP(gl)，
+	// 因此 hp_left 合法上界要相应抬高。用关卡副本抬高，而不是改
+	// validateHPLeft 的签名 —— 后者是普通局的紧上界守卫，保持它不动
+	// 才能继续钉死「非复活局 hp_left ≤ base_hp」。
+	checkGL := gl
+	if tok.Revived {
+		checkGL.BaseHP += ReviveExtraBaseHP(gl)
+	}
+	if err := validateHPLeft(checkGL, in.HPLeft); err != nil {
 		return SettleResult{}, err
 	}
 	// 集合类字段（元素/反应/地形/选牌/哈希）的边界。

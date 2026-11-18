@@ -138,6 +138,14 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 			}
 			usedRevive = true
 		}
+		//  revival 状态必须在**同一事务**内落库，供结算时判定 hp_left 上界。
+		//  放在扣币之后：usedRevive 只有读到余额才知道，INSERT 发生得更早。
+		if usedRevive {
+			if _, err := tx.Exec(ctx,
+				`UPDATE battle_tokens SET revived = TRUE WHERE id = $1`, tokenID); err != nil {
+				return fmt.Errorf("mark battle token revived: %w", err)
+			}
+		}
 		return nil
 	})
 	if err != nil {
@@ -231,9 +239,9 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	segStart := settleNow()
 	var tok domain.BattleToken
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, user_id, level_id, seed, issued_at, expires_at, used_at
+		`SELECT id, user_id, level_id, seed, issued_at, expires_at, used_at, revived
 		 FROM battle_tokens WHERE id = $1 AND user_id = $2`, tokenID, userID).
-		Scan(&tok.ID, &tok.UserID, &tok.LevelID, &tok.Seed, &tok.IssuedAt, &tok.ExpiresAt, &tok.UsedAt)
+		Scan(&tok.ID, &tok.UserID, &tok.LevelID, &tok.Seed, &tok.IssuedAt, &tok.ExpiresAt, &tok.UsedAt, &tok.Revived)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return SettleResp{}, fmt.Errorf("%w: battle token", ErrNotFound)
 	}
