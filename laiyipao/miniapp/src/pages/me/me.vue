@@ -1106,7 +1106,11 @@ async function submitNickname() {
     nicknameErr.value = true
     return
   }
-  if (name.length > 64) {
+  // 与服务端同口径：UpdateNickname 用 utf8.RuneCountInString（码点），
+  // GuestLogin 用 len([]rune(nickname))。JS 的 .length 数的是 UTF-16 code unit，
+  // 一个 emoji 占 2 个单元却只算 1 个字 —— 用它校验会误拒 64 个 emoji（服务端其实放行）。
+  // 用展开运算符按码点计数，两端才一致。
+  if ([...name].length > 64) {
     nicknameMsg.value = '昵称最长 64 个字符'
     nicknameErr.value = true
     return
