@@ -61,16 +61,22 @@ function heatTone(s: AdminSkillView): 'success' | 'info' | 'warning' | 'danger' 
   return 'danger'
 }
 
+// keep-alive onActivated 重拉与在途 load 可重叠（侧栏在 v-loading 遮罩外）：
+// 迟到的旧快照不得覆盖新 skills/recipes，与 EconomyView 同款序号守卫。
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchSkills()
+    if (seq !== loadSeq) return
     skills.value = res.items
     recipes.value = res.recipes
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`技能加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

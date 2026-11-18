@@ -588,3 +588,31 @@ describe('EconomyView 订单筛选竞态（第 67 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('EconomyView 经济数据加载竞态（第 91 轮）', () => {
+  it('写后重拉与返回刷新重叠：迟到旧快照不得覆盖新数据', async () => {
+    function deferred() {
+      let resolve!: (value: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountEconomy([], [shopFixture({ id: 1, name: '初始商品' })])
+    const vm = wrapper.vm as unknown as { load: () => Promise<void> }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchEconomy.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 第一次 load 在途（商城写后整页重拉），切走再切回触发第二次
+    void vm.load()
+    void vm.load()
+    dNew.resolve({ flows: [], shop: [shopFixture({ id: 2, name: '新快照商品' })] })
+    await flushPromises()
+    dOld.resolve({ flows: [], shop: [shopFixture({ id: 1, name: '旧快照商品' })] })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text, '页面应展示最新快照').toContain('新快照商品')
+    expect(text, '迟到的旧快照不得覆盖新数据').not.toContain('旧快照商品')
+    wrapper.unmount()
+  })
+})

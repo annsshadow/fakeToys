@@ -499,3 +499,38 @@ describe('RecomputesView 台账筛选竞态（第 75 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('RecomputesView 总账统计窗口竞态（第 91 轮）', () => {
+  it('旧窗口慢响应后到不得覆盖新窗口的 summary', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as {
+      hours: number
+      summary: { totals: { total: number } } | null
+      loadStats: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchRecomputeStats.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 先切到旧窗口（1 小时），再切到新窗口（24 小时），两次 loadStats 真实并发
+    vm.hours = 1
+    const pOld = vm.loadStats()
+    vm.hours = 24
+    const pNew = vm.loadStats()
+    // 新窗口响应先到，旧窗口慢响应后到
+    dNew.resolve(summary({ totals: { total: 2424, mismatched: 0, rejected: 0, rate_permille: 0 } }))
+    await flushPromises()
+    dOld.resolve(summary({ totals: { total: 1001, mismatched: 0, rejected: 0, rate_permille: 0 } }))
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.summary?.totals.total, '旧窗口慢响应覆盖了新窗口 summary').toBe(2424)
+    wrapper.unmount()
+  })
+})

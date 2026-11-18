@@ -148,7 +148,11 @@ function renderCharts() {
   }
 }
 
+// keep-alive onActivated 重拉与在途 load 可重叠（侧栏在 v-loading 遮罩外）：
+// 迟到的旧快照不得覆盖新 data / 触发过期 renderCharts，与 EconomyView 同款序号守卫。
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   loadError.value = ''
   try {
@@ -161,15 +165,18 @@ async function load() {
     // 兜底 `labelOfReaction` 里的 `|| key` 覆盖的是另一种情况：
     // 后台连的是**旧版服务端**、响应里没有某个新反应 —— 那时只影响坐标轴文案。
     const [dash, labels] = await Promise.all([fetchDashboard(), fetchReactionLabels()])
+    if (seq !== loadSeq) return
     data.value = dash
     reactionLabel.value = labels
     await new Promise((r) => setTimeout(r, 30))
+    if (seq !== loadSeq) return
     renderCharts()
   } catch (e) {
+    if (seq !== loadSeq) return
     loadError.value = (e as Error).message
     ElMessage.error(`看板数据加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

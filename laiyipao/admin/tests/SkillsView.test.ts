@@ -437,3 +437,33 @@ describe('SkillsView keep-alive 刷新（P5-9）', () => {
     wrapper.unmount()
   })
 })
+describe('SkillsView 技能加载竞态（第 91 轮）', () => {
+  it('旧快照慢响应后到不得覆盖新 skills/recipes', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountSkills()
+    const vm = wrapper.vm as unknown as {
+      skills: Array<{ name: string }>
+      load: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchSkills.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    const pOld = vm.load()
+    const pNew = vm.load()
+    dNew.resolve({ items: [skillFixture({ name: '新快照技能' })], recipes: [] })
+    await flushPromises()
+    dOld.resolve({ items: [skillFixture({ name: '旧快照技能' })], recipes: [] })
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.skills.length, '应显示一条技能').toBe(1)
+    expect(vm.skills[0].name, '旧快照慢响应覆盖了新 skills').toBe('新快照技能')
+    wrapper.unmount()
+  })
+})

@@ -163,17 +163,24 @@ function shapeHint(level: RecomputeLevelStat): string {
   return ''
 }
 
+// 统计窗口下拉 @change 与刷新按钮均可连续触发且无 loading 守卫：
+// 迟到的旧窗口慢响应不得覆盖新 summary，与 load() 的 loadSeq 同款。
+let statsLoadSeq = 0
 async function loadStats() {
+  const seq = ++statsLoadSeq
   statsLoading.value = true
   try {
-    summary.value = await fetchRecomputeStats(hours.value)
+    const res = await fetchRecomputeStats(hours.value)
+    if (seq !== statsLoadSeq) return
+    summary.value = res
   } catch (e) {
+    if (seq !== statsLoadSeq) return
     // 总账拿不到时**不能**把列表一起阻断：列表是逐条证据，
     // 总账只是个概览。反过来（只有概览没证据）才是没用的。
     ElMessage.warning(`总账加载失败：${(e as Error).message}`)
     summary.value = null
   } finally {
-    statsLoading.value = false
+    if (seq === statsLoadSeq) statsLoading.value = false
   }
 }
 

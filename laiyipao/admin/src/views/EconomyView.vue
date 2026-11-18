@@ -119,16 +119,22 @@ function isOnSale(o: AdminShopItemView): boolean {
   return o.enabled === true
 }
 
+// 写后整页重拉与 keep-alive 返回刷新可重叠（侧栏在 v-loading 遮罩外）：
+// 迟到的旧快照不得覆盖新数据，与 LevelsView/BattlesView 的 loadSeq 同款。
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchEconomy()
+    if (seq !== loadSeq) return
     flows.value = res.flows
     shop.value = res.shop
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`经济数据加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
