@@ -62,7 +62,7 @@
           <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
-          v-for="(a, i) in announcements"
+          v-for="(a, i) in visibleAnnouncements"
           :key="a.id"
           class="ann-item"
           @click="toggleAnn(a.id)"
@@ -310,6 +310,8 @@ watch(
  * 并在控制台留一条 warn。判据是「不显示假数据」，而不是「永不报错」。
  */
 const announcements = ref<Announcement[]>([])
+// 首页只铺最新 3 条；announcements 本身是全量（用于「全部 N 条」计数）。
+const visibleAnnouncements = computed(() => announcements.value.slice(0, 3))
 const expanded = ref<Set<number>>(new Set())
 
 /**
@@ -325,7 +327,9 @@ async function loadAnnouncements(): Promise<void> {
   if (annInflight) return
   annInflight = true
   try {
-    const res = await api.fetchAnnouncements(3)
+    // 拉全量（服务端上限 20）用于「全部 N 条」计数；首页只铺最新 3 条在模板里切片。
+    // 此前拉 3 条又把 length 当总数，6 条公告会显示成「全部 3 条」——用户可见的假话。
+    const res = await api.fetchAnnouncements(20)
     announcements.value = res.items ?? []
   } catch (e) {
     // ⚠️ 失败时**保留已有内容**，不清空。

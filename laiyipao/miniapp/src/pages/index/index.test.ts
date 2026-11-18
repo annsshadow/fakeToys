@@ -304,6 +304,28 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).toContain('构筑评分')
   })
 
+  it('首页公告“全部 N 条”显示真实总数，且首页只展示最新 3 条', async () => {
+    // 运营发了 6 条公告；server 按 limit 截断（公告页用 limit=20 视为全量）。
+    // 首页此前用 fetchAnnouncements(3) 拉 3 条，却把 announcements.length
+    // 当“全部”条数 —— 6 条公告在首页显示成“全部 3 条”，一句用户可见的假话。
+    const all = Array.from({ length: 6 }, (_, i) => ({
+      id: i + 1,
+      title: `公告${i + 1}`,
+      body: '正文',
+      published_at: '2026-11-17T00:00:00Z',
+    }))
+    mockApi.fetchAnnouncements.mockImplementation((limit?: number) =>
+      Promise.resolve({ items: all.slice(0, limit ?? 20) }),
+    )
+    mountPage()
+    await flushPromises()
+
+    // 首页仍只铺最新 3 条（首屏不被挤爆）
+    expect(wrapper.findAll('.ann-item').length).toBe(3)
+    // “全部 N 条”必须是真实总数 6，而不是首页展示的 3 条
+    expect(wrapper.text()).toContain('全部 6 条 →')
+  })
+
   // ── 分享（2026-10-23）────────────────────────────────────────────
   // 判据是**行为**：微信真正用的就是回调的返回值。
   // 只断言「注册了回调」不够 —— 卡片内容错了只有分享出去的人看得见。
