@@ -22,9 +22,11 @@
 
   /* 文本四阶：主 / 常规 / 弱化 / 更弱 */
   --lyp-text: #e6edf3;
+  /* WCAG 2.1 AA 1.4.3：弱化/更弱文本承载 kpi-sub / hint / nav-group-title 等正文，
+     对最亮表面 panel-3 也必须 ≥4.5:1；原值 #8b949e/#6b7480 仅 4.66/3.03:1。 */
   --lyp-text-2: #c2ccd6;
-  --lyp-muted: #8b949e;
-  --lyp-dim: #6b7480;
+  --lyp-muted: #9aa5b2;
+  --lyp-dim: #96a0ad;
 
   /* 品牌与语义色 */
   --lyp-accent: #ff6b35;
