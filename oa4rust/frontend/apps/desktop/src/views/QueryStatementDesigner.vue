@@ -117,9 +117,9 @@
           </table>
         </div>
         <div class="results-pager" v-if="resultData.length > 0">
-          <button class="pg-btn" :disabled="page<=1" @click="page--">‹</button>
+          <button class="pg-btn" aria-label="上一页" :disabled="page<=1" @click="page--">‹</button>
           <span class="pg-info">第 {{ page }} / {{ totalPages }} 页</span>
-          <button class="pg-btn" :disabled="page>=totalPages" @click="page++">›</button>
+          <button class="pg-btn" aria-label="下一页" :disabled="page>=totalPages" @click="page++">›</button>
         </div>
       </aside>
     </div>

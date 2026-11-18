@@ -125,9 +125,9 @@
         </div>
       </template>
       <div v-if="totalPages>1" class="pagination">
-        <button class="pgb" :disabled="page<=1" @click="page--">‹</button>
+        <button class="pgb" aria-label="上一页" :disabled="page<=1" @click="page--">‹</button>
         <span class="pgi">第{{page}}/{{totalPages}}页</span>
-        <button class="pgb" :disabled="page>=totalPages" @click="page++">›</button>
+        <button class="pgb" aria-label="下一页" :disabled="page>=totalPages" @click="page++">›</button>
       </div>
     </div>
     <div class="content-panel glass-card">

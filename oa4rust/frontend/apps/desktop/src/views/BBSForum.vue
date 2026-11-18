@@ -184,9 +184,9 @@
 
       <!-- 分页：后端无 total 信封，用「本页满则可能有下一页」驱动 -->
       <div v-if="hasMore || page > 1" class="pagination">
-        <button class="page-btn" :disabled="page <= 1" @click="page--">‹</button>
+        <button class="page-btn" aria-label="上一页" :disabled="page <= 1" @click="page--">‹</button>
         <span class="page-info">第 {{ page }} 页</span>
-        <button class="page-btn" :disabled="!hasMore" @click="page++">›</button>
+        <button class="page-btn" aria-label="下一页" :disabled="!hasMore" @click="page++">›</button>
       </div>
     </main>
 

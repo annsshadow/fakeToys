@@ -6,9 +6,9 @@
     <div class="view-header glass-card">
       <h1>日历</h1>
       <div class="header-controls">
-        <button class="nav-btn" @click="prevMonth">‹</button>
+        <button class="nav-btn" aria-label="上一月" @click="prevMonth">‹</button>
         <span class="month-label">{{ currentYear }}年{{ currentMonth }}月</span>
-        <button class="nav-btn" @click="nextMonth">›</button>
+        <button class="nav-btn" aria-label="下一月" @click="nextMonth">›</button>
         <button class="today-btn" @click="goToday">今天</button>
       </div>
     </div>
