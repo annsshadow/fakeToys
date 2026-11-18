@@ -19,6 +19,17 @@ const DARK_QUERY = '(prefers-color-scheme: dark)'
 const THEME_KEY = 'oa4rust_theme'
 
 /**
+ * R234：浏览器/PWA 外壳颜色（任务切换器、标题栏）必须跟随应用明暗主题。
+ * 所有改主题的路径——init、系统跟随、跨标签页同步、setTheme——都走这里一处同步，
+ * 避免静态 meta 在 light 主题下仍显示深色。非浏览器环境（SSR）安全跳过。
+ */
+function syncBrowserThemeColor(mode: ThemeMode): void {
+  if (typeof document === 'undefined') return
+  const meta = document.head?.querySelector('meta[name="theme-color"]')
+  meta?.setAttribute('content', mode === 'dark' ? '#060913' : '#f0f4f8')
+}
+
+/**
  * R229：主题选择在标签页之间同步。localStorage 的 storage 事件只在「其他」标签页
  * 改动时触发，因此这里不会出现自己写自己、来回抖动的情况。收到新值后除了更新共享
  * 状态与 <html> 属性，还必须拆掉本页可能的系统跟随监听：另一个标签页选的是显式
@@ -33,6 +44,7 @@ if (typeof addEventListener === 'function') {
     stopFollowing = null
     _theme.value = mode
     document.documentElement.setAttribute('data-theme', mode)
+    syncBrowserThemeColor(mode)
   })
 }
 
@@ -45,6 +57,7 @@ export function createThemeProvider() {
   function applyTheme(mode: ThemeMode): void {
     _theme.value = mode
     document.documentElement.setAttribute('data-theme', mode)
+    syncBrowserThemeColor(mode)
   }
 
   function setTheme(mode: ThemeMode): void {
