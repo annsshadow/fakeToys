@@ -536,6 +536,14 @@ function statusText(key: string, ms: number): string {
   return `${kind} ${(ms / 1000).toFixed(1)}s`
 }
 
+/**
+ * 受击增伤是千分比：服务端 AmplifyPermille（superconduct=600 → +60%），
+ * 直接拼 % 会把效果夸大 10 倍，与 miniapp 反应图鉴口径也不一致。
+ */
+function amplifyPctText(v: number): number {
+  return v / 10
+}
+
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '暂无数据'
 const loading = ref(false)
@@ -760,7 +768,7 @@ onUnmounted(() => {
             <el-table-column label="受击增伤" width="90">
               <template #default="{ row }">
                 <el-tag v-if="row.amplify_pct > 0" size="small" type="warning">
-                  +{{ row.amplify_pct }}%
+                  +{{ amplifyPctText(row.amplify_pct) }}%
                 </el-tag>
                 <span v-else class="muted">—</span>
               </template>
