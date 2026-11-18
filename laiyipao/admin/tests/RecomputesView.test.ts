@@ -463,3 +463,39 @@ describe('筛选应重置台账分页（第 57 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('RecomputesView 台账筛选竞态（第 75 轮）', () => {
+  it('旧筛选慢响应后到不得覆盖新筛选的台账（第 75 轮）', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    // 挂载并完成初次加载，再替换 mock 为两个可控 deferred。
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as {
+      userId: number | undefined
+      rows: Array<{ id: number; nickname: string }>
+      load: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchRecomputes.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 先发旧筛选（user_id=1），再发新筛选（user_id=2）。
+    vm.userId = 1
+    const pOld = vm.load()
+    vm.userId = 2
+    const pNew = vm.load()
+    // 新筛选响应先到，旧筛选慢响应后到。
+    dNew.resolve({ items: [row({ id: 99, nickname: '新筛选玩家' })], total: 1 })
+    await flushPromises()
+    dOld.resolve({ items: [row({ id: 1, nickname: '旧筛选玩家' })], total: 1 })
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.rows.length, '台账应显示一条记录').toBe(1)
+    expect(vm.rows[0].nickname, '旧筛选慢响应覆盖了新筛选结果').toBe('新筛选玩家')
+    wrapper.unmount()
+  })
+})

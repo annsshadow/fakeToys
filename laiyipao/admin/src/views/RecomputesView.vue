@@ -228,7 +228,9 @@ async function switchMode(next: string) {
   }
 }
 
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchRecomputes({
@@ -238,12 +240,14 @@ async function load() {
       limit: LEDGER_PAGE_SIZE,
       offset: (ledgerPage.value - 1) * LEDGER_PAGE_SIZE,
     })
+    if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`重算台账加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
