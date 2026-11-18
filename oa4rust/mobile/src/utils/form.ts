@@ -277,7 +277,7 @@ export function validateSimpleForm(fields: MobileFormField[], values: Record<str
   for (const field of fields) {
     if (!field.required) continue
     const v = values[field.key]
-    const empty = v === undefined || v === '' || (Array.isArray(v) && v.length === 0)
+    const empty = v === undefined || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0)
     if (empty) errors[field.key] = `${field.label || field.key} 为必填项`
   }
   return errors

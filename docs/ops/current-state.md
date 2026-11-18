@@ -2870,3 +2870,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r245 排除清单（核实同步良好/非 bug，未改）：bag.vue doUpgrade/doSynthesize/doWash/doEquipGem/doUnequipGem/doApplyPreset（已修）、mastery.vue allocate/reset、signin 全部写路径、shop buyItem、index/stage/battle settle、me.vue saveDefense/toggleShield/昵称/升级/删除防线、admin Skills/Levels/Users/Economy/Content/Recomputes 各写路径、server 护盾 shielded_until 读写测试。
 - 门禁（主线程全量）：oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 448 文件 0 error（29 info 既有）、mobile 40 文件/305 passed；miniapp 137 文件/1479 passed（2 skipped 既有）+ tsc/vue-tsc 0；admin 37 文件/496 passed + vue-tsc 0；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R245 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复挑战历史失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 106. 第 96 轮：R246 mobile 必填空白校验 + miniapp 护盾权威态回填（2026-11-19）
+
+### 106.1 R246（oa4rust/mobile）纯空白必填不再绕过校验
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/utils/form.ts:280 validateSimpleForm 的 empty 判定为 v === undefined || v === '' || (Array.isArray(v) && v.length === 0)，纯空白字符串不等于空串可绕过必填；oa4rust/mobile/src/pages/process/start.vue:137 用其赋值 errors，:391 提交按钮仅 disabled=submitting||!selectedProcessId，填空白申请原因可直接提交。桌面 formFieldValidation.ts:isBlank 已用 trim，跨端口径不一致。 |
+| 修复 | form.ts:280 单行改为 v === undefined || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0)，仅字符串走 trim，空数组/undefined/非必填语义不变，LF 保持。 |
+| 测试 | 新增 form.validateBlank.contract.test.ts 4 例（空白必填报错/正常值与'0'不误伤/空串空数组回归/非必填空白不报错）。主线程独立 RED（备份→checkout HEAD→1 failed/3 passed，实收 AssertionError: expected {} to deeply equal { reason: '申请原因 为必填项' }→恢复→4 passed；另核 start.vue:391 可达性。门禁：oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 449 文件 0 error（29 info 既有）、mobile 41 文件/309 passed、diff --check 0。 |
+| 负结果 | 排查但未改：chatPolling/chatScroll、processList/pendingCount/meetingList、latest/loadList/datetime、各 feed、桌面 resultPagination/formatNumber/formFieldValidation/calendarGrid/date 均已有充分测试；mobile 各页 catch 已用 describeLoadError 收敛；桌面 120+ catch 多为 AI 容错非确定缺口。 |
+
+### 106.2 laiyipao/miniapp 护盾切换以服务端 shielded_until 为权威
+- 缺口：laiyipao/miniapp/src/pages/me/me.vue:1292 toggleShield 在 saveDefense 成功后 shielded.value = !shielded.value 纯本地取反，不采信服务端返回的 shielded_until；同页 loadDefenses（:1204-1218）按 isShieldActive(shielded_until, 服务端时钟) 判定。服务端因并发/策略未真正开盾（返回空 shielded_until）或返回过期时刻时，按钮与「护盾剩余」文案显示已开，与权威态相反（与 R244 doApplyPreset、R245 challenge 同族）。服务端 SaveDefense 确实按 shield_hours 写入并回读 shielded_until（progression.go:744-748）。
+- 修复（me.vue 1 行）：shielded.value = !shielded.value → shielded.value = isShieldActive(res.defense?.shielded_until, store.estimateServerNowMs())，CRLF 1734/0 不变。
+- 夹具修正（me.test.ts +10 行，非迎合新代码）：:288 与 :498 两处 mockApi.saveDefense 从「从不返回 shielded_until」改为按真实服务端语义返回权威 shielded_until（开=2999 时刻、关=undefined），断言文案未动。
+- 测试：新增 me_toggle_shield_r96.test.ts 1 例行为测试（服务端返回无 shielded_until→点击后按钮仍是「开启」且无剩余文案）。主线程独立 RED：实收 AssertionError「expected '关闭 24h 护盾' to contain '开启 24h 护盾'」（:64）→恢复→新测试+me.test.ts 全绿。
+
+### 106.3 负结果、门禁与目标状态
+- lybug-r246 排除清单（逐一核实未改）：bag.vue equip/unequip/doEquipGem/doUnequipGem/doUpgrade/doWash/doSynthesize/preset CRUD/doApplyPreset（已修）、me.vue challenge（已修）/shielded_until 读写（R133）/changePassword/upgrade、signin.vue doSignIn/claimOffline/doRedeem、mastery.vue allocate/reset、verify.vue submit、battle.vue abandon/settle、shop.vue doBuy、store.refreshProfile（game.ts:475-525）钱包同步；server AdminListUsersPage/AdminExportUsers 与 AdminListDefenseChallenges/AdminExportDefenseChallenges 同口径、SaveDefense 本身正确。
+- 门禁（主线程全量）：oa4rust 153 文件/1632 passed + typecheck 6 项目 Done + lint 449 文件 0 error（29 info 既有）+ mobile 41 文件/309 passed；miniapp 138 文件/1480 passed（2 skipped 既有）+ type-check:test + type-check 均 0；admin 37 文件/496 passed + vue-tsc 0；git diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R246 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复护盾切换本地取反真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
