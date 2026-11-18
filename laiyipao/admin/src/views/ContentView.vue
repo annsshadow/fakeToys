@@ -316,6 +316,7 @@ async function submitAnnouncement() {
     }
     editingAnnId.value = null
     annForm.value = { title: '', body: '', published: false }
+    previewPubAt.value = null
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
@@ -329,6 +330,7 @@ async function submitAnnouncement() {
 function startEditAnn(a: AdminAnnouncementView) {
   editingAnnId.value = a.id
   annForm.value = { title: a.title, body: a.body, published: a.published }
+  previewPubAt.value = a.published_at ?? null
 }
 
 /**
@@ -337,6 +339,7 @@ function startEditAnn(a: AdminAnnouncementView) {
  */
 function previewAnnouncement(a: AdminAnnouncementView) {
   annForm.value = { title: a.title, body: a.body, published: a.published }
+  previewPubAt.value = a.published_at ?? null
   openPreview()
 }
 
@@ -357,6 +360,7 @@ async function copyAnnBody(a: AdminAnnouncementView) {
 function cancelEditAnn() {
   editingAnnId.value = null
   annForm.value = { title: '', body: '', published: false }
+  previewPubAt.value = null
 }
 
 /**
@@ -365,6 +369,11 @@ function cancelEditAnn() {
  * 此前只能先发布再在玩家端看。这里用当前表单内容打开预览对话框。
  */
 const previewVisible = ref(false)
+/**
+ * 第 55 轮：玩家端预览的发布时间必须显示服务端真实 published_at，
+ * 而不是打开预览的此刻。行级预览/编辑时回填，新建时保持 null。
+ */
+const previewPubAt = ref<string | null>(null)
 
 function openPreview() {
   if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
@@ -870,7 +879,7 @@ loadAll()
             <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
               <strong>{{ annForm.title }}</strong>
               <span class="muted" style="font-size: 12px">
-                {{ annForm.published ? new Date().toLocaleString() : '未发布（仅草稿）' }}
+                {{ annForm.published ? (previewPubAt ? fmtTime(previewPubAt) : '发布后生成') : '未发布（仅草稿）' }}
               </span>
             </div>
             <div style="margin-top: 10px; white-space: pre-wrap; color: var(--el-text-color-regular); line-height: 1.7">

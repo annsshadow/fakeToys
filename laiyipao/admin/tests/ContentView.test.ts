@@ -12,6 +12,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fmtTime } from '@/utils/format'
 
 const fetchAnnouncements = vi.hoisted(() => vi.fn())
 const createAnnouncement = vi.hoisted(() => vi.fn())
@@ -479,6 +480,45 @@ describe('ContentView 公告玩家端预览（第 54 轮）', () => {
     expect(wrapper.text()).toContain('玩家端预览')
     expect(wrapper.text()).toContain('版本更新')
     expect(wrapper.text()).toContain('修复若干问题')
+    wrapper.unmount()
+  })
+
+  it('发布时间显示服务端真实 published_at，而非打开预览的此刻（第 55 轮）', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-06-15T10:00:00Z'))
+    try {
+      const realPublishedAt = '2026-01-01T00:00:00Z'
+      const wrapper = await mountContent({
+        announcements: [
+          { id: 1, title: '时间校对', body: '看发布时间', published: true, published_at: realPublishedAt, created_at: realPublishedAt },
+        ],
+      })
+      const btn = wrapper.findAll('button').find((b) => b.text() === '预览')
+      expect(btn, '找不到公告行「预览」按钮').toBeTruthy()
+      await btn!.trigger('click')
+      await flushPromises()
+
+      // 玩家端真实看到的是 published_at 格式化后的时间
+      expect(wrapper.text()).toContain(fmtTime(realPublishedAt))
+      // 绝不能是「打开预览这一刻」（2030-06-15）——旧实现 new Date().toLocaleString() 会命中
+      expect(wrapper.text()).not.toContain('2030')
+      wrapper.unmount()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('新建公告未发布前的预览不伪造发布时间（第 55 轮）', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '新公告', body: '正文', published: true }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    // 还没有真实 published_at 时应如实说明，而不是编一个当前时间骗运营
+    expect(wrapper.text()).toContain('发布后生成')
     wrapper.unmount()
   })
 })
