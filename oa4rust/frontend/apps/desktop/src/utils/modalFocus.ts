@@ -12,8 +12,23 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 const ATTRIBUTE_MARKER = 'data-oa4-modal-managed'
+const TITLE_SELECTOR = 'h1,h2,h3,h4,h5,h6,[role="heading"]'
+const TITLE_ID_PREFIX = 'oa4-modal-title-'
+let titleIdCounter = 0
 
-type ManagedModal = { opener: HTMLElement | null; restoreFocus: boolean }
+type ManagedModal = {
+  opener: HTMLElement | null
+  restoreFocus: boolean
+  /** Heading we injected an id into, so we can undo it on close/dispose. */
+  titledBy: HTMLElement | null
+}
+
+/** A dialog's accessible name comes from a visible heading (WCAG 4.1.2). */
+function findTitle(overlay: HTMLElement): HTMLElement | null {
+  // Respect an author-supplied labelling: leave naming entirely alone.
+  if (overlay.hasAttribute('aria-labelledby') || overlay.hasAttribute('aria-label')) return null
+  return overlay.querySelector<HTMLElement>(TITLE_SELECTOR)
+}
 
 function focusableWithin(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
@@ -92,6 +107,10 @@ export function installViewModalManager(): () => void {
     overlay.removeAttribute(ATTRIBUTE_MARKER)
     overlay.removeAttribute('role')
     overlay.removeAttribute('aria-modal')
+    if (record.titledBy?.id.startsWith(TITLE_ID_PREFIX)) {
+      record.titledBy.removeAttribute('id')
+    }
+    overlay.removeAttribute('aria-labelledby')
     if (record.restoreFocus && record.opener?.isConnected) record.opener.focus()
   }
 
@@ -107,7 +126,25 @@ export function installViewModalManager(): () => void {
     for (const overlay of views) {
       if (managed.has(overlay)) continue
       const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-      managed.set(overlay, { opener: overlay.contains(opener) ? null : opener, restoreFocus: false })
+      const title = findTitle(overlay)
+      let titledBy: HTMLElement | null = null
+      if (title) {
+        if (title.id) {
+          // Author-supplied id: reference it as-is and leave it untouched.
+          titledBy = null
+        } else {
+          title.id = `${TITLE_ID_PREFIX}${++titleIdCounter}`
+          titledBy = title
+        }
+        if (!overlay.hasAttribute('aria-labelledby')) {
+          overlay.setAttribute('aria-labelledby', title.id)
+        }
+      }
+      managed.set(overlay, {
+        opener: overlay.contains(opener) ? null : opener,
+        restoreFocus: false,
+        titledBy,
+      })
       overlay.setAttribute(ATTRIBUTE_MARKER, '')
       overlay.setAttribute('role', 'dialog')
       overlay.setAttribute('aria-modal', 'true')
@@ -192,9 +229,14 @@ export function installViewModalManager(): () => void {
     document.removeEventListener('focusin', onFocusIn, true)
     applyHiddenRoots([])
     for (const overlay of Array.from(managed.keys())) {
+      const record = managed.get(overlay)
       overlay.removeAttribute(ATTRIBUTE_MARKER)
       overlay.removeAttribute('role')
       overlay.removeAttribute('aria-modal')
+      overlay.removeAttribute('aria-labelledby')
+      if (record?.titledBy?.id.startsWith(TITLE_ID_PREFIX)) {
+        record.titledBy.removeAttribute('id')
+      }
       managed.delete(overlay)
     }
   }
