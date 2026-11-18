@@ -1024,3 +1024,63 @@ describe('UsersView 复制用户 ID（第 86 轮）', () => {
     wrapper.unmount()
   })
 })
+
+/**
+ * 第56轮：用户列表快速切换筛选时，旧的在飞响应不得覆盖新筛选结果。
+ * UsersView 的 load() 不同于已修的 BattlesView（第53轮）仍无请求序号守卫：
+ * 运营点「查询」（旧筛选）请求在飞 → 改关键词再点「查询」（新筛选）→
+ * 新请求先回、旧请求后回时，老响应把 users/total 写回，页面显示的仍是旧筛选用户。
+ */
+describe('UsersView 筛选竞态（第 56 轮）', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('新筛选先回、旧筛选后回：列表只显示新筛选的用户', async () => {
+    const d1 = deferred() // 首次挂载
+    const d2 = deferred() // 旧筛选的「查询」
+    const d3 = deferred() // 新筛选的「查询」
+    let call = 0
+    fetchUsers.mockImplementation(() => {
+      call += 1
+      if (call === 1) return d1.promise
+      if (call === 2) return d2.promise
+      return d3.promise
+    })
+
+    const router = await makeRouter()
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+    d1.resolve({ items: [userFixture({ id: 1, nickname: '旧玩家火' })], total: 1 })
+    await flushPromises()
+
+    // 第一次「查询」（旧筛选）→ 请求在飞
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 改关键词 → 第二次「查询」触发新请求
+    const vm = wrapper.vm as unknown as { keyword: string }
+    vm.keyword = '龙'
+    await flushPromises()
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(3)
+
+    // 新筛选先回：只含 id=99 新玩家龙
+    d3.resolve({ items: [userFixture({ id: 99, nickname: '新玩家龙' })], total: 1 })
+    await flushPromises()
+    // 旧筛选后回：含 id=1 旧玩家火，不应覆盖新列表
+    d2.resolve({ items: [userFixture({ id: 1, nickname: '旧玩家火' })], total: 1 })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.el-table__row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].text()).toContain('新玩家龙')
+    expect(rows[0].text()).not.toContain('旧玩家火')
+    wrapper.unmount()
+  })
+})

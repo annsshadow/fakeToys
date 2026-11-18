@@ -210,7 +210,15 @@ async function onExportUserFlows(userId: number) {
   }
 }
 
+/**
+ * 列表请求序号（2026-11-18 第56轮）：快速切换筛选时，只接受最新一次请求的响应。
+ * 与 BattlesView 第53轮同族 —— 旧筛选的慢响应后到会覆盖新筛选的 users/total，
+ * 运营看到的列表与刚点的筛选条件矛盾。
+ */
+let listReqSeq = 0
+
 async function load() {
+  const seq = ++listReqSeq
   loading.value = true
   try {
     const res = await fetchUsers({
@@ -228,12 +236,14 @@ async function load() {
       // 需核查筛选（2026-11-01 新一轮第 60 轮）
       suspicious: suspiciousFilter.value,
     })
+    if (seq !== listReqSeq) return // 旧筛选的迟到响应不得覆盖新结果
     users.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== listReqSeq) return
     ElMessage.error(`用户加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === listReqSeq) loading.value = false
   }
 }
 
