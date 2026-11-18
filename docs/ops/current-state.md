@@ -1987,3 +1987,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R205 导航段边界完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 公告预览时间），子代理负结果，继续找但不强造。
+
+## 65. 第 56 轮：R206 交互控件键盘可达性 + admin 用户列表筛选竞态 + laiyipao 负结果
+
+起点 HEAD=2992fc557，分支 feat/h5-battle-substantive-100。oaopt-r206 负责 oa4rust/frontend（R206），lybug-r56 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 65.1 R206 裸点击控件键盘可达性（WCAG 2.1.1 / 4.1.2）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/ui/src/components/AppShell.vue 中 logo、侧栏 nav-item、user-menu、移动端 tab-item 均为裸 div @click，无 tabindex/role/keydown：键盘用户无法 Tab 聚焦、无法用 Enter/Space 激活，读屏用户无法识别其可点击角色；collapse-btn 图标按钮内容仅装饰字符「☰」，无可访问名。历史 R155–R205 仅做过 navActive 段边界高亮，未覆盖键盘可达性，非重复。 |
+| 修复 | 四类控件加 role=button + tabindex=0 + @keydown.enter + @keydown.space.prevent；collapse-btn 加 aria-label；抽 toggleSidebar/toggleUserMenu/toggleUserMenuOnKeydown（后者用 e.target===e.currentTarget 防下拉子项 Enter 冒泡误关菜单）。 |
+| 门禁 | AppShell.keyboardA11y.contract.test.ts 5 例（源码文本契约：提取所有带 @click 标签断言键盘可聚焦/有角色/可键盘激活，collapse-btn 有可访问名，含「交互控件存在」哨兵防空跑）RED(4 failed)→GREEN 5/5；oa4rust 全量 114 文件/1444 passed、typecheck 6 项目 Done、lint 391 文件 0 error（20 info 既有，LINT_EXIT=0）。主线程独立复跑契约 5 passed、全量门禁全绿。 |
+
+### 65.2 admin 用户列表快速切筛选竞态（与第53轮战报同族，UsersView 漏修）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/UsersView.vue 的 load() 无请求序号守卫。运营点「查询」（旧筛选）请求在飞 → 改关键词再点「查询」（新筛选）→ 新请求先回、旧请求后回时，旧响应把 users/total 写回，页面显示的仍是旧筛选用户，与刚点的筛选条件矛盾。同族修复已见于 BattlesView 第53轮（loadSeq），UsersView 遗漏。 |
+| 修复 | 新增 listReqSeq，load() 开头 const seq=++listReqSeq；Promise 返回后写入前 if(seq!==listReqSeq)return，catch 同守卫，finally if(seq===listReqSeq)loading.value=false。 |
+| 门禁 | UsersView.test.ts 新增 describe「筛选竞态（第56轮）」行为测试（deferred 三请求 d1 挂载/d2 旧筛选/d3 新筛选，新 d3 先回含 id99「新玩家龙」、旧 d2 后回含 id1「旧玩家火」）RED(1 failed：expected 页面含「新玩家龙」，实收显示「旧玩家火」)→GREEN；admin 全量 34 文件/462 passed、vue-tsc exit 0。 |
+
+### 65.3 laiyipao 负结果与目标二边界
+
+- lybug-r56 负结果零改动：按服务端权威契约（domain/service/httpapi）与客户端消费面逐类交叉核对 14 类（config 全字段/304 时钟校准、52 条端点路径与查询参数、结算 SettleInput/Resp、战报 keyset、签到、离线收益、商城兑换任务、专精、宝石装备、预设诊断、图鉴单位换算、护盾时钟、verify/replay、固定不动项与历史已修项），全部一致、已修或语义歧义，无满足「真实可确证 + 用户可见 + 非已修 + 非固定不动项」的新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0（注意不是 /health），本地 health=200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界；口令存 gitignored 本地文件不回显。
+
+### 65.4 交付边界与审阅记录
+
+- 成果分三提交（R206 / admin 用户列表竞态 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R206 键盘可达性完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 用户列表竞态），子代理负结果，继续找但不强造。
