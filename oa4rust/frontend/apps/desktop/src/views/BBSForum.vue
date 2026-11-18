@@ -7,9 +7,9 @@
     <div class="bbs-header glass-card">
       <div class="header-left">
         <h1>论坛</h1>
-        <nav class="forum-tabs">
+        <nav class="forum-tabs" aria-label="论坛板块">
           <button v-for="tab in tabs" :key="tab.key" class="tab-btn"
-            :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
+            :aria-pressed="activeTab === tab.key" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
             {{ tab.label }}
           </button>
         </nav>
@@ -146,9 +146,9 @@
     <!-- 右侧：帖子列表 -->
     <main class="bbs-main glass-card">
       <!-- 帖子列表 -->
-      <div v-if="activeTab==='my'" class="my-subtabs">
-        <button :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
-        <button :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
+      <div v-if="activeTab==='my'" class="my-subtabs" role="group" aria-label="我的帖子子标签">
+        <button :aria-pressed="mySub==='topics'" :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
+        <button :aria-pressed="mySub==='replies'" :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
       </div>
       <div v-if="topicsLoading" class="loading-state">
         <div v-for="i in 6" :key="i" class="skeleton-row"></div>

@@ -185,19 +185,19 @@
     <div class="content-panel glass-card">
       <div class="pt cfg-pt">
         <span>排班与配置</span>
-        <span class="cfg-tabs">
-          <button class="cfg-tab" :class="{on:moreTab==='schedule'}" @click="switchMore('schedule')">排班</button>
-          <button class="cfg-tab" :class="{on:moreTab==='employee'}" @click="switchMore('employee')">员工配置</button>
-          <button class="cfg-tab" :class="{on:moreTab==='holiday'}" @click="switchMore('holiday')">自助假期</button>
-          <button class="cfg-tab" :class="{on:moreTab==='workday'}" @click="switchMore('workday')">工作日</button>
-          <button class="cfg-tab" :class="{on:moreTab==='admin'}" @click="switchMore('admin')">管理员</button>
-          <button class="cfg-tab" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
-          <button class="cfg-tab" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
-          <button class="cfg-tab" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
+        <span class="cfg-tabs" role="group" aria-label="排班与配置切换">
+          <button class="cfg-tab" :aria-pressed="moreTab==='schedule'" :class="{on:moreTab==='schedule'}" @click="switchMore('schedule')">排班</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='employee'" :class="{on:moreTab==='employee'}" @click="switchMore('employee')">员工配置</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='holiday'" :class="{on:moreTab==='holiday'}" @click="switchMore('holiday')">自助假期</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='workday'" :class="{on:moreTab==='workday'}" @click="switchMore('workday')">工作日</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='admin'" :class="{on:moreTab==='admin'}" @click="switchMore('admin')">管理员</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='importlog'" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='statlog'" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='cycle'" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2wp'" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2group'" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2shift'" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2leave'" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
         <button class="mini-add" v-if="moreTab==='holiday'" @click="addSelfHoliday">+ 申请假期</button>

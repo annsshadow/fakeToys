@@ -50,8 +50,10 @@
     <div class="cal-list-bar glass-card">
       <span class="cll-title">日历：</span>
       <span v-if="calListError" class="cll-error">{{ calListError }}<button class="cll-tab" @click="loadCalendars(calScope)">重试</button></span>
-      <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
-      <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
+      <span role="group" aria-label="日历范围">
+        <button class="cll-tab" :aria-pressed="calScope==='my'" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
+        <button class="cll-tab" :aria-pressed="calScope==='public'" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
+      </span>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
       <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
       <button class="cll-tab" @click="loadCalTwin">🔁 孪生端点</button>
