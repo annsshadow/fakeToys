@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { cmsApi, portalApi, queryviewApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { loadBrowseRows } from './browseFeed'
 
 type TabKey = 'portal' | 'query' | 'cms'
@@ -28,6 +29,7 @@ const loading = ref(false)
 const loadError = ref('')
 const detail = ref<Row | null>(null)
 const detailLoading = ref(false)
+const detailGate = createLatestGate()
 
 function nameOf(r: Row): string {
   return String(r.name ?? r.title ?? r.flag ?? r.id ?? '未命名')
@@ -67,6 +69,7 @@ function switchTab(key: TabKey): void {
 }
 
 async function open(r: Row): Promise<void> {
+  const token = detailGate.begin()
   detailLoading.value = true
   detail.value = null
   try {
@@ -75,20 +78,24 @@ async function open(r: Row): Promise<void> {
       detail.value = r
       return
     }
+    let fetched: Row
     if (tab.value === 'portal') {
-      detail.value = ((await portalApi.pageDetail(id)) as { data?: Row }).data ?? r
+      fetched = ((await portalApi.pageDetail(id)) as { data?: Row }).data ?? r
     } else if (tab.value === 'query') {
       const view = String(r.view_flag ?? r.viewFlag ?? 'view')
-      detail.value = ((await queryviewApi.execute(view, id)) as { data?: Row }).data ?? r
+      fetched = ((await queryviewApi.execute(view, id)) as { data?: Row }).data ?? r
     } else {
       const resp = await cmsApi.documentSearch(nameOf(r))
       const list = (resp.data ?? []) as Row[]
-      detail.value = { 文档数: list.length, 栏目: nameOf(r), 首篇: list[0] ? nameOf(list[0]) : '—' }
+      fetched = { 文档数: list.length, 栏目: nameOf(r), 首篇: list[0] ? nameOf(list[0]) : '—' }
     }
+    if (!detailGate.isLatest(token)) return
+    detail.value = fetched
   } catch (e) {
+    if (!detailGate.isLatest(token)) return
     uni.showToast({ title: e instanceof Error ? e.message : '加载失败', icon: 'none' })
   } finally {
-    detailLoading.value = false
+    if (detailGate.isLatest(token)) detailLoading.value = false
   }
 }
 
