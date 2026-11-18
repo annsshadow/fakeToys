@@ -1856,3 +1856,38 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R201 登录表单标签关联完成）；目标二卡外部凭据；目标三本轮负结果，继续找但不强造。
+
+## 61. 第52轮：R202 表格表头作用域 + admin 导出业务日 + 战报切筛选竞态
+
+### 61.1 R202 全局表格表头作用域增强（WCAG 1.3.1，oa4rust 桌面）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | 全仓 30+ 数据表格、41 个 `<th>` 全为裸标题，无 scope 属性、无 caption；读屏器在单元格间导航时无法把数据关联到列/行标题。原有 skip-link / modal-focus / form-error 三个全局增强器均未覆盖表格语义。 |
+| 修复 | 新增 `frontend/apps/desktop/src/utils/tableA11y.ts` 的 `installTableA11y(root)`：MutationObserver 驱动，为 thead 内 th 补 scope=col、tbody 行首 th 补 scope=row，尊重视图已有 scope 不覆盖，兼容 v-if 异步插入，返回幂等卸载函数；main.ts 挂载前接入。 |
+| 门禁 | tableA11y.contract.test.ts 4 例 jsdom 行为测试（列/行作用域补全、已有 scope 不覆盖、异步插入补正、卸载断观察器）：RED(2 failed，expected null to be 'col')→GREEN 4/4；oa4rust 全量 110 文件/1427 passed、typecheck 6 包、biome 386 文件 0 error（19 info 为既有）。 |
+| 未选方向 | img alt（仅 2 处且已有 alt）、forced-colors、On Input、虚拟滚动均属已覆盖或无落点，不强造。 |
+
+### 61.2 admin 导出文件名业务日口径（UTC+8）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin 各视图 10 处 `a.download` 用 `new Date().toISOString().slice(0,10)` 取 UTC 墙钟日期；部署 UTC+8 时本地凌晨 0–8 点导出的 CSV 文件名带"昨天"日期，与 R167 全项目业务日 UTC+8 口径不一致。 |
+| 修复 | format.ts 新增 `exportDateLabel(now: Date = new Date()): string`：UTC 墙钟 +8h 后取 UTC 分量，只依赖 now、与运行机时区无关；6 个视图 import 更新并把 10 处表达式替换为 `exportDateLabel()`。4 处日期区间辅助函数（nextDay 的 UTC 计算）与 1 处 expires_at 格式化属 UTC 语义正确，不动。 |
+| 门禁 | exportDateLabel.test.ts 4 例（跨日/边界/不跨日/补零，显式 UTC 时刻与时区无关）：RED(exportDateLabel is not a function，4 failed)→GREEN 4/4；admin 全量 33 文件/452 passed、type-check(vue-tsc)0、toISOString.slice 导出残留 0。 |
+
+### 61.3 laiyipao/miniapp 战报切换筛选丢弃在飞的旧 loadMore 响应
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | battles.vue 用户在「加载更多」（旧筛选/旧游标）请求在飞时切换筛选：filter 的 watch 触发 reload 拉新第一页替换 items，但旧 loadMore 回来后仍把旧游标页 append 进新筛选列表，next_cursor/hasMore 也被旧响应覆盖——服务端 result 是全量过滤参数，「胜利」列表混入失败战报。 |
+| 修复 | 新增列表请求序号 `listReqSeq`：reload 与 loadMore 各占一号，响应后到且序号过期则丢弃，finally 里 loading/loadingMore 复位也加序号守卫。 |
+| 门禁 | battles.test.ts 新增行为测试（deferred 三请求，新 reload 先回、旧 loadMore 后回，断言列表只剩新筛选胜场）：RED 前置已确认竞态可现；miniapp 全量 133 文件/1473 passed|2 skipped、vue-tsc 0。 |
+
+### 61.4 交付边界与审阅记录
+
+- 三成果分四提交（R202 / admin 导出业务日 / miniapp 竞态 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- lybug-r52 两轮 nudge 超时不收敛，主线程独立复核其核心改动（battles 7 passed）后 interrupt_agent 中断、以现有成果收口；敏感扫描命中两处 admin 文件均为既有 UI 文案（重置密码/修改密码）与变量名，非真值、非本轮改动行。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R202 表格语义完成）；目标二卡外部凭据；目标三本轮有真 bug 修复（战报切筛选竞态 + 导出业务日），继续找但不强造。
