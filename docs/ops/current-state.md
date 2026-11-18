@@ -1650,3 +1650,30 @@ lybug-r43 先读服务端 Go 契约再逐项行为级核对 fixed.ts mulDiv/appl
 
 - 两提交 4453d41cb、d7ff1f0ce + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R194 已完成）；目标二卡外部凭据；目标三本轮修复游客转正身份刷新，继续找但不强造。
+
+## 五十四、第45轮：R195登录页resize监听器泄漏 + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r195 修复一个真实事件监听泄漏（packages/ui 审计盲区）；lybug-r45 深查全契约后如实报负结果、零改动。主线程独立复核 RED/GREEN、跑全量门禁后提交 R195。
+
+### 54.1 oa4rust R195 登录页 resize 监听器泄漏（提交 b7d870dae）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | packages/ui/src/components/LoginScreen.vue onMounted 用匿名内联箭头 window.addEventListener(resize,()=>{...})，onBeforeUnmount 只 cancelAnimationFrame 从不解绑；匿名函数无引用物理上无法 removeEventListener。LoginScreen 是 /login 路由组件，会话过期/登出反复进入每次新增一个永久 resize 监听器，旧闭包捕获 canvasRef → 多次登录窗口缩放重复画布重绘、内存缓慢增长 | 真实性能/内存泄漏，apps/desktop/src/views/lifecycleAudit.test.ts(R142)只配对 add/remove 且 SCAN_ROOTS 仅含 apps/desktop/src 与 mobile/src，packages/ui 从未审计故长期漏检 |
+| 修复 | 抽具名 function handleResize()，onMounted 注册同一引用、onBeforeUnmount 用同一引用 removeEventListener；新增 LoginScreen.lifecycle.contract.test.ts 3 例断言处理器具名、add/remove 同引用配对、标识符一致 | 2 文件（1 改 + 1 新契约测试含 Copyright/SPDX 头）|
+| 门禁 | 契约测试 RED(3 failed 确因匿名未解绑)→GREEN 3/3；主线程独立复跑 3 passed；从 oa4rust 根 pnpm test 104 files 1398 passed、typecheck 6 包 Done、biome 2 文件 0 error；diff --check 0、敏感扫描无命中 | 契约测试无真值域名/IP/密钥 |
+
+### 54.2 laiyipao 第45轮诚实负结果
+
+lybug-r45 读服务端权威契约（domain/service/httpapi）与 miniapp 消费面逐类交叉核对 14 类：榜单 rank=0 哨兵(economy.go:250-257,311-334 ↔ rank.vue:79-100+rank.test.ts:204-214)、榜单排序方向(economy.go:229-234 效率榜 ASC ↔ rank.vue:138-157 反向分差)、GameConfig 全字段(service.go:1499-1545 ↔ client.ts:66-182+contract_coverage.test.ts)、server_time 校准(service.go:1494-1495 ↔ client.ts:745-810+game.test.ts:266-411)、签到状态周期、商城视图限购、结算结果映射(SettleResp game.go:214-227 无 kills/leaked/reactions ↔ battle.vue:768-780 唯一正确来源)、结算上报边界(battle.go:493-549)、体力掉落预览、面板攻击力千分比、宝石专精道具、离线收益游客转正、预设背包兑换码——全部一致或属已修。未升级候选：rank.vue:172 scoreBuckets 在 rank=0 用 score=0 高亮首桶，但系服务端回落直接结果且视觉自洽，不构成可确证用户可见错误。零文件改动、未跑无意义门禁。连续第 31/34/41/42/43/45 轮负结果，印证 43.4 策略不强造。
+
+### 54.3 主线程侦察与交付边界
+
+- oa4rust/mobile（独占）侦察负结果：uni-app H5 的 autocomplete 仅由 textContentType 映射且允许值只有 off/one-time-code（uni-h5.es.js:13094/13119-13124），无法透传 username/current-password 等标准 token；移动端 input 0 处 autocomplete 但受框架限制非可确证缺口，不强造。image 元素 0、utils(auth-guard/format/form/loadList/networkStatus/latest/datetime)均有成熟守卫与契约测试。
+- laiyipao/admin（不在 lybug-r45 写范围）复核负结果：千分比渲染全部正确（WikiView amplifyPctText(v)=v/10、base_coef/attack_weight_pct 标‰、RecomputesView pct(permille)=permille/10、EquipmentView base_bonus_pct 标‰、LevelsView clear_rate 服务端已按百分数下发）。无可确证新 bug。
+- 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页200，远程卡 GitHub Secrets 超会话边界）。B3、A1/A2/A5 及 laiyipao 固定不动项维持记账。
+
+### 54.4 交付
+
+- 提交 b7d870dae + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R195 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
