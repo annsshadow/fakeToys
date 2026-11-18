@@ -36,6 +36,12 @@ const pendingRuns: PendingRun[] = []
 function getOrCreateFrame(): HTMLIFrameElement {
   if (!iframe) {
     iframe = document.createElement('iframe')
+    // R224 WCAG 4.1.2 / 2.4.3：该 iframe 是屏幕外的纯脚本执行容器（1px，
+    // left:-9999px），对键盘/读屏用户没有可交互内容。给它可访问名称，并
+    // 从读屏树与 Tab 顺序中移除，避免读屏念出无名 frame、Tab 焦点跳进暗帧。
+    iframe.setAttribute('title', '脚本沙箱执行帧')
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.setAttribute('tabindex', '-1')
     // Strict sandbox: scripts run, but same-origin access is blocked.
     iframe.setAttribute('sandbox', 'allow-scripts')
     // Load the bootstrap page that registers the __oa4rust_sandbox_code listener.
