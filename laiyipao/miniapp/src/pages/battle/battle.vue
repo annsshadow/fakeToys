@@ -72,7 +72,7 @@
           此前体力在开战时就扣了，而页面**没有**任何放弃路径 ——
           中途退出等于「什么都没发生，但资源没了」。
         -->
-        <view v-if="!settled" class="abandon-btn" @click="abandon">
+        <view v-if="!settled || (settleResult && settleResult.error)" class="abandon-btn" @click="abandon">
           <Icon name="flag" :size="26" />
           <text>{{ abandoning ? '处理中…' : '放弃' }}</text>
         </view>
@@ -256,6 +256,9 @@
       </view>
       <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
       <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
+      <!-- 结算失败时 token 仍未 used_at，服务端仍允许放弃退体力；
+           不给出入口，玩家会白白损失开战时已扣的体力（或被迫再来一局再扣一次）。 -->
+      <view v-if="settleResult.error" class="btn" @click="abandon">{{ abandoning ? '处理中…' : '放弃并退回体力' }}</view>
       <view class="reward-row">
         <view v-for="(v, k) in settleResult.loot" :key="k" class="reward">
           <Icon :name="currencyIcon(String(k))" :size="28" />

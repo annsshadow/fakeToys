@@ -134,7 +134,7 @@ async function submit(): Promise<void> {
     return
   }
   if (fields.value.length) {
-    errors.value = validateSimpleForm(fields.value, values.value)
+    errors.value = validateSimpleForm(fields.value, values.value, attachments.value)
     if (Object.keys(errors.value).length) {
       submitTip.value = '请先修正表单校验错误'
       return

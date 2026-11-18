@@ -56,3 +56,19 @@ describe('validateSimpleForm 必填空白判定（R246）', () => {
     expect(validateSimpleForm(fields, { reason: 'ok', note: '   ' })).toEqual({})
   })
 })
+
+describe('validateSimpleForm 必填附件与上传态一致（R257）', () => {
+  const attach = [{ ...requiredField('attach', '证明材料'), type: 'attachment' as const }]
+
+  it('已上传的必填附件不再被误判为未填', () => {
+    // start.vue 把上传结果放在 attachments[field.key]，不写回 values；校验必须认这个来源，
+    // 否则用户上传附件后仍被"为必填项"拦住，永远无法发起带必填附件的流程。
+    expect(validateSimpleForm(attach, {}, { attach: [{ id: 'f1', name: 'proof.pdf' }] })).toEqual({})
+  })
+
+  it('附件数组为空仍判未填', () => {
+    expect(validateSimpleForm(attach, {}, { attach: [] })).toEqual({
+      attach: '证明材料 为必填项',
+    })
+  })
+})

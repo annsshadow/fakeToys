@@ -3072,3 +3072,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - laiyipao/miniapp 战报翻页忙标志复位（R256，lybug-r256）：battles.vue reload() 只 ++listReqSeq+loading=true 不复位 loadingMore，用户加载 more 在飞时切换筛选触发 reload，旧 loadMore 的 finally 因 seq 过期不复位忙标志→按钮永久卡「加载中…」且后续无法翻页。修复 reload 开头 loadingMore.value=false（+4 行含 3 注释）；battles.test.ts 新增行为用例（按钮恢复可点能继续翻页）。独立 RED（加载中… not to contain 加载中）→GREEN 8 passed。
 - 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 45 文件/329 passed + miniapp 142 文件/1487 passed(2 skipped) + admin 37 文件/497 passed + Rust IM crate 115 passed + OA 6 项目 typecheck 0 + OA lint 457 文件 0 error(29 info) + miniapp type-check/type-check:test 0 + admin vue-tsc 0 + diff --check 0。三处均 SPDX 双头、LF 保持、外科手术式改动。
 - 四目标：①目标一 R256 双代理交付完成（认证去重），持续找缺口②目标二 §99 已交付③目标三 R256 翻页忙标志修复完成④目标四 IM e2e 由真 bug 修复转绿，app-coverage 31+designer 4+IM 1=36 真实浏览器用例全绿。
+
+## 116. 第107轮：必填附件校验死锁 + 结算失败退体力 + e2e BBS 全流程转绿
+
+### 116.1 oa4rust/mobile 必填附件死锁（R257，oaopt-r257）
+- 缺口：form.ts validateSimpleForm 只从 values 判空，但 start.vue:240-245 把上传结果写 attachments[field.key]、不写回 values，且校验(:137)早于组包(:149-157)；attachment 类字段（映射见 form.ts:150-156）传完附件仍被"为必填项"拦，永远无法发起带必填附件的流程。修复：validateSimpleForm 加可选第三参 attachments，attachment 类型且 attachments[key].length 非空不判空；start.vue 调用传 attachments.value（3 文件 26+/3-，LF）。主线程独立 RED（expected {attach:证明材料 为必填项} toEqual {}）→GREEN 6 passed。负结果：process/start 两阶段提交与 chat 乐观消息等排除未改。
+
+### 116.2 laiyipao/miniapp 结算失败退体力入口（R257，lybug-r257）
+- 缺口：battle.vue settle() 第一行无条件 settled=true，catch 只写 error 不复位；放弃按钮 v-if="!settled" 被隐藏，兜底卡只有「再来一局」（redirectTo 会二次扣体力）。服务端 settlement 校验/replay 均在事务前返回、token used_at 只在事务内标记（game.go SettleBattle :448-459），结算失败时 token 仍可放弃退款（battleabandon.go :64-92），但客户端关掉了唯一入口→体力卡死。修复：放弃按钮条件放宽为 !settled||(settleResult&&settleResult.error)，兜底卡补「放弃并退回体力」按钮复用 abandon()（battle.vue +4/-1，CRLF 1756/BOM 保持；battle.test.ts +24 行 1 例）。主线程独立 RED（AssertionError 结算失败兜底卡必须保留退体力入口 expected undefined to be truthy @:452）→GREEN 37 passed。
+
+### 116.3 目标四 e2e：IM + BBS 转绿，剩余 reject 定性为环境时序
+- IM 修复（§115.5）后 oa-flows-live IM 用例由 error 转绿；BBS 全流程用例此前两处失败均为测试脆弱性：:79 getByRole(button,{name:"我的"}) strict mode 命中 3 元素→加 exact:true；:86「我的回复」命中顶部操作区与子栏两处→改用 .my-subtabs 容器定位；深层失败「暂无帖子」根因为造数 reply creator=e2e-live 与「我的回复」按会话登录人过滤（u2_my_reply_list u2.rs:1096-1097 空 body 回落 session）错配→改 creator=process.env.E2E_USERNAME??"admin"。修复后真实浏览器 --grep BBS 用例 1 passed，oa-flows-live 全量 4 passed/1 failed。
+- 剩余 workflow reject（:207 response.json 60s 超时）定性：DB 直查该次发起任务 create_time=2026-11-18 20:48:37 UTC（本地 04:48:37，即用例发起时刻）task_status 已是 expired；task_complete 状态门禁（lib.rs:3821-3827 仅 active/processing 放行）拒 complete/reject，属 seed-approval-flow start 活动 task 发起即 expired 的测试环境时序问题，非稳定 API bug，不改产品源码。
+- 真实浏览器 e2e 累计全绿：app-coverage 31 + designer-roundtrip 4 + oa-flows-live 4（含 IM/BBS/版块/ProgramCenter）= 39 passed；workflow-runtime 与 oa-flows reject 同源 expired，记为环境限制。
+
+### 116.4 门禁与负结果
+- 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 45 文件/331 passed + OA 6 项目 typecheck 0 + OA lint 457 文件 0 error(29 info)；miniapp 142 文件/1488 passed(2 skipped) + vue-tsc 0 + type-check:test 0；admin 37 文件/497 passed + vue-tsc 0；diff --check 0。三处源码均 SPDX 双头、格式（LF/CRLF+BOM）保持、外科手术式改动。
+- 四目标：①目标一 R257 双代理交付复核完成，持续找缺口②目标二 §99 已交付③目标三 R257 退体力修复完成④目标四真实 e2e 累计 39 passed，剩余 reject 定性为环境时序不改源码。凭证仅存仓库外临时文件+env，真值不入库。
