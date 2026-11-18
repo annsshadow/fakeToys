@@ -3041,3 +3041,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - oaopt-r254 负结果：无新增（本轮聚焦单处可达缺口）。lybug-r254 排除清单：admin/server 未改；R94-R103 已修同族写路径不再重复。
 - 门禁（主线程独立全量）：OA 156 文件/1640 passed + 6 项目 typecheck + lint 456 文件 0 error（29 info 既有）、mobile 门禁随 OA 通过；miniapp 142 文件/1486 passed（2 skipped 既有）+ type-check:test + type-check 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R254 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复商城钱包全局失同步真 bug，继续找但不强造。目标四（e2e 真实环境）隔离 PG 已迁移 384 表、admin 测试哈希已注入、后端二进制已重编（详见 §115 起 e2e 执行记录）。
+## 115. 第105轮：recycle 写后刷新契约 + e2e 真实环境首绿 + 陈旧断言修复
+
+### 115.1 oa4rust/mobile recycle 写后刷新乐观排除（R255）
+- 缺口：recycle.vue remove()/emptyAll() 成功 toast 后直接 await load()，load() 默认 previousRows=rows.value 仍含已删/已清空行；loadList 失败分支（utils/loadList.ts:57 return {ok:false,rows:[...previousRows],error}）回退旧数据→UI 提示成功但条目重现。模板 :143 remove(r)、:154 emptyAll 可达，:disabled=busy 仅防双击不阻首次点击。
+- 修复：remove() 改 await load(rows.value.filter((r)=>String(r.id??)!==id))、emptyAll() 改 await load([]) 并加注释；新增 recycle.writeRefresh.contract.test.ts（2 源码契约 + 1 loadList 行为闭环：正证乐观排除失败仅留 [b]、反证默认重现 [a,b]，SPDX 双头，LF）。
+- 复核：主线程独立 RED——git checkout 还原 recycle.vue 后 vitest run 该契约测试，2 failed（AssertionError expected async function remove... to match /await\s+load\(\s*rows\.value\.filter\(/ test:25；expected async function emptyAll... to match /await\s+load\(\[\]\)/ test:32）→恢复修复版 GREEN 3 passed。
+
+### 115.2 目标四 e2e 真实环境：app-coverage 31 passed 全绿
+- 环境：隔离 PG 容器 oa4rust-e2e-pg（宿主回环 55434，占位口令，.env 入 gitignore + CREDENTIAL_DENIED 保护），migrate-only 384 表；测试账号 bcrypt {bcrypt} 前缀哈希注入（口令仅存仓库外临时文件 + env，不入库）；后端 target/debug/oa4rust.exe 于 2026-11-19 03:28 重编。启动须带 OA4RUST_WEB_DIST 指向仓库外根路径产物副本 D:/tmp/oa4rust-dist-root（由 dist/web 替换 /oa4rust-api→/api、/oa4rust-ws→/ws、/oa4rust/→/ 得到）。
+- 登录链路纠偏：POST /api/authentication/login 正确字段为 {credential,password}（此前 {userName,password} 400 是字段名错），后端 crates/auth/src/lib.rs:155-164，前端 packages/apis/src/index.ts:50-51。Node fetch 直调 200 + setCookie oa4rust_session。password_expired=true 因 change_password_time 为 NULL，不阻断。
+- 陈旧断言修复：oa4rust/e2e/app-coverage.spec.ts:174-179 删 vue-i18n import 断言；:192-198 改为 test(i18n intentionally removed (优化轮37))，断言 not.toContain(createI18n/from vue-i18n/app.use(i18n))——与 main.test.ts:88-92「i18n removed」契约对齐。独立 RED→GREEN 严格串行：checkout 还原→--grep "Imports Vue|Initializes i18n" 得 2 failed→cp 恢复→--grep "i18n intentionally removed" 得 2 passed。
+- 根因与解决：完整 app-coverage 首次 17 个路由页 body hidden 5000ms，因 dist 引用 /oa4rust/assets/* 而本地后端只服务根路径，浏览器收到 SPA fallback HTML 而非真 JS，Vue 未挂载。纯环境配置切后端到根路径产物副本后重跑：31 passed（6.1s），真实浏览器 e2e 首次全绿（D:/tmp/e2e-full2.log）。仓库源码零改动（仅上述测试断言修正，放弃改 main.ts/vite.config.ts/产物的过度设计）。
+- 其余 3 个 e2e 文件待跑通：designer-roundtrip（4 往返）、oa-flows-live（5 全流程）、workflow-runtime（1 用例）。workflow-runtime 首跑：登录与流程发起成功，末尾 POST /api/task/{id}/complete 返回 400（后端 lib.rs:3821-3827 task_status 门禁或归属校验），属真实 API 线索，诊断中。
+
+### 115.3 负结果、门禁与目标状态
+- lybug-r255 全负结果零改动（task-201 claim→complete）。
+- 门禁（主线程独立）：OA 156 文件/1640 passed + 6 项目 typecheck 0 + mobile 45 文件/328 passed + diff --check 0（lint 上次 456 文件 0 error/29 info 既有）。SPDX 双头齐全，LF 保持。
+- 四目标：①目标一 R255 完成，持续找缺口②目标二 §99 已交付③目标三 R255 负结果，继续找但不强造④目标四 app-coverage 31 passed 全绿，其余 3 文件待跑通。

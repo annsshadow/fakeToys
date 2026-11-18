@@ -64,7 +64,8 @@ async function remove(r: Row): Promise<void> {
     if (!res) return
     await recycleApi.remove(id)
     uni.showToast({ title: '已删除', icon: 'success' })
-    await load()
+    // 刷新失败时 loadList 回退 previousRows；排除已删行，避免"已删除"提示后条目重现。
+    await load(rows.value.filter((r) => String(r.id ?? '') !== id))
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '删除失败', icon: 'none' })
   } finally {
@@ -115,7 +116,8 @@ async function emptyAll(): Promise<void> {
     if (!res) return
     await recycleApi.empty()
     uni.showToast({ title: '已清空', icon: 'success' })
-    await load()
+    // 清空成功后刷新失败也不能让旧行重现，previousRows 传空。
+    await load([])
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '清空失败', icon: 'none' })
   } finally {
