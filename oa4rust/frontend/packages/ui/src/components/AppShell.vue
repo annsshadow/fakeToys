@@ -47,6 +47,7 @@
             <input
               v-model="searchQuery"
               placeholder="搜索 (⌘K)"
+              data-oa-global-search
               class="search-input"
               @keydown.ctrl.k.prevent="focusSearch"
               @keydown.meta.k.prevent="focusSearch"
@@ -202,7 +203,7 @@ function toggleUserMenuOnKeydown(e: KeyboardEvent): void {
 }
 
 function focusSearch(): void {
-  const input = document.querySelector('.search-input') as HTMLInputElement
+  const input = document.querySelector('input[data-oa-global-search]') as HTMLInputElement
   input?.focus()
 }
 

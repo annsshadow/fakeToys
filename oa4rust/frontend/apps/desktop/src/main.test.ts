@@ -149,6 +149,17 @@ describe('main.ts executable verification', () => {
     })
   })
 
+  describe('Global search shortcut setup', () => {
+    // R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须全局可用，入口须装配快捷键安装器。
+    test('Installs the global search shortcut before mounting', () => {
+      expect(mainSource).toContain("import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'")
+      expect(mainSource).toContain('installGlobalSearchShortcut()')
+      expect(mainSource.indexOf('installGlobalSearchShortcut()')).toBeLessThan(
+        mainSource.indexOf("app.mount('#o2-app-root')"),
+      )
+    })
+  })
+
   describe('App plugins registration', () => {
     test('Registers multiple plugins', () => {
       expect(mainSource).toContain('app.use(createPinia())')

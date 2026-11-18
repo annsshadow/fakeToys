@@ -8,6 +8,7 @@ import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { installFormErrorA11y } from './utils/formErrorA11y'
+import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'
 import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
@@ -566,4 +567,6 @@ installSkipLink()
 installFormErrorA11y()
 // R202：全局表格表头作用域增强（WCAG 1.3.1），观察 v-if 异步插入的数据表格。
 installTableA11y()
+// R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须在应用任意位置可用。
+installGlobalSearchShortcut()
 app.mount('#o2-app-root')
