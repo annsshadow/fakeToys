@@ -714,3 +714,68 @@ describe('BattlesView 复制战报 ID（第 92 轮）', () => {
   })
 })
 
+/**
+ * 第53轮：快速切换筛选时，旧筛选的在飞响应不得覆盖新筛选结果。
+ *
+ * 服务端 fetchBattles 的 result 是全量过滤参数；运营先点一次「筛选」（默认/旧筛选），
+ * 请求在飞时把结果下拉改成「胜利」再点「筛选」，新请求先返回、旧请求后返回时，
+ * 老响应把 battles/total 写回，页面显示的仍是旧筛选的战报 —— 与刚选的「胜利」矛盾。
+ * 与 miniapp 战报切筛选竞态（34f6d3289）同族，但这里的 load() 没有请求序号守卫。
+ */
+describe('BattlesView 筛选竞态', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('新筛选先回、旧筛选后回：列表只显示新筛选的结果', async () => {
+    const d1 = deferred() // 首次挂载（旧筛选）
+    const d2 = deferred() // 旧筛选的「筛选」点击
+    const d3 = deferred() // 新筛选的「筛选」点击
+    let call = 0
+    fetchBattles.mockImplementation(() => {
+      call += 1
+      if (call === 1) return d1.promise
+      if (call === 2) return d2.promise
+      return d3.promise
+    })
+
+    const router = await makeRouter()
+    const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+    d1.resolve({ items: [battleFixture({ id: 1, result: 'win' })], total: 1 })
+    await flushPromises()
+
+    // 第一次「筛选」（旧筛选）→ 请求在飞
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 把结果下拉改成「胜利」→ 第二次「筛选」触发新请求
+    const vm = wrapper.vm as unknown as { result: string }
+    vm.result = 'win'
+    await flushPromises()
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(3)
+
+    // 新筛选先回：只含 id=99
+    d3.resolve({ items: [battleFixture({ id: 99, result: 'win' })], total: 1 })
+    await flushPromises()
+    // 旧筛选后回：含 id=1，不应覆盖新列表
+    d2.resolve({ items: [battleFixture({ id: 1, result: 'lose' })], total: 1 })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.el-table__row')
+    // 行为断言：页面只显示新筛选的 id=99（胜）；旧响应 id=1（负）不得回灌
+    expect(rows).toHaveLength(1)
+    expect(rows[0].text()).toContain('99')
+    expect(rows[0].text()).toContain('胜')
+    expect(rows[0].text()).not.toContain('负')
+    expect(vm.result).toBe('win')
+    wrapper.unmount()
+  })
+})
+

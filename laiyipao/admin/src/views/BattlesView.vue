@@ -146,7 +146,10 @@ async function copyBattleId(id: number) {
   }
 }
 
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     // 反应名与战报并发取。反应名失败**不**阻断战报列表 ——
@@ -156,13 +159,16 @@ async function load() {
       fetchBattles(filterParams.value),
       fetchReactionLabels().catch(() => null),
     ])
+    // 筛选/分页切换会让多份 load 并发；旧请求后到不得覆盖新筛选的结果。
+    if (seq !== loadSeq) return
     battles.value = res.items
     total.value = res.total
     reactionLabel.value = labels ?? reactionLabel.value
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`战报加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
