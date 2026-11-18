@@ -1592,3 +1592,30 @@ lybug-r42 逐字段核对签到周期与 day_index 状态机(economy.go:463-653 
 - 提交 37510913d + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 及 laiyipao 固定不动项维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界。
 - 推送教训复用：管道 tail 后 $? 是 tail 退出码须用 ${PIPESTATUS[0]}；Connection closed by 198.18.0.46 出口抖动重试即可，绝不先 update-ref。
+
+## 五十二、第43轮：R193 登录回跳开放重定向防护 + laiyipao 诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r193 修复一个真实开放重定向安全缺陷（R193）；lybug-r43 深查 laiyipao 全契约后如实报负结果、零改动。主线程独立复核 RED/GREEN、跑全量门禁后提交 R193。
+
+### 52.1 oa4rust R193 登录回跳开放重定向（提交 ba213087a）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | LoginScreen.vue 原回跳白名单仅用 startsWith(/) && !startsWith(//) 字符串判断；WHATWG URL 把反斜杠/控制字符当斜杠，new URL(/\\evil.example, base).origin 实落外部源（主线程 Node 实算确证 /\\evil.example、/\\/evil.example、/\t/evil.example 均落到 evil.example），构造 query 即可登录后跳外部站点 | 真实开放重定向，安全缺陷，不在 R181-R192 已做项内 |
+| 修复 | 新增 sdk/src/safeRedirect.ts 的 resolveSafeRedirect(raw:unknown):string：取 query 首个字符串，拒绝 //、反斜杠、控制字符(<0x20/0x7f)、跨 origin/protocol，用 new URL 实算复核后返回站内路径，默认 /app/dashboard；index.ts barrel 导出；LoginScreen.vue 改用 helper；4 文件含 Copyright/SPDX 头 | 同源深链(含 query/fragment)、可重复 query 数组、非 string 输入均正确处理 |
+| 门禁 | safeRedirect.contract.test.ts 4 行为契约 RED(模块不存在→FAIL)→GREEN 4/4；主线程独立复跑 4 passed；pnpm typecheck 6 包 Done、biome 4 文件 0 error、pnpm test 102 files 1390 passed；git diff --check EXIT=0、敏感扫描无命中 | 测试用 evil.example/oa.invalid 占位域名，无真值入库 |
+
+### 52.2 laiyipao 第43轮诚实负结果
+
+lybug-r43 先读服务端 Go 契约再逐项行为级核对 fixed.ts mulDiv/applyArmor↔damage.go(含 dmg<=0 早退)、能量定点恢复(R99 并发安全)、兑换码条件 UPDATE 互斥、订单分单位、评级规则↔levelgen.go、装备/技能/图鉴译名与千分比、scaledMs/scaledDelayTicks 跨端 round/ceil、battles.vue 统计分母除零、商城 limit_per_day=0、签到周期、challengeStats 胜率分母/离线 cap_hours/token 刷新、反应图鉴千分比、宝石品质 mult、敌人速度/攻击间隔单位共 15 类，全部一致或属已修/设计取舍。无可确证且有用户可见后果的新 bug，如实报负结果、零文件改动、未跑无意义门禁。连续第 31/34/41/42/43 轮负结果，印证 43.4 策略（bug 趋枯竭勿强造）。
+
+### 52.3 主线程侦察与目标二复核
+
+- laiyipao/admin（不在 lybug-r43 写范围）复核 SkillsView.vue ELEMENT_LABEL(5 元素)/FAMILY_LABEL(8 系别) 对照 server/internal/domain/content.go:328-464 与 elements.go:16-20 权威定义完全一致无契约漂移；DefensesView.vue:123-147 winRate/suspiciousRows 用 wins/losses 计算自洽；LevelsView.vue:45 clear_rate 服务端已按百分数下发不再乘 100；EconomyView/ContentView/format.ts 守卫成熟。无可确证新 bug，未强造改动。
+- 目标二 augmentor 本地 health=200、根页=200（http://127.0.0.1:8000）；远程部署仍卡 GitHub Secrets（gh CLI 不可用）超会话边界，维持 33.3 交付边界不臆造。
+
+### 52.4 交付与边界
+
+- 提交 ba213087a + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- B3、A1/A2/A5 及 laiyipao 固定不动项（wins/losses 方向、ChallengedToday、aoeRadius=0、config.levels[].seed 类型差异）维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线；目标二卡外部凭据；目标三连续负结果继续找但不强造。
