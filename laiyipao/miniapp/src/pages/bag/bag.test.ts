@@ -819,7 +819,9 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
     mockApi.fetchPresets.mockResolvedValue({
       presets: [{
         id: 9, name: '进攻套', is_current: true, created_at: 'x',
-        slots: { skills: [1, 4, 7], equipment: [1, 10], gems: [7, 8] },
+        // 第 94 轮：技能 id 必须在本文件 bagConfig 的技能库里（原 [1,4,7] 的 7 不存在，
+        // 4 还是被动）—— 应用预设后槽位会真实渲染这些技能，不存在的 id 会让模板崩。
+        slots: { skills: [1, 3, 5], equipment: [1, 10], gems: [7, 8] },
       }],
     })
     // 当前已佩戴一颗宝石（id 5）→ 应用时要先卸下。
@@ -827,7 +829,7 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
       gems: [{ id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare',
         affixes: [], equipped_slot: '1' }],
     })
-    mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 4, 7] })
+    mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 3, 5] })
     mockApi.saveEquippedEquipment.mockResolvedValue({ items: [] })
     mockApi.unequipGem.mockResolvedValue({
       gem: { id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare', affixes: [], equipped_slot: '' },
@@ -843,7 +845,7 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
     await flushPromises()
 
     // persistLoadout 会补齐 4 槽（不足补 0）
-    expect(mockApi.saveLoadout).toHaveBeenCalledWith([1, 4, 7, 0])
+    expect(mockApi.saveLoadout).toHaveBeenCalledWith([1, 3, 5, 0])
     expect(mockApi.saveEquippedEquipment).toHaveBeenCalledWith([1, 10])
     expect(mockApi.unequipGem).toHaveBeenCalledWith(5)
     expect(mockApi.equipGem).toHaveBeenCalledWith(7)

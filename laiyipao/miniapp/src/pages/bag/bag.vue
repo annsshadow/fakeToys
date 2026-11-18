@@ -1215,8 +1215,14 @@ async function doApplyPreset(p: api.PresetView) {
     // 1. 出战技能（槽位参与回放哈希，必须走服务端）
     const ok = await store.persistLoadout(p.slots.skills)
     if (!ok) throw new Error('出战技能保存失败')
-    // 2. 装备整组替换
-    await api.saveEquippedEquipment(p.slots.equipment)
+    // 第 94 轮：槽位 UI 用的是页内 selected，不是 store.loadout ——
+    // 不同步的话应用成功后槽位/热量预算还显示挂载时的旧快照
+    // （toggleEquip/clearSlot 成功后同样有这一步）。
+    selected.value = [...store.loadout]
+    // 2. 装备整组替换。响应带整组新 items，写回 myEquipments，
+    // 否则装备行的已装备标记/穿戴贡献/换装建议全停在旧状态（equip/unequip 同款写法）。
+    const eqres = await api.saveEquippedEquipment(p.slots.equipment)
+    myEquipments.value = eqres.items ?? myEquipments.value
     // 3. 宝石：先卸当前全部已佩戴，再按预设逐个佩戴（上限 6 颗由服务端判）
     const gresp = await api.fetchGems()
     for (const g of gresp.gems ?? []) {
