@@ -33,6 +33,8 @@ function getContainer(): HTMLDivElement {
 }
 
 function showToast(opts: ToastOptions): void {
+  // 无 DOM 环境（原生 App 壳 / SSR）下 toast 无处渲染，静默降级而非抛错。
+  if (typeof document === 'undefined') return
   const { type = 'info', duration = 3000, message } = opts
   const container = getContainer()
 
@@ -99,8 +101,8 @@ function removeToast(el: HTMLElement): void {
   setTimeout(() => el.remove(), 200)
 }
 
-// Inject keyframes once
-if (!document.getElementById('oa4-toast-styles')) {
+// Inject keyframes once（无 DOM 环境下跳过，模块须可被安全 import）
+if (typeof document !== 'undefined' && !document.getElementById('oa4-toast-styles')) {
   const style = document.createElement('style')
   style.id = 'oa4-toast-styles'
   style.textContent = `
