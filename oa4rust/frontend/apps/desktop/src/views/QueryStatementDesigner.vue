@@ -886,6 +886,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
+import { buildCsv } from '../utils/csv'
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { formatPercent } from '../utils/formatNumber'
@@ -1117,11 +1118,11 @@ function sortResult(col: string) {
 }
 function exportCSV() {
   if (!resultData.value.length) return
-  const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  const csv = buildCsv(
+    resultHeaders.value,
+    resultData.value.map((r) => resultHeaders.value.map((h) => String(r[h] ?? ''))),
   )
-  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, 'query_result.csv')
 }
 

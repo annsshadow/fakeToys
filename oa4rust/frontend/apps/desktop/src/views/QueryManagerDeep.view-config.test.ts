@@ -18,8 +18,9 @@ describe('QueryManagerDeep 视图配置真应用', () => {
   it('结果网格与导出走视图投影（所见即所得）', () => {
     expect(source).toContain('v-for="h in viewHeaders"')
     expect(source).toContain('v-for="(row,i) in displayRows"')
-    expect(source).toContain('const header = viewHeaders.value.join')
-    expect(source).toContain('const rows = viewRows.value.map')
+    expect(source).toContain("import { buildCsv, parseCsv } from '../utils/csv'")
+    expect(source).toContain('const csv = buildCsv(')
+    expect(source).toContain('viewRows.value.map((r) => viewHeaders.value.map')
   })
 
   it('过滤表达式客户端求值：等值/不等/包含/裸子串，无注入面', () => {

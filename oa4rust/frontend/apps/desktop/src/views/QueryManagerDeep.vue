@@ -434,7 +434,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
-import { parseCsv } from '../utils/csv'
+import { buildCsv, parseCsv } from '../utils/csv'
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
@@ -1040,12 +1040,12 @@ async function importData() {
 }
 function exportResults() {
   if (!viewRows.value.length) return
-  // 导出跟随视图配置投影（所见即所得）
-  const header = viewHeaders.value.join(',')
-  const rows = viewRows.value.map((r) =>
-    viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  // 导出跟随视图配置投影（所见即所得）；表头/字段统一引号转义，避免列名含逗号时错列
+  const csv = buildCsv(
+    viewHeaders.value,
+    viewRows.value.map((r) => viewHeaders.value.map((h) => String(r[h] ?? ''))),
   )
-  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, 'query_result.csv')
 }
 function fmtTime(t?: string) {

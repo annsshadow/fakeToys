@@ -43,7 +43,8 @@ describe('QueryManagerDeep 表格设计（tableConfig）真应用', () => {
   })
 
   it('导出仍走视图投影（viewRows/viewHeaders），不被交互层污染', () => {
-    expect(source).toContain('const rows = viewRows.value.map')
-    expect(source).toContain('const header = viewHeaders.value.join')
+    expect(source).toContain('const csv = buildCsv(')
+    expect(source).toContain('viewRows.value.map((r) => viewHeaders.value.map')
+    expect(source).not.toContain("viewHeaders.value.join(',')")
   })
 })
