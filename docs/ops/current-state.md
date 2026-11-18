@@ -2330,3 +2330,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 69 轮侦察全负结果：订单金额 amount/100 与服务端分单位一致、netFlow 读 f.delta、所有分页 @current-change 绑定 load 系列、UsersView 封禁 Object.assign 回填与 isCancel 分离、9 个导出 handler 传筛选参数、数字单位与零除保护正确、CSV objectURL 配对、复制 try/catch 完整、ContentView 提交防重就位；无可确证新 bug 不强造。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health）、根页 / 与 /docs /openapi.json 均 200、匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R219 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理找到 miniapp 切关竞态真 bug 已修，主线程 admin 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+
+## 79. 第 70 轮现量：R220 结果表可排序表头无障碍 + admin 公告预览表单污染真 bug
+
+### 79.1 R220 结果表可排序表头无障碍（WCAG 2.1.1/2.4.7/1.3.1）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/QueryManagerDeep.vue 与 QueryStatementDesigner.vue 的结果表可排序 th 只有 @click，键盘无法聚焦/激活（2.1.1），焦点环无处落脚（2.4.7），读屏器无 aria-sort 不知当前排序方向（1.3.1）。 |
+| 修复 | 两处 th 加 tabindex=0、role=button、:aria-sort 三态（none/ascending/descending，分别绑 sortState / sortCol+sortAsc）、@keydown.enter 与 @keydown.space.prevent 触发原排序处理（toggleSort / sortResult）；纯属性增强，排序逻辑不动。新增 sortableHeaderA11y.contract.test.ts 源码级扫描 6 例（两表各 tabindex/Enter+Space/aria-sort 三态）。 |
+| 门禁 | 主线程独立 RED（cp 备份两 vue→git checkout 回退→契约测试 6/6 failed→cp 恢复→6/6 passed）；全量 oa4rust 130 文件/1512 passed、typecheck 6 项目 Done、lint 412 文件 0 error（24 info 既有）。 |
+
+### 79.2 admin 编辑中行级预览他条公告污染编辑表单（真 bug）
+
+- 真 bug：laiyipao/admin/src/views/ContentView.vue 的 previewAnnouncement(a) 原直接把被预览公告的 title/body/published 写进编辑表单 annForm，却不改 editingAnnId。用户正在编辑公告 A（editingAnnId=A.id）时点击列表另一公告 B 的「预览」，annForm 变成 B 内容而 editingAnnId 仍是 A；关闭预览点「更新」，submitAnnouncement 以 A.id 调 updateAnnouncement 写入 B 的内容，造成用户可见数据损坏。第 55 轮 previewPubAt 只修了发布时间伪造，未覆盖此状态污染。
+- 修复：预览对话框改用独立快照 previewForm，彻底不碰 annForm。新增 previewForm ref；previewAnnouncement(a) 只写 previewForm 与 previewPubAt 后调抽出的 showPreviewDialog()（校验标题正文非空）；openPreview() 先浅拷贝 annForm 到 previewForm 再复用同一校验；模板三处 annForm.title/published/body 改绑 previewForm。
+- 验证：ContentView.test.ts 末尾加行为测试 1 例（编辑 A→预览 B→提交，断言 updateAnnouncement 收到 A.id 与 A 的原内容）；RED 实收 updateAnnouncement(1, B内容) 证明污染，GREEN 1 passed；admin 全量 34 文件/475 passed、vue-tsc 0。
+
+### 79.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r220 负结果零改动：护盾剩余时间、diagnosis failed_times、战斗时长单位、upgradeSkill wallet 回填、hp_left、钱包竞态 6 类候选双向核对全一致，miniapp+server 写范围无改动，不强造。主线程 admin 第 70 轮侦察另确认公告发布切换、分页钳制、删除后回退、编辑表单赋值等均无缺口。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R220 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程 admin 找到公告预览表单污染真 bug 已修，lybug 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
