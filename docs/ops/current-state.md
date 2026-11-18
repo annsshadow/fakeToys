@@ -1731,3 +1731,34 @@ lybug-r47 按 lead 要求收敛后报负结果、零改动：逐类核对离线�
 
 - 提交 9b87dd7f7 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R197 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
+
+## 五十七、第48轮：R198 WebSocket单例订阅泄漏 + admin文本对比度AA + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r198 修复一处真实事件订阅泄漏；主线程在 laiyipao/admin（子代理写范围外）首次审计并修复弱化文本对比度缺陷；lybug-r48 聚焦事务/并发/错误码/SQL/时区/溢出维度深查后如实报负结果、零改动。三个写范围互斥，主线程独立复核 RED/GREEN 与全量门禁后分两批提交。
+
+### 57.1 oa4rust R198 WebSocket单例订阅卸载后不释放（提交 d5640c0e9）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | packages/sdk/src/websocket.ts 的 handlers=Map<string,Set<MessageHandler>>，on() 入 Set、off() 需同引用，但 close() 原实现从不清 handlers；scheduleReconnect() 由 onclose 触发不经 close()。IMChat.vue:613/649/654 每次挂载用匿名闭包 ws.on(im_create/presence/receipt)，闭包捕获 allMessages/selectedChat/queryClient，onUnmounted 只调 ws.close()。useWebSocket() 返回模块级单例跨路由常驻：反复进出 IM 每次塞 3 个新匿名 handler（Set 按引用去重无效），旧闭包永久残留——每条消息触发 N 份旧 handler、重复 invalidateQueries、对已卸载组件 ref 写回、内存随进出线性增长 | 真实性能/内存泄漏；R195 发现 packages/ui 是 lifecycleAudit 盲区后，本轮在 sdk 层发现同族缺陷（既有 websocket.test.ts 未覆盖订阅释放）|
+| 修复 | close() 中 _connected=false 之后加 handlers.clear() + 注释说明：主动关闭（组件卸载/登出）彻底拆订阅；意外断线走 onclose→scheduleReconnect 不经 close()，订阅照常保留 | 1 改 + 1 新契约测试（168 行含 Copyright/SPDX 头、@vitest-environment node）|
+| 门禁 | websocket.handler-lifecycle.contract.test.ts 4 行为测试（close 后旧 handler 不触发、清空各事件与 $all、单例跨路由重挂、意外断线重连保留订阅）RED(3 failed/1 passed，expected length 1 but got 2，counts 实得 {im:2,presence:1,receipt:1,all:4})→GREEN 4/4；主线程独立复跑 4 passed；oa4rust 根 pnpm test 107 文件/1420 passed、typecheck 6 包、biome 2 文件 0 error；diff --check 0、敏感扫描无命中 | 测试无真值域名/IP/密钥 |
+
+### 57.2 laiyipao/admin 弱化文本对比度 WCAG AA 1.4.3（提交 767b179c6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | admin 全仓此前从未做过对比度审计（R185/R191/R192 均在 oa4rust 桌面/移动端）。:root 的 --lyp-muted #8b949e、--lyp-dim #6b7480 承载大量活动正文小字（.kpi-sub/.hint/.nav-group-title/.dim/EP secondary text）：WCAG sRGB 实算 dim 对四深色背景 bg/panel/panel-2/panel-3 仅 4.06/3.70/3.39/3.03:1，全部低于 AA 1.4.3 的 4.5:1（muted 4.66~6.25 达标）。用户可见：KPI 副标题、登录提示、导航分组标题在深色背景上偏暗难读 | 真实系统性无障碍标准缺口，admin 从未审计 |
+| 修复 | --lyp-muted #8b949e→#9aa5b2、--lyp-dim #6b7480→#96a0ad（提亮后 dim 对最亮背景 5.41:1、muted 5.73:1，仍保 text-2>muted>dim 四阶层级）；新增 tests/textContrast.test.ts 按 WCAG sRGB 实算四背景≥4.5:1 并断言层级 | 2 文件（1 改 + 1 新契约测试含 Copyright/SPDX 头）；仅 main.css token 层，视图零改动 |
+| 门禁 | textContrast.test.ts RED(dim on bg 4.06<4.5)→GREEN 3/3；主线程独立复跑 3 passed；admin 全量 29 文件/437 passed、vue-tsc 0；diff --check 0、敏感扫描无命中 | 测试仅读 CSS token 无真值；admin type-check:test 另有 pre-existing 错误（UsersView.test.ts:95 defense 字段类型，与本次改动无关，git diff 确认该文件未改）|
+
+### 57.3 laiyipao 第48轮诚实负结果与主线程核实
+
+- lybug-r48 聚焦此前较少覆盖维度深查，全部有守卫/属已修：事务边界(SignIn/Redeem/AdminCreateRedeemCodes/AdminLogin 同事务+唯一键，ban_atomicity_test.go)、并发竞态(idem potency RunIdempotent 23505 分支+tx_pool_guard_test.go)、错误码(codes.go:95-105 全映射+contract_r96_test.go)、SQL 边界(clampLimit/负offset夹0/负cursor降级/next_cursor用HasMore/keyword转义)、时区日期(固定 Asia/Shanghai+periodStart 先 In 再截断+time_range_test.go)、溢出除零(arith_helpers/collections_overflow/muldiv_overflow 全覆盖)。零改动、未跑无意义门禁。
+- 主线程独立核实"可疑但排除"候选：后台 parseQueryTime 按 UTC 解析与业务时区差 8h——middleware.go:569 注释与 time_range_test.go:64-69 已把 UTC 语义钉死为业务意图，前端 nextDay() 同样用 T00:00:00Z，全链路口径一致；改成业务时区需重定义权威口径并同步前后端与测试，方案不唯一，属语义歧义不强造，同意不动。
+- 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页200/匿名 POST=401，远程卡 GitHub Secrets 超会话边界）。B3、A1/A2/A5 及 laiyipao 固定不动项维持记账。
+
+### 57.4 交付
+
+- 两提交 d5640c0e9、767b179c6 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R198 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
