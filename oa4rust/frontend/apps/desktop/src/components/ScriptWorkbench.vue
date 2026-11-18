@@ -56,7 +56,7 @@
 // W7：三域脚本设计器共享工作台——列表 + CodeMirror 编辑器 + 保存/删除 + 版本历史。
 // 后端差异（端点/字段名）由各视图的 adapter 承接，本组件只管交互。
 import { computed, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptCodeEditor from './ScriptCodeEditor.vue'
 
@@ -178,10 +178,6 @@ async function remove(): Promise<void> {
 
 function restore(version: ScriptVersion): void {
   if (typeof version.content === 'string') form.value.code = version.content
-}
-
-function confirmMsg(message: string): boolean {
-  return typeof window !== 'undefined' ? window.confirm(message) : false
 }
 
 refresh()
