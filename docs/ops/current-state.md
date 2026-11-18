@@ -1762,3 +1762,39 @@ lybug-r47 按 lead 要求收敛后报负结果、零改动：逐类核对离线�
 
 - 两提交 d5640c0e9、767b179c6 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R198 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
+
+## 五十八、第49轮：R199 ScriptWorkbench可访问确认框 + laiyipao昵称Unicode码点 + admin WCAG 2.4.1跳转链接（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r199 修一处无障碍缺陷（本地原生 window.confirm 遮蔽项目可访问异步 confirmMsg）；lybug-r49 修一处用户可见 bug（昵称长度按 UTF-16 码元校验与服务端 rune 口径错位）；主线程在 admin（子代理写范围外）首次落地 WCAG 2.4.1 跳转到主要内容链接。三写范围互斥，主线程独立复核 RED/GREEN 与双全量门禁后分三批提交。
+
+### 58.1 oa4rust R199 脚本工作台删除改用可访问异步确认框（提交 6de37ef22）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | apps/desktop/src/components/ScriptWorkbench.vue 第 162-163 行 async remove() 已写 await confirmMsg(...)，但第 183-185 行本地定义 function confirmMsg(message):boolean { return window.confirm(message) }，且第 59 行只 import toast——本地原生包装遮蔽了 utils/toast.ts:153 导出的可访问 confirmMsg(message,title):Promise<boolean>（role=dialog/aria-modal/焦点移入取消按钮/Tab焦点陷阱/Esc关闭/焦点归还）。原生 confirm 无上述无障碍能力；无 window 的非浏览器 shell 环境静默返回 false 永远删不掉。三路由 cms/portal/process-script-designer 均加载此组件。confirm-await.test.ts 只守调用是否 await，不守 await 的是谁——旧守卫长期绿 | 真实无障碍+功能缺陷；R197 prompt/R198 WebSocket 未覆盖 |
+| 修复 | 第 59 行改为 import { confirmMsg, toast } from ../utils/toast；删本地原生包装；第 163 行 await 保持不变。新增 scriptWorkbenchConfirm.test.ts（含 Copyright/SPDX 头，node 环境）从源码解析 remove() 实际绑定，本地包装以 new Function 在无 window 下求值复现同步布尔路径，否则断言从 ../utils/toast 导入可访问异步实现 | 2 文件（1 改 + 1 新契约测试）；仅 frontend/apps/desktop 范围 |
+| 门禁 | 契约 2 例 RED（expected false to be an instance of Promise + 本地包装源码字面量）→GREEN 2/2；主线程从 oa4rust 根独立复跑 2 passed；pnpm test 108 文件/1422 passed、typecheck 6 包 Done、biome 改动 2 文件 0 error；diff --check 0、敏感扫描无命中 | 测试无真值域名/IP/密钥 |
+
+### 58.2 laiyipao miniapp 昵称长度按 Unicode 码点计数（提交 f3f8fca5b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | miniapp/src/pages/me/me.vue:1109 的 submitNickname 用 name.length > 64 校验——JS .length 数 UTF-16 code unit，一个 emoji 占 2 单元却算 1 个字；服务端 player_account.go:120 用 utf8.RuneCountInString、service.go:451 GuestLogin 用 len([]rune(nickname))、MaxNicknameLen=64（service.go:393），均按码点。64 个 emoji 是地道 64 字，服务端放行但客户端抢先拒绝——用户可见功能失效 | 真实契约错位 bug；新方向未修过 |
+| 修复 | 改为 [...name].length > 64（展开运算符按码点计数）并加注释说明服务端 rune 口径；me.test.ts 补 updateNickname mock + 两条行为测试（64 emoji 应提交 / 65 emoji 应拒，夹具自检修[64,128]） | 2 文件（1 改 + 1 测试）；仅 miniapp 范围 |
+| 门禁 | RED（64 emoji 用例 expected vi.fn() to be called with  emoji... Number of calls: 0）→GREEN 2/2；主线程独立复跑 me.test.ts 28 passed；miniapp pnpm test 133 文件/1472 passed|2 skipped、vue-tsc 0、tsc 测试类型 0、server go test ./internal/domain/... -skip TestNoRealSecretsInRepo PASS；diff --check 0、敏感扫描无命中 | 测试文本仅 emoji 无真值 |
+
+### 58.3 laiyipao/admin WCAG 2.4.1 跳转到主要内容（提交 d6d3ba128）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | admin 此前无跳转到主要内容链接（R187 只在 oa4rust 桌面落地），键盘用户打开后台每次都要 Tab 过侧边栏全部导航才能到主内容（WCAG 2.4.1 Bypass Blocks） | 真实系统性无障碍缺口；属统一设计标准 |
+| 修复 | 新增 src/utils/skipLink.ts installSkipLink()：链接插在 #app 之前跨路由常驻、MutationObserver 给 #main-content 补 tabindex=-1、点击把焦点移入目标、返回 dispose 幂等移除；main.ts 挂载前调用；AdminLayout.vue 的 el-main 加 id=main-content；main.css 加 .skip-link 视觉样式（focus 时从 -1000px 落到 12px）与 #main-content:focus:not(:focus-visible) outline:none | 4 文件（1 改 main + 1 改 layout + 1 改 css + 2 新文件，共 5 文件）；仅 admin 范围 |
+| 门禁 | skipLink.test.ts 4 例 jsdom（首个可聚焦元素/点击移焦点/异步挂载/dispose）首次因 fixture 把 aside 放在 #app 外致 2 失败（expected ASIDE to be A），对齐真实 DOM（aside+main 均在 #app 内）后 GREEN 4/4；admin 全量 30 文件/441 passed、vue-tsc 0；diff --check 0、敏感扫描无命中 | fixture 无真值；测试仅 DOM 结构 |
+
+### 58.4 交付边界与审阅记录
+
+- oa4rust R199 的本地 confirm 包装是历史遗留（R160 confirmMsg 无障碍升级只覆盖显式 import 方，遗漏 ScriptWorkbench 自带同名包装）；本轮用契约测试钉死"删除必须 await 可访问异步 confirmMsg"，防止本地包装复活。R197 prompt/R198 WebSocket 已修面不变。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异；本轮昵称码点 bug 是 miniapp 新方向，与此前千分比族 bug 不同源。
+- 目标二 augmentor 本轮复核本地 health=200/根页=200，维持 33.3 交付边界（远程卡 GitHub Secrets DEPLOY_* 超会话边界，gh CLI 不可用）；口令存 gitignored Temp/aug-key.txt 不回显。
+- 提交 f3f8fca5b、6de37ef22、d6d3ba128 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R199 完成）；目标二卡外部凭据；目标三本轮 miniapp 昵称码点真 bug 已修，继续找但不强造。
