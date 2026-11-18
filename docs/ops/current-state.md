@@ -2712,3 +2712,16 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 三代码提交：8d6a64eae(R238 前端)、bf0513bfb(miniapp 战报详情竞态)、3e8205525(admin 看板图 a11y)，docs §97 本提交。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R238 完成（列定义表格控件可访问名，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 找到 miniapp 战报详情竞态真 bug 并修、admin 主线程找到看板图 a11y 缺口并修。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 98. 第 89 轮现量：R239 文件关闭按钮可访问名 + lybug/admin/mobile 全负结果
+
+### 98.1 R239 文件引用面板与详情弹窗关闭按钮补可访问名
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/FileManager.vue:172/185 两个字形 ✕ 关闭按钮（关闭引用面板/关闭文件详情）仅含字形无 aria-label/title，读屏只念「乘号按钮」无法区分（WCAG 4.1.2 Name/Role/Value Level A）；同文件其他图标按钮均有 title，为孤岛；现有 labelA11y/formErrorA11y/modalFocus/glyphButtonA11y 增强器均不覆盖。 |
+| 修复 | 两处各补 aria-label="关闭引用面板"/"关闭文件详情"；新增 FileManager.closeA11y.contract.test.ts（vitest+readFileSync 源码契约 4 例，含所有 ✕ 关闭按钮必须有可读名的兜底断言）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退组件→契约 3 failed/1 passed→恢复→4 passed）；全量 oa4rust 149 文件/1604 passed、typecheck 6 项目、lint 440 文件 0 error（29 info 既有）、diff --check OK、敏感扫描无命中。 |
+
+### 98.2 负结果、目标二与交付边界
+- lybug-r239 负结果零改动：写范围 laiyipao/miniapp+server git status 空；双向核对约 50 request↔routes.go、DTO 逐字段、竞态序号守卫、幂等键、定时器清理、错误码、定点单位、战斗核心事务全一致，按约束不强造；主线程 admin 第 89 轮侦察全负结果（12 视图 @change/@current-change/watch 分布、RecomputesView loadSeq 守卫就位、详情守卫就位、无 selection/index 列、纯图形仅星级第81轮已修）。
+- 关键决策：mobile search.vue 曾试加 createLatestGate 竞态守卫（RED→GREEN 通过），复核发现 doSearch 有 loading 守卫 + 按钮 :disabled="loading" + retry 仅 loading=false 出现，旧新请求无法真实并发，属防御性冗余非真 bug，已 git checkout HEAD 完全撤销——写竞态守卫前必须验证旧新请求能否真实并发，否则构成滥竽充数。
+- 三目标仍 active：目标一 R239 完成（文件关闭按钮可访问名，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
