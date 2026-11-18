@@ -13,6 +13,7 @@ import { installLabelA11y } from './utils/labelA11y'
 import { installLoadingA11y } from './utils/loadingA11y'
 import { installViewModalManager } from './utils/modalFocus'
 import { installProgressA11y } from './utils/progressA11y'
+import { createRouteAnnouncer } from './utils/routeAnnouncer'
 import { installSearchFieldA11y } from './utils/searchFieldA11y'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
@@ -523,9 +524,12 @@ router.beforeEach(async (to) => {
 })
 
 // 86 条路由均声明 meta.title，导航后同步到 document.title（多标签页/历史记录可辨识）。
+// R231：导航后同时播报新页面标题并把键盘焦点移到主内容（WCAG 2.4.3 / 4.1.3）。
+const routeAnnouncer = createRouteAnnouncer()
 router.afterEach((to) => {
   const title = to.meta.title as string | undefined
   document.title = title ? `${title} · OA4Rust` : 'OA4Rust'
+  routeAnnouncer.announce(to)
 })
 
 const queryClient = new QueryClient({
