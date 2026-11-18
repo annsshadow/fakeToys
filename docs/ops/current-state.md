@@ -2081,3 +2081,33 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 成果分三提交（R208 / admin CSV 导出条数 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R208 验证码刷新键盘可达性完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 三处 CSV 导出条数），子代理负结果，继续找但不强造。
+## 68. 第 59 轮：R209 密码可见性按钮无障碍 + admin ContentView 四加载器筛选竞态 + laiyipao 负结果
+
+起点 HEAD=13566b042，分支 feat/h5-battle-substantive-100。oaopt-r209 负责 oa4rust/frontend（R209），lybug-r59 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 68.1 R209 登录页密码可见性按钮无障碍（WCAG 4.1.2 Name, Role, Value / Level A）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/ui/src/components/LoginScreen.vue 密码框旁切换明文/密文的眼睛按钮 <button class="eye-btn"> 唯一内容是 emoji（👁 / 🙈），既无 aria-label / title 提供可访问名称，也无 aria-pressed 暴露当前状态。读屏用户在密码框后遇到「无名按钮」且无法知道密码当前是隐藏还是可见——发生在登录这一关键路径。同文件验证码刷新有 aria-label、OAuth 有 :title、登录按钮有文本，唯独此处是孤岛；历史 R155–R208（labelA11y 只校验 input、inputPurposeA11y 只校验 autocomplete、R195 lifecycle 只管 resize、lifecycleAudit 扫描根不含 packages/ui）均未覆盖。 |
+| 修复 | 眼睛按钮补 aria-label="显示或隐藏密码" 与 :aria-pressed="showPassword"（+2 行）；新增 LoginScreen.passwordA11y.contract.test.ts 2 例（源码级读取 .vue，断言可访问名称存在且为人类语言、aria-pressed 绑定 showPassword），锁定名称与状态防回归。 |
+| 门禁 | RED（修复前 2 failed：缺 aria-label、缺 :aria-pressed）→GREEN 2 passed；主线程独立复核 diff 干净、契约测试断言合理；全量 oa4rust 118 文件/1461 passed、typecheck 6 项目 Done、lint 396 文件 0 error（20 info 既有）。 |
+
+### 68.2 admin ContentView 四加载器筛选竞态守卫
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/ContentView.vue 四个 tab 加载器 loadAnnouncements / loadCodes / loadLogs / loadRedeemUsages 均无请求序号守卫，与已修 BattlesView(loadSeq)/UsersView(listReqSeq) 同族：快速切换筛选时旧筛选的慢响应后到，覆盖新筛选的 announcements/codes/logs/redeemUsages + total，页面显示与当前筛选条件不符。 |
+| 修复 | 四个加载器各加 let xxxReqSeq=0（redeemUsageReqSeq/annReqSeq/codeReqSeq/logReqSeq），load 开头 const seq=++xxxReqSeq，await 后与 catch 内各加 if (seq!==xxxReqSeq) return，丢弃过期响应与过期报错提示。 |
+| 门禁 | ContentView.test.ts 末尾加 describe「ContentView 公告筛选竞态（第 59 轮）」1 例（deferred 造 old/new 两个可控 Promise，先 resolve 新后 resolve 旧，断言页面保留新筛选结果）。RED 1 failed（实收旧筛选结果覆盖新结果）→GREEN；admin 全量 34 文件/467 passed、vue-tsc exit 0。 |
+
+### 68.3 laiyipao 负结果与目标二边界
+
+- lybug-r59 负结果零改动：服务端权威契约（domain/service/httpapi）↔ miniapp 消费面逐类核对 6 大类（分页/keyset 边界、数值单位/溢出、时区/日界/时钟、DTO 字段/tag、状态机/鉴权/错误码、并发竞态），全部一致、已修或语义歧义，无满足「真实可确证+用户可见+非已修+非固定不动项」的新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0（注意不是 /health），根页//docs/openapi.json 均 200，匿名 POST 404；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，口令存 gitignored 本地文件不回显，不臆造地址账号密码。
+
+### 68.4 交付边界与审阅记录
+
+- 成果分三提交（R209 / admin ContentView 竞态 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R209 密码可见性按钮无障碍完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin ContentView 四加载器筛选竞态），子代理负结果，继续找但不强造。
