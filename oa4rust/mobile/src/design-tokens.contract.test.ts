@@ -338,3 +338,9 @@ describe('移动端状态文字对比度契约（WCAG 2.1 AA / 1.4.3）', () => 
     }
   })
 })
+
+describe('移动端全局 color-scheme 契约（原生控件配色一致）', () => {
+  it('App.vue 全局样式声明与浅色设计 token 匹配的 color-scheme: light', () => {
+    expect(app).toMatch(/page\s*\{[^}]*color-scheme:\s*light\s*;/)
+  })
+})

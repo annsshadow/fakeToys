@@ -34,6 +34,8 @@ page {
   --color-success-text: #1e7e34;
   --color-placeholder: #c0c4cc;
 
+  /* 全局原生控件（input/select/滚动条/autofill）配色跟随浅色主题，避免系统默认深色/浅色割裂。 */
+  color-scheme: light;
   background-color: var(--color-bg-page);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
