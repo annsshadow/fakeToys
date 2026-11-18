@@ -2111,3 +2111,32 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 成果分三提交（R209 / admin ContentView 竞态 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R209 密码可见性按钮无障碍完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin ContentView 四加载器筛选竞态），子代理负结果，继续找但不强造。
+
+## 69. 第 60 轮现量：R210 组织选择器选中态无障碍 + admin 战报详情竞态
+
+### 69.1 R210 OrganizationSelector 选中状态无障碍（WCAG 4.1.2 Name, Role, Value）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/packages/ui/src/components/OrganizationSelector.vue（已导出 O2OrganizationSelector 可复用组件）中，切换搜索类型的 type-button 仅用 :class={active} 表达激活态、搜索结果 result-item 仅用 :class={selected} 表达已选，唯一可见标记 <span class=selection-mark aria-hidden=true> 对读屏隐藏。读屏用户无法得知当前激活哪种类型、结果中哪项已选，WCAG 4.1.2 Level A 真实违背。R179 只修该组件搜索类型竞态、R201/R206/R209 均未触及本组件，现有组件测试零 ARIA 状态断言。 |
+| 修复 | type-button 加 :aria-pressed="activeType === type"；result-item 加 :aria-pressed="isSelected(item)"，共 +2 行。 |
+| 门禁 | 新增 OrganizationSelector.ariaState.contract.test.ts 2 例（源码级抽取两个 button 片段断言 aria-pressed 精确绑定）。RED 2 failed（无 aria-pressed）→GREEN 2 passed；新测试+原组件测试 2 文件 5 passed；主线程独立复跑全量 oa4rust 119 文件/1463 passed、typecheck 6 项目 Done、lint 397 文件 0 error（20 info 既有）。 |
+
+### 69.2 admin BattlesView 详情抽屉请求竞态守卫
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/BattlesView.vue 的 openDetail() 无请求序号守卫，而同项目 UsersView.openDetail 早有 detailReqSeq 守卫。先点战报 A 详情（慢请求），关闭抽屉再点战报 B（快请求），B 先渲染后 A 的迟到响应把 detail 改回 A —— 抽屉上下文是 B、内容却是 A。 |
+| 修复 | openDetail 前加 let detailReqSeq=0，开头 const seq=++detailReqSeq，await fetchBattleDetail 后与 catch 内各加 if (seq!==detailReqSeq) return，丢弃过期响应与过期报错。 |
+| 门禁 | BattlesView.test.ts 末尾加 describe「BattlesView 详情抽屉竞态（第 60 轮）」1 例（deferred 造旧/新两个可控 Promise，先 resolve 新再 resolve 旧，断言 vm.detail.id===2）。RED 1 failed（expected 1 to be 2）→GREEN 1 passed；admin 全量 34 文件/468 passed、vue-tsc exit 0。 |
+
+### 69.3 laiyipao 负结果与目标二边界
+
+- lybug-r60 负结果零改动：服务端权威契约（domain/service/httpapi）↔ miniapp 消费面逐类交叉核对 gems 词条单位、挑战次数/won、订单金额状态、公告、离线收益、星级、构筑评级、专精、皮肤/反应图鉴、损失排行、技能升级公式，全部一致或属已修/固定不动项。重点排除：千分比口径一致、损失排行进度条 width=Math.min(100,total/5) 属 Top5 视觉归一非业务 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，口令存 gitignored 本地文件不回显，不臆造地址账号密码。
+
+### 69.4 交付边界与审阅记录
+
+- 成果分三提交（R210 / admin BattlesView 详情竞态 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R210 组织选择器选中态无障碍完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin BattlesView 详情抽屉竞态），子代理负结果，继续找但不强造。
