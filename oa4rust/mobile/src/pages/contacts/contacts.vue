@@ -6,6 +6,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { messageApi, orgApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { describeLoadError, listState, loadList } from '@/utils/loadList'
 
 const keyword = ref('')
@@ -14,6 +15,8 @@ const loading = ref(false)
 const loaded = ref(false)
 const loadError = ref('')
 const busyId = ref('')
+const personDetailGate = createLatestGate()
+const unitPeopleGate = createLatestGate()
 const listView = computed(() =>
   listState({ loading: loading.value, loaded: loaded.value, count: rows.value.length, error: loadError.value }),
 )
@@ -101,20 +104,25 @@ function switchMode(next: Mode): void {
 /** 打开人员详情：并行取身份与角色（任一失败不影响另一）。 */
 async function openPerson(row: Record<string, unknown>): Promise<void> {
   const flag = typeof row.flag === 'string' ? row.flag : ''
+  const token = personDetailGate.begin()
   detail.value = row
   detailError.value = ''
   identities.value = []
   roles.value = []
-  if (!flag) return
+  if (!flag) {
+    detailLoading.value = false
+    return
+  }
   detailLoading.value = true
   try {
     const [ids, rls] = await Promise.allSettled([orgApi.personIdentities(flag), orgApi.personRoles(flag)])
+    if (!personDetailGate.isLatest(token)) return
     if (ids.status === 'fulfilled') identities.value = (ids.value.data ?? []) as Record<string, unknown>[]
     if (rls.status === 'fulfilled') roles.value = (rls.value.data ?? []) as Record<string, unknown>[]
     const failed = ids.status === 'rejected' ? ids.reason : rls.status === 'rejected' ? rls.reason : null
     if (failed) detailError.value = describeLoadError('身份与角色加载失败', failed)
   } finally {
-    detailLoading.value = false
+    if (personDetailGate.isLatest(token)) detailLoading.value = false
   }
 }
 
@@ -132,6 +140,7 @@ const unitPeopleTarget = ref<Record<string, unknown> | null>(null)
 async function openUnit(row: Record<string, unknown>): Promise<void> {
   const unit = String(row.id ?? row.name ?? '')
   if (!unit) return
+  const token = unitPeopleGate.begin()
   unitPeopleName.value = orgNameOf(row)
   unitPeopleTarget.value = row
   unitPeopleError.value = ''
@@ -145,6 +154,7 @@ async function openUnit(row: Record<string, unknown>): Promise<void> {
     },
     { label: '单位人员加载失败' },
   )
+  if (!unitPeopleGate.isLatest(token)) return
   unitPeople.value = result.rows
   if (!result.ok) unitPeopleError.value = result.error
   unitPeopleLoading.value = false
