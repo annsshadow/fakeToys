@@ -435,3 +435,31 @@ describe('RecomputesView 用户跳转用户详情（第 96 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('筛选应重置台账分页（第 57 轮）', () => {
+  it('在第 3 页改筛选后点「筛选」：offset 回到 0，避免新筛选的小结果集被误判为空', async () => {
+    // 分页器 v-if=total>50，给足总数让翻页状态真实存在。
+    fetchRecomputes.mockResolvedValue({ items: [row()], total: 500 })
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as { ledgerPage: number; userId: number | undefined }
+
+    // 运营已经翻到第 3 页（offset=100）。
+    vm.ledgerPage = 3
+    await flushPromises()
+
+    // 改筛选条件后点「筛选」。
+    vm.userId = 42
+    const btn = wrapper.findAll('button').find((b) => b.text() === '筛选')
+    expect(btn, '找不到「筛选」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    const last = fetchRecomputes.mock.calls[fetchRecomputes.mock.calls.length - 1][0]
+    expect(last.user_id, '筛选条件未生效，测试没有触发到正确请求').toBe(42)
+    expect(
+      last.offset,
+      '改筛选后仍停在旧页：offset 不为 0，新筛选只有几条时会被误判为「无不符记录」',
+    ).toBe(0)
+    wrapper.unmount()
+  })
+})

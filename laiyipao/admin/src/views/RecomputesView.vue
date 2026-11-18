@@ -566,7 +566,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           placeholder="关卡 ID"
           style="width: 120px"
         />
-        <el-button @click="load">筛选</el-button>
+        <!-- 第 57 轮：改筛选必须回到第一页，否则旧页 offset 会把小结果集误判为空表（与 BattlesView 同款）。 -->
+        <el-button @click="((ledgerPage = 1), load())">筛选</el-button>
         <el-checkbox v-model="onlyMismatch" style="margin-left: 12px">只看不符</el-checkbox>
         <!-- 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮） -->
         <el-button style="margin-left: 12px" @click="onExportCsv">导出 CSV</el-button>
