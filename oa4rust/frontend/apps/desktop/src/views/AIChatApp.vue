@@ -46,7 +46,7 @@
       <div class="sidebar glass-card">
         <div class="sidebar-header">
           <button class="btn-new" @click="createNewChat">+ 新对话</button>
-          <button class="btn-config" title="MCP 配置" @click="openConfig">⚙</button>
+          <button class="btn-config" title="MCP 配置" aria-label="MCP 配置" @click="openConfig">⚙</button>
         </div>
         <div class="chat-list">
           <div
@@ -61,7 +61,11 @@
               <div class="chat-title">{{ c.title || c.name || '未命名对话' }}</div>
               <div class="chat-meta">{{ formatDate(c.updatedAt) }}</div>
             </div>
-            <button class="btn-del-sm" @click.stop="deleteChat(c)">✕</button>
+            <button
+              class="btn-del-sm"
+              :aria-label="`删除对话：${c.title || c.name || '未命名对话'}`"
+              @click.stop="deleteChat(c)"
+            >✕</button>
           </div>
           <ListLoadError v-if="conversations.length > 0 && convoError" mode="banner" :message="convoError" @retry="loadConversations" />
           <ListLoadError v-else-if="conversations.length === 0 && convoError" mode="empty" :message="convoError" @retry="loadConversations" />
@@ -105,7 +109,7 @@
             <div v-if="attachments.length" class="attach-chips">
               <span v-for="(a, i) in attachments" :key="i" class="attach-chip">
                 📎 {{ a.name }}
-                <button class="attach-x" @click="attachments.splice(i, 1)">✕</button>
+                <button class="attach-x" aria-label="移除附件" @click="attachments.splice(i, 1)">✕</button>
               </span>
             </div>
             <textarea
@@ -118,7 +122,12 @@
             ></textarea>
             <div class="input-actions">
               <input ref="fileInputRef" type="file" class="file-hidden" @change="onPickFile" />
-              <button class="btn-attach" title="上传附件" @click="fileInputRef?.click()">📎</button>
+              <button
+                class="btn-attach"
+                title="上传附件"
+                aria-label="上传附件"
+                @click="fileInputRef?.click()"
+              >📎</button>
               <label class="stream-toggle" title="切换流式/整段回复">
                 <input v-model="streamMode" type="checkbox" />
                 流式
