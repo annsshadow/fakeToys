@@ -2489,3 +2489,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 77 轮侦察全负结果：format.ts 工具函数、除法除零保护、9 个导出 API 与列表筛选同口径、date_to nextDay UTC 开区间、路由深链（UsersView user_id/WikiView sameTarget/LoginView redirectTarget /admin 前缀）、分页 @current-change、表单校验（parseReward/parsePriceMap/submitCode/submitEdit）、client.ts 401 处理与错误信封、DashboardView echarts 实例缓存、mobile 工具（轮询退避/日期越界/文件大小）均正确无缺口；本轮唯一可确证新 bug 为 86.1 R227（oa4rust 面）。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R227 完成（验证规则应用到选中接线，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 87. 第 78 轮现量：R228 登录失败消息可播报 + admin/mobile 全负结果
+
+### 87.1 R228 登录失败消息可播报（WCAG 4.1.3 Status Messages）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/packages/ui/src/components/LoginScreen.vue 登录失败提示 <div v-if="error" class="error-msg">{{ error }}</div> 由 v-if 异步插入，纯视觉文案无 role/aria-live；认证失败（含需要验证码的 401）后读屏用户听不到「登录失败」，页面看似无变化。全局 formErrorA11y 只处理带 data-oa-field-error 的字段级错误（XformRuntime 路径），R226 ListLoadError 只覆盖列表加载失败，均不覆盖此处，为未覆盖的真 4.1.3 缺口。 |
+| 修复 | 一行最小改动：失败提示 div 加 role="alert" aria-live="assertive"，使异步插入的错误文案被读屏立即播报；保留 v-if="error" 与 error 文本渲染。新增 LoginScreen.errorAnnouncement.contract.test.ts 3 例（源码标签扫描）。 |
+| 门禁 | 契约 RED 2 failed|1 passed→GREEN 3/3（失败断言实收 <div v-if="error" class="error-msg"> 缺 role/aria-live）；主线程独立 RED（cp 备份→git checkout HEAD 回退→RED 2 failed→cp 恢复→GREEN 3 passed）；全量 oa4rust 139 文件/1550 passed、typecheck 6 项目 Done、lint 422 文件 0 error（29 info 既有）。 |
+
+### 87.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r228 负结果零改动：写范围 laiyipao/miniapp+server 双向核对（异步陈旧响应竞态序号守卫、延迟回调卸载守卫、401 令牌续期单飞、store 单飞、分页夹取、CSV 注入防护与字节预算、RunIdempotent 幂等、ttlCache 单飞、preset 归属校验、revive 血量口径、定点 permille 跨端）全一致或已修，无新 bug 不强造。
+- 主线程 admin 第 78 轮侦察全负结果：日期区间 nextDay UTC 开区间、关键词/表单 trim、各 applyXxxFilter 重置 page=1、事件处理器交叉检查（NO MISSING HANDLERS DETECTED）、offsetPager 上界对齐、onActivated 首次跳过刷新、api/index.ts 布尔参数 1/0 转换、广义模板孤儿标识符扫描（3 处命中均属 v-for 作用域变量误报）均正确；mobile 面 latest 令牌/listState 三分支/轮询退避/网络状态可见化均完备。本轮唯一可确证新成果为 87.1 R228（oa4rust 面）。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R228 完成（登录失败状态消息可播报，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
