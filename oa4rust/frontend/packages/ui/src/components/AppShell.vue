@@ -6,14 +6,14 @@
     <!-- 侧边栏 -->
     <aside class="sidebar" :style="{ width: sidebarCollapsed ? '64px' : '240px' }">
       <div class="sidebar-header">
-        <div class="logo" @click="sidebarCollapsed = !sidebarCollapsed">
+        <div class="logo" role="button" tabindex="0" aria-label="切换侧边栏" @click="toggleSidebar" @keydown.enter="toggleSidebar" @keydown.space.prevent="toggleSidebar">
           <span class="logo-icon">◆</span>
           <span v-show="!sidebarCollapsed" class="logo-text">OA4RUST</span>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" :class="{ active: isActive(item.path) }" @click="navigate(item)">
+        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
         </div>
@@ -35,7 +35,7 @@
       <!-- 顶栏 -->
       <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
         <div class="topbar-left">
-          <button class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed">
+          <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
           </button>
           <div class="breadcrumb">{{ currentTitle }}</div>
@@ -59,7 +59,7 @@
             <span class="icon">🔔</span>
             <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
           </button>
-          <div class="user-menu" @click="showUserMenu = !showUserMenu">
+          <div class="user-menu" role="button" tabindex="0" aria-haspopup="menu" :aria-expanded="showUserMenu" aria-label="用户菜单" @click="toggleUserMenu" @keydown.enter="toggleUserMenuOnKeydown" @keydown.space.prevent="toggleUserMenuOnKeydown">
             <img
               v-if="user?.icon"
               :src="user.icon"
@@ -105,8 +105,12 @@
         v-for="item in mobileNavItems"
         :key="item.path"
         class="tab-item"
+        role="button"
+        tabindex="0"
         :class="{ active: isActive(item.path) }"
         @click="navigate(item)"
+        @keydown.enter="navigate(item)"
+        @keydown.space.prevent="navigate(item)"
       >
         <span class="tab-icon">{{ item.icon }}</span>
         <span class="tab-label">{{ item.label }}</span>
@@ -181,6 +185,20 @@ function isActive(path: string): boolean {
 function navigate(item: NavItem): void {
   if (item.path) router.push(item.path)
   showUserMenu.value = false
+}
+
+function toggleSidebar(): void {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+function toggleUserMenu(): void {
+  showUserMenu.value = !showUserMenu.value
+}
+
+// 仅在焦点位于 user-menu 本身时切换；下拉项（链接/按钮）的 Enter 交给其原生行为，
+// 避免键盘打开子菜单时被父级 keydown 冒泡再次关闭。
+function toggleUserMenuOnKeydown(e: KeyboardEvent): void {
+  if (e.target === e.currentTarget) toggleUserMenu()
 }
 
 function focusSearch(): void {
