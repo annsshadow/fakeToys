@@ -3,6 +3,7 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
 import { confirmTokenValid, getToken, setToken } from '@/api/client'
+import { createRouteAnnouncer } from '@/utils/routeAnnouncer'
 
 /**
  * 路由表与 AdminLayout 的侧边栏一一对应。
@@ -101,8 +102,15 @@ function syncDocumentTitle(to: { meta?: Record<string, unknown> }) {
   document.title = page ? `${page} · ${BASE_TITLE}` : BASE_TITLE
 }
 
+let routeAnnouncer: ReturnType<typeof createRouteAnnouncer> | null = null
+function getRouteAnnouncer() {
+  if (!routeAnnouncer && typeof document !== 'undefined') routeAnnouncer = createRouteAnnouncer()
+  return routeAnnouncer
+}
+
 router.afterEach((to) => {
   syncDocumentTitle(to)
+  getRouteAnnouncer()?.announce(to)
   if (router.currentRoute.value.path !== '/admin/login' && !getToken()) {
     setToken('')
   }
