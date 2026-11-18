@@ -1319,6 +1319,9 @@ async function onDeleteMyDefense() {
     shielded.value = false
     uni.showToast({ title: '防线已删除', icon: 'none' })
     await loadDefenses()
+    // 第 103 轮（R246）：服务端删除防线时 defense_challenges 随外键 CASCADE
+    // 消失；这是页内动作（不触发 onShow），必须就地重拉被挑战记录，否则卡片停在旧快照。
+    await loadDefenseChallengeHistory()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   }
