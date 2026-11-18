@@ -882,14 +882,22 @@ function mapText(m: Record<string, number> | undefined): string {
     .join('、')
 }
 
+// 第 88 轮：切战报详情的请求序号守卫。与 stage/rank/signin 同构 ——
+// 快速点不同战报时，先发的慢响应若晚到，会覆盖后发战报的详情（掉落/命中串味）。
+let battleDetailReqSeq = 0
+
 async function toggleBattleDetail(b: api.BattleHistoryItem) {
   if (battleDetail.value?.id === b.id) {
     battleDetail.value = null
     return
   }
+  const seq = ++battleDetailReqSeq
   try {
-    battleDetail.value = await api.myBattleDetail(b.id)
+    const fresh = await api.myBattleDetail(b.id)
+    if (seq !== battleDetailReqSeq) return // 已有更新的详情请求，丢弃陈旧响应
+    battleDetail.value = fresh
   } catch {
+    if (seq !== battleDetailReqSeq) return
     battleDetail.value = null
   }
 }

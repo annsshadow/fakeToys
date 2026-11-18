@@ -31,6 +31,9 @@ describe('战报详情功能守卫', () => {
   it('me.vue 必须包含战报详情入口与展开逻辑', () => {
     const src = readFileSync(ME_VUE, 'utf-8')
     expect(src).toContain('toggleBattleDetail(b)')
-    expect(src).toContain('battleDetail.value = await api.myBattleDetail(b.id)')
+    // 第 88 轮：详情加载加了请求序号守卫，赋值改为「先 await 再判序号后写回」，
+    // 因此不再要求旧的整句字面量；但仍必须存在「取单局详情 + 写回 battleDetail」两步。
+    expect(src).toMatch(/await\s+api\.myBattleDetail\(b\.id\)/)
+    expect(src).toMatch(/battleDetail\.value\s*=/)
   })
 })
