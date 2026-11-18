@@ -10,6 +10,7 @@
         type="button"
         class="type-button"
         :class="{ active: activeType === type }"
+        :aria-pressed="activeType === type"
         @click="activeType = type"
       >
         {{ typeLabels[type] }}
@@ -41,6 +42,7 @@
           type="button"
           class="result-item"
           :class="{ selected: isSelected(item) }"
+          :aria-pressed="isSelected(item)"
           :disabled="disabled"
           @click="toggle(item)"
         >
