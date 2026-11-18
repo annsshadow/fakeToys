@@ -2538,3 +2538,24 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程第 80 轮 admin+mobile 侦察全负结果：admin 12 视图无 sortable/sort-change/resetFields、exportDateLabel 覆盖 6 视图、CSV 由服务端生成前端只下载；mobile 76 文件仅 bbs/new.vue 一处 maxlength=100，BBS 发帖 canSubmit+submitting 守卫完备，系统扫描 4 处疑似提交弱点全为正则误报。未发现可确证新 bug，不强造。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R230 完成（上传遮罩接入焦点增强器，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+
+## 90. 第 81 轮现量：R231 路由切换播报 + admin 星级文本替代 + CORS 幂等头放行
+
+### 90.1 R231 SPA 路由导航无障碍（WCAG 2.4.3 / 4.1.3）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/main.ts 的 router.afterEach 只把 meta.title 同步到 document.title（:526-529），SPA 视图切换后既不移动键盘焦点也不播报页面切换。侧栏/底栏导航项是 div role=button，键盘用户激活后焦点停在原元素，读屏听不到页面变化；86 条业务路由全为客户端导航，影响面全局。R224-R230 已覆盖 toast/遮罩/主题/消息但未覆盖路由切换。 |
+| 修复 | 新增 oa4rust/frontend/apps/desktop/src/utils/routeAnnouncer.ts：createRouteAnnouncer(doc) 导航后写入 aria-live=polite/role=status/aria-atomic=true 的 sr-only live region「已切换到：<title>」（无 title 用「页面已切换」），并把焦点移到 #main-content 补 tabindex=-1；AppShell out-in 过渡使新 main 晚挂载，做 50ms×20 次有限重试；无 main 的登录/SSO 路由仅播报不抛错；dispose 清理 region 与重试。main.ts afterEach 内保留原 title 行并追加 routeAnnouncer.announce(to)，实例创建一次。新增 routeAnnouncer.contract.test.ts 7 例 jsdom 行为测试+源码接线契约。 |
+| 门禁 | 契约 RED（移除模块→Failed to resolve import）→GREEN 7/7；主线程独立 RED（cp 备份→git checkout 回退 main→移走模块→RED 1 failed suite→恢复→GREEN 7 passed）；新测试首次 lint 报 import 顺序 1 error，经 biome check --write 修复后 oa4rust lint exit 0；全量 oa4rust 142 文件/1561 passed、typecheck 6 项目 Done、diff --check OK。 |
+
+### 90.2 laiyipao 真 bug：admin 星级列文本替代 + server CORS 放行幂等键
+
+- admin 星级非文本内容（主线程）：laiyipao/admin/src/views/BattlesView.vue:406 星级列 <template #default="{ row }">{{ "★".repeat(row.stars) }}</template> 是唯一纯图形编码数据列，读屏把 ★★★ 念成一串 star 需自己数，列头仅「星」无文本替代（WCAG 1.1.1），其他列都用 el-tag 带文字。修复为 <span role="img" :aria-label="row.stars + ' 星'">…</span>，tests/BattlesView.test.ts 末尾加 describe「BattlesView 星级非文本替代（第 81 轮）」1 例（stars:3 断言 role=img + aria-label="3 星"）。RED 实跑 img.exists false→GREEN；独立 RED（cp 备份→git checkout HEAD 回退→1 failed→cp 恢复→1 passed）成立。admin 34 文件/479 passed、vue-tsc exit 0。
+- server CORS 预检漏 Idempotency-Key（lybug-r231）：laiyipao/miniapp/src/api/client.ts:418/444 的 buyItem 给 POST /shop/:id/buy 带自定义头 Idempotency-Key，浏览器对带自定义头的跨域 POST 必发 OPTIONS 预检；服务端 middleware.go:712 原 Allow-Headers=Content-Type,Authorization 不含该头，H5 跨域购买整批被拦在预检（routes.go:711-713 早有同型警告，既有 TestCORSHeadersAndPreflight 只验 Allow-Origin 与 204 漏掉头内容）。修复 middleware.go:712 白名单补 Idempotency-Key（单行最小改动），新增 cors_idempotency_key_test.go TestCORSPreflightAllowsIdempotencyKey 实测预检响应头含 idempotency-key 且保留原两 header。RED（回退白名单→FAIL 实收 Content-Type,Authorization）→GREEN（PASS），gofmt -l 空。
+
+### 90.3 负结果、目标二与交付边界
+
+- lybug-r231 除 CORS 外，写范围 laiyipao/miniapp+server 其余双向核对全一致，无新 bug 不强造。全量门禁：miniapp 134 文件/1475 passed|2 skipped、vue-tsc exit 0；server httpapi go test 全包 512s PASS（含新 CORS 用例）、domain 包 PASS、service 包 3 个 DB e2e 因无 DSN（NO_DB_ENV，SQLSTATE 57P01）失败，与 CORS 改动无关，历史记账排除，完整 Go 门禁需 TEST_DATABASE_URL 环境。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R231 完成（路由切换播报+焦点迁移，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 admin 星级文本替代与 server CORS 幂等头两处真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
