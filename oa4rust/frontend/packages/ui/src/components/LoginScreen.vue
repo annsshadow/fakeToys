@@ -281,19 +281,22 @@ function cleanupParticles(): void {
   if (animFrame) cancelAnimationFrame(animFrame)
 }
 
+function handleResize(): void {
+  const canvas = canvasRef.value
+  if (canvas) {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+  }
+}
+
 onMounted(() => {
   initParticles()
-  window.addEventListener('resize', () => {
-    const canvas = canvasRef.value
-    if (canvas) {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-  })
+  window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
   cleanupParticles()
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
