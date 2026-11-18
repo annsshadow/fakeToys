@@ -709,7 +709,7 @@ func cors(allow []string) fiber.Handler {
 		}
 		if origin != "" {
 			c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-			c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+			c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization,Idempotency-Key")
 			c.Set("Access-Control-Max-Age", "600")
 		}
 		if c.Method() == fiber.MethodOptions {
