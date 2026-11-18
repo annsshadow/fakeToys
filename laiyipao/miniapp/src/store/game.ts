@@ -495,6 +495,28 @@ export const useGameStore = defineStore('game', () => {
       if (me.account) {
         accountCreatedAt.value = me.account.created_at ?? ''
         accountLastLoginAt.value = me.account.last_login_at ?? ''
+        // task-81（第 44 轮）：/me.account 是登录态的权威身份快照。
+        // 服务端 UpgradeGuestAccount 会把 is_guest 翻成 false、PUT /me/nickname
+        // 会改昵称，但此前这里只取注册/登录时间 —— 游客转正后本会话仍显示
+        // 「游客账号」、改密码入口不出现，改名后顶部昵称也不更新，直到
+        // 用户重新登录才恢复。同步落盘身份摘要，冷启动才能立刻是正确态。
+        // 缺字段（老服务端）时保留本地值，与 max_stage 的兜底口径一致。
+        let identityChanged = false
+        if (typeof me.account.is_guest === 'boolean' && me.account.is_guest !== isGuest.value) {
+          isGuest.value = me.account.is_guest
+          identityChanged = true
+        }
+        if (
+          typeof me.account.nickname === 'string' &&
+          me.account.nickname &&
+          me.account.nickname !== nickname.value
+        ) {
+          nickname.value = me.account.nickname
+          identityChanged = true
+        }
+        if (identityChanged) {
+          api.saveProfile({ nickname: nickname.value, isGuest: isGuest.value })
+        }
       }
     } catch (e) {
       // 静默：页面会展示已有数据，不因刷新失败而白屏

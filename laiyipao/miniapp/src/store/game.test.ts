@@ -441,6 +441,33 @@ describe('档案与钱包刷新', () => {
     expect(store.power).toBe(0)
   })
 
+  it('refreshProfile：以 /me.account 为准刷新账号身份（游客转正后立即切换账号视图）', async () => {
+    // 服务端 UpgradeGuestAccount 把 users.is_guest 写成 FALSE，/me 的
+    // account 字段下发的就是登录态权威快照。此前 refreshProfile 只读了
+    // created_at / last_login_at，忽略 is_guest —— 游客转正后 me 页还显示
+    // 「游客账号」且「修改密码」入口不出现，直到重新登录才恢复。
+    store.isGuest = true
+    store.nickname = '游客7'
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9,
+      account: { created_at: '2026-01-01T00:00:00Z', last_login_at: '2026-01-02T00:00:00Z', is_guest: false, nickname: '转正玩家' },
+    } as any)
+    await store.refreshProfile()
+    expect(store.isGuest).toBe(false)
+    expect(store.nickname).toBe('转正玩家')
+    expect(mockApi.saveProfile).toHaveBeenCalledWith({ nickname: '转正玩家', isGuest: false })
+  })
+
+  it('refreshProfile：/me.account 缺少 is_guest 时保留本地身份（老服务端兜底）', async () => {
+    store.isGuest = true
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9,
+      account: { created_at: '2026-01-01T00:00:00Z', last_login_at: '2026-01-02T00:00:00Z' },
+    } as any)
+    await store.refreshProfile()
+    expect(store.isGuest).toBe(true)
+  })
+
   it('refreshWallet 成功 / 失败都不抛', async () => {
     mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
     await store.refreshWallet()
