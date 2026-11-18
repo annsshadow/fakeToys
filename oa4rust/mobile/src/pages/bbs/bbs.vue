@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { bbsApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { loadBbsTopics } from './bbsFeed'
 
 const session = useSession()
@@ -14,6 +15,7 @@ const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 const bbsError = ref('')
+const listGate = createLatestGate()
 
 function titleOf(row: Record<string, unknown>): string {
   const v = row.title
@@ -42,16 +44,16 @@ async function load() {
     loaded.value = true
     return
   }
+  const token = listGate.begin()
   loading.value = true
   bbsError.value = ''
-  try {
-    const result = await loadBbsTopics(() => bbsApi.mobileViewAll(), rows.value)
-    rows.value = result.rows
-    if (!result.ok) bbsError.value = result.error
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  const result = await loadBbsTopics(() => bbsApi.mobileViewAll(), rows.value)
+  // 下拉刷新 / 重试可并发触发：过期响应不得覆盖新请求的数据，也不得提前复位 loading。
+  if (!listGate.isLatest(token)) return
+  rows.value = result.rows
+  if (!result.ok) bbsError.value = result.error
+  loading.value = false
+  loaded.value = true
 }
 
 onShow(async () => {

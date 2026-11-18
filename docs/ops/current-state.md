@@ -3205,3 +3205,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 123.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 159 文件/1646 passed + pnpm typecheck 6 项目 0 + biome lint 463 文件 0 error(29 info 既有)；miniapp 142 文件/1489 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。R264 源码 SPDX 双头、LF 保持、真值不入库。
 - 四目标：①目标一 R264 版块删除守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R264 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 124. 第115轮：论坛列表竞态守卫 + 购买确认弹窗期防双扣
+
+### 124.1 oa4rust/mobile 论坛列表并发令牌守卫（R265，oaopt-r265）
+- 缺口：bbs.vue load() 无并发令牌，三条触发路径（onShow/onPullDownRefresh/失败重试模板 @tap=load）可并发。uni.request 封装未暴露 RequestTask 无法 abort；慢网下旧请求 A 晚于新请求 B 返回时，A 用发起时旧 rows 快照覆盖新数据，且 A 的 finally 提前把 loading=false 造成 B 仍在飞却显示刷新完成。同构缺陷 browse/calendar/process/contacts 均已用 createLatestGate 修复，唯 bbs 漏接。
+- 修复：bbs.vue import createLatestGate、新增 const listGate=createLatestGate()；load() 在 await loadBbsTopics 前 const token=listGate.begin()，响应后 if (!listGate.isLatest(token)) return 再写 rows/bbsError/loading/loaded（去掉原 try/finally，loadBbsTopics 内部全捕获异常不外抛）。+10/-8，LF 保持。
+- 测试：新增 bbs.listRace.contract.test.ts（SPDX 双头）3 例源码契约（入口无忙标志阻挡、begin 早于 await、过期响应写操作全在 guard 之后）。主线程独立 RED→GREEN（注意根 vitest.config.ts exclude mobile/**，须在 oa4rust/mobile 包内跑 pnpm exec vitest run src/pages/bbs/...）：RED exit1 2 failed（expected false to be true @:23、expected -1 to be greater than -1 @:32）→恢复 GREEN 3 passed。代理曾因 -t 过滤词与 it 名不符致 3 skipped 假绿，识别后改整文件运行。
+
+### 124.2 laiyipao/miniapp 购买确认弹窗期防双扣（R265，lybug-r265）
+- 缺口：shop.vue doBuy() 原在 await uni.showModal() 之后才置 buyingId；弹窗 awaiting 期间守卫仍为 0，连点第二件商品穿过守卫弹第二个确认框，两个都确认则发两次 buyItem——client.ts 每次调用生成不同幂等键，服务端按两笔成交，玩家被扣两次币。取消分支原本未复位守卫存在按钮卡死隐患。
+- 修复：soldOut 检查后、showModal 前置 buyingId.value=it.id（+5 行中文注释说明双扣风险），取消分支拆为 if(!confirmed) buyingId.value=0 + if(!confirmed) return 保留既有源码断言字面子串，删原 await 后的置位，finally 复位不变。BOM/换行风格保持。新增 shop_buy_modal_guard.test.ts（双头 jsdom，2 例：弹窗待决期连点只弹一次只发一次购买 + 取消复位）。
+- 主线程独立 RED→GREEN（仅还原 shop.vue，保留新测试防 skipped 假绿）：在 laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/shop/shop_buy_modal_guard.test.ts，RED exit1 AssertionError expected "vi.fn()" to be called 1 times, but got 2 times（:98）→恢复 GREEN 2 passed。
+- 证伪方向（勿重复）：分页 boundary（admin offsetPager MAX_OFFSET=25000 + cappedTotal/canGoNext、服务端 clampLimit/queryOffset 越界拒绝，测试充分）；HTTP200 业务错误信封（admin ApiError 集中处理、miniapp 2xx 直 resolve + 服务端统一 httperr.Render 真实非 2xx，整体证伪）；admin 批量兑换码/ContentView 批量码/RecomputesView 双竞态守卫均已加固；game.ts loadConfig/换号守卫、battles.vue listReqSeq/loadingMore 复位已到位。后续线索：其他页 uni.showModal/异步确认前守卫置位一致性（退款、删除类操作）。
+
+### 124.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 159 文件/1646 passed + pnpm typecheck 6 项目 0 + biome lint 464 文件 0 error(29 info 既有)；miniapp 143 文件/1491 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处源码 SPDX 双头、格式（LF/BOM）保持、真值不入库。
+- 四目标：①目标一 R265 论坛列表竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R265 购买弹窗期双扣真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

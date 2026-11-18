@@ -361,6 +361,11 @@ async function load() {
 async function doBuy(it: ShopItem) {
   if (buyingId.value !== 0) return
   if (soldOut(it)) return
+  // ⚠️ 守卫必须在 showModal **之前**置位（同 battle.vue 放弃局的做法）：
+  // 弹窗 await 期间 buyingId 若还是 0，连点第二件会穿过守卫弹出第二个确认框，
+  // 两个都确认就发两次 buyItem —— 每次调用生成不同幂等键（client.ts），
+  // 服务端按两笔成交，玩家被扣两次币。取消时也必须复位，否则按钮卡在「购买中」。
+  buyingId.value = it.id
   // 购买二次确认（2026-11-01 新一轮第 91 轮）：消耗货币，防止误点误购。
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
@@ -372,8 +377,8 @@ async function doBuy(it: ShopItem) {
       fail: () => resolve(false),
     })
   })
+  if (!confirmed) buyingId.value = 0
   if (!confirmed) return
-  buyingId.value = it.id
   try {
     await api.buyItem(it.id)
     // 购买同时改变「买了几个」与「余额」，两者都必须以服务端为准：
