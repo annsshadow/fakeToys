@@ -3,10 +3,11 @@
 
 // Several views reuse the same hand-written full-screen overlay pattern under
 // different class names: FileManager detail/upload, IMChat message paging,
-// PortalDesigner create dialog and FormDesigner preview. All expose @click.self
-// close, a visible heading and an isolated focus context, so every family needs
-// the same dialog semantics (WCAG 2.1.2 / 2.4.3 / 4.1.2).
-const OVERLAY_SELECTOR = '.modal-overlay,.upload-overlay,.paging-overlay,.modal-mask,.preview-overlay'
+// PortalDesigner create dialog, FormDesigner preview and the abbreviated .mo
+// mask in MeetingApp/QueryManager. All expose @click.self close, a visible
+// heading and an isolated focus context, so every family needs the same dialog
+// semantics (WCAG 2.1.2 / 2.4.3 / 4.1.2).
+const OVERLAY_SELECTOR = '.modal-overlay,.upload-overlay,.paging-overlay,.modal-mask,.preview-overlay,.mo'
 const CONFIRM_OVERLAY_ID = 'oa4-confirm-overlay'
 const FOCUSABLE_SELECTOR = [
   'a[href]',

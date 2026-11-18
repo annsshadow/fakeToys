@@ -2796,3 +2796,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - admin 加载器守卫普查收官：WikiView load 仅 onMounted 单次、goTo 不重取数据 → 无重叠，负结果不修；RecomputesView loadMode 仅 reloadAll 调用、switchMode 有 modeSaving 守卫 → 无真实并发，负结果。Dashboard/Equipment/Skills 经核实有 onActivated 重拉 + 遮罩外侧栏 → 真 bug 已修。
 - SPDX 普查负结果（既有债非本轮引入，不修）：scripts/check-license-headers.mjs 报 4 个 IN_HEAD 文件缺头（miniapp stage_detail_race.test.ts、desktop tabStateA11y.contract.test.mjs、ui LoginScreen.labelA11y/OrganizationSelector.ariaState contract.test.ts）；本轮新增测试头齐全。
 - 三目标仍 active：目标一 R241 完成（三族浮层焦点 + mobile 详情竞态，累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮 admin 五视图加载竞态真 bug 已修、lybug 字段核对负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 102. 第 92 轮：R242 第 6 族 .mo 浮层焦点 + admin 用户导出 is_guest 漏传（2026-11-18）
+
+### 102.1 R242（oa4rust 前端）缩写类名 .mo 族纳入全局模态焦点管理
+| 项 | 内容 |
+|---|---|
+| 缺口 | MeetingApp.vue:103（新建会议）/:116（会议详情）、QueryManager.vue:50（新建查询）用缩写类名 .mo 做全屏遮罩（两文件样式 .mo{position:fixed;inset:0;background:var(--bg-overlay);z-index:200}，MeetingApp.vue:1013 / QueryManager.vue:247），与已覆盖五族同构（@click.self 关闭 + 可见 h3 + 独立焦点上下文），但 modalFocus.ts OVERLAY_SELECTOR 漏掉 .mo → 无 role=dialog/aria-modal/可访问名、Esc 关不掉、焦点可逃逸背景（WCAG 2.1.2/2.4.3/4.1.2）。全前端 .mo 词元仅此 3 处，无类名冲突。 |
+| 修复 | OVERLAY_SELECTOR 追加 ',.mo'（一处扩展即覆盖三浮层，installViewModalManager 全局安装于 main.ts，无需改视图）；新增 modalFocus.moFamily.contract.test.ts 5 例（1 源码锚定三浮层标记与样式 + 4 行为契约：role/aria、Esc 关闭还焦点、焦点进入+Tab 循环、背景 aria-hidden 开关恢复）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退→4 failed/1 passed：role 实收 null、Esc 后未关闭、焦点仍在 opener、aria-hidden null→恢复→与 R241 overlayFamilies 合计 17 passed）；oa4rust 152 文件/1627 passed、typecheck 6 项目 Done、lint 444 文件 0 error（29 info 既有）、diff --check 0。 |
+
+### 102.2 laiyipao/admin 用户列表 CSV 导出漏传 is_guest 筛选
+- 缺口：UsersView.vue load() 把 isGuestFilter 传给 fetchUsers（列表正确过滤，:232），但 onExportCsv 调用的 exportUsersCsv 前端封装（api/index.ts）类型与 query 组装均无 is_guest。服务端 adminExportUsers（laiyipao/server/internal/httpapi/handlers_admin.go:355-365）2026-11-03 R29 已补 is_guest 三态解析（注释原话「此前列表有、导出漏」），只修了服务端、前端两处一直没接上。后果：运营筛「游客」或「账号」再导出 CSV 拿到全部账号，而 toast 声称「已导出 N 名用户（当前筛选结果）」——审计口径错误。
+- 修复（+83 行 0 删除，全 LF）：api/index.ts:289 参数类型补 is_guest?: boolean；:298-300 query 组装补 if (params.is_guest !== undefined) q.set('is_guest', ... ? '1' : '0')（与 fetchUsers:270 同款三态，false 不丢弃）；UsersView.vue:426-427 onExportCsv 补传 is_guest: isGuestFilter.value。
+- 测试：api-index.test.ts 补 getBlob mock + 2 例（is_guest=1/0 拼接、缺省不出现+与 suspicious 组合）；UsersView.test.ts 补 exportUsersCsv mock + 2 例（下拉选游客/账号后导出透传 true/false，含 URL.createObjectURL jsdom 垫片）。
+- 门禁：主线程独立 RED（cp 备份→git checkout HEAD 回退两源文件→4 failed：api 实收 URL 无 is_guest、调用参数对象无 is_guest 字段→恢复→4 passed）；admin 37 文件/496 passed、vue-tsc exit 0。miniapp/server 零改动。
+
+### 102.3 负结果与目标状态
+- lybug-r242 其余排除项：UsersView detailReqSeq/listReqSeq 竞态守卫在位（56轮已修）、onGrant 负数二次确认/正则解析、日期开区间 nextDay、分页 canGoNext 上界均正确；onActivated 首挂载跳过正确。固定不动项未触碰。
+- oaopt-r242 与 R241 无交集：.mo 是第 6 族，R241 三族（paging-overlay/modal-mask/preview-overlay）测试与本轮改动互不重叠。
+- 三目标仍 active：目标一 R242 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮找到并修复导出与筛选口径不一致真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
