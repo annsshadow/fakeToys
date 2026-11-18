@@ -1,9 +1,18 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { formatFileSize } from '@/utils/format'
 import { type LoadOutcome, loadList } from '@/utils/loadList'
 
 export type DocRow = Record<string, unknown>
+
+/**
+ * 文档库 x_file 行返回 size，FILE_FILE 附件行返回 length（两者都是字节数）。
+ * 两处列表共用同一 meta 渲染，必须兼容两种字段名，否则附件行永远不显示大小。
+ */
+export function docMetaSize(row: Record<string, unknown>): string {
+  return formatFileSize(row.size ?? row.length)
+}
 
 export interface DocListSources {
   fileList: () => Promise<{ data?: unknown } | undefined>

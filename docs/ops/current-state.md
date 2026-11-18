@@ -3004,3 +3004,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r252 排除清单（未改）：R94/R95/R96/R98/R101 已修的同族写路径、admin 零改动、server 未改源码；admin type-check:test 11 条 TS 错误（api-index.test.ts 3 / ContentView.test.ts 4 / DashboardView 2 / RecomputesView 1 / UsersView 1）经零改动判定为预存基线，与本次无关。oaopt-r252 负结果：中位数 UI 不可达、mobile utils/a11y 层已全覆盖，未凑数。
 - 门禁（主线程独立全量）：miniapp 140 文件/1484 passed（2 skipped 既有）+ type-check:test + type-check 0；OA typecheck 6 项目、lint 456 文件 0 error（29 info 既有）、mobile 44 文件/321 passed、diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R252 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复穿戴战力失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 113. 第 103 轮：R253 附件列表大小字段兼容 + miniapp 删除防线后挑战历史失同步（2026-11-19）
+
+### 113.1 R253（oa4rust/mobile）我的附件列表不再缺失文件大小
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/doc/doc.vue:37-45 metaOf(row) 原只调 formatFileSize(row.size)。「我的附件（FILE_FILE）」列表走 fileApi.attachmentList → GET /api/attachment/list/editor/{owner}（services/index.ts:236），后端 lib.rs:875-877 构造 JSON key `length`（i64 数字）无 size 字段；附件模板 :198 与文件模板 :220 共用 metaOf，导致附件行大小永远显示为空（formatFileSize(undefined)===''）。可达性：附件区无 disabled/遮罩，onShow→load()→attachRows 渲染必经。桌面 FileManager.vue:985 已有 m.length ?? m.size 兼容，mobile 缺失。 |
+| 修复 | docFeed.ts:13-15 新增纯函数 docMetaSize(row)=formatFileSize(row.size ?? row.length)（带 JSDoc）；doc.vue:11 import 改 { docMetaSize, loadDocLists }，:38 metaOf 改调 docMetaSize(row)。x_file 列表 size 优先，两种后端形状都正确。LF 保持，无重构。 |
+| 测试 | docFeed.test.ts 追加 4 例（size/length/均无/优先级）共 7 例。主线程独立 RED（串行备份→checkout HEAD 剥离修复）4 failed/3 passed（均 TypeError: docMetaSize is not a function）→恢复→GREEN 7/7。门禁：OA 156 文件/1638 passed、typecheck 6 项目、lint 456 文件 0 error（29 info 既有）、mobile 44 文件/325 passed、diff --check 0。 |
+
+### 113.2 laiyipao/miniapp 删除防线后被挑战记录停在旧快照
+- 缺口：laiyipao/miniapp/src/pages/me/me.vue:1321 附近 onDeleteMyDefense 删除防线成功后只 await loadDefenses()，未重拉 loadDefenseChallengeHistory()。服务端 progression.go:811 注释及 :815-816 DELETE FROM defenses WHERE owner_id=$1 会使 defense_challenges 随外键 CASCADE 消失；MyDefenseChallenges（:1270-1290）按 d.owner_id 过滤。删除是页内动作不触发 onShow，「被挑战记录」卡片仍显示已不存在的挑战者——R245（challenge 成功后未重拉历史）的镜像同族。
+- 修复（me.vue +3 行，CRLF 保持）：await loadDefenses() 后加两行注释 + await loadDefenseChallengeHistory()。
+- 测试：新增 me_defense_delete_history_sync.test.ts（双头，LF；vi.mock + mountPage + onShow 建立旧快照 + showModal confirm，myDefenseChallenges mock 第一次 1 条/第二次空，断言删除后调用 2 次且 UI 不含老挑战者）。主线程独立 RED：AssertionError「expected vi.fn() to be called 2 times, but got 1 times」(:170)→GREEN 1 passed。中途 mockResolvedValue(undefined) 触发 TS2345，改 mockResolvedValue({ ok: true } as any) 复验通过。
+
+### 113.3 负结果、门禁与目标状态
+- oaopt-r253 排除清单（未采纳伪证）：chat.vue 乐观消息 id 同毫秒冲突（sending 同步守卫+按钮 disabled 不可达）、formatFileSize 字符串 size（后端 i64=number 契约不成立）、IM conversation_id/BBS create_time/文件 createTime/鉴权守卫候选（后端契约或既有测试已覆盖）。lybug-r253 无新增负结果清单项。
+- 主线程取证教训：RED 复核的备份命令链首条 cp 失败会让后续 checkout 未执行、RED 假通过——必须分步执行 cp/checkout 并核对每步 exitCode；源文件的修复版本始终完整（工作树核查确认）。
+- 门禁（主线程独立全量）：miniapp 141 文件/1485 passed（2 skipped 既有）+ type-check:test + type-check 0；OA 156 文件/1638 passed + 6 项目 typecheck + lint 456 文件 0 error（29 info 既有）+ mobile 44 文件/325 passed + diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R253 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复删除防线后挑战历史失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。

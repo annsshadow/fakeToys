@@ -7,9 +7,8 @@ import { computed, ref } from 'vue'
 import { fileApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
-import { formatFileSize } from '@/utils/format'
 import { listState } from '@/utils/loadList'
-import { loadDocLists } from './docFeed'
+import { docMetaSize, loadDocLists } from './docFeed'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
@@ -36,7 +35,7 @@ function nameOf(row: Record<string, unknown>): string {
 }
 function metaOf(row: Record<string, unknown>): string {
   const parts: string[] = []
-  const sizeText = formatFileSize(row.size)
+  const sizeText = docMetaSize(row)
   if (sizeText) parts.push(sizeText)
   for (const k of ['createTime', 'creator']) {
     const v = row[k]
