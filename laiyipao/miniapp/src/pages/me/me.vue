@@ -1289,7 +1289,7 @@ async function toggleShield() {
       shield_hours: shielded.value ? 0 : 24,
     })
     myDefense.value = res.defense
-    shielded.value = !shielded.value
+    shielded.value = isShieldActive(res.defense?.shielded_until, store.estimateServerNowMs())
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   }

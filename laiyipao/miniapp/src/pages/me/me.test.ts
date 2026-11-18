@@ -288,6 +288,11 @@ describe('me.vue 我的页', () => {
       attempt_limit: 3,
       mine_attempts_today: 0,
     } as any)
+    // 真实服务端按 shield_hours=24 写入并返回 shielded_until（progression.go:744-748，R133 回读）；
+    // 只有返回权威时间，按钮才应翻转为「关闭」。
+    mockApi.saveDefense.mockResolvedValue({
+      defense: defenseView({ shielded_until: '2999-01-02T00:00:00Z' }),
+    } as any)
     const { wrapper } = mountPage(Me)
     await flushPromises()
     const shieldBtn = wrapper.findAll('.btn').find((b) => b.text().includes('开启 24h 护盾'))!
@@ -493,6 +498,11 @@ describe('me.vue 我的页', () => {
 
   it('toggleShield 在无防线时：名称回退 + 未开盾 24h / 已开盾 0h 两侧', async () => {
     mockApi.fetchDefenses.mockResolvedValue({ mine: null, candidates: [], attempt_limit: 3 } as any)
+    // 两次 saveDefense 分别返回「已开启」和「已关闭」的权威 shielded_until，
+    // 与真实服务端按 shield_hours 回读的语义一致（否则第二次请求不会是 0h）。
+    mockApi.saveDefense
+      .mockResolvedValueOnce({ defense: defenseView({ shielded_until: '2999-01-02T00:00:00Z' }) } as any)
+      .mockResolvedValueOnce({ defense: defenseView({ shielded_until: undefined }) } as any)
     const { wrapper } = mountPage(Me)
     await flushPromises()
     // 第一次：myDefense null → 名称回退；shielded=false → shield_hours 24
