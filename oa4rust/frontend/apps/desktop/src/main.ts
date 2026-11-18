@@ -11,6 +11,7 @@ import { installFormErrorA11y } from './utils/formErrorA11y'
 import { installViewModalManager } from './utils/modalFocus'
 import { watchSessionCacheReset } from './utils/sessionCache'
 import { installSkipLink } from './utils/skipLink'
+import { installTableA11y } from './utils/tableA11y'
 import { shouldRetryQuery } from './views/listQuery'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
@@ -563,4 +564,6 @@ installViewModalManager()
 installSkipLink()
 // R188：全局表单错误无障碍关联（WCAG 3.3.1 / 4.1.2），观察 v-if 异步插入的错误文本。
 installFormErrorA11y()
+// R202：全局表格表头作用域增强（WCAG 1.3.1），观察 v-if 异步插入的数据表格。
+installTableA11y()
 app.mount('#o2-app-root')
