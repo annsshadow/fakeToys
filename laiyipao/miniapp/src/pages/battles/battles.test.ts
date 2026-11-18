@@ -287,3 +287,67 @@ describe('battles.vue 末页恰好满一页时不得再显示加载更多（以 
     expect(wrapper.find('.load-more').exists()).toBe(false)
   })
 })
+
+/**
+ * 服务端契约（routes.go myBattleHistory / economy.go MyBattleHistoryPage）：
+ * result 是**服务端分页过滤**参数，筛选「胜利」后整份列表都只能是 win。
+ *
+ * 竞态：用户在「加载更多」（旧筛选/旧游标）请求在飞时切换筛选。
+ * filter 的 watch 触发 reload 重新拉第一页并替换 items；但那次在飞的 loadMore
+ * 回来后仍把旧游标的页 append 进 items —— 于是「胜利」列表里混进旧筛选的
+ * 失败战报，next_cursor/hasMore 也被旧响应覆盖。响应后到者不该覆盖新筛选态。
+ */
+describe('battles.vue 切换筛选时丢弃在飞的旧 loadMore 响应', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+  const row = (id: number, result: 'win' | 'lose') => ({
+    id, result, stars: result === 'win' ? 3 : 0, level_id: 4,
+    score: 100 + id, kills: 10, leaked: result === 'win' ? 0 : 9,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('筛选切换后的 reload 先回、旧 loadMore 后回：列表只保留新筛选的数据', async () => {
+    const d1 = deferred() // 首屏 reload（全部）
+    const d2 = deferred() // 加载更多（旧游标）
+    const d3 = deferred() // 切筛选后的 reload（胜利）
+    const seen: Array<{ result?: string; cursor?: number }> = []
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, _offset = 0, result?: string, cursor?: number) => {
+      seen.push({ result, cursor })
+      if (seen.length === 1) return d1.promise
+      if (seen.length === 2) return d2.promise
+      return d3.promise
+    })
+
+    const { wrapper } = mountPage(Battles)
+    d1.resolve({ items: [row(1, 'win')], next_cursor: 50 })
+    await flushPromises()
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    // 点「加载更多」→ 发起旧筛选、旧游标的请求（故意先不 resolve）
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+    expect(seen[1]).toEqual({ result: '', cursor: 50 })
+
+    // 切到「胜利」→ watch(filter) 触发 reload 拉新第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // reload（新筛选）先回
+    d3.resolve({ items: [row(3, 'win')], next_cursor: 0 })
+    await flushPromises()
+    // 在飞的旧 loadMore 后回，混进一条旧筛选的失败战报
+    d2.resolve({ items: [row(2, 'lose')], next_cursor: 0 })
+    await flushPromises()
+
+    expect(seen[2]?.result).toBe('win')
+
+    // 行为断言：筛选已切到「胜利」，列表只能有胜场；旧响应不得污染新列表
+    const badges = wrapper.findAll('.result-badge').map((b) => b.text())
+    expect(badges).toEqual(['胜'])
+  })
+})

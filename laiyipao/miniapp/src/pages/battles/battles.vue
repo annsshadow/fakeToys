@@ -206,6 +206,12 @@ const loadingMore = ref(false)
 const hasMore = ref(false)
 /** 服务端提供的 keyset 游标（上一页末行 id）；0 表示没有更多页。 */
 const nextCursor = ref(0)
+/**
+ * 列表请求序号（第 52 轮）：每次 reload / loadMore 各占一个序号。
+ * 切筛选触发 reload 后，仍在飞的旧 loadMore 响应序号已过期，必须丢弃，
+ * 否则旧游标的页会 append 进新筛选的列表（服务端 result 是全量过滤的）。
+ */
+let listReqSeq = 0
 const expandedId = ref(0)
 
 /**
@@ -257,9 +263,11 @@ watch(filter, () => {
 })
 
 async function reload(): Promise<void> {
+  const seq = ++listReqSeq
   loading.value = true
   try {
     const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)
+    if (seq !== listReqSeq) return // 已有更新的 reload/loadMore，丢弃陈旧响应
     items.value = res.items ?? []
     // 服务端 MyBattleHistoryPage 先多取 1 行判断 hasMore：总数恰好满一页时
     // hasMore=false → next_cursor=0。以 next_cursor 为准，避免满页时按钮无效常驻。
@@ -277,7 +285,7 @@ async function reload(): Promise<void> {
   } catch {
     // 战报加载失败：展示空态，不阻塞页面
   } finally {
-    loading.value = false
+    if (seq === listReqSeq) loading.value = false
   }
 }
 const details = ref<Record<number, BattleDetail>>({})
@@ -541,9 +549,11 @@ function copyHash(hash: string) {
  */
 async function loadMore() {
   if (loadingMore.value || !hasMore.value) return
+  const seq = ++listReqSeq
   loadingMore.value = true
   try {
     const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value, nextCursor.value)
+    if (seq !== listReqSeq) return // 筛选已切换/已有更新的 reload，丢弃陈旧响应
     const more = res.items ?? []
     const existing = new Set(items.value.map((it) => it.id))
     items.value = items.value.concat(more.filter((it) => !existing.has(it.id)))
@@ -553,7 +563,7 @@ async function loadMore() {
   } catch {
     // 加载更多失败：保留按钮可重试
   } finally {
-    loadingMore.value = false
+    if (seq === listReqSeq) loadingMore.value = false
   }
 }
 
