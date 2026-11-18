@@ -16,16 +16,16 @@
   --color-primary-soft: rgba(0, 212, 255, 0.08);
 
   /* 辅色：紫电 */
-  --color-accent: #a855f7;
+  --color-accent: #c084fc;
   --color-accent-glow: rgba(168, 85, 247, 0.3);
   --color-accent-soft: rgba(168, 85, 247, 0.08);
 
   /* 语义色 */
   --color-success: #10b981;
-  --color-success-glow: rgba(16, 185, 129, 0.3);
+  --color-success-glow: rgba(16, 185, 129, 0.2);
   --color-warning: #f59e0b;
-  --color-warning-glow: rgba(245, 158, 11, 0.3);
-  --color-error: #ef4444;
+  --color-warning-glow: rgba(245, 158, 11, 0.24);
+  --color-error: #ff8080;
   --color-error-glow: rgba(239, 68, 68, 0.35);
   --color-info: #3b82f6;
 
@@ -88,11 +88,12 @@
   --color-primary-soft: rgba(37, 99, 235, 0.05);
 
   --color-accent: #7c3aed;
-  --color-accent-glow: rgba(124, 58, 237, 0.2);
+  --color-accent-glow: rgba(124, 58, 237, 0.08);
 
-  --color-success: #15803d;
-  --color-warning: #b45309;
-  --color-error: #b91c1c;
+  /* R192：语义文字叠在同色 glow 底上仍需 ≥4.5:1（见 semanticTintContrast.contract.test.ts）。 */
+  --color-success: #166534;
+  --color-warning: #92400e;
+  --color-error: #991b1b;
   --color-info: #2563eb;
 
   --bg-base: #f0f4f8;
