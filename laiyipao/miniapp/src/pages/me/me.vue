@@ -1443,6 +1443,10 @@ async function challenge(target: DefenseView) {
       lastChallenge.value = { ...outcome, stolen: res.stolen ?? {} }
       await store.refreshWallet()
       await loadDefenses()
+      // 第 95 轮（R245）：挑战成功会在服务端写入 defense_challenges，
+      // 这是页内动作（不触发 onShow），必须就地重拉两份历史，否则卡片停在旧快照。
+      await loadChallengeHistory()
+      await loadDefenseChallengeHistory()
     } catch (e) {
       lastChallenge.value = {
         won: false,
