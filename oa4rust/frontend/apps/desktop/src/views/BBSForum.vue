@@ -637,6 +637,7 @@ const {
   data: repliesData,
   isError: repliesIsError,
   error: repliesError,
+  refetch: refetchReplies,
 } = useQuery({
   queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
   queryFn: async () => {
@@ -718,7 +719,7 @@ const replyMutation = useMutation({
     }),
   onSuccess: () => {
     replyText.value = ''
-    refetch() // refetch replies
+    refetchReplies() // refetch replies
     // refresh topic list to update reply count
     refetch()
   },

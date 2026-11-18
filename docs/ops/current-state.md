@@ -3160,3 +3160,18 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 120.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 vitest 157 文件 passed + pnpm typecheck 6 项目 0 + biome lint 461 文件 0 error(29 info)；mobile 包 48 文件/338 passed（含 start.formRace.contract.test.ts 6 项）。miniapp/admin 本轮零改动沿用上轮基线。diff --check 0，R261 源码 SPDX 双头、LF 保持、真值不入库。
 - 四目标：①目标一 R261 发起流程连点守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R261 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 121. 第112轮：BBS 回复发布后列表刷新
+
+### 121.1 oa4rust/desktop BBSForum 回复后刷新错对象（R262，oaopt-r262）
+- 缺口：BBSForum.vue replyMutation.onSuccess 原两处 refetch() 都来自 topics 主题列表 useQuery（全文件唯一 refetch 解构在 :559），第一处注释写 refetch replies 实际刷主题列表→主题列表被刷两次；回复列表 useQuery（:636-652，queryKey [bbs,replies,...]）从未导出 refetch 也无 invalidate，数据流 useQuery→watch(repliesData)→replies，无写后重拉路径。可达性：打开帖子详情→发回复成功→onSuccess 只刷主题列表→新回复详情内不可见，须关开详情才出现。
+- 修复：回复列表 useQuery 解构新增 refetch: refetchReplies（:640）；onSuccess 第一处改 refetchReplies()（:722），第二处 refetch() 保留刷主题回复计数。+2/-1 外科手术式，LF 保持。
+- 测试：新增 BBSForum.replyRefresh.contract.test.ts（SPDX 双头）1 例源码契约——replies query 导出 refetchReplies、onSuccess 调 refetchReplies() 且不再含 refetch() // refetch replies、保留主题计数 refetch()。
+- 主线程独立 RED→GREEN（严格串行）：备份修复版至 /d/tmp/BBSForum.vue.r262.leadcheck→git checkout 还原→vitest -t「refetch replies after reply published」RED exit1（AssertionError expected ... to contain refetch: refetchReplies, @:19）→恢复 GREEN exit0 1 passed。
+
+### 121.2 laiyipao 服务端引擎重查修负结果（R262，lybug-r262）
+- 零改动。按建议方向系统排查引擎重算与装配重逻辑，5 项全证伪：applyLoadoutContribution（build_parts.go:291）与 loadLoadout（loadout_attacker.go:174）词条 switch 逐行一致；attackerFromParts 统一钳 MaxElementCap 无跨路径漂移；Go engine_combat.go:790 与 TS engine.ts:1930 反应阶语义一致、AttackerFromSnapshot 缺省逐字一致；熔断分母 settle_recomputes 语义为已知安全方向设计取舍（recompute_audit_test.go:130 + ownership_scan_test.go:225 固化），改造超外科手术范围；Decide 状态机各分支有测试覆盖。
+- 后续线索（非本轮 bug）：真实不符率监控可切到 EngineCounters 全量；migration 00015 索引注释与部分索引矛盾属文档瑕疵。
+
+### 121.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 158 文件/1643 passed + pnpm typecheck 6 项目 0 + biome lint 462 文件 0 error(29 info 既有)；miniapp 142 文件/1488 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。lybug-r262 零改动沿用基线。R262 源码 SPDX 双头、LF 保持、真值不入库。
+- 四目标：①目标一 R262 BBS 回复刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R262 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
