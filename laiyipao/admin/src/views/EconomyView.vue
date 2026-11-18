@@ -3,7 +3,7 @@ import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { isCancel, fmtTime } from '@/utils/format'
+import { exportDateLabel, isCancel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 import {
   fetchEconomy,
@@ -173,7 +173,7 @@ async function onExportOrdersCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `orders_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()

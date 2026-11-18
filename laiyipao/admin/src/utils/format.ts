@@ -22,6 +22,21 @@ export function fmtTime(s: string): string {
 }
 
 /**
+ * 导出文件名里的业务日（YYYY-MM-DD），固定按 UTC+8 计算。
+ *
+ * 运营后台部署在 UTC+8，业务日口径已全项目统一为 UTC+8（R167）。
+ * 导出文件名此前用 new Date().toISOString().slice(0, 10) 取 UTC 墙钟日期，
+ * 于是本地凌晨 0–8 点（UTC 前一天 16:00–24:00）导出的文件名会带"昨天"
+ * 的日期，与运营当天看到的日期不一致。这里把 UTC 墙钟 +8h 后取 UTC
+ * 分量，结果只依赖 now、与运行机器的本地时区无关（测试可在任意时区跑）。
+ */
+export function exportDateLabel(now: Date = new Date()): string {
+  const shifted = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${shifted.getUTCFullYear()}-${p(shifted.getUTCMonth() + 1)}-${p(shifted.getUTCDate())}`
+}
+
+/**
  * 审计 detail 的表格预览长度。
  *
  * ⚠️ R98：80 字符是**表格列宽**的取舍，不是 detail 的完整内容。

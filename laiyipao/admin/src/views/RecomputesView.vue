@@ -31,7 +31,7 @@ import {
   type RecomputeModeState,
   type RecomputeSummary,
 } from '@/api'
-import { fmtTime } from '@/utils/format'
+import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -262,7 +262,7 @@ async function onExportCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `recomputes_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `recomputes_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()

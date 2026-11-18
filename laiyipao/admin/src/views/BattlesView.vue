@@ -12,7 +12,7 @@ import {
   type VerifyResult,
 } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
-import { fmtTime } from '@/utils/format'
+import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -187,7 +187,7 @@ async function onExportCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `battles_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `battles_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()

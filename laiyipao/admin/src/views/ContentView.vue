@@ -24,7 +24,7 @@ import {
   type AdminRedeemCodeView,
   type AdminRedeemUsageView,
 } from '@/api'
-import { auditDetailFull, auditDetailPreview, fmtTime } from '@/utils/format'
+import { auditDetailFull, auditDetailPreview, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const activeTab = ref('announcements')
@@ -161,7 +161,7 @@ async function onExportRedeemUsagesCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `redeem_usages_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `redeem_usages_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -269,7 +269,7 @@ async function onExportAuditLogs() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `audit_logs_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `audit_logs_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -290,7 +290,7 @@ async function onExportRedeemCodes() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `redeem_codes_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `redeem_codes_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -427,7 +427,7 @@ async function onExportAnnouncements() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `announcements_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `announcements_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()

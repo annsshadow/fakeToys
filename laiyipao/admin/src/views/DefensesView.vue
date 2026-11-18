@@ -3,7 +3,7 @@ import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
-import { fmtTime } from '@/utils/format'
+import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const router = useRouter()
@@ -92,7 +92,7 @@ async function onExportChallengesCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `defense_challenges_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `defense_challenges_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()

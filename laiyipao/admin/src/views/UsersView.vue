@@ -15,7 +15,7 @@ import {
   type AdminUserView,
 } from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
-import { fmtTime, isCancel } from '@/utils/format'
+import { exportDateLabel, fmtTime, isCancel } from '@/utils/format'
 import { canGoNext, cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -199,7 +199,7 @@ async function onExportUserFlows(userId: number) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `user_${userId}_flows_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `user_${userId}_flows_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -422,7 +422,7 @@ async function onExportCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `users_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
