@@ -2472,3 +2472,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 76 轮侦察：el-switch 仅 LevelsView toggle 已有确认、DashboardView echarts 常驻免 dispose、LoginView 提交防重完整；本轮唯一可确证新 bug 为 85.2 防线筛选竞态；R226 状态消息为 oa4rust 面。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R226 完成（加载失败状态消息可播报，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 找到防线筛选竞态真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B）。
+
+## 86. 第 77 轮现量：R227 验证规则「应用到选中」接线真 bug + admin 全负结果
+
+### 86.1 R227 验证规则构建器「应用到选中」接线（真 bug）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue 验证规则构建器的「应用到选中」按钮模板绑定 @click=applyValidationRules，但脚本中从未定义该函数——点击抛「Property was accessed during render but is not defined」，构建器里配置的 required:/min:/max:/pattern: 规则永远无法应用到字段校验对象，功能完全失效。 |
+| 修复 | 新增 apps/desktop/src/utils/validationRuleApply.ts 纯函数 applyBuilderRules(base, rules)：只按第一个冒号切分（保留正则里的冒号），识别 required/min/max/pattern 四种 kind，非数字参数不污染为 NaN，不改传入 base 对象；FormDesigner.vue 新增 applyValidationRules() 处理器（无选中字段时提示、过滤匹配当前字段或全局规则、应用并 pushFormHistory、toast 反馈）。回归修正：addValidationRule 默认值保持 required（不带冒号），兼容仍判断等于 required 的 validateAll()；applyBuilderRules 对无冒号的裸 required 同样识别。 |
+| 验证 | 契约 validationBuilderApply.contract.test.ts 钉住按钮引用函数必须在脚本有定义；行为 validationRuleApply.test.ts 6 例（含裸 required 兼容锁定用例）。独立 RED（cp 备份→git checkout HEAD 回退 FormDesigner.vue→契约 1 failed「function applyValidationRules 无定义」→cp 恢复→GREEN）。全量 oa4rust 138 文件/1547 passed、typecheck 6 项目 Done、lint 421 文件 0 error（29 info 既有）。 |
+
+### 86.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r227 负结果零改动：写范围 laiyipao/miniapp+server 双向核对（客户端/服务端路由、DTO、游标分页、签到周期、settle/replay、IDOR、千分比、错误码、幂等）全一致或已修，无新 bug 不强造；子代理久拖不收敛由主线程中断，写范围 git status 干净，主线程独立补跑门禁：miniapp 134 文件/1475 passed|2 skipped、vue-tsc exit 0；server domain go test -skip TestNoRealSecretsInRepo ok exit 0。
+- 主线程 admin 第 77 轮侦察全负结果：format.ts 工具函数、除法除零保护、9 个导出 API 与列表筛选同口径、date_to nextDay UTC 开区间、路由深链（UsersView user_id/WikiView sameTarget/LoginView redirectTarget /admin 前缀）、分页 @current-change、表单校验（parseReward/parsePriceMap/submitCode/submitEdit）、client.ts 401 处理与错误信封、DashboardView echarts 实例缓存、mobile 工具（轮询退避/日期越界/文件大小）均正确无缺口；本轮唯一可确证新 bug 为 86.1 R227（oa4rust 面）。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R227 完成（验证规则应用到选中接线，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
