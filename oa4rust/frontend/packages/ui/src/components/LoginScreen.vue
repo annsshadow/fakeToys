@@ -78,7 +78,7 @@
             </div>
           </div>
 
-          <div v-if="error" class="error-msg">{{ error }}</div>
+          <div v-if="error" class="error-msg" role="alert" aria-live="assertive">{{ error }}</div>
 
           <button
             type="submit"
