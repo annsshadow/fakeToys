@@ -44,17 +44,17 @@
       <div class="form-row">
         <div class="form-group">
           <label>当前密码</label>
-          <input v-model="pwdForm.oldPassword" type="password" class="form-input" placeholder="请输入当前密码" />
+          <input v-model="pwdForm.oldPassword" type="password" class="form-input" autocomplete="current-password" placeholder="请输入当前密码" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>新密码</label>
-          <input v-model="pwdForm.newPassword" type="password" class="form-input" placeholder="请输入新密码" />
+          <input v-model="pwdForm.newPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请输入新密码" />
         </div>
         <div class="form-group">
           <label>确认密码</label>
-          <input v-model="pwdForm.confirmPassword" type="password" class="form-input" placeholder="请再次输入" />
+          <input v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" />
         </div>
       </div>
       <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>

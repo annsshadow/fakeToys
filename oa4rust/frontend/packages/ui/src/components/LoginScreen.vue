@@ -23,6 +23,7 @@
               v-model="username"
               type="text"
               class="form-input"
+              autocomplete="username"
               placeholder="请输入用户名"
               autofocus
               :disabled="loading"
@@ -36,6 +37,7 @@
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-input"
+                autocomplete="current-password"
                 placeholder="请输入密码"
                 :disabled="loading"
               />
