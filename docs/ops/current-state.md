@@ -2663,3 +2663,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 三代码提交：14e7da2c7(R236)、b0e883df2(mobile 日程)、065e18a73(mobile 回收站)，docs §95 本提交。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R236 完成（思维导图目录树 a11y，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 96. 第 87 轮现量：R237 tab 激活态 a11y + mobile 流程表单加载竞态
+
+### 96.1 R237 tab/切换按钮激活态对读屏可见
+| 项 | 内容 |
+|---|---|
+| 缺口 | 三视图 tab/切换按钮选中态仅靠 CSS class（:class on/active）表达，读屏无法感知状态（WCAG 4.1.2/1.3.1）：AttendanceApp 12 个 cfg-tab、BBSForum 主标签+我的子标签、CalendarApp 日历范围切换。 |
+| 修复 | cfg-tab 补 :aria-pressed="moreTab==='key'" + 容器 role=group/aria-label；BBSForum nav/子标签容器加 aria-label/role=group，主标签与我的子标签补 aria-pressed；CalendarApp 我的/公共补 aria-pressed + role=group，动作按钮（其余 cll-tab）保持原样不加。新增 tabStateA11y.contract.test.mjs（node:test 源码契约 3 例，含动作按钮不被误加的负断言）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退三视图→契约 3 failed→恢复→3 passed）；契约测试经 biome check --write 格式化后全量 oa4rust 147 文件/1597 passed、typecheck 6 项目、lint 438 文件 0 error（29 info 既有）。 |
+
+### 96.2 mobile 流程表单加载竞态
+| 项 | 内容 |
+| 缺口 | oa4rust/mobile/src/pages/process/start.vue 的 async loadBoundForm(processId) 两次 await（processApi.getProcess / processApi.getForm）无序号守卫：快速切换流程时旧响应覆盖新 fields/groups/values/showForm，旧 catch 写旧错误、旧 finally 提前清 formLoading。 |
+| 修复 | 复用 @/utils/latest 的 createLatestGate() 新增模块级 formGate；loadBoundForm 开头 const token=formGate.begin()，两处 await 后各加 isLatest 守卫，catch 同守卫再写 formError，finally 仅 isLatest 清 formLoading。新增 start.formRace.contract.test.ts 6 例源码级契约。 |
+| 门禁 | 独立 RED（备份→回退 start.vue→6 failed→恢复→6 passed）；mobile 37 文件/291 passed、pnpm --filter mobile typecheck exit 0。 |
+
+### 96.3 负结果、目标二与交付边界
+- lybug-r237 负结果零改动：写范围 laiyipao/miniapp+server 双向核对约 50 request↔routes.go 97 路由、请求体/查询参数/响应 DTO 逐字段、分页/401 单飞/幂等/定时器/错误码全一致，主动否决多项弱候选，写范围干净。主线程 admin 面侦察全负结果（LoginView/DashboardView 用 el-alert 无 aria-live 但属 element-plus 组件行为，不强造）。
+- 三代码提交：2cad88a7a(R237 前端 tab 激活态)、06d2b2023(mobile 流程表单竞态)，docs §96 本提交。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R237 完成（tab 激活态 a11y，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
