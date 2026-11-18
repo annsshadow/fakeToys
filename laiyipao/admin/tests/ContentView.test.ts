@@ -1113,3 +1113,39 @@ describe('ContentView 创建提交防重（第 63 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 编辑中预览他条公告不得污染编辑表单（第 70 轮）', () => {
+  const annA: Row = { id: 1, title: '公告A', body: '正文A', published: false, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' }
+  const annB: Row = { id: 2, title: '公告B', body: '正文B', published: false, published_at: '2026-01-02T00:00:00Z', created_at: '2026-01-02T00:00:00Z' }
+
+  it('编辑 A 时行级预览 B，随后提交应更新 A 而非把 B 的内容写回 A', async () => {
+    updateAnnouncement.mockReset().mockResolvedValue({ id: 1, updated: ['title', 'body'] })
+    const wrapper = await mountContent({ announcements: [annA, annB] })
+    const vm = wrapper.vm as unknown as {
+      annForm: { title: string; body: string; published: boolean }
+      editingAnnId: number | null
+      startEditAnn: (a: Row) => void
+      previewAnnouncement: (a: Row) => void
+      submitAnnouncement: () => Promise<void>
+    }
+
+    // 运营正在编辑公告 A
+    vm.startEditAnn(annA)
+    await flushPromises()
+    expect(vm.editingAnnId).toBe(1)
+    expect(vm.annForm).toEqual({ title: '公告A', body: '正文A', published: false })
+
+    // 点列表里公告 B 的「预览」——只读预览不应改写正在编辑的表单
+    vm.previewAnnouncement(annB)
+    await flushPromises()
+    expect(wrapper.text()).toContain('公告B') // 预览对话框确实展示 B
+
+    // 关闭预览后提交更新
+    await vm.submitAnnouncement()
+    await flushPromises()
+
+    // 关键：更新目标仍是 A(id=1)，内容也必须是 A 自己的，绝不能被 B 覆盖
+    expect(updateAnnouncement).toHaveBeenCalledWith(1, { title: '公告A', body: '正文A', published: false })
+    wrapper.unmount()
+  })
+})

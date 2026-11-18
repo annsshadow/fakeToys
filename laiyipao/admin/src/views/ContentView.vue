@@ -370,9 +370,9 @@ function startEditAnn(a: AdminAnnouncementView) {
  * 在列表里直接看某条公告的玩家端效果（不必先点编辑再预览）。
  */
 function previewAnnouncement(a: AdminAnnouncementView) {
-  annForm.value = { title: a.title, body: a.body, published: a.published }
+  previewForm.value = { title: a.title, body: a.body, published: a.published }
   previewPubAt.value = a.published_at ?? null
-  openPreview()
+  showPreviewDialog()
 }
 
 /**
@@ -406,13 +406,24 @@ const previewVisible = ref(false)
  * 而不是打开预览的此刻。行级预览/编辑时回填，新建时保持 null。
  */
 const previewPubAt = ref<string | null>(null)
+/**
+ * 第 70 轮：预览对话框使用独立表单快照，绝不改写正在编辑的 annForm。
+ * 此前列表行级「预览」直接把被预览公告写进 annForm，但 editingAnnId 不变，
+ * 编辑 A 时预览 B 后点「更新」会把 B 的内容写回 A（用户可见数据损坏）。
+ */
+const previewForm = ref({ title: '', body: '', published: false })
 
-function openPreview() {
-  if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
+function showPreviewDialog() {
+  if (!previewForm.value.title.trim() || !previewForm.value.body.trim()) {
     ElMessage.error('标题与正文都不能为空')
     return
   }
   previewVisible.value = true
+}
+
+function openPreview() {
+  previewForm.value = { ...annForm.value }
+  showPreviewDialog()
 }
 
 function closePreview() {
@@ -919,13 +930,13 @@ loadAll()
         <el-dialog v-model="previewVisible" title="玩家端预览" width="520px">
           <div style="border: 1px solid var(--el-border-color); border-radius: 8px; padding: 16px 20px">
             <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
-              <strong>{{ annForm.title }}</strong>
+              <strong>{{ previewForm.title }}</strong>
               <span class="muted" style="font-size: 12px">
-                {{ annForm.published ? (previewPubAt ? fmtTime(previewPubAt) : '发布后生成') : '未发布（仅草稿）' }}
+                {{ previewForm.published ? (previewPubAt ? fmtTime(previewPubAt) : '发布后生成') : '未发布（仅草稿）' }}
               </span>
             </div>
             <div style="margin-top: 10px; white-space: pre-wrap; color: var(--el-text-color-regular); line-height: 1.7">
-              {{ annForm.body }}
+              {{ previewForm.body }}
             </div>
           </div>
           <template #footer>
