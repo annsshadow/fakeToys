@@ -381,6 +381,8 @@ async function doSignIn() {
       signedToday.value = true
       lastResult.value = `签到成功，获得 ${rewardText(res.reward)}`
       flashFeedback('sign') // R34
+      // 签到会 bumpTasks({signin:1}) 推进「今日完成签到」任务；不重拉则本会话一直停在 0/1
+      await load()
       await store.refreshWallet()
     }
   } catch (e) {

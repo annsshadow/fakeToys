@@ -416,4 +416,36 @@ describe('signin.vue 签到页', () => {
     expect(wrapper.text()).toContain('每周-当前任务')
     expect(wrapper.text()).not.toContain('每日-慢到任务')
   })
+
+  it('签到成功后重拉任务列表：daily_signin 任务进度即时刷新（写后失同步）', async () => {
+    // 服务端 SignIn 会 bumpTasks({signin:1}) 推进 daily_signin 任务；
+    // 签到页必须随之重拉任务，否则本会话内仍停在 0/1「未完成」。
+    let signedIn = false
+    mockApi.fetchTasks.mockImplementation(() =>
+      Promise.resolve({
+        items: [
+          signedIn
+            ? { id: 4, name: '今日完成签到', progress: 1, target: 1, done: true, claimed: false, reward: { coin: 500 } }
+            : { id: 4, name: '今日完成签到', progress: 0, target: 1, done: false, claimed: false, reward: { coin: 500 } },
+        ],
+      }),
+    )
+    mockApi.signIn.mockImplementation(() => {
+      signedIn = true
+      return Promise.resolve({ already: false, day_index: 1, reward: { coin: 1000 } })
+    })
+
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.findAll('.task .btn')[0]!.text()).toBe('未完成')
+    expect(wrapper.find('.task').text()).toContain('0 / 1')
+
+    const fetchBefore = mockApi.fetchTasks.mock.calls.length
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(mockApi.fetchTasks.mock.calls.length).toBeGreaterThan(fetchBefore)
+    expect(wrapper.findAll('.task .btn')[0]!.text()).toBe('领取')
+    expect(wrapper.find('.task').text()).toContain('1 / 1')
+  })
 })
