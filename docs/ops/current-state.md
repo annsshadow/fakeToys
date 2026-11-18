@@ -2450,3 +2450,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 75 轮侦察：本轮唯一可确证新 bug 为 84.2 重算台账筛选竞态；R225 必填语义为 oa4rust 面。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R225 完成（动态表单必填语义，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 找到重算台账竞态真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B）。
+## 85. 第 76 轮现量：R226 加载失败状态消息可播报 + admin 防线筛选竞态真 bug
+
+### 85.1 R226 列表加载失败状态消息可播报（WCAG 4.1.3 / 3.3.1）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/ListLoadError.vue 是 40+ CRUD 视图共用的列表加载失败组件（全仓 224 处使用），v-if/v-else 动态插入失败文案的容器 .list-error-empty/.list-error-banner 无 role=alert/aria-live，读屏用户听不到加载失败——WCAG 4.1.3 Status Messages (AA) 真实违背。R155–R225 修过 toast 降级、表单错误、loading 指示器，未覆盖此共用组件，非重复。 |
+| 修复 | 两个分支根 div 加 role="alert" aria-live="assertive"，使异步插入的失败文案被读屏立即播报。纯模板属性增强不改文案与重试逻辑。新增 ListLoadError.a11y.contract.test.ts 3 例（源码标签扫描 + jsdom 真实 DOM 渲染验证 role/live/文案/重试按钮）。 |
+| 门禁 | 契约 RED 3 failed→GREEN 3/3；主线程独立 RED（cp 备份→git checkout HEAD 回退→RED 3 failed/渲染 role 为空→cp 恢复→GREEN 3 passed，恢复后 grep role=alert 2 处完整）；全量 oa4rust 136 文件/1540 passed、typecheck 6 项目 Done、lint 418 文件 0 error（29 info 既有）。 |
+
+### 85.2 admin 防线列表筛选竞态（真 bug）
+
+- 真 bug：laiyipao/admin/src/views/DefensesView.vue 主 load()（:178）无请求序号守卫，keyword 搜索（@keyup.enter/@clear）、护盾状态 el-select @change、分页 @current-change 均触发 load()；快速切换筛选时旧响应慢到覆盖新筛选的 rows/total，用户看到旧筛选的防线。同族已修 BattlesView/UsersView/ContentView/LevelsView/EconomyView/RecomputesView，此处漏修。
+- 修复：新增 loadSeq 计数器；load() 开头 const seq=++loadSeq，await fetchDefenses 之后及 catch 内加 if (seq !== loadSeq) return，finally 内仅当 seq===loadSeq 才清 loading。
+- 验证：DefensesView.test.ts 末尾加行为测试 1 例（deferred 三请求：初始空、旧筛选 id1「旧筛选结果」、新筛选 id99「新筛选结果」，新先回旧后回）。RED 实收页面显示「旧筛选结果」不含「新筛选结果」证明覆盖，GREEN 1 passed；admin 全量 34 文件/478 passed、vue-tsc 0。
+
+### 85.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r226 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 7 大类（条件 GET 304 与时钟校准、token 续期单飞+401 幂等键、keyset 分页、签到/离线周期日界、permille 定点跨端镜像、IDOR 矩阵、settle/replay 契约）全一致；damage.ts 的 HitInput.roll 旧「0..9999」措辞属陈旧文档非可执行 bug，不强造。
+- 主线程 admin 第 76 轮侦察：el-switch 仅 LevelsView toggle 已有确认、DashboardView echarts 常驻免 dispose、LoginView 提交防重完整；本轮唯一可确证新 bug 为 85.2 防线筛选竞态；R226 状态消息为 oa4rust 面。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R226 完成（加载失败状态消息可播报，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 找到防线筛选竞态真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B）。
