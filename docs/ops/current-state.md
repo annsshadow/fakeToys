@@ -2576,3 +2576,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程第 82 轮 admin+mobile 侦察全负结果：admin 12 视图竞态守卫覆盖 7 视图、其余 4 视图 onMounted 单次加载无筛选竞态；导出条数全部来自 csvDataRowCount 真值；无 index 作 v-for key；写操作防重/二次确认齐全；日期区间 nextDay UTC 开区间正确。mobile 76 文件定时器/监听器配对清理完备（chatPolling stop 清 timeout、bbs/new setTimeout、main unhandledrejection 常驻合理）。未发现可确证新 bug，不强造。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R232 完成（Canvas 图表文字替代，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程 admin/mobile 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 92. 第 83 轮现量：R233 CSV 表头引号转义 + server CORS 暴露 Date 头
+
+### 92.1 R233 CSV 导出表头引号转义（真数据 bug）
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/QueryManagerDeep.vue 与 QueryStatementDesigner.vue 的 CSV 导出用 viewHeaders.join(',') 裸拼表头，而字段值单独引号转义；列名含逗号/引号/换行时表头错列，导入回读 parseCsv 后列名与值错位（RFC 4180 子集破坏）。字段值转义已有，唯独表头遗漏。 |
+| 修复 | 新增 utils/csv.ts 的 buildCsv(headers, rows) 纯函数（表头/字段一律双引号，内嵌 '' doubled 转义，LF 行尾，与 parseCsv 方言互逆），两视图导出统一改走 buildCsv；新增 csv.export.contract.test.ts 4 例（含逗号/引号/换行列名往返、空字段保留）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退 csv.ts+QueryManagerDeep.vue→契约 4 failed→cp 恢复→4 passed）；全量 oa4rust 144 文件/1575 passed、typecheck 6 项目 Done、lint 0 error（29 info 既有）、diff --check OK。 |
+
+### 92.2 laiyipao 真 bug：server CORS 暴露 Date 头（miniapp 304 时钟校准）
+- lybug-r233 找到并落盘：server cors() 只设 Allow-Origin/Methods/Headers/Max-Age 未设 Access-Control-Expose-Headers；miniapp H5 的 /config 条件请求在 304（零字节）时 client.ts:800-811 headerTimeMs() 只能读 Date 响应头校准本地时钟，store/game.ts:425/468 用其判 shielded_until 护盾是否仍生效（me.vue:761/1205/1415）；Date 非 CORS safelisted response header，浏览器跨域读不到 → 时钟校准静默失效（过期护盾显示生效中）。修复 middleware.go:713 补 c.Set("Access-Control-Expose-Headers", "Date")（全 server 唯一 setter），新增 cors_expose_date_test.go TestCORSExposesDateForConfigClockCalibration 实测 304 响应头。
+- 独立 RED（备份→git checkout HEAD 回退 middleware.go→目标用例 FAIL 实收 Expose-Headers=""→恢复→PASS），gofmt -l 空；server 定向用例 exit 0、domain 包 exit 0；admin 34 文件/479 passed、vue-tsc exit 0；全工作树 diff --check OK。
+
+### 92.3 负结果、目标二与交付边界
+- lybug-r233 除 CORS Date 外未发现其他可确证 bug；主线程本轮 admin/mobile 面未引入新改动。目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R233 完成（CSV 表头引号转义，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 server CORS Date 真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
