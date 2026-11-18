@@ -10,13 +10,14 @@
       :class="`xform-${module.type.toLowerCase()}`"
     >
       <label v-if="label(module)" :for="module.id">
-        {{ label(module) }}<span v-if="module.required" class="required">*</span>
+        {{ label(module) }}<span v-if="module.required" class="required" aria-hidden="true">*</span>
       </label>
       <textarea
         v-if="kind(module) === 'textarea'"
         :id="module.id"
         :value="stringValue(module)"
         :placeholder="placeholder(module)"
+        :required="module.required || undefined"
         :readonly="module.readonly"
         :disabled="module.disabled || readonly"
         @input="update(module, ($event.target as HTMLTextAreaElement).value)"
@@ -25,6 +26,7 @@
         v-else-if="kind(module) === 'select'"
         :id="module.id"
         :value="stringValue(module)"
+        :required="module.required || undefined"
         :disabled="module.disabled || readonly"
         @change="update(module, ($event.target as HTMLSelectElement).value)"
       >
@@ -33,7 +35,7 @@
           {{ option.label }}
         </option>
       </select>
-      <div v-else-if="kind(module) === 'checkboxes'" class="xform-options">
+      <div v-else-if="kind(module) === 'checkboxes'" class="xform-options" role="group" :aria-required="module.required ? 'true' : undefined">
         <label v-for="option in options(module)" :key="option.value">
           <input
             type="checkbox"
@@ -50,6 +52,7 @@
         :type="kind(module)"
         :value="stringValue(module)"
         :placeholder="placeholder(module)"
+        :required="module.required || undefined"
         :readonly="module.readonly"
         :disabled="module.disabled || readonly"
         @input="update(module, inputValue(module, $event))"
