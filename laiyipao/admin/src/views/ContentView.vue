@@ -328,11 +328,14 @@ async function onExportRedeemCodes() {
   }
 }
 
+const annSaving = ref(false)
 async function submitAnnouncement() {
+  if (annSaving.value) return
   if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
     ElMessage.error('标题与正文都不能为空')
     return
   }
+  annSaving.value = true
   try {
     if (editingAnnId.value !== null) {
       await updateAnnouncement(editingAnnId.value, annForm.value)
@@ -347,6 +350,8 @@ async function submitAnnouncement() {
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
+  } finally {
+    annSaving.value = false
   }
 }
 
@@ -517,7 +522,9 @@ function parseReward(s: string): Record<string, number> | null {
   return Object.keys(out).length ? out : null
 }
 
+const codeSaving = ref(false)
 async function submitCode() {
+  if (codeSaving.value) return
   const reward = parseReward(codeForm.value.reward)
   if (!reward) {
     ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')
@@ -527,6 +534,7 @@ async function submitCode() {
     ElMessage.error('兑换码不能为空')
     return
   }
+  codeSaving.value = true
   try {
     if (editingCodeId.value !== null) {
       await updateRedeemCode(editingCodeId.value, {
@@ -549,6 +557,8 @@ async function submitCode() {
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
+  } finally {
+    codeSaving.value = false
   }
 }
 
@@ -807,7 +817,7 @@ loadAll()
                 <el-form-item>
                   <el-checkbox v-model="annForm.published">立即发布</el-checkbox>
                 </el-form-item>
-                <el-button type="primary" @click="submitAnnouncement">
+                <el-button type="primary" :loading="annSaving" @click="submitAnnouncement">
                   {{ editingAnnId !== null ? '更新' : '创建' }}
                 </el-button>
                 <!-- 玩家端预览（2026-11-01 新一轮第 54 轮） -->
@@ -942,7 +952,7 @@ loadAll()
               <el-input v-model="codeForm.expires_at" placeholder="2026-12-31T23:59:59Z" style="width: 200px" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitCode">
+              <el-button type="primary" :loading="codeSaving" @click="submitCode">
                 {{ editingCodeId !== null ? '更新' : '生成' }}
               </el-button>
               <!-- 批量生成（2026-11-01 新一轮第 57 轮）：复用当前奖励/次数/过期时间 -->

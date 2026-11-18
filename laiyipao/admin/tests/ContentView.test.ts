@@ -1064,3 +1064,52 @@ describe('ContentView 导出与列表筛选同口径（第 62 轮）', () => {
     wrapper.unmount()
   })
 })
+describe('ContentView 创建提交防重（第 63 轮）', () => {
+  function deferred<T>() {
+    let resolve!: (v: { item: Row }) => void
+    const promise = new Promise<{ item: Row }>((r) => { resolve = r })
+    return { promise, resolve }
+  }
+
+  it('公告：首次创建请求未返回时重复提交不得再次调用创建接口', async () => {
+    const d = deferred()
+    createAnnouncement.mockReset()
+    createAnnouncement.mockImplementation(() => d.promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      annForm: { title: string; body: string; published: boolean }
+      submitAnnouncement: () => Promise<void>
+    }
+    vm.annForm = { title: '重复提交公告', body: '正文', published: true }
+
+    const p1 = vm.submitAnnouncement()
+    const p2 = vm.submitAnnouncement()
+    d.resolve({ item: { id: 1 } })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createAnnouncement, '双击「创建」只应发出一次创建请求').toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+
+  it('兑换码：首次创建请求未返回时重复提交不得再次调用创建接口', async () => {
+    const d = deferred()
+    createRedeemCode.mockReset()
+    createRedeemCode.mockImplementation(() => d.promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      submitCode: () => Promise<void>
+    }
+    vm.codeForm = { code: 'DUP-CODE', reward: 'coin:100', max_uses: 100, expires_at: '' }
+
+    const p1 = vm.submitCode()
+    const p2 = vm.submitCode()
+    d.resolve({ item: { id: 1 } })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createRedeemCode, '双击「创建」只应发出一次创建请求').toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+})
