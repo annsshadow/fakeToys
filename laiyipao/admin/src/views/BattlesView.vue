@@ -75,16 +75,10 @@ const onlyMismatched = ref(false)
 /**
  * 日期范围（2026-10-31 新一轮第 14 轮）。
  * `el-date-picker` value-format="YYYY-MM-DD"，v-model 直接是字符串数组。
- * 服务端 `date_to` 是开区间（`created_at < date_to`），
- * 所以结束日期要传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 会补成当天 24:00
+ * 的半开区间（含结束当天），前端不可再自行 +1 天。
  */
 const dateRange = ref<[string, string] | null>(null)
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 /**
  * 2026-10-21（P5-1）：分页。
@@ -102,9 +96,9 @@ const filterParams = computed(() => ({
   limit: PAGE_SIZE,
   offset: (page.value - 1) * PAGE_SIZE,
   only_mismatched: onlyMismatched.value || undefined,
-  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from 当天 00:00，date_to 次日 00:00（开区间）
+  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from/date_to 原样传，服务端含结束当天
   date_from: dateRange.value?.[0] || undefined,
-  date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+  date_to: dateRange.value?.[1] || undefined,
   // 结果筛选（2026-11-01 新一轮第 44 轮）
   result: result.value || undefined,
 }))
@@ -186,7 +180,7 @@ async function onExportCsv() {
       only_mismatched: onlyMismatched.value || undefined,
       // 日期范围（2026-10-31 新一轮第 14 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
       // 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径
       result: result.value || undefined,
     })

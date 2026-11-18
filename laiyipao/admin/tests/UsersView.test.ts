@@ -923,7 +923,7 @@ describe('UsersView 分页/搜索边界补充', () => {
 })
 
 describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
-  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期次日）', async () => {
+  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期按原值传，服务端含当天）', async () => {
     const wrapper = await mountUsers([userFixture()], 5)
     const vm = wrapper.vm as unknown as { lastLoginRange: [string, string] | null }
 
@@ -934,8 +934,8 @@ describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
     expect(fetchUsers).toHaveBeenLastCalledWith(
       expect.objectContaining({
         last_login_from: '2026-10-01',
-        // 服务端 date_to 是开区间：结束日期传次日才能包含 10-31 当天
-        last_login_to: '2026-11-01',
+        // 服务端 last_login_to=YYYY-MM-DD 已含当天整天，前端不再重复 +1
+        last_login_to: '2026-10-31',
       }),
     )
     wrapper.unmount()

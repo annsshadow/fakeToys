@@ -353,8 +353,8 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
     expect(exportOrdersCsv).toHaveBeenCalledWith({
       status: 'paid',
       date_from: '2026-10-01',
-      // 结束日期传次日（服务端 date_to 是开区间）
-      date_to: '2026-11-01',
+      // 服务端 date_to=YYYY-MM-DD 已由 queryTimeEnd +1 天含当天整天，前端不再重复 +1
+      date_to: '2026-10-31',
     })
     expect(document.body.textContent).toContain('已导出')
     wrapper.unmount()

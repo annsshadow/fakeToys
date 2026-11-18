@@ -851,3 +851,21 @@ describe('BattlesView 星级非文本替代（第 81 轮）', () => {
   })
 })
 
+describe('BattlesView 日期范围筛选（第 100 轮）', () => {
+  it('日期范围查询把结束日原样传给 date_to（服务端含当天，不重复 +1）', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const vm = wrapper.vm as unknown as { dateRange: [string, string] | null }
+    vm.dateRange = ['2026-10-01', '2026-10-31']
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        date_from: '2026-10-01',
+        // 服务端 queryTimeEnd 对 YYYY-MM-DD 已 +1 天含整天；前端再 +1 会多算 11-01
+        date_to: '2026-10-31',
+      }),
+    )
+    wrapper.unmount()
+  })
+})
+

@@ -125,12 +125,6 @@ function applyCodeFilter() {
   loadCodes()
 }
 
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
-
 // 使用记录请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
 let redeemUsageReqSeq = 0
 async function loadRedeemUsages() {
@@ -202,7 +196,7 @@ async function loadAnnouncements() {
     const a = await fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
       published: annPublished.value,
       date_from: annDateRange.value?.[0] || undefined,
-      date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+      date_to: annDateRange.value?.[1] || undefined,
     })
     if (seq !== annReqSeq) return
     announcements.value = a.items
@@ -243,7 +237,7 @@ async function loadLogs() {
       action: logAction.value || undefined,
       target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
-      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+      date_to: logDateRange.value?.[1] || undefined,
     })
     if (seq !== logReqSeq) return
     logs.value = l.items
@@ -284,7 +278,7 @@ async function onExportAuditLogs() {
       action: logAction.value || undefined,
       target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
-      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+      date_to: logDateRange.value?.[1] || undefined,
     })
     // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度（第 58 轮）。
     const exportedCount = csvDataRowCount(await blob.text())
@@ -478,7 +472,7 @@ async function onExportAnnouncements() {
     const blob = await exportAnnouncementsCsv({
       published: annPublished.value,
       date_from: annDateRange.value?.[0] || undefined,
-      date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+      date_to: annDateRange.value?.[1] || undefined,
     })
     const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)

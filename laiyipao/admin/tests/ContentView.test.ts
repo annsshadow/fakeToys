@@ -1041,7 +1041,7 @@ describe('ContentView 导出与列表筛选同口径（第 62 轮）', () => {
     expect(exportAnnouncementsCsv).toHaveBeenCalledWith({
       published: true,
       date_from: '2026-01-01',
-      date_to: '2026-02-01',
+      date_to: '2026-01-31',
     })
     wrapper.unmount()
   })

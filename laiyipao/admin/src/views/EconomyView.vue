@@ -30,18 +30,12 @@ const orderPage = ref(1)
 
 /**
  * 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 创建日期范围。
- * 服务端 date_to 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 含结束当天，前端不再 +1。
  */
 const orderStatus = ref('')
 const orderDateRange = ref<[string, string] | null>(null)
 // 渠道筛选（2026-11-01 新一轮第 67 轮）。
 const orderProvider = ref('')
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 /**
  * 服务端可作价全集 = `walletColumns`（coin/gem/energy/keys）+ `walletTokens`
@@ -147,7 +141,7 @@ async function loadOrders() {
       // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
-      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      date_to: orderDateRange.value?.[1] || undefined,
       // 渠道筛选（2026-11-01 新一轮第 67 轮）
       provider: orderProvider.value || undefined,
     })
@@ -176,7 +170,7 @@ async function onExportOrdersCsv() {
     const blob = await exportOrdersCsv({
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
-      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      date_to: orderDateRange.value?.[1] || undefined,
       // 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径
       provider: orderProvider.value || undefined,
     })

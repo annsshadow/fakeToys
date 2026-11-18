@@ -77,21 +77,15 @@ const offset = ref(0)
 /**
  * 注册日期范围（2026-10-31 新一轮第 15 轮）。
  * `el-date-picker` value-format="YYYY-MM-DD"，v-model 是字符串数组。
- * 服务端 `date_to` 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 含结束当天，前端不再 +1。
  */
 const dateRange = ref<[string, string] | null>(null)
 
 /**
  * 最后登录时间范围（2026-11-01 新一轮第 46 轮）。
- * 与注册日期同样的开区间语义：结束日期传**次日** 00:00。
+ * 与注册日期同样：结束日期原样传，服务端含当天。
  */
 const lastLoginRange = ref<[string, string] | null>(null)
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
@@ -227,12 +221,12 @@ async function load() {
       offset: offset.value,
       // 注册日期范围（2026-10-31 新一轮第 15 轮）
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
       // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
       is_guest: isGuestFilter.value,
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）
       last_login_from: lastLoginRange.value?.[0] || undefined,
-      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      last_login_to: lastLoginRange.value?.[1] || undefined,
       // 需核查筛选（2026-11-01 新一轮第 60 轮）
       suspicious: suspiciousFilter.value,
     })
@@ -422,12 +416,12 @@ async function onExportCsv() {
       keyword: keyword.value || undefined,
       // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
       // 游客/账号筛选（2026-11-18 第92轮）：与列表同口径，漏传会导出全部账号
       is_guest: isGuestFilter.value,
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
       last_login_from: lastLoginRange.value?.[0] || undefined,
-      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      last_login_to: lastLoginRange.value?.[1] || undefined,
       // 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径
       suspicious: suspiciousFilter.value,
     })
