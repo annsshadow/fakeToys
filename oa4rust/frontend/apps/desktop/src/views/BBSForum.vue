@@ -195,7 +195,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>新发帖</h3>
-          <button class="close-btn" @click="showNewTopic = false">✕</button>
+          <button class="close-btn" aria-label="关闭发帖弹窗" @click="showNewTopic = false">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -226,7 +226,7 @@
       <div class="modal glass-card topic-detail">
         <div class="modal-header">
           <h3>{{ viewingTopic.title }}</h3>
-          <button class="close-btn" @click="viewingTopic = null">✕</button>
+          <button class="close-btn" aria-label="关闭帖子详情" @click="viewingTopic = null">✕</button>
         </div>
         <div class="modal-body">
           <div class="detail-meta">
@@ -287,7 +287,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h3>
-          <button class="close-btn" @click="closeSectionModal">✕</button>
+          <button class="close-btn" aria-label="关闭版块编辑弹窗" @click="closeSectionModal">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -310,7 +310,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>版块详情</h3>
-          <button class="close-btn" @click="sectionInfo.open=false">✕</button>
+          <button class="close-btn" aria-label="关闭版块详情" @click="sectionInfo.open=false">✕</button>
         </div>
         <div v-if="sectionInfo.loading" class="loading-state"><p>加载中…</p></div>
         <div v-else class="modal-body">
