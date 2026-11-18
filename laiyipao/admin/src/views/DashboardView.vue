@@ -13,6 +13,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 import { fetchDashboard, type Dashboard } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
+import { describeDashboardChart, type ChartRow } from '@/utils/chartA11y'
 
 echarts.use([
   BarChart,
@@ -68,6 +69,20 @@ const verificationTone = computed(() => {
   if (!v || v.checked === 0) return 'info'
   return v.mismatched === 0 ? 'success' : 'danger'
 })
+
+/** 第88轮：canvas 图对读屏不可见，抽出等价文本与数据表（WCAG 1.1.1）。 */
+const dauRows = computed<ChartRow[]>(() => (data.value?.daily_active ?? []).map((x) => ({ label: x.date, value: x.dau })))
+const reactionRows = computed<ChartRow[]>(() =>
+  [...(data.value?.reaction_usage ?? [])]
+    .sort((a, b) => a.count - b.count)
+    .map((x) => ({ label: labelOf(x.reaction), value: x.count })),
+)
+const funnelRows = computed<ChartRow[]>(() =>
+  (data.value?.stage_funnel ?? []).slice(0, 30).map((x) => ({ label: `第${x.level_id}关`, value: x.attempts })),
+)
+const dauDesc = computed(() => describeDashboardChart({ title: '近 14 日活跃', chartType: 'line', unit: '日', metric: '活跃', rows: dauRows.value }))
+const reactionDesc = computed(() => describeDashboardChart({ title: '元素反应使用分布', chartType: 'bar', unit: '种', metric: '触发', rows: reactionRows.value }))
+const funnelDesc = computed(() => describeDashboardChart({ title: '关卡漏斗', chartType: 'bar', unit: '关', metric: '尝试', rows: funnelRows.value }))
 
 function renderCharts() {
   const d = data.value
@@ -290,12 +305,30 @@ load()
       <el-row :gutter="12">
         <el-col :span="12" :xs="24" :sm="12">
           <el-card shadow="never" header="近 14 日活跃">
-            <div ref="dauRef" style="height: 240px" />
+            <div ref="dauRef" class="chart-canvas" role="img" :aria-label="dauDesc.label" style="height: 240px" />
+            <table class="chart-data-sr">
+              <caption>近 14 日活跃数据</caption>
+              <thead><tr><th scope="col">日期</th><th scope="col">活跃用户数</th></tr></thead>
+              <tbody>
+                <tr v-for="row in dauDesc.rows" :key="row.label">
+                  <th scope="row">{{ row.label }}</th><td>{{ row.value }}</td>
+                </tr>
+              </tbody>
+            </table>
           </el-card>
         </el-col>
         <el-col :span="12" :xs="24" :sm="12">
           <el-card shadow="never" header="元素反应使用分布（I-1 健康度）">
-            <div ref="reactionRef" style="height: 240px" />
+            <div ref="reactionRef" class="chart-canvas" role="img" :aria-label="reactionDesc.label" style="height: 240px" />
+            <table class="chart-data-sr">
+              <caption>元素反应使用分布数据</caption>
+              <thead><tr><th scope="col">反应</th><th scope="col">触发次数</th></tr></thead>
+              <tbody>
+                <tr v-for="row in reactionDesc.rows" :key="row.label">
+                  <th scope="row">{{ row.label }}</th><td>{{ row.value }}</td>
+                </tr>
+              </tbody>
+            </table>
             <el-alert
               v-if="data.reaction_usage.length === 0"
               type="info"
@@ -309,9 +342,32 @@ load()
       </el-row>
 
       <el-card shadow="never" header="关卡漏斗（前 30 关）" class="mt-2">
-        <div ref="funnelRef" style="height: 260px" />
+        <div ref="funnelRef" class="chart-canvas" role="img" :aria-label="funnelDesc.label" style="height: 260px" />
+        <table class="chart-data-sr">
+          <caption>关卡漏斗数据（尝试次数）</caption>
+          <thead><tr><th scope="col">关卡</th><th scope="col">尝试次数</th></tr></thead>
+          <tbody>
+            <tr v-for="row in funnelDesc.rows" :key="row.label">
+              <th scope="row">{{ row.label }}</th><td>{{ row.value }}</td>
+            </tr>
+          </tbody>
+        </table>
       </el-card>
     </template>
   </div>
 </template>
+
+<style scoped>
+.chart-data-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
 
