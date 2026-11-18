@@ -101,4 +101,22 @@ describe('BBSForum contracts', () => {
     expect(source).toContain('user/reply/my/list/page/${page.value}/count/${pageSize}')
     expect(source).toContain('我的回复')
   })
+
+  it('删除版块有在途守卫且按钮禁用防重复 DELETE', () => {
+    // confirmMsg 是异步单例弹窗：DELETE 在途期间 sectionBusy 为 true。
+    // 若入口无守卫且按钮无 disabled，用户在请求飞行中再次点击会再弹一次确认框并发出第二次
+    // 非幂等删除；与同文件 saveSection 及 CRUD 页删除守卫保持同构。
+    expect(source).toContain(
+      '<button class="sec-act" title="删除版块" aria-label="删除版块" :disabled="sectionBusy" @click.stop="deleteSection(sec)">✕</button>',
+    )
+    const body = source.slice(source.indexOf('async function deleteSection(sec: Section): Promise<void> {'))
+    const guardIdx = body.indexOf('if (!sec.id || sectionBusy.value) return')
+    const confirmIdx = body.indexOf('await confirmMsg(')
+    const occupyIdx = body.indexOf('sectionBusy.value = true')
+    const resetIdx = body.indexOf('sectionBusy.value = false')
+    expect(guardIdx).toBeGreaterThan(-1)
+    expect(confirmIdx).toBeGreaterThan(guardIdx)
+    expect(occupyIdx).toBeGreaterThan(confirmIdx)
+    expect(resetIdx).toBeGreaterThan(occupyIdx)
+  })
 })

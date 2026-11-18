@@ -133,7 +133,7 @@
           <span class="sec-actions">
             <button class="sec-act" title="版块详情" aria-label="版块详情" @click.stop="openSectionInfo(sec)">ℹ</button>
             <button class="sec-act" title="重命名版块" aria-label="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
-            <button class="sec-act" title="删除版块" aria-label="删除版块" @click.stop="deleteSection(sec)">✕</button>
+            <button class="sec-act" title="删除版块" aria-label="删除版块" :disabled="sectionBusy" @click.stop="deleteSection(sec)">✕</button>
           </span>
         </li>
         <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
@@ -478,7 +478,7 @@ async function saveSection(): Promise<void> {
   }
 }
 async function deleteSection(sec: Section): Promise<void> {
-  if (!sec.id) return
+  if (!sec.id || sectionBusy.value) return
   const ok = await confirmMsg(`确定删除版块「${sec.name}」？该版块下的帖子不受影响。`)
   if (!ok) return
   sectionBusy.value = true

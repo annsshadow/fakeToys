@@ -3191,3 +3191,17 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 122.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 159 文件/1645 passed + pnpm typecheck 6 项目 0 + biome lint 463 文件 0 error(29 info 既有)；miniapp 142 文件/1489 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处源码 SPDX 双头、LF 保持、真值不入库。注：miniapp perf_baseline 为负载型 flaky（代理首跑绊线后单跑 2 次 GREEN，主线程全量跑 GREEN）。
 - 四目标：①目标一 R263 IM 发送守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R263 换号串号真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 123. 第114轮：版块删除在途守卫
+
+### 123.1 oa4rust/desktop BBSForum 版块删除可重复 DELETE（R264，oaopt-r264）
+- 缺口：BBSForum.vue 删除版块按钮原无 :disabled，deleteSection(sec) 入口仅 if (!sec.id) return，sectionBusy.value=true 在 await confirmMsg() 之后才置位。confirmMsg 是异步单例弹窗，DELETE 在途期间入口无守卫且按钮未禁用，飞行中再次点击会再弹确认框并发出第二次非幂等 DELETE。同文件 saveSection 及 crudDeleteGuards.test.ts 已钉住同构删除守卫，本处为覆盖遗漏。
+- 修复：删除按钮加 :disabled="sectionBusy"；deleteSection 入口改 if (!sec.id || sectionBusy.value) return；保留守卫在 confirm 前、占用在 confirm 后的既有约定。BBSForum.test.ts 追加单测断言 disabled 字面量与 guardIdx < confirmIdx < occupyIdx < resetIdx 顺序（20+/2-，LF）。
+- 主线程独立 RED→GREEN（严格串行）：备份修复版至仓库外→checkout 还原源文件→vitest -t「删除版块有在途守卫且按钮禁用防重复 DELETE」RED exit1（AssertionError expected source to contain 删除按钮 disabled 字面量）→恢复 GREEN exit0 1passed/7skipped。代理修正过测试切片签名（补齐 : Promise<void>）后 RED 才成立。
+
+### 123.2 laiyipao 换号字段残留与非常规路径负结果（R264，lybug-r264）
+- 零改动。系统证伪两类方向：①换号残留——wallet/power/buildRating/build/accountCreatedAt/accountLastLoginAt 在 refreshProfile 覆盖式赋值，isGuest/nickname 登录三分支显式覆盖（/me 恒返完整 account），equippedSkillIds/loadout 各消费页（battle/me/bag/index）均消费前 loadLoadout 或服务端快照为准，equipment/masteryNodes 覆盖式加载，无串号可达窗口；maxStage 上轮已修不重复。②非常规路径——登出/401 跳登录/admin 多管理员切换/开局重入均有覆盖或单次调用保证。
+- 后续线索（未达可达 bug 阈值）：refreshProfile 的 progressOwnerId 只守 maxStage，equippedSkillIds/loadout 靠各页 loadLoadout 惯例，健壮性偏弱（未来新增消费页若漏刷新会重现串号）；me.vue ensureBuildLoaded 对双空中止属产品口径。
+
+### 123.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 159 文件/1646 passed + pnpm typecheck 6 项目 0 + biome lint 463 文件 0 error(29 info 既有)；miniapp 142 文件/1489 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。R264 源码 SPDX 双头、LF 保持、真值不入库。
+- 四目标：①目标一 R264 版块删除守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R264 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
