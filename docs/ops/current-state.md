@@ -2641,3 +2641,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 三提交：3335264c1(R235)、3a1b3c2d9(mobile contacts)、a549bbe29(admin 路由播报)，docs §94 本提交。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R235 完成（搜索框 a11y 扩面，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 95. 第 86 轮现量：R236 思维导图目录树 a11y + mobile 日程/回收站详情竞态
+
+### 95.1 R236 思维导图目录树展开器键盘与读屏可达
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/MindApp.vue 目录树行原是 <button @click=selectFolder> 内嵌 <span class=expander @click.stop=toggleFolder>，展开器仅响应鼠标，无 tabindex/role/aria-expanded/aria-label/键盘事件；folderRows 仅在 expandedFolders 含 id 时才 walk 子项 → 键盘与读屏用户子目录永久隐藏（WCAG 2.1.1/4.1.2/2.4.7）。 |
+| 修复 | 目录行改 <div class=folder-row>，展开器拆 v-if hasChildren 原生 <button type=button :aria-expanded :aria-label @click.stop> 与 v-else <span class=expander aria-hidden=true>，目录名独立 <button class=folder-name @click=selectFolder>，style 补 reset + :focus-visible 轮廓；expandedFolders=ref(new Set) 用 Set 替换保响应。新增 folderExpanderA11y.contract.test.ts 7 例（源码文本契约）。 |
+| 门禁 | 主线程独立 RED（cp 备份→git checkout HEAD 回退→7 failed→恢复→7 passed）；oa4rust 147 文件/1597 passed、typecheck 6 项目、lint 0 error（29 info 既有）。 |
+
+### 95.2 mobile 日程与回收站详情只认最新一次（竞态守卫）
+| 项 | 内容 |
+|---|---|
+| 日程缺口 | oa4rust/mobile/src/pages/calendar/calendar.vue 的 openEvent() 异步详情加载无序号守卫：快速点不同事件旧响应覆盖新 detail，旧 finally 提前清 detailLoading。 |
+| 日程修复 | 复用 createLatestGate() 新增 detailGate；openEvent() 开头 token=begin()，await 后 isLatest 守卫才写 detail，catch 同守卫，finally 仅 isLatest 清 detailLoading。新增 calendar.detailRace.contract.test.ts 4 例，独立 RED（回退→4 failed→恢复→4 passed）。 |
+| 回收站缺口 | oa4rust/mobile/src/pages/recycle/recycle.vue 的 showDetail() 无序号守卫：快速点不同卡片旧响应覆盖新详情。 |
+| 回收站修复 | 复用 createLatestGate() 新增 detailGate；begin()→await 拿 fetched→isLatest 守卫才写 detail，catch 同守卫。新增 recycle.detailRace.contract.test.ts 3 例，独立 RED（回退→3 failed→恢复→3 passed）。 |
+
+### 95.3 负结果、目标二与交付边界
+- lybug-r236 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 46 端点↔routes.go、request 核心/401 单飞/token 存储/逐字段 DTO/keyset/定时器清理全一致；主动否决 shop.vue/signin.vue 的 1.2s UI toast timer 缺 onUnload（自熄灭、无实质后果，不强造），写范围干净。主线程 admin 第 86 轮侦察全负结果（img 无 alt/选择列无 label/纯字形无 aria/空态无 desc 全 0，字形扫描 41 处全为注释文案；EquipmentView/SkillsView/WikiView 单次加载无筛选竞态）。
+- 三代码提交：14e7da2c7(R236)、b0e883df2(mobile 日程)、065e18a73(mobile 回收站)，docs §95 本提交。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R236 完成（思维导图目录树 a11y，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug/admin 全负结果，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
