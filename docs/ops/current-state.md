@@ -2140,3 +2140,24 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 成果分三提交（R210 / admin BattlesView 详情竞态 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R210 组织选择器选中态无障碍完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin BattlesView 详情抽屉竞态），子代理负结果，继续找但不强造。
+## 70. 第 61 轮现量：R211 视图弹窗可访问名称 + laiyipao 负结果
+
+### 70.1 R211 视图弹窗补可访问名称（WCAG 4.1.2 Name, Role, Value）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/utils/modalFocus.ts 的 installViewModalManager() 在 sync() 中给每个 .modal-overlay 设 role=dialog + aria-modal=true，但从未提供可访问名称。真实 44 个 CRUD 视图弹窗都是 div.modal-overlay 内含 h3 标题且标题无 id、无 aria-labelledby/aria-label；屏幕阅读器只播报「对话框」，用户无法分辨新建/编辑/详情弹窗。confirmMsg 自己设了 aria-labelledby，视图弹窗管理器没有。R155-R210 未覆盖。 |
+| 修复 | 新增 TITLE_SELECTOR（h1-h6 / role=heading）、TITLE_ID_PREFIX=oa4-modal-title- 与唯一计数器；findTitle() 在作者已提供 aria-label/aria-labelledby 时直接返回 null 尊重作者命名；sync() 给无 id 标题注入唯一 id 并设 overlay 的 aria-labelledby，作者已有 id 则原样引用；releaseManaged() 与 dispose() 撤销注入的 aria-labelledby 并清理注入的标题 id。共 +44/-2。 |
+| 门禁 | 新增 modalFocus.a11yName.contract.test.ts 5 例（jsdom：标题命名/多弹窗唯一 id/关闭清理/作者命名不被覆盖/dispose 清理）。主线程独立 stash 回退修复后实跑 RED 3 failed（overlay must expose aria-labelledby: expected null to be truthy）→恢复后 GREEN；新契约+原 R162 回归 2 文件 11 passed；全量 oa4rust 120 文件/1468 passed、typecheck 6 项目 Done、lint 398 文件 0 error（20 info 既有）。 |
+
+### 70.2 laiyipao 负结果与目标二边界
+
+- lybug-r61 负结果零改动：路由↔客户端 1:1（50+ 端点无孤儿/遗漏）、响应结构↔TS 接口逐字匹配（MyRank/SignInStatus/OfflineRewardStatus/BattleDetail/ChallengeHistoryItem/Diagnose 等）、关键流程双向核对（战报分页 keyset+listReqSeq、签到周期、离线收益 FOR UPDATE、放弃战斗退体力、专精 reset、卡关诊断）全部一致，竞态守卫齐全。未发现满足「真实可确证+用户可见+未修复」标准的新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，口令存 gitignored 本地文件不回显，不臆造地址账号密码。
+
+### 70.3 主线程侦察与交付边界
+
+- 主线程侦察负结果：laiyipao/admin 各导出提示条数已全部来自 csvDataRowCount 真值（BattlesView/ContentView/EconomyView/RecomputesView/UsersView），redeem usages/user flows 为纯提示无条数；各视图 dateRange 用 nextDay 开区间与后端一致；表单用 el-form-item label 正确关联；无裸 div/span/li @click 控件。WikiView 搜索框有有意义 placeholder（HTML-AAM 回退名称），不构成可确证缺口。oa4rust/mobile 无 v-html、登录 submit 有 submitting 防重守卫、监听/定时器均有配对清理，无可确证缺口。
+- 提交前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R211 视图弹窗可访问名称完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程侦察无缺口，继续找但不强造。
