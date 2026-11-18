@@ -516,13 +516,14 @@ const calendarCells = computed(() => {
     })
   }
 
+  const businessToday = calendarBusinessToday()
+
   // 本月
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const dayEvents = allEvents.value.filter(
       (e: CalendarEvent) => e.startTime?.startsWith(dateStr) || e.startTime?.includes(dateStr),
     )
-    const businessToday = calendarBusinessToday()
     cells.push({
       key: calendarCellKey(year, month, d),
       day: d,

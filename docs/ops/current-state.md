@@ -2967,3 +2967,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r250 排除清单（未改）：bag doApplyPreset/doSynthesize、me challenge 历史/护盾、admin 导出 is_guest、五视图加载竞态、导出链路十项、B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞、server 护盾读写、mastery/signin/shop/index/stage/battle settle、商城写后缓存、game.go 复活归属过滤、shop doBuy 刷新；admin client 令牌缓存、server queryOffset/queryTimeRange 边界、miniapp 令牌刷新/auth/Redeem-SignIn 并发/pagination.go/csv_safe.go/export_limit.go/adminutil.ts/offsetPager.ts/format.ts/adminRole.ts/labels.ts/reactionPairs.ts 均无缺口。
 - 门禁（主线程独立全量）：OA 155 文件/1635 passed + 6 项目 typecheck + lint 454 文件 0 error（29 info 既有）、mobile 43 文件/317 passed；admin 37 文件/497 passed + vue-tsc 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R250 完成（累计 100+ 轮实质优化，恰逢第100轮）；目标二已于 §99 完成交付；目标三本轮修复 admin 日期双重 +1天真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 111. 第 101 轮：R251 日历循环内不变式外提 + miniapp 签到后任务进度同步（2026-11-19）
+
+### 111.1 R251（oa4rust/desktop）日历网格渲染不再重复计算业务今日 28~31 次
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/CalendarApp.vue 的 calendarCells computed「本月」循环 for (let d=1; d<=daysInMonth; d++) 内（原 L525）每次迭代都调用 calendarBusinessToday()——该函数内部 new Date()+UTC+8 偏移+多次 getUTC*，结果与循环变量 d 无关，渲染一次网格重复执行 28~31 次。日历页渲染即触发，无 disabled/遮罩。 |
+| 修复 | 把 const businessToday = calendarBusinessToday() 提到「本月」循环之前（现 L519），循环内只消费 businessToday.day/month/year 计算 isToday（现 L532），UTC+8 业务日语义与 R169 口径不变；L579 另一处（初始化当前年月，非循环内）不动。2 增 1 删，LF 保持。 |
+| 测试 | 新增 CalendarApp.businessToday.contract.test.ts（双头，源码结构契约：node:fs 读 .vue + 括号配平提取循环体）。主线程独立 RED 3 failed/3（实收 businessToday 必须在循环外求值一次 expected +0 to be 1 / 循环体内仍有调用 expected 1 to be +0 / 声明必须在循环外）→GREEN 3 passed。门禁：oa4rust 156 文件/1638 passed、typecheck 6 项目、lint 455 文件 0 error（29 info 既有）、diff --check 0。 |
+
+### 111.2 laiyipao/miniapp 签到成功后「今日完成签到」任务进度不同步（真 bug）
+- 缺口：laiyipao/miniapp/src/pages/signin/signin.vue doSignIn() 成功分支只改 claimedCount/canSign/signedToday + refreshWallet，从不重拉任务列表；服务端 SignIn（economy.go:579）成功会 bumpTasks({signin:1}) 推进种子任务 daily_signin（seed.go:328 {4,1,"daily_signin","今日完成签到","daily","signin"}，target=1）。同页 claim()（399-409）写后都 await load()，签到漏掉→签到成功后本会话内任务仍显示 0/1「未完成」，须手动切 tab 或重进页面才刷新（写后失同步同族）。
+- 修复（仅 signin.vue +2 行，CRLF 600→602 保持）：doSignIn 成功分支在 await store.refreshWallet() 前加注释 + await load()，与 claim() 写后重拉同一模式。
+- 测试：signin.test.ts 追加 1 例（fetchTasks mock 按 signedIn 标志返回 0/1→1/1，签到前后断言按钮「未完成」→「领取」、进度「0 / 1」→「1 / 1」且 fetchTasks 调用数增加）。主线程独立 RED：AssertionError「expected 1 to be greater than 1」(fetchTasks 仍只挂载时调 1 次)，1 failed/24 passed→GREEN 25 passed。
+
+### 111.3 负结果、门禁与目标状态
+- lybug-r251 排除清单（未改）：admin Recomputes/Dashboard 无日期双重+1同族；换装 attacker 由 battle/token 权威快照刷新不构成失同步；gems.vue 无写操作；signin day_index 与权威 claimed_count 语义一致；server 静态配置缓存无写路径；battle settle/retry/verify 写后刷新完整。oaopt-r251 无负结果（仅一处可达缺口）。
+- 门禁（主线程独立全量）：OA 156 文件/1638 passed + 6 项目 typecheck + lint 455 文件 0 error（29 info 既有）；miniapp 139 文件/1482 passed（2 skipped 既有）+ type-check:test + type-check 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R251 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复签到任务进度失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
