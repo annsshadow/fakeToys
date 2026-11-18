@@ -95,9 +95,16 @@ func (s *Service) recomputeEngine(
 		return nil
 	}
 
-	outcome := domain.Replay(
+	// 复活局：客户端把 ReviveExtraBaseHP 计进 replay_hash 的 |X 段，
+	// 重算必须同口径，否则合法复活局哈希必然不符（第 40 轮）。
+	// tok.Revived 是权威来源（与 ValidateSettle 抬高 hp_left 上界同源）。
+	var extraBaseHp int64
+	if tok.Revived {
+		extraBaseHp = domain.ReviveExtraBaseHP(gl)
+	}
+	outcome := domain.ReplayWithExtraBaseHp(
 		gl, build, fmt.Sprintf("%d", tok.Seed), in.CardPicks, in.ReplayHash,
-		domain.EnemiesByID(), domain.SkillsByID(), domain.DefaultScoreRules(),
+		domain.EnemiesByID(), domain.SkillsByID(), domain.DefaultScoreRules(), extraBaseHp,
 	)
 
 	// ⚠️ 这三行顺序不能换：Err 必须先判。
