@@ -2051,3 +2051,33 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R207 全局搜索快捷键完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 重算筛选分页），子代理负结果，继续找但不强造。
+## 67. 第 58 轮：R208 验证码刷新键盘可达性 + admin 三处 CSV 导出条数真值 + laiyipao 负结果
+
+起点 HEAD=bf8f13464，分支 feat/h5-battle-substantive-100。oaopt-r208 负责 oa4rust/frontend（R208），lybug-r58 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 67.1 R208 登录验证码刷新控件键盘可达性（WCAG 2.1.1 / 4.1.2 / 1.1.1）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/ui/src/components/LoginScreen.vue 验证码刷新动作原绑在裸 <img @click="refreshCaptcha">：<img> 不可 Tab 聚焦、不响应 Enter/Space，无 role/可访问名；验证码看不清时这是登录页唯一刷新入口 → 键盘与读屏用户被硬阻断在登录之外。历史 R155–R207 未覆盖验证码交互控件，非重复。 |
+| 修复 | 改为原生 <button type="button" class="captcha-refresh" aria-label="刷新验证码" @click="refreshCaptcha"> 包裹展示用 <img alt="验证码">；显式 type="button" 防位于 form 内误触登录提交；CSS 去按钮默认样式、保留边框圆角、加 :focus-visible 2px 焦点轮廓；img 仅作非文本替代、去鼠标专属 cursor/@click。 |
+| 门禁 | 新增 captchaRefreshA11y.contract.test.ts 6 例（刷新控件存在/原生 button/type=button/aria-label/无鼠标专属 img/img 保留 alt）。RED(4 failed：刷新控件不是原生 button、缺 type=button、缺可访问名、存在鼠标专属图片)→GREEN；主线程独立复核 diff 干净；全量 oa4rust 117 文件/1459 passed、typecheck 6 项目 Done、lint 395 文件 0 error（20 info 既有，LINT_EXIT=0）。 |
+
+### 67.2 admin ContentView 三处 CSV 导出条数真值（第 54 轮同族漏网）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/ContentView.vue 的公告/兑换码/审计日志三个 CSV 导出提示用 announcements.value.length / codes.value.length / logs.value.length（当前页条数）冒充导出条数，而 exportAnnouncementsCsv/exportRedeemCodesCsv/exportAuditLogsCsv 服务端端点均为全量导出（无 limit/offset）：翻页或筛选后运营看到的提示条数远小于实际下载行数，误导归档核对。第 54 轮已修 BattlesView/UsersView/EconomyView/RecomputesView 四处同族，此处漏修。 |
+| 修复 | 三个 handler 均改为 const exportedCount = csvDataRowCount(await blob.text())，提示改「已导出 N 条…（当前筛选结果）」，复用第 54 轮 format.ts 的 csvDataRowCount（逐字符扫 BOM/表头/引号内换行/转义双引号/CRLF）。 |
+| 门禁 | ContentView.test.ts 加 vi.hoisted 三个导出 mock + describe「CSV 导出条数真值（第 58 轮）」3 例（当前页 1 条、CSV 全量 3 行，直接调 vm 导出 handler 避开多 tab 同名按钮）。RED(3 failed，实收「已导出 1 条…（当前页）」)→GREEN；admin 全量 34 文件/466 passed、vue-tsc exit 0。 |
+
+### 67.3 laiyipao 负结果与目标二边界
+
+- lybug-r58 负结果零改动：服务端权威契约（domain/service/httpapi）↔ miniapp 消费面逐类核对 10 类（/me/battles 分页边界与 keyset、离线奖励数值与并发、签到时区日界、SignInResult 字段名与 JSON tag、公告 limit 边界、MyRank 哨兵语义、星级聚合映射、requireUser 鉴权 401/403 区分、错误码契约、战报筛选竞态已修项），全部一致、已修或语义歧义，无满足「真实可确证+用户可见+非已修+非固定不动项」的新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0（注意不是 /health），根页//docs/openapi.json 均 200，匿名 POST 404；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，口令存 gitignored 本地文件不回显，不臆造地址账号密码。
+
+### 67.4 交付边界与审阅记录
+
+- 成果分三提交（R208 / admin CSV 导出条数 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R208 验证码刷新键盘可达性完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 三处 CSV 导出条数），子代理负结果，继续找但不强造。
