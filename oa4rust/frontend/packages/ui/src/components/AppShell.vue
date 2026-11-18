@@ -12,8 +12,8 @@
         </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
+      <nav class="sidebar-nav" aria-label="主导航">
+        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :aria-current="isActive(item.path) ? 'page' : undefined" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
         </div>
@@ -101,13 +101,14 @@
     </div>
 
     <!-- 移动端底部导航 -->
-    <nav v-if="isMobile" class="tab-bar">
+    <nav v-if="isMobile" class="tab-bar" aria-label="底部导航">
       <div
         v-for="item in mobileNavItems"
         :key="item.path"
         class="tab-item"
         role="button"
         tabindex="0"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
         :class="{ active: isActive(item.path) }"
         @click="navigate(item)"
         @keydown.enter="navigate(item)"
