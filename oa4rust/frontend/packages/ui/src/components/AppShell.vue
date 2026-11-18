@@ -119,6 +119,7 @@
 import { useSession, useTheme } from '@oa4rust/sdk'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { isNavActive } from './navActive'
 
 const router = useRouter()
 const route = useRoute()
@@ -174,7 +175,7 @@ const mobileNavItems: NavItem[] = [
 ]
 
 function isActive(path: string): boolean {
-  return route.path.startsWith(path)
+  return isNavActive(route.path, path)
 }
 
 function navigate(item: NavItem): void {
