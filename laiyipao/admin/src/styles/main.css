@@ -503,3 +503,13 @@ body {
 #main-content:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* ── WCAG 2.4.7 键盘焦点可见 ─────────────────────────────────────────
+ * admin 用 Element Plus，且部分视图（如 WikiView 搜索框）有 outline:none
+ * 移除浏览器原生轮廓；这里在全局层提供统一焦点环，只在键盘交互时出现，
+ * !important 覆盖各视图 scoped 样式的 outline:none，保证键盘用户看得清焦点。
+ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--lyp-accent) !important;
+  outline-offset: 2px;
+}
