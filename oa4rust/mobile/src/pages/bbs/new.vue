@@ -50,16 +50,18 @@ async function submit() {
     const newId = resp.data?.id ?? ''
     uni.showToast({ title: '发布成功', icon: 'success' })
     // 新主题详情可直接打开；拿不到 id 时退回列表刷新即可。
+    // 成功到跳转的 600ms 窗口内保持提交守卫，防止连点重复发帖；跳转发生时才释放。
     setTimeout(() => {
       if (newId) {
         uni.redirectTo({ url: `/pages/bbs/topic?id=${encodeURIComponent(newId)}` })
       } else {
         uni.navigateBack()
       }
+      submitting.value = false
     }, 600)
   } catch {
     uni.showToast({ title: '发布失败，请重试', icon: 'none' })
-  } finally {
+    // 失败立即释放守卫，允许用户重试。
     submitting.value = false
   }
 }

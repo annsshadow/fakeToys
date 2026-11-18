@@ -2930,3 +2930,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 108.3 负结果、门禁与目标状态
 - 门禁（主线程独立全量）：miniapp 139 文件/1481 passed（2 skipped 既有）+ type-check:test + type-check 0；admin 37 文件/496 passed + vue-tsc 0；OA 155 文件/1635 passed + 6 项目 typecheck + lint 451 文件 0 error（29 info 既有）+ diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R248 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复熔炼幽灵槽真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 109. 第 99 轮：R249 mobile 发帖 600ms 窗口重复提交（2026-11-19）
+
+### 109.1 R249（oa4rust/mobile）发帖成功跳转前释放提交守卫致连点重复发帖
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/bbs/new.vue submit()（原第39-65行）发帖成功后 showToast('发布成功')，跳转放在 setTimeout(...,600) 内，但 finally 立即 submitting.value=false。canSubmit()（:19-20）含 !submitting.value；模板 :96 提交按钮只有 :class={disabled:!canSubmit()} 透明度样式、无真正 disabled 属性，@tap=submit 仍可触发。成功到跳转的 600ms 窗口内守卫已释放，连点会二次调用 bbsApi.topicCreate 造成重复发帖。可达性已核：picker/input/textarea 均可交互、无遮罩。 |
+| 修复 | 删除 finally；submitting.value=false 移入 setTimeout 回调末尾（:60，跳转时才释放）与 catch 末尾（:65，失败立即释放可重试），加两条说明注释。diff +2 注释/+2 赋值/-1 行；源文件纯 LF（CRLF=0/LF=164）保持。 |
+| 测试 | 新增 newSubmitGuard.test.ts（双头）：3 例源码结构契约（定时器回调内含释放、catch 内含释放、finally 不再无条件释放）。主线程独立 RED 3 failed/3（实收 expected setTimeout body to contain submitting.value=false / catch body 同 / expected true to be false）→GREEN 3 passed/3。 |
+| 负结果 | QueryStatementDesigner resultNumericStats 偶数上中位数口径错但 computed 未被模板消费（UI 不可达）；QueryManagerDeep 两处排序比较器重复属重构非缺陷；桌面 utils（calendarGrid/simulationProgress/formFieldValidation/csv/resultPagination/formatNumber）与 sandbox 并发队列、各 mobile 加载链/写守卫（calendar/collect/recycle/process）历轮已覆盖——均登记未改，不凑数。 |
+
+### 109.2 laiyipao 第99轮负结果（lybug-r249，零改动）
+- 同族写后失同步全面核实良好：bag.vue doWash/doEquipGem/doUnequipGem 回写 ownedGems+refreshProfile、doUpgrade 写回执、预设 save/delete/setCurrent 均 loadPresets、equip/unequip 只写 myEquipments 但战力纯函数不含装备（server game.go:954-998）无 stale；me.vue 昵称/升级/改密码/删防线/saveDefense/toggleShield/challenge 写后均刷新权威；shop.vue doBuy 成功失败均 load() 且 index/me onShow 均 refreshProfile；mastery/signin/battle settle 均已修/已刷新。
+- server/admin 写后缓存与权威态全已覆盖：公告 create/update/delete（含 !replayed 幂等）flush announcementsCache、商城 update flush shopCache+economyCache（R97）、结算 flushLeaderboards；staticConfig=sync.OnceValue 不查库属设计（内容表 seeder 管理，配置版本按内容哈希失效 service.go:1577-1754），非写后失同步。未发现新的真实可达可 RED→GREEN 取证 bug，按纪律零改动。
+
+### 109.3 门禁与目标状态
+- 门禁（主线程独立全量）：OA 155 文件/1635 passed + 6 项目 typecheck + lint 452 文件 0 error（29 info 既有）+ mobile 42 文件/313 passed + diff --check 0。laiyipao 本轮零源码变更故未重跑（前序门禁已绿）。SPDX 双头齐全，LF 保持。
+- 三目标仍 active：目标一 R249 完成（累计 100+ 轮实质优化，恰逢第99轮）；目标二已于 §99 完成交付；目标三第99轮全负结果（同族 bug 已被前序修完），继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
