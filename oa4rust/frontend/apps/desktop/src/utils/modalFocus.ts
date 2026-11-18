@@ -1,7 +1,9 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-const OVERLAY_SELECTOR = '.modal-overlay'
+// FileManager reuses the same hand-written overlay pattern with a different
+// class for its detail/upload dialogs, so both families need dialog semantics.
+const OVERLAY_SELECTOR = '.modal-overlay,.upload-overlay'
 const CONFIRM_OVERLAY_ID = 'oa4-confirm-overlay'
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -70,8 +72,9 @@ function backgroundRoots(overlay: HTMLElement): HTMLElement[] {
 
 /**
  * Global keyboard/focus behavior for the hand-written modal overlays used by
- * the CRUD views. One install covers every `<div class="modal-overlay"
- * @click.self="...">` without touching the 90+ view files.
+ * the CRUD views and FileManager. One install covers every `<div
+ * class="modal-overlay|upload-overlay" @click.self="...">` without touching
+ * the 90+ view files.
  *
  * - Escape dispatches a bubbling click on the overlay itself, triggering the
  *   view's existing `@click.self` close handler (no state coupling).
