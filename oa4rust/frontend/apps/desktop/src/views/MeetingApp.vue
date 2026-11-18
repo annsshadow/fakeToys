@@ -140,6 +140,7 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { createGeneration } from './latestOnly'
 import { describeListError } from './listQuery'
+import { meetingCompletedFromResponse, meetingStatusClass, meetingStatusText } from './meetingStatus'
 
 interface M {
   id: string
@@ -209,10 +210,10 @@ async function loadMeetings() {
   }
 }
 function statusTxt(m: M) {
-  return m.status === '1' ? '进行中' : m.status === '2' ? '已结束' : '未开始'
+  return meetingStatusText(m.status)
 }
 function statusCls(m: M) {
-  return m.status === '1' ? 'active' : m.status === '2' ? 'ended' : 'pending'
+  return meetingStatusClass(m.status)
 }
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
@@ -674,9 +675,11 @@ async function markMeetingCompleted(m: M) {
   if (!(await confirmMsg('确定将该会议标记为已完成？'))) return
   try {
     // POST meeting/{id}/manual/completed → UPDATE x_meeting status='completed'（无 body）
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    const r = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    // 列表端点 meeting/list/apply 的 SELECT 不含 status 列，重载会把刚完成的会议显示成「未开始」。
+    // 消费 manual/completed 响应里的权威布尔并就地落态。
+    if (meetingCompletedFromResponse(r)) m.status = 'completed'
     toast.success('已标记完成')
-    loadMeetings()
   } catch (e: any) {
     toast.error(`标记完成失败: ${e?.message ?? ''}`)
   }

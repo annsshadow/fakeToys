@@ -3221,3 +3221,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 124.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 159 文件/1646 passed + pnpm typecheck 6 项目 0 + biome lint 464 文件 0 error(29 info 既有)；miniapp 143 文件/1491 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处源码 SPDX 双头、格式（LF/BOM）保持、真值不入库。
 - 四目标：①目标一 R265 论坛列表竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R265 购买弹窗期双扣真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 125. 第116轮：会议标记完成权威态渲染 + 删除防线弹窗期守卫
+
+### 125.1 oa4rust/desktop 会议状态渲染误报未开始（R266，oaopt-r266）
+- 缺口：MeetingApp.vue 列表源 GET meeting/list/apply/1/size/50 的 SELECT 不含 status 列（后端 meeting_assemble_control/src/lib.rs:1067-1070），卡片 statusTxt/statusCls 只认历史数值串 1/2（进行中/已结束），而后端权威值域是英文串（UPDATE x_meeting SET status=completed，lib.rs:2846；security_gate_tests.rs:702 wait/processing/completed）。用户点「标记完成」后 manual/completed 把库置 completed，原代码随后 loadMeetings() 重载无 status 的列表→卡片永远显示「未开始」，用户以为操作失败。manual/completed 响应体带权威布尔 ActionResult.data.completed（routes.rs:64/119），纯前端可自洽修复。
+- 修复：新增 meetingStatus.ts（meetingStatusText/meetingStatusClass 兼容数值串+英文值域、meetingCompletedFromResponse 只认 data.completed===true 的权威布尔，双头）；MeetingApp.vue statusTxt/statusCls 委托纯函数，markMeetingCompleted 消费响应权威布尔就地 m.status=completed 并去掉 loadMeetings() 重载（+3/-4）。新增 meetingStatus.test.ts（双头，5 例：值域映射+源码契约）。
+- 主线程独立 RED→GREEN（备份 MeetingApp.vue + 移走 meetingStatus.ts，保留新测试防假绿；在 oa4rust 下 pnpm exec vitest run src/views/meetingStatus.test.ts --root frontend/apps/desktop）：RED exit1 Error Cannot find module ./meetingStatus → 恢复 GREEN 5 passed。代理首轮 lint 因测试第 38 行格式报 1 error，修正后 0 error。
+- 负结果（勿重复）：SDK api.ts 401→refresh→单次重放/403/404 归一化已充分覆盖；纯函数 csv.ts/calendarGrid.ts 有单测；桌面 88 个 useMutation 扫描 Personal 头像上传无展示面、ServiceInvokeDesigner runM 另有 reload；MeetingApp searchKey/statusFilter 未随 GET 下发是既存设计遗留（列表端点无对应查询契约，无法纯前端自洽修复）。
+
+### 125.2 laiyipao/miniapp 删除防线弹窗期双请求（R266，lybug-r266）
+- 缺口：me.vue:1304 onDeleteMyDefense() 在 showModal 前无 in-flight 守卫，双击「删除防线」弹两个确认框，两次都确认发两次 api.deleteMyDefense()；服务端 progression.go:815 DELETE FROM defenses WHERE owner_id=$1，第二次 RowsAffected=0 返回 ErrNotFound「你还没有设置防线」，弹莫名错误。同 battle.vue 放弃局/shop.vue 购买确认已修属同类缺陷。
+- 修复：me.vue 新增 const deletingDefense=ref(false)，onDeleteMyDefense 在 showModal 前 if(deletingDefense.value) return 并置位，if(!confirmed) 复位，try/catch 后 finally 复位（沿用既有注释风格，CRLF 无 BOM 保持）。新增 me_defense_delete_modal_guard.test.ts（LF 无 BOM、双头+jsdom，2 例：弹窗待决期连点只弹一次只删一次、取消后守卫复位可再删）。
+- 主线程独立 RED→GREEN（仅还原 me.vue 保留新测试；laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/me/me_defense_delete_modal_guard.test.ts）：RED exit1 expected "vi.fn()" to be called 1 times, but got 2 times（:159）→恢复 GREEN 2 passed。
+- 证伪方向：7 处 showModal 全量核对——battle/shop 已修，me.vue:1166 已在本机退出提示 showCancel:false 无异步写，其余无 async 写操作；列表页并发令牌与错误信封消费边角无新可达 bug。后续线索：me.vue:1149 confirmLogout() 在 showModal 后调 api.logout()（登出语义幂等，本轮未改）；uni.showActionSheet 等其他异步确认入口未纳入本轮扫描。
+
+### 125.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 160 文件/1651 passed + pnpm typecheck 6 项目 0 + biome lint 466 文件 0 error(29 info 既有)；miniapp 144 文件/1493 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。三处新文件 SPDX 双头、格式（LF/CRLF-BOM）保持、真值不入库。
+- 四目标：①目标一 R266 会议状态权威态渲染复核完成，持续找缺口②目标二 §99 已交付③目标三 R266 删除防线弹窗期双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

@@ -1301,31 +1301,43 @@ async function toggleShield() {
  * 删除后其他玩家无法再挑战你，相关挑战记录也会一并删除。
  * 必须二次确认（不可恢复）。
  */
-async function onDeleteMyDefense() {
-  const confirmed = await new Promise<boolean>((resolve) => {
-    uni.showModal({
-      title: '删除防线',
-      content: '删除后其他玩家将无法挑战你，该防线的挑战记录也会一并删除。确定继续？',
-      confirmText: '删除',
-      cancelText: '取消',
-      success: (r) => resolve(!!r.confirm),
-      fail: () => resolve(false),
+  // 第 116 轮（R266）：守卫必须在 showModal 之前置位。此前弹窗挂起期间
+  // 没有 in-flight 标记，双击会弹两个确认框，两次都确认就发两次删除请求；
+  // 第二次服务端返回 ErrNotFound「你还没有设置防线」，弹莫名错误。
+  // 同 battle.vue 放弃局 / shop.vue 购买确认的做法：取消与 finally 都复位。
+  const deletingDefense = ref(false)
+  async function onDeleteMyDefense() {
+    if (deletingDefense.value) return
+    deletingDefense.value = true
+    const confirmed = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '删除防线',
+        content: '删除后其他玩家将无法挑战你，该防线的挑战记录也会一并删除。确定继续？',
+        confirmText: '删除',
+        cancelText: '取消',
+        success: (r) => resolve(!!r.confirm),
+        fail: () => resolve(false),
+      })
     })
-  })
-  if (!confirmed) return
-  try {
-    await api.deleteMyDefense()
-    myDefense.value = null
-    shielded.value = false
-    uni.showToast({ title: '防线已删除', icon: 'none' })
-    await loadDefenses()
-    // 第 103 轮（R246）：服务端删除防线时 defense_challenges 随外键 CASCADE
-    // 消失；这是页内动作（不触发 onShow），必须就地重拉被挑战记录，否则卡片停在旧快照。
-    await loadDefenseChallengeHistory()
-  } catch (e) {
-    uni.showToast({ title: (e as Error).message, icon: 'none' })
+    if (!confirmed) {
+      deletingDefense.value = false
+      return
+    }
+    try {
+      await api.deleteMyDefense()
+      myDefense.value = null
+      shielded.value = false
+      uni.showToast({ title: '防线已删除', icon: 'none' })
+      await loadDefenses()
+      // 第 103 轮（R246）：服务端删除防线时 defense_challenges 随外键 CASCADE
+      // 消失；这是页内动作（不触发 onShow），必须就地重拉被挑战记录，否则卡片停在旧快照。
+      await loadDefenseChallengeHistory()
+    } catch (e) {
+      uni.showToast({ title: (e as Error).message, icon: 'none' })
+    } finally {
+      deletingDefense.value = false
+    }
   }
-}
 
 /**
  * 挑战用的标准战场：第 1 关（I-5 规定双方在同一张图上比构筑）。
