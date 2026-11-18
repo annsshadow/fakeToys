@@ -1704,3 +1704,30 @@ lybug-r46 逐类核对 laiyipao/miniapp 与 server 契约面：API 路径/方法
 
 - 提交 37a461922 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R196 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
+
+## 五十六、第47轮：R197 AI调试面板prompt取消吞值 + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r197 修复一个真实误操作缺陷（原生 prompt 取消被 || '' 吞成空参仍发写/删请求）；lybug-r47 逐类核对全契约后如实报负结果、零改动。主线程独立复核 RED/GREEN、跑全量门禁后提交 R197。
+
+### 56.1 oa4rust R197 AI调试面板 prompt 取消吞值（提交 9b87dd7f7）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | apps/desktop/src/views/AIChatApp.vue 的 AI 调试面板 aiWrite/aiMore/aiMore2 共 16 处以裸 prompt(label,'') || '' 收集模型/MCP/公告/线索/文件 ID 与 flag（原行号 294,297,300,303,306,310,313,317,335,339,342,345,370,376,383,389）。prompt 取消返回 null 被 || '' 吞成空串，代码仍发 api.post/delete/get（如 config/delete/mcp/、chat/delete/、index/delete/ 等），用户误点「取消」即触发空参数写/删请求、产生脏数据与错误提示；原生 prompt 也不受主题与 confirmMsg 无障碍约束。security.test.ts:34-52 只守卫 confirmMsg 导入不覆盖 prompt | 真实用户可见误操作缺陷；R181-R196 未覆盖 |
+| 修复 | 新增 aiPrompt(label):string\|null 保留 null；16 处改为先判 null 再 return（12 处直接赋值 + aiMore2 的 4 处 encodeURIComponent 输入）；确认时仍用原值发请求。新增 aiPromptCancel.test.ts（含 Copyright/SPDX 头）从 SFC 抽取真实三函数，注入 prompt=()=>null 与 spy api 覆盖全部 16 个需输入 op | 2 文件（1 改 + 1 新行为测试）；仅 frontend 范围 |
+| 门禁 | aiPromptCancel.test.ts RED(16 failed/1 passed，典型 expected [] to deeply equal [delete /api/ai/chat/delete/])→GREEN 17/17；主线程独立复跑 17 passed；从 oa4rust 根 pnpm test 106 files/1416 passed、typecheck 6 包 Done、biome 2 文件 0 error；diff --check 0、敏感扫描无命中 | 测试用 spy api 无真值域名/IP/密钥 |
+
+### 56.2 laiyipao 第47轮诚实负结果
+
+lybug-r47 按 lead 要求收敛后报负结果、零改动：逐类核对离线收益(economy.go:706/740↔client.ts:1400/signin.vue:292-313)、任务周期(game.go:1246/1351↔signin.vue:332-368)、专精额外槽(power.go:108/135+extra_slots.test.ts)、公告(announcement.go:52-100 limit 夹取/NULLS LAST)、宝石佩戴(gems.go:343 EquipSlotLimit=6/391 锁行串行/459 幂等↔bag.vue:792)、预设应用(presets.go:51↔bag.vue:1144)、签到(economy.go:403-653↔signin.vue:214-252)、商城(economy.go:871-984↔shop.vue:220-233)，以及禁止重复/固定项全部一致或属已修。server gofmt -l 输出为空。连续第 31/34/41/42/43/45/46/47 轮负结果，印证 43.4 策略不强造。
+
+### 56.3 主线程侦察与交付边界
+
+- oa4rust/mobile（独占）复核负结果：chatPolling.ts 串行轮询守 stopped 丢弃在途、activePollers/activeTimers 计数可观测、stop() 幂等；chat.vue onShow/onHide/onUnload 正确配对 stopPolling 与 unwatchNetwork；message.vue 同构。全仓 8 处监听器/定时器均有配对清理，无 R195/R196 同族缺陷。
+- laiyipao/admin（不在 lybug-r47 写范围）复核负结果：UsersView.vue 详情序号守卫(detailReqSeq 防慢网错数据)、dateRange/lastLoginRange 开区间 nextDay、CURRENCY_LABEL/FLOW_REASON_LABEL 白名单齐全；DashboardView.vue echarts ??= 复用与 /* 验真一致率分母保护 + 首 onActivated 跳过防双请求，测试已锁 KPI/初始化/加载竞态三类风险。无可确证新 bug 未强造。
+- 目标二 augmentor 本轮复核本地 health=200/根页=200/匿名 POST=401，维持 33.3 交付边界（远程卡 GitHub Secrets 超会话边界）。B3、A1/A2/A5 及 laiyipao 固定不动项维持记账。
+
+### 56.4 交付
+
+- 提交 9b87dd7f7 + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R197 完成）；目标二卡外部凭据；目标三本轮负结果继续找但不强造。
