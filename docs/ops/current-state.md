@@ -1534,3 +1534,33 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 维持既有记账不擅动（理由同 15.3/16.3）；目标二 augmentor 维持 33.3 交付边界。
 - lint 17 infos 为 baseline + R189/移动端新测试 Math.pow 风格提示（info 级，EXIT=0 不阻塞）。
 - 工具细节：vitest --reporter=basic 本环境报 Failed to load custom Reporter，改默认 reporter；oa4rust/mobile 子目录 pnpm exec vitest 可用（frontend 子目录须从根跑）。
+
+## 五十、第41轮：R191亮色语义色正文对比度 + 移动端全局color-scheme + laiyipao诚实负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r191 完成 R191亮色主题语义色 WCAG 标准升级；主线程独立补移动端全局 color-scheme（与桌面 R190 同构）；lybug-r41 深查 laiyipao 逐字段契约后如实报负结果、零改动。两写范围互斥（oa4rust/frontend vs oa4rust/mobile），全量门禁复核后分两提交。
+
+### 50.1 oa4rust R191 亮色语义色正文对比度 WCAG 2.1 AA / 1.4.3（提交 e0eeb756e）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 亮色主题 --color-success/warning/error 在桌面 100+ 处作文字色（状态徽章/统计数字/.xform-error/.required/.status），但实算 success 3.15~3.30:1、warning 2.88~3.19:1、error 4.37:1 对 base 背景，均低于 AA 4.5:1；R181-R190 只覆盖 muted 正文色，语义色系统缺口此前未修 | 真实对比度实算确证 |
+| 修复 | dark.css light 块三行 token：success #16a34a→#15803d、warning #d97706→#b45309、error #dc2626→#b91c1c；保留色相与层级 | 2 文件（1 改 + 1 新契约测试）|
+| 门禁 | semanticColorContrast.contract.test.ts 9 例 sRGB 实算三语义色对三背景≥4.5:1 RED(7失败)→GREEN(9/9；success 4.54/5.02/4.79、warning 4.54/5.02/4.80、error 5.85/6.47/6.18)；oa4rust 根 pnpm test 100 files 1378 passed、typecheck 6 包、biome 374 文件 0 error | — |
+
+### 50.2 oa4rust 移动端全局 color-scheme（提交 586599b2b）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 桌面 R190 已声明 color-scheme，但移动端全仓 grep 无 color-scheme（prefers-color-scheme 媒体查询作用不同），uni-app H5/App 内置 WebView 原生 input/select/滚动条/autofill 仍按系统默认渲染，与浅色设计 token 割裂 | 与桌面 R190 同构的系统性标准缺口 |
+| 修复 | App.vue page 规则加 color-scheme: light 一行 + 自解释注释（移动端全仓浅色 token） | 2 文件（App.vue + 契约测试）|
+| 门禁 | design-tokens.contract.test.ts 新增全局 color-scheme 契约 1 例 RED→GREEN（契约 27/27）；移动端全量 271 passed、tsc --noEmit EXIT=0 | — |
+
+### 50.3 laiyipao 第41轮诚实负结果
+
+lybug-r41 逐字段对照复活局全链路（ExtraBaseHp/replay_hash |X 段/ReviveExtraBaseHP/recompute 换算/battle.vue BigInt/engine.ts baseHp）、replay attacker 缺省值、activeSlots、Score、mulDiv 128位精确除法、GameTuning 千分比族、terrain/heat 纯函数、分页游标、BattleDetail 19 字段、GameConfig 全量字段、Diagnose 权威、技能规则、LCG、百分比定义、等级专精、config 缓存版本共 16 类，全部一致或属已修/已排除项。无可写成「能失败的 RED 断言」的真实不一致点，如实报负结果、零文件改动、未跑无意义门禁。印证 43.4 策略提示（易发现 bug 趋枯竭，勿强造）。
+
+### 50.4 交付与边界
+
+- 两提交 e0eeb756e、586599b2b + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 及 laiyipao 固定不动项维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界（本轮复核本地 health=200）。
+- 新契约测试文件按仓库规范补 Copyright/SPDX 头与自解释说明；biome 374 文件 0 error（17 infos baseline 不阻塞）。
