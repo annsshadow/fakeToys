@@ -15,6 +15,16 @@ export function setWebSocketBase(base: string): void {
 }
 
 type MessageHandler = (data: unknown) => void
+
+/**
+ * 自动重连成功后要重放的应用层状态。
+ * 用 getter 而非快照值：会话可在运行时切换（selectConversation），重连时必须读取当前值，
+ * 否则会把 presence / 房间恢复到过期会话。返回空串表示当前无该状态、跳过发送。
+ */
+export interface O2ReconnectState {
+  getSender?: () => string | undefined
+  getRoomId?: () => string | undefined
+}
 type EventMap = {
   im_create: MessageHandler
   im_revoke: MessageHandler
@@ -47,6 +57,12 @@ export class O2WebSocketClient {
   private ws: WebSocket | null = null
   private url: string
   private handlers = new Map<string, Set<MessageHandler>>()
+  /**
+   * 应用层需要在每次连接（含意外断线后自动重连）成功后重放的状态。
+   * 典型场景：IMChat 的在线身份声明（presence）与房间加入（join_room）。
+   * 仅在 onopen 成功时重放，失败/未连接时不会发送，避免半连接状态。
+   */
+  private reconnectStates: O2ReconnectState[] = []
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private _connected = false
@@ -81,6 +97,7 @@ export class O2WebSocketClient {
         this._connected = true
         this.reconnectAttempts = 0
         this.startHeartbeat()
+        this.replayReconnectState()
         resolve()
       }
 
@@ -138,6 +155,31 @@ export class O2WebSocketClient {
   /** 加入房间 */
   joinRoom(roomId: string): void {
     this.send('join_room', { room_id: roomId })
+  }
+
+  /**
+   * 注册连接成功后要重放的应用层状态（身份声明 + 房间加入）。
+   * IMChat 首次 connect().then() 用本方法替代一次性回调，使 SDK 在
+   * 每次自动重连成功后都能恢复 presence 与房间订阅。
+   * 重复调用以最后一次注册为准（覆盖语义），不累积。
+   */
+  registerReconnectState(state: O2ReconnectState): void {
+    this.reconnectStates = [state]
+  }
+
+  /** 清除已注册的重连状态；组件卸载显式调用（close 不自动清，保持订阅生命周期对称）。 */
+  clearReconnectState(): void {
+    this.reconnectStates = []
+  }
+
+  /** 连接成功后重放已注册状态；每次读取 getter 当前值，避免恢复到过期会话。 */
+  private replayReconnectState(): void {
+    for (const state of this.reconnectStates) {
+      const sender = state.getSender?.()
+      const roomId = state.getRoomId?.()
+      if (sender) this.declarePresence(sender)
+      if (roomId) this.joinRoom(roomId)
+    }
   }
 
   /** 离开房间 */

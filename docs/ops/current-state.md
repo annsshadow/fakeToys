@@ -3130,3 +3130,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 118.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 156 文件 passed + mobile 47 文件/336 passed + OA 6 项目 typecheck 0 + lint 459 文件 0 error(29 info)；miniapp/admin 本轮零改动沿用上轮门禁（miniapp 142 文件/1488 passed(2 skipped)、admin 497 passed）。R259 oaopt 源码 SPDX 双头、LF 保持、diff --check 0。
 - 四目标：①目标一 R259 发消息落库守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R259 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。凭证仅存仓库外临时文件+env，真值不入库。
+
+## 119. 第110轮：WebSocket 重连后应用层状态重放
+
+### 119.1 SDK 自动重连丢失 presence/join_room（R260，oaopt-r260）
+- 缺口：websocket.ts onopen 仅置 connected/心跳/resolve，scheduleReconnect 直接 connect() 绕过 IMChat 首次 connect().then() 里一次性的 declarePresence/joinRoom（IMChat.vue:658-665，专属频道 :672-694 同根因）。网络闪断/服务端重启后 SDK 静默重连成功但不再声明身份与加房间→roster 消失、收不到回执、在线数失真，UI 却因 connected=true 误报成功。
+- 修复：websocket.ts 新增 O2ReconnectState（getter 读当前会话，避免切会话后重连回旧房间）+ registerReconnectState/clearReconnectState，onopen 成功后 replayReconnectState()；IMChat 主频道/专属频道改用注册，onUnmounted 显式 clear 后 close。
+- 测试：新增 websocket.reconnect-state.contract.test.ts（SPDX 双头）2 例——重连后按 getter 当前值重放 presence+join_room（alice/room-1→bob/room-2）、clear 后不重放。主线程独立 RED（还原两源文件后 2 failed：TypeError client.registerReconnectState is not a function @:124 + AssertionError @:92）→恢复 GREEN 2 passed。
+- 门禁（主线程）：OA 根 vitest 157 文件 passed、pnpm typecheck 6 项目 0、biome lint 460 文件 0 error(29 info)。负结果：mobile 范围无可修新缺口。
+
+### 119.2 laiyipao 全项目查修负结果（R260，lybug-r260）
+- 4 条后续线索全部证伪，零改动：saveProfile 是同步 localStorage.setItem 无竞态；readonly 守卫 AST 测试强制所有 admin 写路由挂 requireWritable() 且 middleware fail-closed；build_snapshot 冻结段+跨端字面向量+双层测试钉死；Buy/SaveDefense 关键写全在同事务并有并发守卫。
+- 安全说明：lybug 报 TestNoRealSecretsInRepo 失败——命中 Temp/ 下历史 dist 备份 JS（编译时注入域名真值）。核实 git ls-files Temp=0、.gitignore:227 忽略 Temp，即从未入库/未推送，不构成仓库泄露事故无需轮换；已删除两个含真值的历史备份 JS，重跑守卫 ok。
+
+### 119.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 vitest 157 文件 passed + pnpm typecheck 6 项目 0 + biome lint 460 文件 0 error(29 info)；miniapp 142 文件/1488 passed(2 skipped)、admin 37 文件/497 passed、server go test 全包 ok（真值守卫清理后复跑 ok）。diff --check 0。
+- 四目标：①目标一 R260 WebSocket 重连状态重放复核完成，持续找缺口②目标二 §99 已交付③目标三 R260 负结果（零改动）+ 清理历史备份真值残留④目标四真实 e2e 39 passed。凭证仅存仓库外临时文件+env，真值不入库。

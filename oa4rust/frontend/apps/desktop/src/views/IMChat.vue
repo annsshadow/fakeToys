@@ -655,14 +655,13 @@ function initWebSocket(): void {
     lastDelivered.value = Number(data?.delivered ?? 0)
   })
 
-  ws.connect()
-    .then(() => {
-      // 连接建立后声明在线身份（roster 用），并切到当前会话房间。
-      const me = session.user?.unique
-      if (me) ws.declarePresence(me)
-      if (selectedChat.value) ws.joinRoom(selectedChat.value.id)
-    })
-    .catch(() => console.warn('[IM] WebSocket connect failed'))
+  // 注册重连状态：SDK 在每次连接（含意外断线自动重连）成功后重新声明身份并加入当前会话房间。
+  // getter 读当前会话，避免切换会话后重连回到旧房间。
+  ws.registerReconnectState({
+    getSender: () => session.user?.unique,
+    getRoomId: () => selectedChat.value?.id,
+  })
+  ws.connect().catch(() => console.warn('[IM] WebSocket connect failed'))
 }
 
 // ── 专属房间频道（房间专用 WS 通道 /ws/realtime/room/{id}）+ 房间在线统计（HTTP GET stats）──
@@ -681,10 +680,10 @@ async function connectRoomChannel(): Promise<void> {
     onlineCount.value = Number(data?.count ?? 0)
   })
   try {
+    // 专属频道同样注册重连状态：断线重连后自动重新声明身份。
+    roomWs.registerReconnectState({ getSender: () => session.user?.unique })
     await roomWs.connect()
     roomChannel.value = true
-    const me = session.user?.unique
-    if (me) roomWs.declarePresence(me)
     toast.success(`已进入房间 ${room} 专属通道`)
   } catch {
     toast.error('专属房间通道连接失败')
@@ -1158,6 +1157,7 @@ onUnmounted(() => {
   if (callState.value !== 'idle') endCall(false)
   roomWs?.close()
   roomWs = null
+  wsClient.value?.clearReconnectState()
   wsClient.value?.close()
 })
 // rev478（用户裁定放宽双计口径）：IM 镜像/方法孪生真注册路由 2 条（消息消费维度 + 群退出 self 位；arity 已校验）
