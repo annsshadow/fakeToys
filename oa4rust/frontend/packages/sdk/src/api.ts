@@ -286,8 +286,12 @@ export class ApiClient {
     const controller = new AbortController()
     const bridge = bridgeAbort(options?.signal, controller)
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutElapsed = false
     if (options?.timeoutMs) {
-      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => {
+        timeoutElapsed = true
+        controller.abort()
+      }, options.timeoutMs)
     }
     let resp: Response
     try {
@@ -302,6 +306,7 @@ export class ApiClient {
       })
     } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
+      if (timeoutElapsed) throw networkFailure(UPLOAD_TIMEOUT_MESSAGE)
       throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
@@ -426,8 +431,12 @@ export class ApiClient {
     const controller = new AbortController()
     const bridge = bridgeAbort(options?.signal, controller)
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutElapsed = false
     if (options?.timeoutMs) {
-      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => {
+        timeoutElapsed = true
+        controller.abort()
+      }, options.timeoutMs)
     }
     let resp: Response
     try {
@@ -440,6 +449,7 @@ export class ApiClient {
       })
     } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
+      if (timeoutElapsed) throw networkFailure(UPLOAD_TIMEOUT_MESSAGE)
       throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
