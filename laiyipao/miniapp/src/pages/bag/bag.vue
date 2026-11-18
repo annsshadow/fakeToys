@@ -1032,8 +1032,11 @@ async function doSynthesize(r: { a: number; b: number; output: number }): Promis
   synthesizing.value = r.output
   try {
     const res = await api.synthesizeSkills(r.a, r.b)
-    // 材料已删、产物已发放、槽位可能被清空 —— build 快照必须重拉
-    await store.refreshProfile()
+    // 材料已删、产物已发放、槽位可能被清空 —— build 快照必须重拉。
+    // 熔炼服务端会清掉指向材料的出战槽位（synthesis.go 第 6 步），
+    // 必须重拉 /me/loadout 并同步页内 selected，否则槽位继续显示已被消耗的技能（幽灵槽）。
+    await Promise.all([store.refreshProfile(), store.loadLoadout()])
+    selected.value = [...store.loadout]
     uni.showToast({ title: `熔炼成功：${skillNameOf(res.output)}`, icon: 'none' })
   } catch (e: any) {
     uni.showToast({ title: e?.message ?? '熔炼失败', icon: 'none' })
