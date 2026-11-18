@@ -286,6 +286,7 @@ export function exportUsersCsv(params: {
   keyword?: string
   date_from?: string
   date_to?: string
+  is_guest?: boolean
   last_login_from?: string
   last_login_to?: string
   suspicious?: boolean
@@ -294,6 +295,9 @@ export function exportUsersCsv(params: {
   if (params.keyword) q.set('keyword', params.keyword)
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  // 游客/账号筛选（2026-11-18 第92轮）：服务端导出 handler 早已支持 is_guest
+  // （2026-11-03 R29），前端封装却一直漏传 —— 筛「游客」再导出拿到全部账号。
+  if (params.is_guest !== undefined) q.set('is_guest', params.is_guest ? '1' : '0')
   if (params.last_login_from) q.set('last_login_from', params.last_login_from)
   if (params.last_login_to) q.set('last_login_to', params.last_login_to)
   if (params.suspicious !== undefined) q.set('suspicious', params.suspicious ? '1' : '0')

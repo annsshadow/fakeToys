@@ -21,6 +21,7 @@ const unbanUser = vi.hoisted(() => vi.fn())
 const grantUser = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
 const exportUserFlowsCsv = vi.hoisted(() => vi.fn())
+const exportUsersCsv = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchUsers,
@@ -29,6 +30,7 @@ vi.mock('@/api', () => ({
   unbanUser,
   grantUser,
   exportUserFlowsCsv,
+  exportUsersCsv,
 }))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
@@ -968,6 +970,53 @@ describe('UsersView 需核查筛选（第 60 轮）', () => {
   it('未设置需核查时参数为 undefined', async () => {
     const wrapper = await mountUsers([userFixture()])
     expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: undefined }))
+    wrapper.unmount()
+  })
+})
+
+/**
+ * 第92轮：用户列表 CSV 导出必须与列表同口径。
+ * 「账号类型=游客」筛选此前只传给了 fetchUsers，onExportCsv 漏传 is_guest ——
+ * 运营筛完游客再导出，拿到全部账号，而 toast 写的是「当前筛选结果」。
+ * 服务端 adminExportUsers 自 2026-11-03 R29 起就支持 is_guest，纯前端缺口。
+ */
+describe('UsersView 用户列表导出与筛选同口径（第92轮）', () => {
+  async function mountForExport() {
+    // jsdom 没有 URL.createObjectURL：下载路径需要垫片
+    const createObjectURL = vi.fn(() => 'blob:mock-users-csv')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjectURL, configurable: true })
+    exportUsersCsv.mockResolvedValue(new Blob(['\uFEFFid,nickname\n1,玩家甲\n']))
+    return mountUsers([userFixture()])
+  }
+
+  it('筛「游客」后导出：exportUsersCsv 携带 is_guest=true', async () => {
+    const wrapper = await mountForExport()
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '账号类型')
+    expect(select, '找不到账号类型下拉').toBeTruthy()
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === '导出 CSV')!.trigger('click')
+    await flushPromises()
+
+    expect(exportUsersCsv).toHaveBeenCalledWith(expect.objectContaining({ is_guest: true }))
+    wrapper.unmount()
+  })
+
+  it('筛「账号」（false）后导出：false 是三态里的显式值，不得被丢弃', async () => {
+    const wrapper = await mountForExport()
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '账号类型')
+    await select!.vm.$emit('update:modelValue', false)
+    await select!.vm.$emit('change', false)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === '导出 CSV')!.trigger('click')
+    await flushPromises()
+
+    expect(exportUsersCsv).toHaveBeenCalledWith(expect.objectContaining({ is_guest: false }))
     wrapper.unmount()
   })
 })

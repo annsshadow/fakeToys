@@ -423,6 +423,8 @@ async function onExportCsv() {
       // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
       date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 游客/账号筛选（2026-11-18 第92轮）：与列表同口径，漏传会导出全部账号
+      is_guest: isGuestFilter.value,
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
       last_login_from: lastLoginRange.value?.[0] || undefined,
       last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
