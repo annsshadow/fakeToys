@@ -2386,3 +2386,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 72 轮侦察全负结果：nextDay 四处 UTC 开区间与服务端一致、6 处 daterange 传参正确、10 处 CSV 导出 URLSearchParams 拼参与条数真值、requestBlob 401 判据与主 request 一致、ContentView/DefensesView 删除后整页重载并二次确认、护盾剩余时间单位正确、对话框/抽屉均有 title、分页 @current-change 均绑定 load 系列，无缺口。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R222 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程 admin 均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+## 82. 第 73 轮现量：R223 导航 landmark 可区分 + admin 波次抽屉竞态真 bug
+
+### 82.1 R223 导航 landmark 可区分与当前位置语义（WCAG 1.3.1 / 2.4.8）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/packages/ui/src/components/AppShell.vue 两处 <nav>（侧边栏主导航 L15、移动端底部 Tab L104）均无 aria-label，读屏器 landmark 列表读作两个无差别的 navigation；导航项仅 class="active" 表达当前页（R205 navActive 只修视觉段边界），DOM 无任何 aria-current，读屏用户听不到「当前页面」。 |
+| 修复 | 两处 nav 分别加 aria-label="主导航"/"底部导航"；侧边栏 nav-item 与底部 tab-item 各加 :aria-current="isActive(item.path) ? 'page' : undefined"（非当前项不产生语义），纯属性增强不改导航逻辑。新增 navLandmarkA11y.contract.test.ts 源码级扫描 5 例。 |
+| 门禁 | 契约测试 RED 4 failed | 1 passed→GREEN 5/5；主线程独立 RED（cp 备份 AppShell.vue→git checkout HEAD 回退→RED 4 failed→cp 恢复→GREEN 5 passed，恢复后 diff 4+/3- 完整）；全量 oa4rust 133 文件/1529 passed、typecheck 6 项目 Done、lint 415 文件 0 error（24 info 既有）。 |
+
+### 82.2 admin 关卡波次抽屉连续打开竞态（真 bug）
+
+- 真 bug：laiyipao/admin/src/views/LevelsView.vue:261 的 async openWaves(row) 无请求序号守卫，快速连开两个关卡的波次抽屉时，旧关慢响应后到覆盖新关 waveRows，而抽屉标题 waveTarget 已是新关——用户看到新关标题配旧关波次。同族已修 BattlesView.openDetail 的 detailReqSeq 与 ContentView 四加载器，此处漏修。
+- 修复：新增 waveReqSeq 计数器；openWaves 开头 const seq=++waveReqSeq，await fetchLevelWaves 之后及 catch 内均加 if (seq !== waveReqSeq) return 丢弃陈旧响应。
+- 验证：LevelsView.test.ts 末尾加行为测试 1 例（deferred 两请求，新关先回 wave_index 9/enemy 99、旧关后回 wave_index 1/enemy 1）；RED 实收 waveRows 为旧关数据证明覆盖，GREEN 1 passed；admin 全量 34 文件/476 passed、vue-tsc 0。
+
+### 82.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r223 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 6 大类（战报分页 keyset/排行榜三榜与 ASC 方向/签到离线收益 DTO/公告首页/请求核心 401 单飞与幂等键与 304 时钟校准/feature flag 旧字段无残留）全一致，git status 写范围为空，不强造。
+- 主线程 admin 第 73 轮侦察全负结果：对话框 open 函数完整回填表单、选择清理 0 处、护盾单位正确；第 82.2 波次竞态为本轮唯一可确证新 bug。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R223 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程 admin 找到波次抽屉竞态真 bug 已修，lybug 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
