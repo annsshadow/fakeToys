@@ -2161,3 +2161,31 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R211 视图弹窗可访问名称完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程侦察无缺口，继续找但不强造。
+## 71. 第 62 轮现量：R212 搜索框可访问名 + admin 导出筛选同口径
+
+### 71.1 R212 应用管理搜索框补可访问名（WCAG 4.1.2 Name, Role, Value）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/AppInfoApp.vue:18 列表搜索框只有 placeholder=搜索应用...，没有 aria-label 或关联 label。占位文本在用户输入后即消失且不能稳定充当可访问名，屏幕阅读器把控件播报为「编辑框 空白」。该视图是 /api/appinfo/* 应用管理真实可达页，R155-R211 只覆盖登录框 label/autocomplete，未触及此搜索框。 |
+| 修复 | 该 input 增 aria-label=搜索应用（单行最小修复）。 |
+| 门禁 | 新增 AppInfoApp.searchA11y.contract.test.ts 1 例，锁定「搜索框必须有显式可访问名，不能只靠 placeholder」。RED（读源码断言 aria-label/aria-labelledby，实收仅 placeholder，1 failed）→GREEN（1 passed）；全量 oa4rust 121 文件/1469 passed、typecheck 6 项目 Done、lint 0 error（新测试首次格式 1 error，经 biome check --write 修正后归零）。 |
+
+### 71.2 admin 公告/兑换码导出与列表筛选同口径（真 bug 修复）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | 服务端 adminExportAnnouncements（handlers_admin.go:1062）支持 published + date_from/date_to，adminExportRedeemCodes（:1228）支持 keyword/enabled/expired，e2e TestE2EAdminExportAnnouncementsFilters/TestE2EAdminExportRedeemCodesFilters 明确验证「导出与列表同口径」；但前端 exportAnnouncementsCsv()/exportRedeemCodesCsv()（api/index.ts:695/:792 原）无参，ContentView onExportAnnouncements/onExportRedeemCodes 不传筛选，提示语却称「当前筛选结果」——筛选后导出拿到全量数据。与第 54 轮已修 CSV 条数真值同族的另一半缺口。 |
+| 修复 | api/index.ts 两导出函数加可选 params（布尔按 1/0 编码、日期按 nextDay 开区间，与列表 fetchAnnouncements/fetchRedeemCodes 逐字同口径）并用 URLSearchParams 拼 query；ContentView 两 handler 传与列表相同筛选对象。 |
+| 门禁 | ContentView.test.ts 末尾加 describe「ContentView 导出与列表筛选同口径（第 62 轮）」2 例（公告断言 published:true/date_from:2026-01-01/date_to:2026-02-01；兑换码断言 keyword:LYP/enabled:true/expired:false）。RED 2 failed（实收 vi.fn() 调用参数 []，证明无参导出全量）→GREEN 2 passed；admin 全量 34 文件/470 passed、vue-tsc exit 0。 |
+
+### 71.3 laiyipao 负结果与目标二边界
+
+- lybug-r62 负结果零改动：逐类双向核对 server 权威契约↔miniapp 消费面 18 类（路由方法路径、请求体/DTO、错误码/信封、分页 keyset、日期周期/scope、签到连续、离线收益、商城限购、结算上报边界、面板千分比、宝石专精/佩戴、预设背包、体力掉落回补、token 校准/越权、溢出/事务并发、订单金额单位、兑换码奖励币种白名单、引擎蓄能塔 charge），全部一致或属已修/固定不动项。按纪律不伪造 RED→GREEN，零写入。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0，根页 200；本地 127.0.0.1:8000 交付完备；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，口令存 gitignored 本地文件不回显，不臆造地址账号密码。
+
+### 71.4 交付边界与审阅记录
+
+- 成果分三提交（R212 / admin 导出筛选同口径 / 本现量文档），推送前 git diff --check 0、改动敏感扫描无命中；推送后 git ls-remote 核验远端 HEAD=本地 HEAD 才 update-ref 同步追踪引用，遇出口抖动重试即可，绝不先更新追踪引用。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R212 应用管理搜索框可访问名完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理负结果、主线程有真 bug 修复（admin 导出与列表筛选同口径），继续找但不强造。
