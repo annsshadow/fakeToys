@@ -12,7 +12,20 @@
 
 type A11yRoot = Document | Element | DocumentFragment
 
-const SEARCH_SELECTOR = 'input.search-input, input.search-input-lg'
+// R235：R217 最初只覆盖 .search-input / .search-input-lg；桌面端另有若干真正用于
+// 搜索/筛选的输入框使用不同 class（详见 searchFieldA11y.searchVariants.contract.test.ts）。
+// 数据录入类 .tmp-input（如“备注内容...”）不在此列，避免把值提示误当可访问名称。
+const SEARCH_SELECTOR = [
+  'input.search-input',
+  'input.search-input-lg',
+  'input.search',
+  'input.sb-input',
+  'input.qs-input',
+  'input.ra-filter',
+  'input.result-filter',
+  'input.list-input',
+  'input.fi2',
+].join(', ')
 
 /** 判断输入控件是否已有任何形式的可访问名称。 */
 function hasAccessibleName(input: HTMLInputElement): boolean {
