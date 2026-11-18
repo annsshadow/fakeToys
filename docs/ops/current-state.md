@@ -1955,3 +1955,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R204 无 DOM 降级完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 导出条数真值），子代理负结果，继续找但不强造。
+
+## 64. 第 55 轮：R205 导航段边界高亮 + admin 公告预览发布时间真值 + laiyipao 负结果
+
+起点 HEAD=979977c14，分支 feat/h5-battle-substantive-100。oaopt-r205 负责 oa4rust/frontend（R205），lybug-r55 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 64.1 R205 侧边栏导航高亮段边界（兄弟路由不误亮）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/ui/src/components/AppShell.vue 的 isActive() 原用 route.path.startsWith(path) 判定导航高亮。路由表同时注册 /app/file（文件管理）与 /app/fileinfo（文件信息）等前缀相同的兄弟路由：访问 /app/fileinfo 时 /app/fileinfo.startsWith(/app/file) 为真，两项同时高亮，用户分不清当前模块（form/formdesigner、view/viewer 同族）。历史轮次 R142–R204 从未处理。 |
+| 修复 | 抽纯函数 isNavActive(currentPath, navPath) 到新增 navActive.ts，AppShell.vue 的 isActive 改委托。匹配改为路由段边界：去尾斜杠后仅 currentPath === base 或以 base + / 开头才命中，既挡兄弟路由误亮，又保留 /app/process/detail/42 子路由高亮。 |
+| 门禁 | navActive.contract.test.ts 7 例（兄弟不误亮、自身/精确/子路由命中、全量导航互斥、AppShell 接线守卫）RED(3 failed，含 /app/fileinfo 误命中 /app/file、路径命中多个导航项)→GREEN 7/7；oa4rust 全量 113 文件/1439 passed、typecheck 6 项目 Done、lint 390 文件 0 error（20 info 既有）。新测试经 biome format 后 lint 归零。 |
+
+### 64.2 admin 公告玩家端预览发布时间：伪造此刻改为服务端真值
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/ContentView.vue:873 原模板用「打开预览的此刻」new Date().toLocaleString() 伪造发布时间，而列表 :821 显示服务端真实 published_at，玩家端 miniapp announcements.vue:69 也用 published_at——运营预览与玩家实际所见不符。 |
+| 修复 | 新增 previewPubAt = ref<string | null>(null)；startEditAnn / previewAnnouncement 回填 a.published_at ?? null，submitAnnouncement 成功 / cancelEditAnn 重置 null；模板改 annForm.published ? (previewPubAt ? fmtTime(previewPubAt) : 「发布后生成」) : 「未发布（仅草稿）」。 |
+| 门禁 | ContentView.test.ts 加 import fmtTime + 2 例（fake timers 冻结 2030-06-15、真实 published_at=2026-01-01T00:00:00Z，断言预览含 fmtTime(真值) 且不含 2030；新建公告无 published_at 断言「发布后生成」）RED(2 failed，实收 2030/6/15 18:00:00 与伪造当前时间)→GREEN 2/2；admin 全量 34 文件/461 passed、vue-tsc exit 0。 |
+
+### 64.3 laiyipao 负结果与目标二边界
+
+- lybug-r55 负结果零改动：路由端点全集、DTO 字段逐字段、战报分页 keyset、any 型响应消费面、请求体契约、错误信封、签到/离线收益、配置条件请求 304 闭环、token 校准/越权校验/攻方属性派生等 9 大类双向交叉核对，全部一致、已修或语义歧义，无满足「真实可确证 + 用户可见 + 非已修 + 非固定不动项」的新 bug，不强造。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0（注意不是 /health），根页 /、/docs、/openapi.json 均 200，匿名 POST 404；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界；口令存 gitignored 本地文件不回显。
+
+### 64.4 交付边界与审阅记录
+
+- 成果分三提交（R205 / admin 公告预览时间 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R205 导航段边界完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 公告预览时间），子代理负结果，继续找但不强造。
