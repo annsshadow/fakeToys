@@ -2369,3 +2369,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 主线程 admin 第 71 轮侦察全负结果：LevelsView/SkillsView 编辑表单防重与校验、DashboardView 图表实例复用与 activatedOnce、10 个导出 API 的 URLSearchParams 拼参与导出条数真值、api/client 401 判据与 token 内存缓存、router beforeEach/afterEach、ContentView 兑换码表单与日期回填、nextDay UTC 开区间、objectURL 创建/释放 10 处配对、删除后整页重载均正确，无缺口。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R221 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程 admin 均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+
+## 81. 第 72 轮现量：R222 字形导航按钮可访问名
+
+### 81.1 R222 字形翻页/翻月按钮补 aria-label（WCAG 4.1.2 / 2.4.6）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views 下 4 个核心视图共 8 个翻页/翻月按钮内容仅为 `‹` / `›`，无 aria-label 或任何可访问名，读屏器仅念「左/右尖括号，按钮」，用户无法分辨是上一页/下一页还是上一月/下一月。位于键盘/读屏用户必经导航路径，且不在已装增强器清单（tableA11y/labelA11y/loadingA11y/progressA11y/searchFieldA11y/modalFocus/navActive/sortableHeaderA11y/minimapA11y）覆盖内。 |
+| 修复 | 模板直接补真实 aria-label：AttendanceApp.vue 两处（page--/page++ 上一页/下一页）、BBSForum.vue 两处、QueryStatementDesigner.vue 两处、CalendarApp.vue 两处（prevMonth/nextMonth 上一月/下一月）。纯属性增强，交互逻辑不动。新增 glyphButtonA11y.contract.test.ts 源码级扫描 8 例，按 @click 处理器定位按钮钉住「字形内容→可读名称」对应关系。曾试 DOM 全局注入方案，因 Vue @click 编译为监听器而非 DOM 属性、生产不生效，判定滥竽充数弃用。 |
+| 门禁 | 契约测试修复前 RED 8 failed、修复后 GREEN 8/8；主线程独立 RED（cp 备份四 vue→git checkout HEAD 回退→RED 8 failed→cp 恢复→GREEN 8 passed，恢复后四视图 diff 完整）；全量 oa4rust 132 文件/1524 passed、typecheck 6 项目 Done、lint 414 文件 0 error（24 info 既有）。 |
+
+### 81.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r222 负结果零改动：写范围 laiyipao/miniapp+server 双向核对（战报分页 keyset/签到日历与 metric bump/诊断 failed_times/订单金额单位/离线奖励/限购护盾/配置 304 时钟/排行榜 scope/专精前置锁/令牌刷新幂等键）全一致；唯一疑似项 mastery.vue:92 文案称「点亮 2 项」而实际规则 ≥1 项，属文案与行为不符非功能 bug，不包装成真 bug 修复。工作树干净。
+- 主线程 admin 第 72 轮侦察全负结果：nextDay 四处 UTC 开区间与服务端一致、6 处 daterange 传参正确、10 处 CSV 导出 URLSearchParams 拼参与条数真值、requestBlob 401 判据与主 request 一致、ContentView/DefensesView 删除后整页重载并二次确认、护盾剩余时间单位正确、对话框/抽屉均有 title、分页 @current-change 均绑定 load 系列，无缺口。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R222 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程 admin 均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
