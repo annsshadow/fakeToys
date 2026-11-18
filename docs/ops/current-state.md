@@ -2019,3 +2019,35 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
 - laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R206 键盘可达性完成）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 用户列表竞态），子代理负结果，继续找但不强造。
+
+## 66. 第 57 轮：R207 全局搜索快捷键 + admin 重算台账筛选分页重置 + laiyipao 负结果
+
+起点 HEAD=e04bd85b1，分支 feat/h5-battle-substantive-100。oaopt-r207 负责 oa4rust/frontend（R207），lybug-r57 负责 laiyipao/miniapp+server（不含 admin），主线程独占 oa4rust/mobile + laiyipao/admin + 现量文档。子代理均不提交 git。
+
+### 66.1 R207 全局搜索快捷键（顶栏宣称的 ⌘K/Ctrl+K 真正生效）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | packages/ui/src/components/AppShell.vue 顶栏搜索框 placeholder 宣称「搜索 (⌘K)」，但 keydown 处理器 @keydown.ctrl.k / @keydown.meta.k 绑在该 input 自身：只有搜索框已获焦点时快捷键才生效，而聚焦它正是快捷键的用途，正常操作中该宣称完全无效。且 30+ CRUD 视图共用 .search-input 类，直接按类名全局聚焦会误焦视图内搜索框。历史 R155–R206 未覆盖，非重复。 |
+| 修复 | 顶栏 input 加稳定标记 data-oa-global-search，focusSearch 改用标记选择器；新增 globalSearchShortcut.ts 安装器，在 document 捕获 (Ctrl|Meta)+K（守卫 defaultPrevented/altKey/shiftKey、仅 key=k/K），每次事件查标记 input 并 focus+select，返回 dispose 移除监听（兼容延迟挂载、避开视图内搜索框）；main.ts 在 mount 前 installGlobalSearchShortcut()（沿用既有 install* 模式）。 |
+| 门禁 | globalSearchShortcut.test.ts 6 例 jsdom 行为测试（含「不劫持视图内 .search-input」）+ shortcutMarker.contract.test.ts 2 例标记/装配契约 + main.test.ts 装配断言。RED(3 文件失败/3 测试失败，含模块解析失败)→GREEN 3 文件 42 passed。主线程独立复跑 42 passed、全量 oa4rust 116 文件/1453 passed、typecheck 6 项目 Done、lint 394 文件 0 error（20 info 既有，LINT_EXIT=0）。 |
+
+### 66.2 admin 重算台账筛选未重置分页（小结果集被误判为空）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | laiyipao/admin/src/views/RecomputesView.vue 台账筛选按钮 @click=load 不重置 ledgerPage。运营翻到第 N 页后改筛选（用户 ID/关卡 ID/只看不符），offset 仍停在旧页 (N-1)*50；新筛选只有少量结果时 offset 越界返回空表，被误判为「该用户无不符记录」。同族 ContentView applyAnnFilter/applyCodeFilter/applyLogFilter、BattlesView 筛选按钮均重置首页，此处漏修。 |
+| 修复 | 筛选按钮改 @click="((ledgerPage = 1), load())"，与同族一致。 |
+| 门禁 | RecomputesView.test.ts 新增 describe「筛选应重置台账分页（第 57 轮）」行为测试（第 3 页改筛选点按钮，断言最后一次请求 user_id=42 且 offset=0）RED(expected 100 to be +0)→GREEN；admin 全量 34 文件/463 passed、vue-tsc exit 0。 |
+
+### 66.3 laiyipao 负结果与目标二边界
+
+- lybug-r57 负结果零改动：服务端权威契约（domain/service/httpapi）↔ 客户端消费面（api/client.ts + pages + store/game.ts）逐类交叉核对 9 大类（全部路由方法路径、DTO 字段逐项、条件 GET/304/时钟校准、401 刷新幂等与错误码语义、日期周期边界、防线 mine 计数回填、消费语义胜负/hp_left/composite/verify、引擎跨端 parity、固定不动项与历史已修排除），全部一致、已修或语义歧义，无满足「真实可确证 + 用户可见 + 非已修 + 非固定不动项」的新 bug，不强造。miniapp 133 文件/1473 passed|2 skipped、server domain 套件 -skip TestNoRealSecretsInRepo PASS。
+- 目标二 augmentor 维持 33.3 交付边界：健康路由 /api/health 返回 status ok / version 3.0.0（注意不是 /health），本轮复核本地 health=200/根页=200；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界；口令存 gitignored 本地文件不回显。
+
+### 66.4 交付边界与审阅记录
+
+- 成果分三提交（R207 / admin 重算筛选分页 / 本现量文档），推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；遇出口抖动 Connection closed by 198.18.0.46 重试即可，绝不先 update-ref。
+- 提交前 git diff --check 0、改动敏感扫描无命中（无口令/token/私钥/真实域名 IP）。
+- laiyipao 固定不动项维持记账：B3 auth_person id≠uid（R152）、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R207 全局搜索快捷键完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程有真 bug 修复（admin 重算筛选分页），子代理负结果，继续找但不强造。
