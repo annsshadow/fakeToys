@@ -15,6 +15,7 @@ import { computed, ref } from 'vue'
 import { type CalendarRow, calendarApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { parseServerDate } from '@/utils/datetime'
+import { createLatestGate } from '@/utils/latest'
 import { describeLoadError } from '@/utils/loadList'
 
 interface EventRow {
@@ -192,19 +193,23 @@ function switchRange(key: RangeKey): void {
 // 事件详情（event/{id}）：移动端在列表内展开，避免多跳一层页面
 const detail = ref<EventRow | null>(null)
 const detailLoading = ref(false)
+const detailGate = createLatestGate()
 
 async function openEvent(e: EventRow): Promise<void> {
   const id = String(e.id ?? '')
   if (!id) return
+  const token = detailGate.begin()
   detailLoading.value = true
   detail.value = null
   try {
     const resp = await calendarApi.eventDetail(id)
+    if (!detailGate.isLatest(token)) return
     detail.value = ((resp as { data?: EventRow }).data ?? e) as EventRow
   } catch {
+    if (!detailGate.isLatest(token)) return
     detail.value = e
   } finally {
-    detailLoading.value = false
+    if (detailGate.isLatest(token)) detailLoading.value = false
   }
 }
 
