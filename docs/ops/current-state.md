@@ -2352,3 +2352,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r220 负结果零改动：护盾剩余时间、diagnosis failed_times、战斗时长单位、upgradeSkill wallet 回填、hp_left、钱包竞态 6 类候选双向核对全一致，miniapp+server 写范围无改动，不强造。主线程 admin 第 70 轮侦察另确认公告发布切换、分页钳制、删除后回退、编辑表单赋值等均无缺口。
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R220 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮主线程 admin 找到公告预览表单污染真 bug 已修，lybug 负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+
+## 80. 第 71 轮现量：R221 迷你地图画布键盘无障碍
+
+### 80.1 R221 迷你地图 canvas 键盘可达与可访问名称（WCAG 2.1.1/4.1.2/2.4.7）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/ProcessDesigner.vue:590 的迷你地图 <canvas> 仅有 @click="minimapClick"（鼠标点击平移定位最近节点），无 tabindex 不可 Tab 聚焦、无 role/aria-label 辅助技术无法识别交互用途、无键盘处理、无可见焦点样式。前 220 轮安装的 a11y 增强器未覆盖此画布，全仓 aria-live 仅 toast 有，不存在重复修复。 |
+| 修复 | canvas 加 tabindex="0"、role="button"、动态 :aria-label（节点总数/当前序号/节点名）、@keydown.left/right 选节点、@keydown.enter/space.prevent 调新增 minimapFocusNode(idx) 定位（复用平移逻辑+更新选中态+重绘），保留原 @click；新增 minimapSelectedNode ref 与 .minimap-canvas:focus-visible 焦点轮廓。新增 minimapA11y.contract.test.ts 源码级扫描 4 例（Tab/role+名称/方向键+Enter+Space/焦点样式）。 |
+| 门禁 | 契约测试初始 RED 4 failed→修复后 GREEN 4/4；主线程独立 RED（cp 备份→git show HEAD 回退→RED 4 failed→cp 恢复→GREEN 4 passed，恢复后 diff 22+/1- 完整）；全量 oa4rust 131 文件/1516 passed、typecheck 6 项目 Done、lint 413 文件 0 error（24 info 既有）。 |
+
+### 80.2 laiyipao 负结果、目标二与交付边界
+
+- lybug-r221 负结果零改动：写范围 laiyipao/miniapp+server 15 类候选双向核对（战报分页竞态/订单金额单位/条件 304/签到/离线收益/商城幂等/战斗结算/me 身份回填/专精背包/千分比单位/时钟护盾/myBattleDetail 响应/反应图鉴幂等/公告搜索/固定不动项）全已有守卫或测试钉住，无可确证新 bug 不强造。
+- 主线程 admin 第 71 轮侦察全负结果：LevelsView/SkillsView 编辑表单防重与校验、DashboardView 图表实例复用与 activatedOnce、10 个导出 API 的 URLSearchParams 拼参与导出条数真值、api/client 401 判据与 token 内存缓存、router beforeEach/afterEach、ContentView 兑换码表单与日期回填、nextDay UTC 开区间、objectURL 创建/释放 10 处配对、删除后整页重载均正确，无缺口。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R221 完成，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮子代理与主线程 admin 均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
