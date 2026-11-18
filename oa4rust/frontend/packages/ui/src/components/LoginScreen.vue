@@ -18,8 +18,9 @@
         <!-- 登录表单 -->
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="form-group">
-            <label class="form-label">用户名</label>
+            <label for="login-username" class="form-label">用户名</label>
             <input
+              id="login-username"
               v-model="username"
               type="text"
               class="form-input"
@@ -31,9 +32,10 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">密码</label>
+            <label for="login-password" class="form-label">密码</label>
             <div class="password-wrapper">
               <input
+                id="login-password"
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-input"
@@ -53,9 +55,10 @@
 
           <!-- 验证码（需要时显示） -->
           <div v-if="showCaptcha" class="form-group">
-            <label class="form-label">验证码</label>
+            <label for="login-captcha" class="form-label">验证码</label>
             <div class="captcha-row">
               <input
+                id="login-captcha"
                 v-model="captchaAnswer"
                 type="text"
                 class="form-input captcha-input"
