@@ -587,7 +587,14 @@
         <!-- Mini-map -->
         <div v-if="minimapVisible && processDef && processDef.nodes.length > 0" class="minimap-container">
           <div class="minimap-header">🗺 迷你地图</div>
-          <canvas ref="minimapCanvasRef" class="minimap-canvas" :width="minimapWidth" :height="minimapHeight" @click="minimapClick"></canvas>
+          <canvas ref="minimapCanvasRef" class="minimap-canvas" :width="minimapWidth" :height="minimapHeight"
+            tabindex="0" role="button"
+            :aria-label="`迷你地图，共 ${processDef.nodes.length} 个节点；方向键选择节点，回车或空格定位到该节点，当前第 ${minimapSelectedNode + 1} 个：${processDef.nodes[minimapSelectedNode]?.label || processDef.nodes[minimapSelectedNode]?.id || ''}`"
+            @keydown.left.prevent="minimapSelectedNode = Math.max(0, minimapSelectedNode - 1)"
+            @keydown.right.prevent="minimapSelectedNode = Math.min(processDef.nodes.length - 1, minimapSelectedNode + 1)"
+            @keydown.enter.prevent="minimapFocusNode(minimapSelectedNode)"
+            @keydown.space.prevent="minimapFocusNode(minimapSelectedNode)"
+            @click="minimapClick"></canvas>
           <div class="minimap-controls">
             <button class="tb-btn" @click="minimapVisible=false">收起</button>
             <button class="tb-btn" @click="zoomToFit">适配</button>
@@ -3563,6 +3570,7 @@ const multiDragOffset = ref({ x: 0, y: 0 })
 const minimapVisible = ref(true)
 const minimapScale = 0.15
 const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
+const minimapSelectedNode = ref(0)
 // ── Execution Simulation ────────────────────────────────────────────
 interface ExecState {
   currentNodeIdx: number | null
@@ -5167,6 +5175,18 @@ function minimapClick(e: MouseEvent) {
     panX.value = cx - (n.x + (n.w || 120) / 2) * zoom.value
     panY.value = cy - (n.y + (n.h || 50) / 2) * zoom.value
   }
+}
+/** 将画布平移到指定流程节点（迷你地图键盘导航复用此逻辑）。 */
+function minimapFocusNode(idx: number) {
+  const rect = canvasRef.value?.getBoundingClientRect()
+  const n = processDef.value?.nodes?.[idx]
+  if (!rect || !n) return
+  const cx = rect.width / 2,
+    cy = rect.height / 2
+  panX.value = cx - (n.x + (n.w || 120) / 2) * zoom.value
+  panY.value = cy - (n.y + (n.h || 50) / 2) * zoom.value
+  minimapSelectedNode.value = idx
+  renderMinimap()
 }
 // ── Canvas Themes ────────────────────────────────────────────────────
 type CanvasTheme = 'dark' | 'midnight' | 'ocean' | 'forest' | 'cyber' | 'sunset' | 'arctic' | 'ember'
@@ -11841,4 +11861,5 @@ async function exportProcess() {
 
 <style scoped>
 /* optimized */
+.minimap-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 </style>
