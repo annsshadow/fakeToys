@@ -46,6 +46,8 @@
               <button
                 type="button"
                 class="eye-btn"
+                aria-label="显示或隐藏密码"
+                :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
               >
                 {{ showPassword ? '🙈' : '👁' }}
