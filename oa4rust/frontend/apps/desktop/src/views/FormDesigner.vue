@@ -726,6 +726,7 @@ import { downloadBlob } from '../utils/download'
 import { formatPercent } from '../utils/formatNumber'
 import { validateFieldValue } from '../utils/formFieldValidation'
 import { toast } from '../utils/toast'
+import { applyBuilderRules } from '../utils/validationRuleApply'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -1406,6 +1407,18 @@ function removeTab(idx: number) {
 // ── Validation Rules ────────────────────────────────────────────────
 function addValidationRule() {
   validationRules.value.push({ fieldKey: '', rule: 'required', message: '必填字段' })
+}
+/** R227：把构建器规则落到「应用到选中」的字段校验对象上，供预览/设计态校验共用。 */
+function applyValidationRules() {
+  if (!currentForm.value || !selectedField.value) {
+    toast.info('请先选中一个字段')
+    return
+  }
+  const key = selectedField.value.key
+  const forField = validationRules.value.filter((r) => !r.fieldKey || r.fieldKey === key)
+  selectedField.value.validation = applyBuilderRules(selectedField.value.validation, forField)
+  pushFormHistory()
+  toast.info(`已应用 ${forField.length} 条规则到「${selectedField.value.label || key}」`)
 }
 function removeValidationRule(idx: number) {
   validationRules.value.splice(idx, 1)
