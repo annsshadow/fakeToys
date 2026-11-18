@@ -6,6 +6,9 @@
 
 /* ===== 暗色主题（默认）===== */
 [data-theme="dark"] {
+  /* 浏览器原生控件（select/date/autofill/滚动条）按深色渲染，与自定义主题一致（R190）。 */
+  color-scheme: dark;
+
   /* 主色：霓虹青 */
   --color-primary: #00d4ff;
   --color-primary-deep: #0099cc;
@@ -76,6 +79,9 @@
 
 /* ===== 亮色主题 ===== */
 [data-theme="light"] {
+  /* 浏览器原生控件按浅色渲染，与自定义主题一致（R190）。 */
+  color-scheme: light;
+
   --color-primary: #2563eb;
   --color-primary-deep: #1d4ed8;
   --color-primary-glow: rgba(37, 99, 235, 0.2);
