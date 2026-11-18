@@ -142,7 +142,7 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 		//  放在扣币之后：usedRevive 只有读到余额才知道，INSERT 发生得更早。
 		if usedRevive {
 			if _, err := tx.Exec(ctx,
-				`UPDATE battle_tokens SET revived = TRUE WHERE id = $1`, tokenID); err != nil {
+				`UPDATE battle_tokens SET revived = TRUE WHERE id = $1 AND user_id = $2`, tokenID, userID); err != nil {
 				return fmt.Errorf("mark battle token revived: %w", err)
 			}
 		}
