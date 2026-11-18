@@ -2428,3 +2428,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 - 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
 - 三目标仍 active：目标一 R224 完成（沙箱 iframe 无障碍隔离，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 与主线程均负结果，继续找但不强造。laiyipao 固定不动项维持记账。
+## 84. 第 75 轮现量：R225 动态表单必填语义 + admin 重算台账筛选竞态
+
+### 84.1 R225 动态工作流表单必填字段无障碍语义（WCAG 3.3.2 / 4.1.2）
+
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/components/XformRuntime.vue 是工作流表单统一渲染器，必填字段此前只有视觉星号 span.required，控件（textarea/select/普通 input）既无 required 也无 aria-required，复选框组无 role=group/aria-required——读屏用户无法区分哪些字段必填。R188 formErrorA11y 仅做错误文本 aria-invalid/aria-describedby 关联，不覆盖必填语义，是真缺口非重复。 |
+| 修复 | 视觉星号加 aria-hidden="true"（装饰元素对读屏隐藏避免重复朗读）；textarea/select/普通 input 各加 :required="module.required || undefined"（用 || undefined 使可选字段不渲染 required="false"）；复选框组 div 加 role="group" + :aria-required。纯 template 属性增强不改校验/提交逻辑。新增 XformRuntime.requiredA11y.contract.test.ts 源码级契约 6 例。 |
+| 门禁 | 契约 RED 5 failed | 1 passed→GREEN 6/6；主线程独立 RED（cp 备份 XformRuntime.vue→git checkout HEAD 回退→RED 5 failed→cp 恢复→GREEN 6 passed，恢复后 diff 7+/2- 完整）；全量 oa4rust 135 文件/1537 passed、typecheck 6 项目 Done、lint 417 文件 0 error（27 info 既有）。 |
+
+### 84.2 admin 重算台账筛选竞态（真 bug）
+
+- 真 bug：laiyipao/admin/src/views/RecomputesView.vue 的 async load() 无请求序号守卫，快速改筛选（user_id/level_id/only_mismatch）时旧筛选慢响应后到覆盖新筛选的 rows/total，用户看到旧筛选的台账。同族已修 BattlesView/UsersView/ContentView/LevelsView/EconomyView，此处漏修。
+- 修复：新增 loadSeq 计数器；load() 开头 const seq=++loadSeq，await fetchRecomputes 之后及 catch 内均加 if (seq !== loadSeq) return 丢弃陈旧响应，finally 内仅当 seq===loadSeq 才清 loading。
+- 验证：RecomputesView.test.ts 末尾加行为测试 1 例（deferred 两请求，新筛选 id99「新筛选玩家」先回、旧筛选 id1「旧筛选玩家」后回）。RED 实收 rows[0].nickname 为「旧筛选玩家」证明覆盖，GREEN 1 passed；admin 全量 34 文件/477 passed、vue-tsc 0。
+
+### 84.3 laiyipao 负结果、目标二与交付边界
+
+- lybug-r225 负结果零改动：写范围 laiyipao/miniapp+server 双向核对 9 大类（路由↔客户端 54 请求路径/116 注册、401 单飞续期与幂等键、条件 GET 304 时钟、keyset 分页、签到离线收益周期、并发退款/行锁/越权 IDOR 矩阵、buyItem 幂等、定点 permille 与单位、错误码双向）全一致；git status 写范围为空，不强造。
+- 主线程 admin 第 75 轮侦察：本轮唯一可确证新 bug 为 84.2 重算台账筛选竞态；R225 必填语义为 oa4rust 面。
+- 目标二 augmentor 维持 33.3 交付边界：本地 /api/health 返回 status ok / version 3.0.0（健康路由不是 /health），根页 / 与 /docs /openapi.json 均 200，匿名 POST 404，监听回环；远程卡 GitHub Secrets DEPLOY_*（gh CLI 不可用）超会话边界，不臆造地址账号密码。
+- 三目标仍 active：目标一 R225 完成（动态表单必填语义，累计 100+ 轮实质优化）；目标二卡外部凭据；目标三本轮 lybug 负结果、主线程 admin 找到重算台账竞态真 bug 已修，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B）。
