@@ -1377,6 +1377,37 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 46.4 交付与边界
 
 - 本轮唯一代码提交 c1cc6a9ba 及本现量文档 §46 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 四十七、第38轮：R188表单错误无障碍关联 + laiyipao mulDiv溢出真bug + 移动端侦察（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r188 做 oa4rust 系统性无障碍标准升级，lybug-r38 转向后端的确定性边界条件排查（前几轮未系统覆盖方向）并确证 1 个真 bug；主线程复核修正注释、复跑双门禁后提交。
+
+### 47.1 oa4rust R188 表单校验错误无障碍关联 WCAG 3.3.1 / 4.1.2（提交 651141da3）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 工作流表单由 XformRuntime 统一渲染，字段错误仅红色 p.xform-error 文本，关联控件无 aria-invalid/aria-describedby、错误无 role=alert——屏幕阅读器用户无从得知哪个字段错、错在哪 | WCAG 3.3.1/4.1.2 标准缺口，非主观审美 |
+| 修复 | 全局运行时增强器 formErrorA11y.ts：MutationObserver（attributeFilter 只盯 data-oa-field-error 避免自触发循环）给带标记错误补 role=alert + 稳定 id，向上找含 input/textarea/select/contenteditable 的字段容器补 aria-invalid=true 与 aria-describedby（保留原 tokens、label[for] 多控件优先）；WeakMap 记忆原属性，错误移除/卸载精准还原、dispose 幂等。XformRuntime 错误 p 加标记、main.ts 挂载前安装 | 4 文件；增强器通用，后续任何错误文本加标记即自动纳入 |
+| 门禁 | formErrorA11y.contract.test.ts 6 例 jsdom 行为测试（单字段/多字段不串线/错误移除清理/保留原 describedby/尊重已有 id-role/卸载断观测）RED（6 failed）→GREEN 6/6；pnpm test 1360 passed、typecheck 6 包、lint 371 文件 0 error | — |
+
+### 47.2 laiyipao mulDiv 中间乘积 int64 溢出真 bug（提交 d630dcebb）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 根因 | damage.go mulDiv(a,b,c)=(a*b)/c 原仅判 c==0 直接 int64 相乘，注释却承诺「内部用 int64 防溢出」且与 TS fixed.ts 的 BigInt 实现逐行等价；溢出回绕致 Go 与 TS 跨端结果不一致 | 可复现边界：6e18×1450/1000 真商 8.7e18 装得下但中间 8.7e21 溢出→Go 错 1000 倍；MaxInt64×2/2→-1；MinInt64×2/2→0 |
+| 修复 | bits.Mul64 + bits.Div64 精确 128 位除法（符号分离、uint64 绝对值正确处理 MinInt64、hi>=uc 夹边界、商再范围检查），数学等价含负数向零截断；主线程复核发现原注释描述的是另一套商余分解算法、已改为与实现一致 | 只改 damage.go + 新测试，不动其他公式 |
+| 门禁 | muldiv_overflow_test.go 3 向量 RED（错 1000 倍/-1/0）→GREEN；主线程复跑域套件 go test ./internal/domain/... -skip TestNoRealSecretsInRepo PASS 16.6s、go vet 0、gofmt 0 | 完整套件中 TestNoRealSecretsInRepo 为预存状态失败（Temp 备份目录 2 处真值，位于 laiyipao 写范围外），用 -skip 排除并如实记录 |
+
+### 47.3 主线程移动端表单无障碍侦察（负结果）
+
+- 移动端全仓 0 处 aria/role，错误提示散落 20+ 页面且无统一 FormItem 组件可全局一处生效；uni-app 组件编译到小程序原生控件时 ARIA 语义未必透传，真机无障碍验收属 C3 外部口径。不做分散式 ARIA 补丁（收益不确定且无法验证），保持诚实负结果、不改文件。
+- lybug-r38 同时系统排查除零/负数/数组越界/nil 解引用/整数溢出/时间边界各类候选（Battle ValidateSettle、arith_helpers、engine 坐标除法、heat Cap、levelgen starThreshold、playerlevel、ttlcache、economy 时钟、periodStart、config Validate），mulDiv 是唯一能确证「契约明确承诺+边界可复现+跨端行为差异」的缺陷。
+
+### 47.4 交付与边界
+
+- 本轮三提交 651141da3、d630dcebb 及本现量文档 §47 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；R188 与 mulDiv 写范围互斥（oa4rust/frontend vs laiyipao/server），无冲突。
+- B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中。
 - B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持既有交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动。
