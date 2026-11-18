@@ -3175,3 +3175,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 121.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 158 文件/1643 passed + pnpm typecheck 6 项目 0 + biome lint 462 文件 0 error(29 info 既有)；miniapp 142 文件/1488 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。lybug-r262 零改动沿用基线。R262 源码 SPDX 双头、LF 保持、真值不入库。
 - 四目标：①目标一 R262 BBS 回复刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R262 负结果（零改动）④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 122. 第113轮：IM 发送在途守卫 + 换号进度串号
+
+### 122.1 oa4rust/desktop IMChat 发送按钮在途守卫（R263，oaopt-r263）
+- 缺口：IMChat.vue sendMessage() 在 sendMutation.mutate(text) 返回后同步执行 sendLoading.value=false，而 mutate() 是异步提交、返回时请求仍在途。模板按钮 :disabled="!inputText.trim()||sendLoading" 与文案「发送中...」证明设计意图是请求在途禁用，同步复位使守卫形同虚设：连点第二次在响应返回前进入→重复发送+多个乐观气泡（失败路径 onError 按 context.optimisticMsg 删除逻辑也会错配）。
+- 修复：sendLoading.value=false 移入 sendMutation 的 onSettled（成功/失败两路径均覆盖），删 sendMessage 中 mutate 后的同步复位；置位守卫保留。+3/-1 LF。
+- 测试：新增 IMChat.sendGuard.test.ts（SPDX 双头）2 例源码契约（置位守卫存在且 mutate 后不同步复位、复位位于 onSettled）。主线程独立 RED（备份/d/tmp/r263-lead→checkout还原→vitest 2 failed：expected ... not to contain sendLoading.value=false + expected onSettled... to contain）→恢复 GREEN 2 passed。
+
+### 122.2 laiyipao/miniapp 换号后 maxStage 串号（R263，lybug-r263）
+- 缺口：game.ts setMaxStage 只增不减（同一账号会话内保护结算高值），refreshProfile 用它回填服务端 me.max_stage；client.ts logout 只清 token 不清 store，换号走 loginWithPassword/store.login 均无重置。A(id=7,maxStage=57) 登出→B(id=8,max_stage=0) 登录→setMaxStage(0) 因 57 不覆盖→B 继承 unlockedLevel=58 可进未解锁关卡（stage/index.vue 用 unlockedLevel 判锁）。服务端数据正确，客户端展示/可达性错误。grep 无既有换号重置防护。
+- 修复：game.ts 新增 store 内 progressOwnerId=ref(0)，refreshProfile 拿到 me.user_id 时若已有归属且账号变化则先 maxStage.value=0 再让 setMaxStage 用新账号值重建；0 为「未建立归属」哨兵，保护首次刷新时本会话结算值不被误清，同账号重复刷新仍只增不减。+11/-1 LF。game.test.ts 新增换号回归例（A=57→B=0，断言 maxStage=0/unlockedLevel=1）。
+- 主线程独立 RED（备份 game.ts→checkout 还原源文件、保留新测试防 skipped 假绿→vitest -t「换号后重置上一账号进度」RED exit1 AssertionError expected 57 to be +0 @game.test.ts:523）→恢复 GREEN 1 passed/48 skipped。
+- 负结果方向：导出/导入口径（admin CSV 筛选参数逐一对应，requestBlob 丢 code 但无消费方，无可达危害）、admin readonly 写端点（AST 测试强制 requireWritable，豁免仅 /logout）均证伪。后续线索：wallet/build/loadout/equippedSkillIds 换号时部分靠 refreshProfile 覆盖，loadout/equippedSkillIds 仅 loadLoadout 刷新，换号后消费时机值得下轮核实。
+
+### 122.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 159 文件/1645 passed + pnpm typecheck 6 项目 0 + biome lint 463 文件 0 error(29 info 既有)；miniapp 142 文件/1489 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处源码 SPDX 双头、LF 保持、真值不入库。注：miniapp perf_baseline 为负载型 flaky（代理首跑绊线后单跑 2 次 GREEN，主线程全量跑 GREEN）。
+- 四目标：①目标一 R263 IM 发送守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R263 换号串号真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

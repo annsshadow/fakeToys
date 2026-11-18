@@ -504,6 +504,25 @@ describe('进度恢复 max_stage（第 142 轮）', () => {
     await store.refreshProfile()
     expect(store.maxStage).toBe(60)
   })
+
+  it('refreshProfile：换号后重置上一账号进度（新账号不继承旧解锁关卡）', async () => {
+    // 账号 A（id=7）先把本地进度抬到 57（模拟已打到第 57 关）。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(57)
+
+    // 换成账号 B（id=8），服务端进度是 0。只增不减的 setMaxStage 会忽略 0，
+    // 若不按身份重置，B 会继承 A 的 57 关解锁（unlockedLevel=58）。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 8, build: null, build_rating: null, power: 3, max_stage: 0,
+    } as any)
+    await store.refreshProfile()
+    expect(store.userId).toBe(8)
+    expect(store.maxStage).toBe(0)
+    expect(store.unlockedLevel).toBe(1)
+  })
 })
 
 describe('出战槽位（服务端权威 + 归一化）', () => {

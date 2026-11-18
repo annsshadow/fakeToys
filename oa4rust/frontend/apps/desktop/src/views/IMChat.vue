@@ -563,6 +563,9 @@ const sendMutation = useMutation({
     toast.error(`发送失败：${mutationErrorMessage(err)}`)
   },
   onSettled: () => {
+    // R263：请求真正结束（成功或失败）后才解禁发送按钮；不能在 mutate() 后同步复位，
+    // 否则守卫形同虚设，快速连点会重复发送并留下多个乐观气泡。
+    sendLoading.value = false
     queryClient.invalidateQueries({ queryKey: ['im', 'conversations'] })
   },
 })
@@ -572,7 +575,6 @@ function sendMessage(): void {
   if (!text || sendLoading.value) return
   sendLoading.value = true
   sendMutation.mutate(text)
-  sendLoading.value = false
 
   // 同时通过 WebSocket 推送（如果连接可用）。P5：房间即会话 id（conv.id），
   // 与会话列表/消息查询的会话键一致，不再用硬编码 'chat' 广播串流。

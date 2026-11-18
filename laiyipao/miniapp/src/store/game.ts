@@ -98,6 +98,9 @@ export const useGameStore = defineStore('game', () => {
     tokens: Record<string, number>
   }>({ coin: 0, gem: 0, energy: 0, keys: 0, tokens: {} })
   const maxStage = ref(0)
+  // 当前 maxStage 归属的账号 id（以 /me.user_id 为准）。换号时据此清掉旧进度，
+  // 避免只增不减的 setMaxStage 让新账号继承旧账号的解锁关卡。
+  const progressOwnerId = ref(0)
   const power = ref(0)
   const buildRating = ref<any>(null)
   /** 服务端下发的构筑快照，含权威 attacker 属性 */
@@ -483,7 +486,18 @@ export const useGameStore = defineStore('game', () => {
       // （rank.vue 比的是 it.user_id === store.userId）会静默失效。
       // /me 是当前登录态的权威快照，每次 refreshProfile 都会打，
       // 拿它回填比依赖「登录过一次」这个隐含前提可靠。
-      if (typeof me.user_id === 'number' && me.user_id > 0) userId.value = me.user_id
+      if (typeof me.user_id === 'number' && me.user_id > 0) {
+        // 换号（含登出后换账号登录）：清掉上一账号的本地进度，
+        // 再让下面的 setMaxStage 用新账号的 max_stage 重建。
+        // 同一账号重复刷新不受影响，仍保留本会话结算出的更高值。
+        // progressOwnerId=0 表示本会话还没建立归属：此时 maxStage 可能是
+        // 本会话刚结算出的值，不能当换号清掉（首次刷新只认领、不重置）。
+        if (progressOwnerId.value !== 0 && me.user_id !== progressOwnerId.value) {
+          maxStage.value = 0
+        }
+        progressOwnerId.value = me.user_id
+        userId.value = me.user_id
+      }
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build
