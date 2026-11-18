@@ -2831,3 +2831,23 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 方法：封装(api/index.ts) vs 视图传参 vs handler 解析 vs service WHERE 四层逐字对照。Users/Battles/Recomputes/DefenseChallenges/Orders/Announcements/RedeemCodes/RedeemUsages/AuditLogs/UserFlows 十条全对齐：Users 七项全同（is_guest 92轮已修，stats.go:669-767 导出 WHERE $3-$7 与列表同判据）；Battles date_to 均 nextDay 开区间、result 两边 TrimSpace；Recomputes 复用同列表 RecomputeFilter（recompute_gate.go:645-667 vs :735-751 逐行同）；DefenseChallenges 两边同缺日期控件属设计；Orders status/provider 同 TrimSpace；RedeemCodes enabled/expired 三态+LIKE 转义同；AuditLogs admin_id 封装支持但视图无控件且列表也不传，两边一致不算漏；UserFlows 抽屉全量导出无筛选属设计。
 - 附带核查判不算真 bug：handlers_admin.go:611 next_cursor 启发式 len(items)==limit 用未夹取 limit（stats.go:1122 clampLimit(limit,50,200)），limit>200 理论误报——但主线程 ops_grep 证实 next_cursor 仅 types.gen.ts:106/:386 类型声明，无视图消费，BattlesView 用 offset 分页，UI 不可达，按纪律不报不修。
 - 结论：92轮 is_guest 是该族最后一个漏项，「列表有、导出漏」同族普查收官。git status 空、task-177 complete、门禁基线不变（admin 37 文件/496 passed）。
+## 104. 第 94 轮：R244 MeetingApp 三处请求竞态 + miniapp 应用预设局部状态失同步（2026-11-19）
+
+### 104.1 R244（oa4rust/desktop）会议管理三处无守卫请求竞态
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue 三处并发写入无 latest 门：①viewMeeting(m)（会议卡片 @click 无 disabled，详情浮层 .mo 可 @click.self 关后点另一卡片）A→B 快选时 A 的 Promise.all（5 个 settle(api.get)）晚到覆盖 B 的 detail.title/startTime/endTime/creator/content/controlCount/extra 并提前复位 loading；②loadRoomList()（楼栋 select @change 无 disabled）旧楼栋响应/错误覆盖新 roomList/roomError；③loadRooms()（新建会议表单 select @change 无 disabled）旧响应覆盖 rooms 下拉。既有 createGeneration()（latestOnly.ts，R141，AIChatApp 已用）在 MeetingApp 未接入。 |
+| 修复 | +14 行、复用 createGeneration：三函数 await 前 token=next()，成功落地前（catch 分支同理）if (!xxxGeneration.isCurrent(token)) return；各带一行中文机理注释，与 AIChatApp chatGeneration 同款。 |
+| 测试 | 新增 MeetingApp.detailRace.contract.test.ts 5 例（源码结构断言：可达性/登记顺序/guard 先于各字段落地、两列表成功+catch 双分支、表单下拉）。主线程独立 RED（cp 备份→checkout HEAD→4 failed/1 passed：可达性例 RED 即 passed 证明竞态真实→恢复→5 passed）。 |
+| 附带发现（未修） | loadMeetings() 构造 p.key/p.status 但请求 URL 硬编码 /api/meeting/assemble/control/meeting/list/apply/1/size/50 不带参；后端 meeting_list_apply_page_size_size 只取 Path(page,size) 不读 query → 会议列表搜索/状态筛选死参数。属前后端契约缺口，需后端配合，本轮未动。 |
+
+### 104.2 laiyipao/miniapp 应用阵型预设后页内局部状态失同步
+- 缺口：laiyipao/miniapp/src/pages/bag/bag.vue doApplyPreset 把技能槽/装备写服务端成功，但页内两份局部状态未跟随：selected（出战槽 UI/热量预算数据源）未同步 store.loadout（同页 toggleEquip/clearSlot 均有同步）；myEquipments 丢弃 saveEquippedEquipment 响应的整组 items（同页 equip/unequip 均回写）。bag.vue 只有 onMounted 无 onShow，页面存活期不自动重拉 → 玩家应用预设后看到旧槽位与旧装备状态。
+- 修复（+8/-2，LF 保持）：persistLoadout 成功后 selected.value = [...store.loadout]；const eqres = await api.saveEquippedEquipment(...); myEquipments.value = eqres.items ?? myEquipments.value。
+- 测试：新增 bag_apply_preset_sync.test.ts 2 例（真实行为断言：槽位显示预设新技能、装备行/穿戴贡献按回带 items 更新）。主线程独立 RED：槽位实收 ['燃烧弹','冰霜弹','空槽','空槽'] ≠ ['穿甲弹','奇异弹','空槽','空槽']、胸甲行不含「已装备」（2 failed）→恢复→2 passed。
+- 连带修正：bag.test.ts:819-848 既有「应用预设」fixture 技能 [1,4,7]（7 不在技能库、4 被动）改为库内主动技能 [1,3,5]，断言同步更新；修复后槽位真实渲染暴露原 fixture 缺陷，CRLF 1017/1017 保持。
+
+### 104.3 负结果、门禁与目标状态
+- lybug-r244 负结果：shop.vue（buyingId 防连点+确认弹窗+成功重拉）、gems.vue（纯图鉴无写操作）全读无实质 bug；todaySupply 按次数统计属注释口径不算；bag.vue 其余写路径同步均正确。
+- 门禁（主线程全量）：oa4rust 153 文件/1632 passed、typecheck 6 项目 Done、lint 446 文件 0 error（29 info 既有）；miniapp 1478 passed|2 skipped；admin 496 passed + vue-tsc 0。SPDX 双头齐全，utf8/LF 保持，git diff --check 0。
+- 三目标仍 active：目标一 R244 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复应用预设失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
