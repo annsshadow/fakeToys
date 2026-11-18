@@ -1456,6 +1456,41 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
+
+## 四十八、第39轮：R189非文本对比度标准 + admin千分比单位 + laiyipao复活局hp_left真bug（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+主线程发现并修 admin 文档站 amplify_pct 单位 bug；子代理 oaopt-r189 落地全局主题 WCAG 1.4.11 标准、lybug-r39 找到复活币对局结算被无条件拒绝的真 bug；三写范围互斥（admin / oa4rust/frontend / laiyipao/server），主线程复核 diff + 复跑门禁后分三提交。
+
+### 48.1 oa4rust R189 非文本对比度标准 WCAG 2.1 AA / 1.4.11（提交 28b688368）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 全局主题 4 个边框 token 带低 alpha（dark subtle .12/active .35、light subtle .08/active .4），合成到三种背景后仅 1.19~2.30:1，远低于非文本对比度 3:1；全仓 200+ 处输入框/按钮/卡片/skip-link 边框受影响 | WCAG 1.4.11 标准缺口，非主观审美 |
+| 修复 | dark.css 两主题块 4 处 alpha 抬升（dark .5/.7、light .44/.85），保留色相与 active>subtle 层级；在全局主题层一处改而非 200+ 视图 | 2 文件（dark.css + 新契约测试）|
+| 门禁 | nonTextContrast.contract.test.ts 解析主题块、rgba alpha 合成 + sRGB 实算对比度，6 例断言 4 token 对三背景≥3:1 且 active>subtle，RED（4 失败）→GREEN 6/6；从 oa4rust 根 pnpm test 98 files 1366 passed、typecheck 6 包、lint 0 error | 从 frontend 子目录 pnpm exec vitest 报 ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE，须从根跑 |
+
+### 48.2 laiyipao admin 文档站受击增伤千分比单位修正（提交 7ee67d707）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | WikiView.vue 反应表把千分比字段 amplify_pct 直接拼 %（600‰ 显示 +600%，夸大 10 倍），与 miniapp 反应图鉴 /10 口径差 10 倍；现有测试用不真实值 20 并断言 +20%，把错误固化 | 确证跨端显示不一致 |
+| 修复 | 新增 amplifyPctText(v)=v/10 辅助函数并接入模板；测试夹具 superconduct 改真实值 600、断言改 +60%、注释同步 | 2 文件 |
+| 门禁 | WikiView.test.ts RED（+600%≠+60%）→GREEN 25 passed；admin 全量 pnpm test 434 passed、type-check 通过 | — |
+
+### 48.3 laiyipao 复活局 hp_left 上界真 bug（提交 5d63ec4e6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 根因 | StartBattle 复活时下发 extra_base_hp=BaseHP×3/10，客户端加在当前血量（baseHpMax 不变），settleInput 上报 hp_left 可达 1.3×BaseHP；但 validateHPLeft 上界写死 gl.BaseHP 且无条件调用 → 漏怪<30% 的合法复活胜利局被 422 拒绝。DB 早有 battle_tokens.revived 列但 Go 从无读写 | 可复现：玩家花复活币反而结算不了 |
+| 修复 | domain BattleToken 增 Revived bool，ValidateSettle 用关卡副本抬高上界（普通局紧守卫不变）；StartBattle 同事务 UPDATE revived=TRUE，SettleBattle SELECT 补读并 Scan；新行为测试 + 真实 DB 往返测试 | 4 文件（battle.go/game.go + 2 测试）|
+| 门禁 | revive_hpleft_test.go 反射设 Revived 使 RED 可编译（复活局 BaseHP+extra 接受/+1 拒/普通局 BaseHP+1 仍拒）→GREEN；完整域套件 go test ./internal/domain/... -skip TestNoRealSecretsInRepo PASS 16.354s、go vet 0、gofmt clean | — |
+
+### 48.4 边界与记账
+
+- 同源风险（本轮不扩范围，下轮候选）：domain.Replay 构造 BattleConfig 未传 ExtraBaseHp（replay.go:381），复活局 replay_hash 的 |X 段与客户端重算不一致；默认 SETTLE_RECOMPUTE_MODE=enforce 有熔断降级 shadow，仍是隐患。
+- B6（文档站 P6-12）台账过期：实读 WikiView.vue 确认目录/搜索/深链/移动布局早已落地，不重复做；gems/skins/recipes 展示属功能增补非 bug。
+- 三提交 7ee67d707、28b688368、5d63ec4e6 + 本现量文档 SSH 推送前先 ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；B3、A1/A2/A5 维持既有记账不擅动；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（唯一 "design token" 注释命中非真值）；工作树仅含本轮改动，无真值入库。
