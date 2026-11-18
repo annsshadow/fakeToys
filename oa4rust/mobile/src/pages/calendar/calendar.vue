@@ -45,6 +45,8 @@ const calendars = ref<CalendarRow[]>([])
 const events = ref<EventRow[]>([])
 const loading = ref(false)
 const loadError = ref('')
+// 页签切换/刷新的在途列表请求只认最新一次，与详情门分离，见 utils/latest。
+const listGate = createLatestGate()
 const eventsView = computed(() => {
   if (loading.value && events.value.length === 0) return 'loading'
   if (loadError.value && events.value.length === 0) return 'error'
@@ -153,10 +155,12 @@ function startMs(e: EventRow): number {
 }
 
 async function load(): Promise<void> {
+  const token = listGate.begin()
   loading.value = true
   loadError.value = ''
   try {
     const cals = await calendarApi.myCalendars()
+    if (!listGate.isLatest(token)) return
     calendars.value = (cals.data ?? []) as CalendarRow[]
     const all: EventRow[] = []
     // 并行拉取各日历事件（后端 filter 只按 calendarId 过滤），再在客户端做时间窗筛选；
@@ -164,6 +168,7 @@ async function load(): Promise<void> {
     const responses = await Promise.allSettled(
       calendars.value.map((c) => calendarApi.eventsFilter({ calendarId: c.id })),
     )
+    if (!listGate.isLatest(token)) return
     for (const r of responses) {
       if (r.status === 'fulfilled') {
         all.push(...((r.value.data ?? []) as EventRow[]))
@@ -181,10 +186,12 @@ async function load(): Promise<void> {
       })
       .sort((a, b) => startMs(a) - startMs(b))
   } catch (e) {
+    // 过期请求的错误不显示、也不提前清掉新请求的 loading。
+    if (!listGate.isLatest(token)) return
     // 刷新失败保留上一次的日历与日程，不当成空日程。
     loadError.value = describeLoadError('日程加载失败', e)
   } finally {
-    loading.value = false
+    if (listGate.isLatest(token)) loading.value = false
   }
 }
 

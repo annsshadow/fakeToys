@@ -2985,3 +2985,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - lybug-r251 排除清单（未改）：admin Recomputes/Dashboard 无日期双重+1同族；换装 attacker 由 battle/token 权威快照刷新不构成失同步；gems.vue 无写操作；signin day_index 与权威 claimed_count 语义一致；server 静态配置缓存无写路径；battle settle/retry/verify 写后刷新完整。oaopt-r251 无负结果（仅一处可达缺口）。
 - 门禁（主线程独立全量）：OA 156 文件/1638 passed + 6 项目 typecheck + lint 455 文件 0 error（29 info 既有）；miniapp 139 文件/1482 passed（2 skipped 既有）+ type-check:test + type-check 0；diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
 - 三目标仍 active：目标一 R251 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复签到任务进度失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
+## 112. 第 102 轮：R252 calendar 列表竞态守卫 + miniapp 穿戴后战力失同步（2026-11-19）
+
+### 112.1 R252（oa4rust/mobile）日历页 tab/onShow 并发不再让旧响应覆盖新列表
+| 项 | 内容 |
+|---|---|
+| 缺口 | oa4rust/mobile/src/pages/calendar/calendar.vue 的列表 load() 只有详情门 detailGate，无列表门；日历页 tab（今日/本周，模板 @tap=switchRange(r.key)，无 disabled）与 onShow 都能触发 load()。两次切换并发时旧请求的 calendars/events/loadError/loading 覆盖新请求结果，旧 catch 还弹过期错误——同类 browse 页 R243 已有 listGate，calendar 漏修，真实可达不对称缺口。 |
+| 修复 | calendar.vue 加独立 listGate=createLatestGate()（与 detailGate 分离，:49）：load() 入口 token=listGate.begin()（:158）；myCalendars 与 allSettled 两组 await 后各 isLatest(token) 才写列表状态（:163/:171/:190）；过期 catch 不写 loadError，finally 仅最新才清 loading（:194）。仅 8 行，LF 保持。 |
+| 测试 | 新增 calendar.listRace.contract.test.ts（双头）4 例（1 可达性 + 3 守卫结构契约）。主线程独立 RED 3 failed/1 passed（可达性例 RED 即 passed 证明竞态真实；实收 expected false to be true / expected -1 to be greater than -1 / catch 缺 listGate.isLatest）→GREEN 4/4。门禁：mobile 44 文件/321 passed、oa4rust typecheck 6 项目、lint 456 文件 0 error（29 info 既有）、diff --check 0。 |
+
+### 112.2 laiyipao/miniapp 穿戴/卸下装备后战力与构筑停在旧值
+- 缺口：laiyipao/miniapp/src/pages/bag/bag.vue equip()（约 643 行）/unequip()（约 660 行）await api.saveEquippedEquipment(next) 后仅写本地 myEquipments，未刷新 store。服务端 equipment.go:22-23/attackerFromParts 把装备加成计入 build.attacker，穿戴变更后 /me 返回新 build；但本会话 store 的 power/build/attacker 与 equippedEquipmentIds 仍是旧值。同页宝石洗练/镶嵌/卸载、升级、熔炼、应用预设写后均 refreshProfile，唯独穿戴/卸下漏掉→背包/me 页战力、攻击力、评分、防线快照显示旧值，直至手动跳转重载（写后失同步同族）。
+- 修复（仅 bag.vue +5 行含注释，LF 保持 CRLF 0/LF 1525）：equip() 与 unequip() 在 myEquipments 写回后各加 await Promise.all([store.refreshProfile(), store.loadEquipment()])，与 doApplyPreset 口径一致，战力/构筑与已装备 id 双刷新。
+- 测试：新增 bag_equip_sync.test.ts（双头+jsdom，2 用例，mock 按提交 id 集合回显 equipped 与战力），断言穿戴/卸下后 store.power 与 store.equippedEquipmentIds 跟随服务端刷新。主线程独立 RED 2 failed（实收 store.power expected 9 to be 42 / expected 9 to be +0）→GREEN 2 passed。
+- 并发取证教训（主线程）：首轮把「git checkout 还原源文件做 RED」与「全量门禁」放在同一 Promise.all，全量测试恰在 bag.vue 被还原成 bug 态的窗口读到它→2 failed 假失败；分开顺序重跑后 140 文件/1484 passed 全绿。此后 RED 复核与全量门禁必须严格串行，不可并发。
+
+### 112.3 负结果、门禁与目标状态
+- lybug-r252 排除清单（未改）：R94/R95/R96/R98/R101 已修的同族写路径、admin 零改动、server 未改源码；admin type-check:test 11 条 TS 错误（api-index.test.ts 3 / ContentView.test.ts 4 / DashboardView 2 / RecomputesView 1 / UsersView 1）经零改动判定为预存基线，与本次无关。oaopt-r252 负结果：中位数 UI 不可达、mobile utils/a11y 层已全覆盖，未凑数。
+- 门禁（主线程独立全量）：miniapp 140 文件/1484 passed（2 skipped 既有）+ type-check:test + type-check 0；OA typecheck 6 项目、lint 456 文件 0 error（29 info 既有）、mobile 44 文件/321 passed、diff --check 0。SPDX 双头齐全，CRLF/LF 保持。
+- 三目标仍 active：目标一 R252 完成（累计 100+ 轮实质优化）；目标二已于 §99 完成交付；目标三本轮修复穿戴战力失同步真 bug，继续找但不强造。laiyipao 固定不动项维持记账（B3 auth_person id≠uid、wins/losses 方向、ChallengedToday、elements.ts aoeRadius=0、config.levels[].seed 类型差异、Buy 无幂等 R134-B、damage.ts HitInput.roll 旧措辞属文档）。
