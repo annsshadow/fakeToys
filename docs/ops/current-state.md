@@ -1619,3 +1619,34 @@ lybug-r43 先读服务端 Go 契约再逐项行为级核对 fixed.ts mulDiv/appl
 - 提交 ba213087a + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动(Connection closed by proxy)重试即可，绝不先 update-ref。
 - B3、A1/A2/A5 及 laiyipao 固定不动项（wins/losses 方向、ChallengedToday、aoeRadius=0、config.levels[].seed 类型差异）维持既有记账不擅动；目标二 augmentor 维持 33.3 交付边界。
 - 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线；目标二卡外部凭据；目标三连续负结果继续找但不强造。
+
+## 五十三、第44轮：R194输入目的autocomplete标识 + laiyipao游客转正身份刷新 + 主线程负结果（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+子代理 oaopt-r194 完成 R194（WCAG 2.1 AA / 1.3.5 输入目的标识）；lybug-r44 找到并修复一个真实用户可见 bug（游客转正/改名后本会话身份不刷新）。主线程独立复核 RED/GREEN 与全量门禁后分两批提交。
+
+### 53.1 oa4rust R194 输入目的 autocomplete 标识（提交 4453d41cb）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 登录表单(LoginScreen.vue)与改密表单(Personal.vue)5 个输入框全缺 HTML autocomplete 属性，违反 WCAG 2.1 AA / 1.3.5 Identify Input Purpose（Appendix A 的 username/current-password/new-password）；密码管理器无法自动填充，认知/运动障碍用户失去关键减负机制。全仓 grep 确认此前无任何 HTML autocomplete（命中均为 CodeMirror 代码补完非输入目的） | 真实系统性无障碍标准缺口，R181-R193 未覆盖 |
+| 修复 | LoginScreen.vue：username→autocomplete="username"、password→"current-password"（2 行）；Personal.vue：oldPassword→"current-password"、newPassword/confirmPassword→"new-password"（3 行）；新增 inputPurposeA11y.contract.test.ts 按 v-model 定位 input 起始标签断言 token | 3 文件（2 改 + 1 新契约测试含 Copyright/SPDX 头）|
+| 门禁 | inputPurposeA11y.contract.test.ts 5 例 RED(5 failed 全失败)→GREEN 5/5；主线程独立复跑 5 passed；pnpm test 103 files 1395 passed、typecheck 6 包 Done、biome 378 文件 0 error；diff --check 0、敏感扫描无命中 | 契约测试无真值域名/IP/密钥 |
+
+### 53.2 laiyipao 游客转正/改名后身份刷新真 bug（提交 d7ff1f0ce）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | miniapp store refreshProfile() 从 GET /me 拉回权威快照后只回填 account.created_at/last_login_at，忽略 is_guest/nickname。服务端契约 player_account.go:218 UpgradeGuestAccount 把 is_guest 翻 FALSE、routes.go:510-556 /me 把 service.MyAccount 全量 User(json:is_guest/nickname)放 account 下发；客户端 client.ts:961-980 fetchMe 类型明确声明这两字段；消费面 me.vue:61 用 store.isGuest 显示游客/账号视图、:499 v-if="!store.isGuest" 控改密入口、submitUpgrade/submitNickname 成功后调 refreshProfile 注释明确要求翻转。后果：游客转正成功本会话仍显示游客账号且改密入口不出现、改名后顶部昵称不刷新、冷启动 saveProfile 未更新继续拿旧摘要须重新登录 | 真实用户可见 bug，契约双向佐证，§14-§52 零处涉及 |
+| 修复 | game.ts refreshProfile() if(me.account) 内新增：is_guest 为 boolean 且不等则赋值、nickname 为非空 string 且不等则赋值、任一变化 api.saveProfile 落盘；缺字段保留本地值（老服务端兜底，同 max_stage 口径） | 仅 miniapp 2 文件（game.ts + game.test.ts），无 server/admin 改动 |
+| 门禁 | game.test.ts 新增 2 条 RED 行为测试（游客转正立即切换账号视图 / 缺 is_guest 兜底）RED(expected true to be false)→GREEN；主线程独立复跑 game.test.ts 48 passed、miniapp 全量 133 文件 1470 passed/2 skipped；vue-tsc/tsc 双通过、go 域套件 PASS 15.628s/go vet 0/gofmt clean、diff --check 0、敏感扫描无命中 | 契约测试仅占位符无真值 |
+
+### 53.3 主线程侦察与交付边界
+
+- oa4rust/mobile 全面侦察为负结果：全仓 .vue 0 处 aria-label/role（图标按钮均有可见文字标签）、0 处过小触摸目标、0 处 image 元素、133 处 @click；错误文案成熟（loadList/http 归一化+各页 retry）、login 有 submitting 守卫、utils 齐全带测试、文字对比度契约覆盖充分。无可确证新缺口未强造。
+- laiyipao/admin（不在 lybug-r44 写范围）复核为负结果：main.css 已有设计令牌+html.dark color-scheme+prefers-reduced-motion 3 项守卫（无 smooth scroll 故无 R181 落点）；Element Plus 自带 focus-visible 焦点环(el-button.css outline:2px)，admin 自定义视图 outline:none=0 处无 R184 同构缺口；WikiView 不用 behavior:smooth；千分比/契约映射/胜率/clear_rate 均正确。无可确证新 bug 未强造。
+- 目标二 augmentor 维持 33.3 交付边界（本地 health=200/根页200，远程卡 GitHub Secrets 超会话边界）。B3、A1/A2/A5 及 laiyipao 固定不动项维持记账。
+
+### 53.4 交付
+
+- 两提交 4453d41cb、d7ff1f0ce + 本现量文档 SSH 推送前先 git ls-remote 核验远端真实 HEAD，成功后 update-ref 同步追踪引用；推送遇出口抖动重试即可，绝不先 update-ref。
+- 三目标仍 active：目标一走系统性样式/性能标准+契约测试路线（R194 已完成）；目标二卡外部凭据；目标三本轮修复游客转正身份刷新，继续找但不强造。
