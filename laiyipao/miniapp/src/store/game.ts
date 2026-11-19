@@ -257,6 +257,15 @@ export const useGameStore = defineStore('game', () => {
   let loginInflight: Promise<boolean> | null = null
 
   /**
+   * 档案刷新序号：页面多处并发调用 refreshProfile（me/bag/mastery 的 onShow 与
+   * 各异步回调），慢的旧响应若后到会覆盖新响应的 wallet/userId/power。
+   * 只接受最后一次发起的请求结果。
+   */
+  let profileReqSeq = 0
+  /** 钱包刷新序号：refreshProfile 与 refreshWallet 共用 wallet 字段，二者按序写钱包。 */
+  let walletReqSeq = 0
+
+  /**
    * 本环境是否要求账号登录。
    *
    * 来自服务端 `/config` 的 `require_login`（`PLAYER_LOGIN_REQUIRED`）。
@@ -477,9 +486,15 @@ export const useGameStore = defineStore('game', () => {
 
   async function refreshProfile(): Promise<void> {
     readStatusBarHeight()
+    const seq = ++profileReqSeq
+    const walletSeq = ++walletReqSeq
     try {
       const [w, me] = await Promise.all([api.fetchWallet(), api.fetchMe()])
-      wallet.value = { ...w, tokens: w.tokens ?? {} }
+      // 序号守卫：丢弃陈旧响应，避免并发刷新时旧账号/旧钱包覆盖最新态。
+      if (seq !== profileReqSeq) return
+      if (walletSeq === walletReqSeq) {
+        wallet.value = { ...w, tokens: w.tokens ?? {} }
+      }
       // 第 150 轮：以 /me 的 user_id 为身份权威。
       // 此前 userId 只在 login() 里从 TokenPair.user.id 赋值，于是
       // **只要没走过 login() 就是 0** —— 排行榜页「高亮我自己那一行」
@@ -539,10 +554,12 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function refreshWallet(): Promise<void> {
+    const seq = ++walletReqSeq
     try {
       // tokens ?? {} 是对**旧版服务端**的兜底（没这个字段时不该让页面崩），
       // 不是对当前契约的容忍 —— 契约由 /wallet 的类型定义表达。
       const fresh = await api.fetchWallet()
+      if (seq !== walletReqSeq) return
       wallet.value = { ...fresh, tokens: fresh.tokens ?? {} }
     } catch {
       /* 忽略 */

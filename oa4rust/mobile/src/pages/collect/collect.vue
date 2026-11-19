@@ -16,12 +16,17 @@ const loaded = ref(false)
 const loadError = ref('')
 const removingId = ref('')
 
+// onShow 与两处重试按钮共用 load：序号只让最新一次回写，避免旧响应后到覆盖新数据。
+let loadSeq = 0
+
 // 后端 collect_list 返回全员收藏（与桌面 CollectApp 同口径），客户端按本人 personId 过滤。
 async function load() {
   if (!session.user?.unique) return
+  const seq = ++loadSeq
   loading.value = true
   loadError.value = ''
   const result = await loadCollectRows(() => collectApi.list(), session.user.unique, rows.value)
+  if (seq !== loadSeq) return
   rows.value = result.rows
   if (!result.ok) loadError.value = result.error
   loading.value = false

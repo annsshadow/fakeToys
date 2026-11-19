@@ -3444,3 +3444,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 137.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 478 文件 0 error(30 info 既有)；miniapp 150 文件/1513 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R278 会话列表并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R278 防线加载陈旧响应清空真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 138. 第129轮：收藏列表并发加载序号守卫 + 档案刷新并发序号守卫
+
+### 138.1 oa4rust/mobile 收藏列表旧响应覆盖（R279，oaopt-r279）
+- 缺口：collect.vue load() 无请求序号/busy 守卫。三并发入口共用 load()：onShow 每次显示触发 + 模板错误态重试按钮 + 列表内错误横幅重试按钮（两处无 disabled）。不能用 if(loading.value) return 的 busy 守卫（会吞掉 onShow 正当刷新），故用递增序号。弱网点两次重试或快速切页，旧响应后到用陈旧列表覆盖新数据，或过期失败响应写入 loadError、卡住 loading。写权威态 4 处（rows/loadError/loading/loaded）全暴露。
+- 修复：removingId 后新增 let loadSeq=0；load() 内 session 检查后 const seq=++loadSeq；await loadCollectRows(...) 后 if(seq!==loadSeq) return 再写 4 处权威态（+5/-1）。新增 collect.listRace.contract.test.ts（双头）3 例源码契约（序号声明/登记在请求前/过期响应不写权威态）。
+- 主线程独立 RED→GREEN（oa4rust/mobile 包内 pnpm exec vitest run src/pages/collect/collect.listRace.contract.test.ts）：RED exit1 2 failed（source 未含 let loadSeq = 0、guard -1）→恢复 GREEN 3 passed。
+- 负结果（勿重复）：browse.vue listGate+detailGate 齐备、calendar.vue listGate、doc.vue 无多入口窗口窄、attendance(R277)/message(R278) 已修、index.vue R137、recycle.vue detailGate 有且列表序号证伪弱。
+
+### 138.2 laiyipao/miniapp 档案/钱包并发刷新旧响应覆盖（R279，lybug-r279）
+- 缺口：store/game.ts refreshProfile()(:487) 内 Promise.all([fetchWallet, fetchMe]) 后直接写 wallet/userId/power，无序号守卫；并发调用密集——me.vue onShow 一次并行 10 请求（含 refreshProfile+loadLoadout）、bag.vue 多处、mastery.vue、index.vue、battle.vue。两个 refreshProfile 并发时慢的旧响应后到覆盖新响应的 wallet/userId/power（跨账号串号、钱包回退）。refreshWallet() 同样无守卫，与 refreshProfile 共用 wallet 字段。
+- 修复：loginInflight 旁新增 profileReqSeq/walletReqSeq 两个序号；refreshProfile 开头 ++ 两序号、await 后 if(seq!==profileReqSeq) return 丢弃陈旧响应，钱包字段仅在 walletSeq===walletReqSeq 时写；refreshWallet 开头 ++walletReqSeq、await 后 if(seq!==walletReqSeq) return（+18/-1）。loadLoadout 本轮不动。game.test.ts 纯插入 50 行新增 describe「档案刷新并发守卫（第129轮）」2 例（可控 Promise 旧先发/新后发先返回/旧后到断言新响应胜出），BOM+LF 行尾保持。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/store/game.test.ts，仅还原 game.ts 保留新测试）：RED exit1 2 failed（expected 7 to be 88 旧 userId 覆盖新、expected 1 to be 50 旧钱包覆盖新）→恢复 GREEN 51 passed。secrets 守卫 TestNoRealSecretsInRepo/TestNoInfraIdentifiersInRepo PASS。
+- 证伪方向：shop.vue doBuy 有 buyingId 前置位、onMounted load 串行，并发窗口窄暂不动。后续线索（未改）：loadLoadout 仍无序号守卫（me/bag/reactions 并发调用）、shop.vue load()(Promise.all fetchShop+fetchWallet) 无序号、refreshProfile 中 api.saveProfile 未 await（身份变更落盘失败不可见，属容忍设计）。
+
+### 138.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 479 文件 0 error(30 info 既有)；miniapp 150 文件/1515 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/BOM）保持、真值不入库。
+- 四目标：①目标一 R279 收藏列表并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R279 档案刷新并发陈旧覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

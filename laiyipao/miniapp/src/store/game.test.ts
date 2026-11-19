@@ -525,6 +525,56 @@ describe('进度恢复 max_stage（第 142 轮）', () => {
   })
 })
 
+
+describe('档案刷新并发守卫（第 129 轮）', () => {
+  // 用可控 Promise 让「旧请求先发、新请求后发但先返回、旧请求后到」，
+  // 验证序号守卫丢弃陈旧响应，避免旧账号/旧钱包覆盖最新态。
+  it('refreshProfile：并发时旧响应后到不覆盖新响应的 userId 与 wallet', async () => {
+    let resolveOldWallet!: (v: any) => void
+    let resolveOldMe!: (v: any) => void
+    const oldWallet = new Promise<any>((r) => { resolveOldWallet = r })
+    const oldMe = new Promise<any>((r) => { resolveOldMe = r })
+    mockApi.fetchWallet.mockImplementationOnce(() => oldWallet)
+    mockApi.fetchMe.mockImplementationOnce(() => oldMe)
+    const stale = store.refreshProfile()
+
+    mockApi.fetchWallet.mockResolvedValueOnce({ coin: 99, gem: 99, energy: 99, keys: 99, tokens: {} })
+    mockApi.fetchMe.mockResolvedValueOnce({ user_id: 88, build: null, build_rating: null, power: 321 } as any)
+    const fresh = store.refreshProfile()
+
+    // 新请求先返回并落地。
+    await fresh
+    expect(store.userId).toBe(88)
+    expect((store.wallet as any).coin).toBe(99)
+    expect(store.power).toBe(321)
+
+    // 旧请求后到：必须被序号守卫丢弃，不许把 user_id=7 / coin=1 写回来。
+    resolveOldWallet({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
+    resolveOldMe({ user_id: 7, build: null, build_rating: null, power: 123 } as any)
+    await stale
+    expect(store.userId).toBe(88)
+    expect((store.wallet as any).coin).toBe(99)
+    expect(store.power).toBe(321)
+  })
+
+  it('refreshWallet：并发时旧钱包后到不覆盖新钱包', async () => {
+    let resolveOld!: (v: any) => void
+    const oldWallet = new Promise<any>((r) => { resolveOld = r })
+    mockApi.fetchWallet.mockImplementationOnce(() => oldWallet)
+    const stale = store.refreshWallet()
+
+    mockApi.fetchWallet.mockResolvedValueOnce({ coin: 50, gem: 50, energy: 50, keys: 50, tokens: {} })
+    const fresh = store.refreshWallet()
+
+    await fresh
+    expect((store.wallet as any).coin).toBe(50)
+
+    resolveOld({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
+    await stale
+    expect((store.wallet as any).coin).toBe(50)
+  })
+})
+
 describe('出战槽位（服务端权威 + 归一化）', () => {
   it('第 131 轮：equippedSkillIds 初值为空，不再捏造 [1,2,3]', () => {
     // 服务端对一个未保存过槽位的玩家返回 [0,0,0,0]（全空）。
