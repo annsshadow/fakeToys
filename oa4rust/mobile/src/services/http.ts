@@ -57,6 +57,25 @@ function httpStatusError(status: number): ApiError {
   return status === 404 ? new ApiError(NOT_FOUND_MESSAGE, 404) : new ApiError(`HTTP ${status}`, status)
 }
 
+/**
+ * 2xx 响应体信封归一化：与桌面 ApiClient 同口径。
+ * 网关误插 HTML 错误页 / 代理截断时 uni.request 的 res.data 会是非法 JSON 字符串，
+ * 直接当 ApiResponse 返回会让页面把"服务端失败"误判为"成功但无结果"。
+ * H5 上 res.data 是已解析对象、原生端可能是 JSON 文本，两种都接受；
+ * undefined / null（no-content 简写）原样保留，不破坏既有空体语义。
+ */
+function parseEnvelope<T>(data: unknown, status: number): ApiResponse<T> {
+  let value = data
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value)
+    } catch {
+      throw new ApiError('malformed JSON response', status)
+    }
+  }
+  return value as ApiResponse<T>
+}
+
 let apiBase = ''
 let authFailureHandler: (() => void) | null = null
 let refreshPromise: Promise<void> | null = null
@@ -169,7 +188,7 @@ function performRequest<T>(
             resolve({ success: true, data: undefined as T })
             return
           }
-          resolve(data as ApiResponse<T>)
+          resolve(parseEnvelope<T>(data, status))
           return
         }
         if (status === 401) {

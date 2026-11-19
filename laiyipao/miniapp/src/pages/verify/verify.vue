@@ -357,6 +357,9 @@ async function submit(hash: string) {
 }
 
 function doReplay() {
+  // R285：replaying 同时覆盖 30ms 延迟窗口与 submit() 的 await verifyReplay 在途期；
+  // 原仅做按钮文案标记无 return 守卫，在途期再点会启动新 timer 并发第二次验真提交。
+  if (replaying.value) return
   const ri = replayInfo.value
   if (!ri) {
     errMsg.value = '请先取复现信息'

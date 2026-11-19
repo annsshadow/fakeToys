@@ -3536,3 +3536,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 侦察覆盖清单外新增方向全部证伪或已有覆盖，零改动（依硬纪律负结果结案），task-259 已 CAS complete。
 - 证伪方向：AbandonBattle 放弃退款幂等（条件更新 used_at=NULL + RowsAffected==0 拒绝二次放弃/结算，事务内退款）；AllocateMastery/ResetMastery 并发（首步 SELECT user_progress FOR UPDATE 串行化 + allocBusy/resetting 双忙标志 + 并发测试）；spendToken/grantToken 条件更新 balance>=1 + 流水留痕；masterySelected 在 AllocateMastery 持锁点之后调用无缺口；admin UsersView/RecomputesView 写操作均有模态确认 + modeSaving 忙标志；domain/game/*.ts 目录实际不存在（侦察角度证伪）；关卡掉落预览/离线收益领取有守卫测试 + offlineClaiming 忙标志。
 - 四目标：①目标一 R284 BBSForum 版块详情回填竞态修复完成，持续找缺口②目标二 §99 已交付③目标三 R284 laiyipao 新增方向全证伪、零改动负结果结案④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+## 144. 第135轮：移动端传输层非法 JSON 信封归一化（R285，oaopt-r285）
+
+### 144.1 oa4rust/mobile performRequest 2xx 非法 JSON 归一化
+- 缺口：mobile/src/services/http.ts performRequest<T>() 在 2xx 分支直接 resolve(data as ApiResponse<T>)，网关/代理误插 HTML 错误页或截断时 res.data 是非 JSON 字符串被当成功信封。可达链：search.vue:37-38 searchApi.global(kw)→mapi.post(/api/queryview/search)→performRequest→g.data ?? [] 再 .map()，字符串信封下 g.data===undefined 不抛错，(undefined??[]).map 返回空→命中 search.vue:49 rows.value=out 空数组，把服务端失败静默吞成「搜索成功但无结果」并覆盖上次结果。桌面 api.ts R282 已归一化但移动端是不同前端不同文件，属确凿不同缺口。
+- 修复：新增 parseEnvelope<T>(data,status) —— 字符串尝试 JSON.parse，失败抛 ApiError(malformed JSON response,status)；undefined/null/对象原样保留（兼容既有 no-content 语义与 http.test.ts 中 uni.ok(o,undefined) 简写）；2xx 分支一行替换（仅新增 helper 19 行 + 1 行替换）。无 BOM/LF 保持。
+- 新增 http.malformed-json.test.ts（SPDX 双头，4 例：get/post 2xx HTML→ApiError+status、合法 envelope 原样、undefined/204 空体兼容）。
+- 复核：主线程独立 RED→GREEN（备份 D:/tmp/http.ts.r285.fixed→checkout 还原保留测试→mobile 包内 vitest RED 2 failed/2 passed：expected HTML string to be instance of ApiError @:54/:63→恢复 GREEN 4 passed）。
+- 门禁：OA 根 173 文件/1693 passed + typecheck6 + lint 484 文件 0error(30 info)；mobile 54 文件/353 passed。
+- 诚实记录：pnpm build 失败（CmsIndexApp.vue:861 Element is missing end tag），该文件 git 状态为空、本次只改 .ts 且 desktop build 不编译 mobile 文件；代理用 git stash push -u 移走两文件后重跑 build 同样失败，证明基线既存、非本次引入。测试类门禁全绿。
+- 负结果：密码强度前端校验后端已兜底、meeting.vue busyId/listGate 完整、search.vue doSearch 有 loading 守卫（缺陷在传输层已修）、bbs/topic.vue load 无序号但可达性弱、upload 通道原样返回是既有语义刻意不改。
+
+### 144.2 laiyipao/miniapp verify 页验真在途守卫（R285，主线程接手）
+- 背景：lybug-r285 与 lybug-r285b 两代理均失败无收尾，前者零改动、后者仅留下 verify_inflight.test.ts 行为测试未写源码修复；主线程接手完成。
+- 缺口：verify.vue doReplay() 入口只置 replaying.value=true 驱动「重放中…」文案，无 return 在途守卫（同页 fetchReplay/doFalsify 均有）。30ms 延迟回调触发后 pendingTimer 归零、submit() 内 await verifyReplay 期间 replaying 仍 true，此窗口再点启动新 timer 并发第二次 verifyReplay；服务端每次 VerifyReplay INSERT replay_verifications 行，双点污染「本次验真记录」与统计口径。
+- 修复：doReplay() 入口加 if (replaying.value) return（+3 行注释，LF 无 BOM 保持）；verify_inflight.test.ts（双头 jsdom）让首次 verifyReplay 挂起，在途期再点断言只提交一次。
+- 复核：主线程独立 RED→GREEN（基线跑 verify_inflight.test.ts RED：expected vi.fn() to be called 1 times but got 2 @test:128→加守卫后 GREEN 1 passed）。
+- 门禁：miniapp 152 文件/1518 passed(2 skipped)+type-check+type-check:test；admin 37 文件/498 passed+vue-tsc；新测试真值扫描无命中。
+- 四目标：①目标一 R285 移动端非法 JSON 归一化修复完成，持续找缺口②目标二 §99 已交付③目标三 R285 verify 验真在途守卫修复完成（代理失败主线程接手）④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
