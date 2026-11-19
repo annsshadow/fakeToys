@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { authApi, clientDeviceToken, pushApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated, LOGIN_PAGE } from '@/utils/auth-guard'
+import { validateNewPassword } from '@/utils/password'
 
 const session = useSession()
 const groups = ref<string[]>([])
@@ -59,8 +60,9 @@ const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const pwdSaving = ref(false)
 
 async function changePassword() {
-  if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
-    uni.showToast({ title: '请填写完整密码', icon: 'none' })
+  const pwdError = validateNewPassword(pwdForm.value.oldPassword, pwdForm.value.newPassword)
+  if (pwdError) {
+    uni.showToast({ title: pwdError, icon: 'none' })
     return
   }
   if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
@@ -137,7 +139,7 @@ async function changePassword() {
         class="pwd-input"
         password
         type="text"
-        placeholder="新密码（6-64 位，含字母和数字）"
+        placeholder="新密码（至少 10 位）"
       />
       <input
         v-model="pwdForm.confirmPassword"

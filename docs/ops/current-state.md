@@ -3652,3 +3652,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### R290 收官
 - 四目标：①目标一 R290 会议页状态映射缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R290 护盾权威写竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 151. 第142轮：R291 双端改密校验与防线构筑加载假守卫
+
+### 151.1 oa4rust/mobile 修改密码本地预校验（R291，oaopt-r291）
+- 缺口：mobile「我的」页修改密码对新密码无任何长度/复杂度/同一性校验，仅非空+两次一致；placeholder 承诺「6-64 位，含字母和数字」（mine.vue:140 基线），但后端权威规则（laiyipao/server player_account.go:265 ChangePassword，261 行注释「至少 10 位」）为 trim 非空 + len<10 拒绝 + old==new 拒绝、无字母数字复杂度要求。双重伤害：用户填 6-9 位（页面明确允许）前端放行被后端 ErrBadInput 拒、新旧相同前端放行被后端拒。可达链：登录态→我的页→改密填 9 位→保存→后端拒弹错，本可本地零成本拦截。
+- 修复：新增纯函数 oa4rust/mobile/src/utils/password.ts validateNewPassword(old,new):string|null（trim 非空→请填写完整密码、<10→新密码至少 10 位、old==new→新密码不能与原密码相同、通过 null）；mine.vue 加 import、changePassword() 前置拦截 + uni.showToast、placeholder 改「新密码（至少 10 位）」。新增 password.test.ts（4 纯函数分支 + 1 接线契约，SPDX 双头）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/r291-mine.vue.fixed 等→checkout 还原 mine.vue 保留测试→RED vitest -t "可达链：mine.vue 提交前调用预校验并使用其文案，避免弱密码发到后端" EXIT=1 expected src to contain 新密码（至少 10 位） @password.test.ts:30→恢复→GREEN 5 passed EXIT=0）。
+- 门禁：OA 根 pnpm test exit0、mobile pnpm --dir mobile test exit0、typecheck 6 项目 0、biome check 2 文件 0error、pnpm build exit0 built in 3.29s；覆盖率 password.ts 100%，全局 99.58/95.29/100/99.68 达标。
+- 负结果：桌面 Personal.vue 同步校验未改（聚焦 mobile、双端改动面大）、不提取全局常量（仅一处门槛）、不仅改 placeholder（弱密码仍发后端非实质）、不加字母数字复杂度（后端无此要求）、formatSize/formatNumber/paging 等 utils 已覆盖。
+
+### 151.2 laiyipao/miniapp 防线保存构筑加载假守卫（R291，lybug-r291）
+- 缺口：me.vue ensureBuildLoaded（:1264-1278）声称「加载失败必须中止保存」，但其 try/catch 永远抓不到异常——await 的 store.loadEquipment/loadMasteryNodes（game.ts:203-224）内部 catch 吞异常只 console.warn 从不抛；兜底判据 `store.equipment.length===0 && store.masteryNodes.length===0` 用 && 只拦两侧全空，部分失败（一侧失败一侧非空）漏过。可达链：点保存防线→saveDefense→ensureBuildLoaded→弱网 loadEquipment 失败吞异常、loadMasteryNodes 成功返回 [1]→&& 不成立→提交 equipment:[] 残缺快照→别人挑战模拟的不是真实构筑。toggleShield 同路径受影响。历史证据 git show 9560d1d61（二轮审计 P1）引入该守卫但因 store 吞异常从未生效。
+- 修复：game.ts loadEquipment/loadMasteryNodes 加可选参数 rethrow=false，失败 console.warn 后 if(rethrow) throw e（默认静默保持其它调用方语义）；me.vue:1267 ensureBuildLoaded 改 await Promise.all([store.loadEquipment(true),store.loadMasteryNodes(true)]) 让失败上抛被 catch 捕获返回 false 中止保存。新增 me_defense_build_load_guard.test.ts（SPDX 双头 jsdom 2 例：装备失败专精成功/专精失败装备成功均不得提交残缺快照）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/r291-game.ts.fixed 与 r291-me.vue.fixed→checkout 还原两源文件保留测试→RED vitest -t "装备加载失败但专精成功时，不得提交残缺构筑快照" EXIT=1 expected vi.fn() not called but called 1 times @test:66，收到残缺快照 equipment:[]→恢复→GREEN 2 passed EXIT=0）。
+- 门禁：miniapp 157 文件（156 passed/1 skipped）/1527 passed(2 skipped) + type-check + type-check:test 双 0；admin 37 文件/498 passed + type-check 0；server go test -run ^$ ./... 编译级 exit0 无回归（未涉及 server 代码，全量长时模拟未跑）。
+- 负结果：签到/商城/熔炼/预设/穿戴/洗练/mastery/verify/stage/battles/防线共享守卫/game.ts 序号守卫/submitNickname、服务端 damage/score/SignIn/ClaimTask/ChangePassword/synthesis/离线收益/退款幂等/AllocateMastery、通用 pagination/export/csvSafe/ttlcache/idempotency/announcements、admin 视图序号守卫与筛选、t.Skip 扫描——均无新 bug，否决未改。
+
+### R291 收官
+- 四目标：①目标一 R291 改密预校验缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R291 防线构筑加载假守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

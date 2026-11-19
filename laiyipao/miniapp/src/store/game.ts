@@ -200,21 +200,26 @@ export const useGameStore = defineStore('game', () => {
   /** 已点亮的专精节点 id。 */
   const equippedMasteryNodes = computed<number[]>(() => masteryNodes.value.slice())
 
-  async function loadEquipment(): Promise<void> {
+  async function loadEquipment(rethrow = false): Promise<void> {
     try {
       const res = await api.fetchMyEquipment()
       equipment.value = res.items ?? []
     } catch (e) {
       console.warn('[来一炮] 加载装备失败', (e as Error).message)
+      // R291：防线保存等"失败必须中止"的调用方需要看到异常；
+      // 默认仍静默降级，保持其它页面（如背包写后同步）的原有语义。
+      if (rethrow) throw e
     }
   }
 
-  async function loadMasteryNodes(): Promise<void> {
+  async function loadMasteryNodes(rethrow = false): Promise<void> {
     try {
       const res = await api.fetchMastery()
       masteryNodes.value = res.nodes ?? []
     } catch (e) {
       console.warn('[来一炮] 加载专精失败', (e as Error).message)
+      // R291：同 loadEquipment，失败可上抛给必须中止的调用方。
+      if (rethrow) throw e
     }
   }
 

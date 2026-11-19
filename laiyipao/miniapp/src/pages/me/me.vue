@@ -1263,7 +1263,8 @@ const defenseBuild = computed(() => ({
  */
 async function ensureBuildLoaded(): Promise<boolean> {
   try {
-    await Promise.all([store.loadEquipment(), store.loadMasteryNodes()])
+    // R291：必须让加载失败上抛，否则 try/catch 抓不到，半残构筑会被原样保存。
+    await Promise.all([store.loadEquipment(true), store.loadMasteryNodes(true)])
   } catch (e) {
     uni.showToast({ title: `构筑加载失败，未保存防线：${(e as Error).message}`, icon: 'none' })
     return false
