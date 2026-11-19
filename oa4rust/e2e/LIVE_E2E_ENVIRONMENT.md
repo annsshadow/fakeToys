@@ -108,6 +108,7 @@
 - **BUG-D**（真实前端 bug / fe-desktop，**已修复上线并验证**）：`OrgDirectoryApp.vue` 的 `collect(label, await api...)` await 位置错误 → `s(p)=p.catch` 对已解析值抛 `TypeError: e.catch is not a function`。t10 修复已部署；TypeError 消失。
 - **BUG-E**（真实产品 bug / e2e-runner-2 实证，**已修复并 GREEN**）：`ProcessWork.vue:1603 loadTaskInfo` 曾把 GET `/task/expire/{id}` 当只读调用，实为写端点把 active 任务置 expired，导致 `POST /task/{id}/complete` 400。t13 纯前端修复、t14 部署；workflow 闭环双 project 全部 passed。
 - **BUG-F**（产品代码 bug / 后端，**待修 backlog**）：`POST /api/person/list/login/after/object` 对合法 date 稳定返回 500；`endpoints_person2.rs:39 login_after` 把 DB 错误统一吞为 `Err(AppError::Internal)`，补种后 SQL replay 返回 21 行仍 500，证明与数据量无关，属错误语义 bug。前端已能 catch，不阻塞主流程。
+- **BUG-001**（真实后端 bug / shared input_validation，**已修复并线上实证 GREEN**）：`crates/shared/src/input_validation.rs` 的 `validate_length` 曾用 `value.len()`（字节）计长，使 100 中文字符（300 字节 < 255 字符上限）文件夹名被误判 TooLong/400。修复为 `value.chars().count()` 后已 Docker 编译部署（BuildID `<BUILD_ID>`、冒烟 5/5）；本轮用专用 E2E 账号真实认证会话 POST `/api/file/folder/create` 提交 100 中文名 → HTTP 200、`type=success`、无 TooLong、返回新建 folder id，Bug 闭环。
 
 ## 实跑命令模板（占位符形式）
 
@@ -132,3 +133,11 @@ pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spe
 
 1. 登录页空表单提交按钮禁用 2. 密码显隐切换 3. 错误密码行内报错 4. 侧边栏导航+面包屑 5. 用户菜单跳个人中心 6. 全局搜索快捷键 7. 侧边栏折叠展开 8. 个人签名填写提交 9. 系统设置分栏+下拉 10. 通讯录查询本页表格 11. 通讯录分页 12. 两次密码不一致校验 13. 表单不完整校验 14. 未登录重定向 15. 退出登录后重定向
 （workflow-runtime 另 1 条：发起→填写→提交→审批闭环，本轮已 GREEN）
+
+## BUG-001 线上真实会话实证（t19，脱敏）
+
+- 端点：`POST /api/file/folder/create`（`require_session` 需认证会话）；字段 `name`（必填，1–255 字符）、`superior`（可选）、`person`（可选，默认 system），校验 `validate_length("name", name, 1, 255)`（`crates/file/src/lib.rs:608`）。
+- 修复点：`crates/shared/src/input_validation.rs:75 validate_length` 由 `value.len()`（字节）改为 `value.chars().count()`（Unicode 字符数）；部署 BuildID `<BUILD_ID>`、冒烟 5/5。
+- 实证方法：专用 E2E 账号（凭证运行时注入，真值不回显不入库）浏览器登录 → 带会话 `fetch('/oa4rust-api/api/file/folder/create', { method:'POST', body:{ name:'中文字符'×100, person:'<TEST_MARKER>' } })`。
+- 结果（脱敏）：登录 OK；name 字符数=100、字节数=300；HTTP **200**；`HAS_TOO_LONG=false`；响应 `type=success` 且返回新建 folder id。修复前同名会被字节长度 300 误判 >255 → TooLong/400。
+- 结论：BUG-001 真实会话实证通过，Bug 闭环（GREEN）。写操作仅限测试服务器测试库，未碰生产/laiyipao。
