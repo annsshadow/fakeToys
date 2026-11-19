@@ -3374,3 +3374,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 133.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 167 文件/1673 passed + pnpm typecheck 6 项目 0 + biome lint 474 文件 0 error(30 info 既有)；miniapp 146 文件/1502 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R274 脚本工作台详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R274 专精点亮双击重复上报真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 134. 第125轮：表单保存弹窗在途守卫 + 防线保存/护盾共享守卫
+
+### 134.1 oa4rust/desktop FormApp 表单保存弹窗双击双写（R275，oaopt-r275）
+- 缺口：FormApp.vue 新建/编辑弹窗 saveForm() 无在途守卫，创建/更新按钮原 :disabled="!mform.name" 只按名称判空、不反映提交中状态。Vue disabled 响应式更新需 nextTick 异步生效，快速双击/回调重入可在状态翻转前穿透第二次 saveForm；内部 api.post(/api/form)/api.put 是非幂等写，重复穿透创建两份表单或对同一记录覆盖两次，属用户可见数据损坏。既有 security/autoquery-guards/dateParsingContract 等测试均未覆盖该防重。
+- 修复：新增 const saving=ref(false)；按钮 :disabled 改 !mform.name || saving；saveForm 入口 if(saving.value) return + 置位、catch 后 finally 复位（失败不永久卡死按钮）。+8/-1 LF。
+- 测试：新增 FormApp.saveGuard.contract.test.ts（双头）4 条契约（在途 ref、入口拦截顺序、finally 复位、按钮禁用）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/FormApp.saveGuard.contract.test.ts --root frontend/apps/desktop）：RED exit1 4 failed（缺 saving ref/入口守卫/finally/按钮 disabled 字面量）→恢复 GREEN 4 passed。代理首轮 lint 因新增测试 Math.min(...) 多行格式报 1 error，压成单行后 0 error。
+- 负结果（勿重复）：FormApp deleteForm 走 confirmMsg 守卫无双击缺口；importData/导出为一次性同步或已有反馈态。未落入 R271-R274 密集修过的 designer/script 详情回填竞态面。
+
+### 134.2 laiyipao/miniapp 防线保存与护盾交叉提交（R275，lybug-r275）
+- 缺口：me.vue saveDefense(:183)/toggleShield(:186) 均无按钮 disabled 与在途守卫，二者共享同一非幂等写端点 POST /defenses/save（client.ts:1217→handlers_admin.go:34→progression.go:709 upsert，每次重算快照哈希并刷新 shielded_until/updated_at）。双点或交叉点击重复提交；交叉时 shield_hours（0 vs 24）后到覆盖先到，玩家点开盾可能没开成。此前仅 challenge/删除防线等有同族守卫，此处遗漏。
+- 修复：新增共享 const savingDefense=ref(false)，saveDefense/toggleShield 入口各自 if(savingDefense.value) return + 置位，把 ensureBuildLoaded() 纳入 try 确保失败分支也复位，finally 复位（UTF-8 无 BOM、1774 行全 CRLF 保持）。新增 me_defense_save_inflight.test.ts（SPDX+Copyright）2 例：重复点保存不重复提交、保存/开盾交叉点击不覆盖护盾状态。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/me/me_defense_save_inflight.test.ts，仅还原 me.vue 保留新测试）：RED exit1 2 failed（expected "vi.fn()" to be called 1 times, but got 2 times，:145/:170）→恢复 GREEN 2 passed。
+- 证伪方向：bag.vue equip/unequip 已有 if(equipping.value) return；equipment.vue/skills.vue 无写端点、装配写集中在 bag 已被守卫覆盖。后续线索（未改）：me.vue 其他纯展示/导航点击（挑战历史翻页、兑换码弹窗内提交）是否有第三处共享写守卫遗漏，可按「同端点多入口」模式继续排查。
+
+### 134.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 168 文件/1677 passed + pnpm typecheck 6 项目 0 + biome lint 475 文件 0 error(30 info 既有)；miniapp 147 文件/1504 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R275 表单保存弹窗在途守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R275 防线保存/护盾交叉提交真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

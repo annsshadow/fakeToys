@@ -749,6 +749,9 @@ const candidates = ref<DefenseView[]>([])
 const attackLeft = ref(3)
 const shielded = ref(false)
 const simulating = ref(0)
+// 第 125 轮（R275）：saveDefense / toggleShield 写同一条防线记录且都无在途守卫；
+// 双点或交叉点击会重复 POST /defenses/save，且 shield_hours 参数后到覆盖先到。
+const savingDefense = ref(false)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
 
 /**
@@ -1267,8 +1270,11 @@ async function ensureBuildLoaded(): Promise<boolean> {
 }
 
 async function saveDefense() {
-  if (!(await ensureBuildLoaded())) return
+  // R275：与 toggleShield 共享在途守卫，避免同条防线被并发 upsert / 护盾互相覆盖。
+  if (savingDefense.value) return
+  savingDefense.value = true
   try {
+    if (!(await ensureBuildLoaded())) return
     const res = await api.saveDefense({
       name: '我的防线',
       ...defenseBuild.value,
@@ -1283,12 +1289,17 @@ async function saveDefense() {
     await loadDefenses()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    savingDefense.value = false
   }
 }
 
 async function toggleShield() {
-  if (!(await ensureBuildLoaded())) return
+  // R275：与 saveDefense 共享在途守卫，避免保存/开盾交叉提交后到覆盖先到。
+  if (savingDefense.value) return
+  savingDefense.value = true
   try {
+    if (!(await ensureBuildLoaded())) return
     const res = await api.saveDefense({
       name: myDefense.value?.name ?? '我的防线',
       ...defenseBuild.value,
@@ -1299,6 +1310,8 @@ async function toggleShield() {
     shielded.value = isShieldActive(res.defense?.shielded_until, store.estimateServerNowMs())
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    savingDefense.value = false
   }
 }
 
