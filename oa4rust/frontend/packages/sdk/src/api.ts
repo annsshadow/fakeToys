@@ -42,6 +42,17 @@ const FORBIDDEN_MESSAGE = '没有权限执行该操作'
 const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
 
 /**
+ * BUG-B：认证失败（401）有两类完全不同的语义，不能共用一条文案：
+ *   - 登录接口的 401 = 凭据校验失败（用户名/密码错误或账户锁定）。用户仍在登录页，
+ *     没有会话可「过期」，提示必须以凭据错误为导向，否则会误导用户去刷新会话。
+ *   - 其它业务请求的 401 = 会话/令牌失效，需要重新登录。
+ * 后端 POST /api/authentication/login 对「用户不存在」直接返回 401（AppError::Unauthorized），
+ * 且登录请求 requireAuth:false 不会触发 refresh，因此这条 401 必然是凭据错误。
+ */
+const LOGIN_FAILED_MESSAGE = '用户名或密码错误，请重新输入'
+const SESSION_EXPIRED_MESSAGE = 'Session expired, please login again'
+
+/**
  * R155 / B1：传输层网络失败文案归一化。
  * fetch/XHR 的底层错误是英文技术串（Failed to fetch / Network error / Timeout /
  * Request aborted），直接透到页面会变成「加载失败：Failed to fetch」。
@@ -198,10 +209,22 @@ export class ApiClient {
    * 会通知上层两次（handler 弹 toast 就会弹两条）。传入 `cause` 后，已经通知
    * 过的错误原样透传，只有「refresh 因非认证原因失败」才补一次通知。
    */
-  private authenticationFailed(cause?: unknown): AuthenticationError {
+  private authenticationFailed(cause?: unknown, path?: string): AuthenticationError {
     if (cause instanceof AuthenticationError) return cause
     this.authenticationFailureHandler?.()
-    return new AuthenticationError('Session expired, please login again')
+    // 登录接口的 401 是凭据错误，不是会话过期（用户还没登录，无所谓会话失效）。
+    const message = path && this.isLoginRequest(path) ? LOGIN_FAILED_MESSAGE : SESSION_EXPIRED_MESSAGE
+    return new AuthenticationError(message)
+  }
+
+  /** 登录/认证类端点：这些接口的 401 表示凭据无效，而非已登录会话过期。 */
+  private isLoginRequest(path: string): boolean {
+    return (
+      path === '/api/authentication/login' ||
+      path === '/api/authentication' ||
+      path === '/api/authentication/captcha' ||
+      path.startsWith('/api/authentication/two')
+    )
   }
 
   private async request<T>(
@@ -259,7 +282,7 @@ export class ApiClient {
           }
           return this.request<T>(method, path, { ...options, retried: true })
         }
-        throw this.authenticationFailed()
+        throw this.authenticationFailed(undefined, path)
       }
       if (resp.status === 403) {
         throw new PermissionError(FORBIDDEN_MESSAGE)
