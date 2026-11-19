@@ -3524,3 +3524,15 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 其余证伪方向：store 序号竞态/写后同步/在途守卫/服务端事务并发/RunIdempotent/401 单飞/admin 批量守卫/日期边界/经济校验均到位；stats.go:1928 toInt64 截断属理论小瑕疵非可达 bug。
 
 - 四目标：①目标一 R283 PortalPageDesigner 详情回填竞态修复完成，持续找缺口②目标二 §99 已交付③目标三 R283 laiyipao 20+ 方向侦察全证伪、零改动负结果结案④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+## 143. 第134轮：BBSForum 版块详情回填竞态（R284，oaopt-r284）
+
+### 143.1 oa4rust/desktop openSectionInfo 序号守卫
+- 缺口：BBSForum.vue 同文件 openTopic(762-778) 已有 detailSeq 守卫防旧响应覆盖，但同族 openSectionInfo(512-549) 遗漏——三条 Promise.all GET 回填同一 sectionInfo 浮层无在途/序号保护。模板 :134 版块 ℹ 按钮无 disabled、无 loading 短路，可快速连点不同版块；:309 浮层渲染 name/id/subCount/canPublish/description，旧版块慢响应晚到覆盖新版块详情，用户可见串数据。
+- 修复：函数开头 const seq = ++detailSeq；Promise.all 后与 sectionInfo.value.loading=false 前各加 if(seq!==detailSeq)return（共 3 行，LF 无 BOM）；新增 BBSForum.sectionDetailRace.contract.test.ts（SPDX 双头，2 例：可达性 + seq 守卫结构）。
+- 复核：主线程独立 RED→GREEN（备份 D:/tmp/BBSForum.r284.fixed→checkout 还原源文件保留新测试→vitest RED 1 failed/1 passed：expected -1 to be greater than -1 @test:24，可达性 passed 非假绿→恢复 GREEN 2 passed）。
+- 门禁：OA 173 文件/1693 passed + typecheck6 + lint 483 文件 0error(30 info)。
+- 负结果：FileManager.openDetail/MindApp.openMind/PortalDesigner.openDesign 无 seq 但缺强可达性串数据论证，按「宁可负结果零改动」未纳入。
+### 143.2 laiyipao 负结果（R284，lybug-r284）
+- 侦察覆盖清单外新增方向全部证伪或已有覆盖，零改动（依硬纪律负结果结案），task-259 已 CAS complete。
+- 证伪方向：AbandonBattle 放弃退款幂等（条件更新 used_at=NULL + RowsAffected==0 拒绝二次放弃/结算，事务内退款）；AllocateMastery/ResetMastery 并发（首步 SELECT user_progress FOR UPDATE 串行化 + allocBusy/resetting 双忙标志 + 并发测试）；spendToken/grantToken 条件更新 balance>=1 + 流水留痕；masterySelected 在 AllocateMastery 持锁点之后调用无缺口；admin UsersView/RecomputesView 写操作均有模态确认 + modeSaving 忙标志；domain/game/*.ts 目录实际不存在（侦察角度证伪）；关卡掉落预览/离线收益领取有守卫测试 + offlineClaiming 忙标志。
+- 四目标：①目标一 R284 BBSForum 版块详情回填竞态修复完成，持续找缺口②目标二 §99 已交付③目标三 R284 laiyipao 新增方向全证伪、零改动负结果结案④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

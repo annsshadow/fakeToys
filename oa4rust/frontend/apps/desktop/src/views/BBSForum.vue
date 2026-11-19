@@ -510,6 +510,7 @@ const sectionInfo = ref({
   canPublish: '—',
 })
 async function openSectionInfo(sec: Section): Promise<void> {
+  const seq = ++detailSeq
   sectionInfo.value = {
     open: true,
     loading: true,
@@ -525,6 +526,7 @@ async function openSectionInfo(sec: Section): Promise<void> {
     settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
     settle(api.get(`/api/bbs/assemble/control/permission/section/${sec.id}`)),
   ])
+  if (seq !== detailSeq) return
   const m = (main as { data?: Record<string, unknown> } | null)?.data
   if (m && typeof m === 'object') {
     sectionInfo.value.name = String(m.name ?? sec.name)
@@ -542,6 +544,7 @@ async function openSectionInfo(sec: Section): Promise<void> {
       ? '允许'
       : '不允许'
     : '查询失败'
+  if (seq !== detailSeq) return
   sectionInfo.value.loading = false
 }
 
