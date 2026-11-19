@@ -1596,15 +1596,14 @@ async function loadTaskInfo(taskId: string): Promise<void> {
   taskExpireText.value = ''
   if (!taskId) return
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [info, expire] = await Promise.all([
-    // GET service/processing/task/{id} —— 任务详情（x_task）
-    settle(api.get(`/api/processplatform/service/processing/task/${taskId}`)),
-    // GET service/processing/task/expire/{id} —— 超时信息
-    settle(api.get(`/api/processplatform/service/processing/task/expire/${taskId}`)),
-  ])
+  // GET service/processing/task/{id} —— 任务详情（x_task，只读）
+  const info = await settle(api.get(`/api/processplatform/service/processing/task/${taskId}`))
   taskInfo.value = (info as { data?: Record<string, unknown> } | null)?.data ?? null
-  const ed = (expire as { data?: unknown } | null)?.data
-  taskExpireText.value = ed && typeof ed === 'object' ? JSON.stringify(ed).slice(0, 80) : ed != null ? String(ed) : ''
+  // 超时信息直接从已获取的只读详情 end_time 本地推导。
+  // 不再请求 task/expire/{id}：该 GET 绑定写端点 task_id_expire，会把 active 任务置 expired，
+  // 导致后续 complete 被拒（BUG-E，RED→GREEN）。
+  const endTime = taskInfo.value?.end_time
+  taskExpireText.value = endTime != null && String(endTime).trim() ? String(endTime) : ''
 }
 async function pressTask(): Promise<void> {
   const taskId = effectiveTaskId.value
