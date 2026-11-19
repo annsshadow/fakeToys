@@ -130,15 +130,42 @@ export function useToast() {
   return toast
 }
 
-export async function copyText(text: string): Promise<boolean> {
+/** 非安全上下文（HTTP 局域网 / 内嵌 WebView）下 Clipboard API 不存在，用临时 textarea 兜底复制。 */
+function legacyCopy(text: string): boolean {
+  if (typeof document === 'undefined' || typeof document.execCommand !== 'function') return false
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
   try {
-    await navigator.clipboard.writeText(text)
+    textarea.select()
+    textarea.setSelectionRange?.(0, text.length)
+    return document.execCommand('copy')
+  } catch {
+    return false
+  } finally {
+    textarea.remove()
+  }
+}
+
+export async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('已复制到剪贴板')
+      return true
+    } catch {
+      // 权限/CSP 拒绝时继续走 execCommand 兜底，而不是直接判失败。
+    }
+  }
+  if (legacyCopy(text)) {
     toast.success('已复制到剪贴板')
     return true
-  } catch {
-    toast.error('复制失败，请检查剪贴板权限')
-    return false
   }
+  toast.error('复制失败，请检查剪贴板权限')
+  return false
 }
 
 /**

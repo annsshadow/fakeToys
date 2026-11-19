@@ -3596,3 +3596,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### R287 收官
 - 四目标：①目标一 R287 数字字段校验缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R287 洗练共享写守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 148. 第139轮：R288 双前端剪贴板兜底与 laiyipao 选关双击守卫
+
+### 148.1 oa4rust/desktop copyText 非安全上下文兜底（R288，oaopt-r288）
+- 缺口：frontend/apps/desktop/src/utils/toast.ts copyText() 在 Clipboard API 不可用（HTTP 局域网 / 内嵌 WebView 非安全上下文）时只有 await navigator.clipboard.writeText，clipboard undefined 抛错被 catch 吞掉，统一提示「复制失败，请检查剪贴板权限」返回 false。可达链：HTTP 局域网打开桌面前端→配置/表单/流程设计器点「复制配置/JSON/字段文档」（均 await copyText）→复制完全不可用且误报权限问题。
+- 修复：优先 navigator.clipboard.writeText，API 不存在或调用被拒时降级临时 textarea + document.execCommand("copy")（legacyCopy 私有函数，finally 清理节点），两条路径都失败才报错。仅 toast.ts + 新增 copyText.fallback.test.ts（SPDX 双头 2 例）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/toast.ts.R288.fixed→checkout 还原基线 LEGACY_COUNT=0→vitest RED 1 failed expected false to be true @test:134，管道须 set -o pipefail 否则吞 exitCode→恢复修复版 GUARD=2→GREEN 2 passed）。
+- 门禁：OA pnpm test 175 文件/1697 passed、pnpm build exit0 built in 4.87s、pnpm typecheck 6 项目 0、pnpm lint 487 文件 0error(33info)。
+- 遗留项：裸 navigator.clipboard.writeText 调用点（QueryDesigner/QueryManagerDeep/QueryStatementDesigner/ProcessDesigner.vue:11667）缺降级，改动面大未纳入本轮。
+
+### 148.2 laiyipao/miniapp 选关页开始战斗导航在途锁（R288，lybug-r288）
+- 缺口：stage.vue startBattle() 通过 canEnter 守卫后直接 unlockSfx()+uni.navigateTo，无在途锁；快速双击（守卫通过后、页面栈切换完成前）触发两次 navigateTo→两个 battle.vue 实例各自 onLoad→api.startBattle→服务端战斗令牌/体力被扣两次（battleTokenLimit 限流挡不住两连击）。项目已有大量同类双击守卫惯例，唯独此页遗漏。
+- 修复：新增 battleNavigating=ref(false)，startBattle 入口 if(battleNavigating.value)return、canEnter 守卫后置 true、onShow 置 false（打完返回可再次进入）。stage.vue +9 行、stage.test.ts 新增 1 例（双击只导航一次），保持 BOM(efbbbf)+CRLF。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/stage.vue.r288.fixed→checkout 还原基线 GUARD=0→vitest RED expected "vi.fn()" to be called 1 times but got 2 times @stage.test.ts:289→恢复修复版 GUARD=4→GREEN 1 passed|18 skipped）。
+- 门禁：miniapp 154 文件（153 passed/1 skipped）/1523 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0。server go test 本轮未涉及且环境依赖阻塞，如实说明非跳过非通过。
+- 负结果方向：服务端并发/数值与作弊校验链全健全、admin handler BodyParser 检查到位、前端 401 单飞与序号守卫完备，均否决未改。
+
+### R288 收官
+- 四目标：①目标一 R288 剪贴板兜底缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R288 选关页双击导航真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

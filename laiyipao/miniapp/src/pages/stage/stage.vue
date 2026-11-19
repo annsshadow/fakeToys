@@ -265,6 +265,8 @@ const selectedId = ref(0)
 const stars = ref<Record<number, number>>({})
 /** 星级是否已经拉过一次（避免 onLoad + onShow 各拉一次）。 */
 const starsLoaded = ref(false)
+/** 开始战斗的导航在途锁：双击只进一个战斗页，避免叠加实例重复扣体力。 */
+const battleNavigating = ref(false)
 const diagnoseInfo = ref<any>(null)
 
 const chapters = computed(() => store.config?.chapters ?? [])
@@ -497,12 +499,17 @@ function enter(id: number) {
 }
 
 function startBattle() {
+  // 导航在途锁（synchronous）：双击 / 连点只进一个战斗页。
+  // navigateTo 是同步的，两个 battle.vue 实例会各自 onLoad→api.startBattle，
+  // 服务端扣两次体力；这里在第一击就锁住，第二击直接返回。
+  if (battleNavigating.value) return
   if (!canEnter.value || !selected.value) {
     if (store.wallet.energy < (selected.value?.energy_cost ?? 0)) {
       uni.showToast({ title: '体力不足', icon: 'none' })
     }
     return
   }
+  battleNavigating.value = true
   // 解锁音频（2026-10-23）。这里是一次真实的用户手势，且是进入战斗前的
   // **最后一个手势** —— 在这里解锁，进战斗后第一发子弹就有声音，
   // 不必等玩家去碰战斗页的屏幕。
@@ -529,6 +536,8 @@ async function refreshStars(): Promise<void> {
 
 /** 从战斗页返回时刷新星级。 */
 onShow(() => {
+  // 从战斗页返回：本次导航在途结束，允许再次进入。
+  battleNavigating.value = false
   // ⚠️ onLoad 也会拉一次 —— 两者都跑就是**两次请求**，
   // 而且 onShow 那次不 await，可能在令牌就绪前发出 → 401 被静默吞掉。
   // 这里用 `starsLoaded` 挡住重复拉取。

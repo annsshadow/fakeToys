@@ -277,6 +277,19 @@ describe('stage.vue 选关页', () => {
     expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/battle/battle?level=2' })
   })
 
+  it('startBattle：双击只导航一次', async () => {
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    store.setMaxStage(1)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '2' })
+    await flushPromises()
+    const btn = wrapper.find('.btn-primary')
+    await btn.trigger('click')
+    await btn.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledTimes(1)
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/battle/battle?level=2' })
+  })
+
   // 音效解锁（2026-10-23）：整条音效链的唯一闸门。
   //
   // 删掉 `startBattle` 里那行 `unlockSfx()`，`playSfx` 永远在第一行
