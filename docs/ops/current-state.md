@@ -3578,3 +3578,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### R286 收官全量门禁
 - OA 174 文件/1695 passed + typecheck 6 项目 0 + lint 485 文件 0error(33 info)；miniapp 154 文件（153 passed/1 skipped）/1520 passed(2 skipped) + type-check；admin 37 文件/498 passed + type-check；diff --check 0。
 - 四目标：①目标一 R286 生产 build 缺口已修（§145）、常规轮次负结果，持续找缺口②目标二 §99 已交付③目标三 R286 专精页共享写守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 147. 第138轮：R287 双前端与 laiyipao 双缺口修复
+
+### 147.1 oa4rust/mobile 数字字段合法性校验（R287，oaopt-r287）
+- 缺口：mobile/src/utils/form.ts validateSimpleForm 对 number 字段（含 currency，uiTypeOf 归一为 number）只判空不判数值合法性，填 abc/1.2.3/很多 时校验通过、脏值静默进 saveWorkData payload；对照桌面端 formFieldValidation.ts isNumeric（R168）口径不一致。
+- 修复：循环内对非空 number 字段加 Number.isFinite(Number(v)) 校验，错误文案「<label> 不是有效数字」，必填判空重包裹为 if(field.required){...} 使可选数字字段也进数值校验（仅 form.ts +6 行净）。新增 form.number.contract.test.ts（SPDX 双头 5 例：必填/可选非数字拦截、合法值含 0/负数/小数/空格/科学计数、可选留空、parseMobileForm 可达链）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/form.ts.R287.fixed2→checkout 还原基线→mobile 包内 vitest RED 3 failed/2 passed @test:26/32/59→恢复修复版 GREEN 5 passed）。
+- 门禁：OA 174 文件/1695 passed、mobile 55 文件/358 passed、typecheck 6 项目 0、biome 2 文件 0error。vite __dirname 警告为既存非 error。
+
+### 147.2 laiyipao/miniapp 洗练入口共享写守卫（R287，lybug-r287）
+- 缺口：bag.vue doWash 洗练入口漏接 R276/R277 的 presetWriteBusy 共享写守卫（六个单入口与 doApplyPreset 已双向互锁，唯独 doWash 遗漏）；doWash 同样写 user_gems.affixes 并用局部 ownedGems 旧快照 splice 回填。应用预设在途点洗练会用旧快照交叉覆盖宝石词条/佩戴态，反向则 doApplyPreset 末尾 loadGems 整表覆盖冲掉洗练结果。
+- 修复：doWash 入口加 || presetWriteBusy.value 守卫、进入置位、finally 复位，共享守卫定义处补 R287 注释（+7/-1，noBOM/LF 保持）。新增 bag_wash_crosswrite_inflight.test.ts（双头 jsdom 2 例双向交叉写）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/bag.vue.R287.fixed→checkout 还原基线→miniapp vitest RED 2 failed：washGem 被调 1 次期望 0、saveLoadout 被调 1 次期望 0→恢复修复版 GREEN 2 passed）。
+- 门禁：miniapp 154 文件（153 passed/1 skipped）/1522 passed(2 skipped) + type-check + test-tsconfig 双 0；admin 37 文件/498 passed + type-check 0。纯前端缺口未触及 server，go test 非必需。
+- 负结果方向：服务端 economy.go RunIdempotent、兑换码并发/过期、gems.go 三操作事务+FOR UPDATE 健全；client.ts 401 单飞复用幂等键仅可用性弱点；me.vue submitNickname 服务端幂等无经济损害；game.ts loadEquipment/loadMasteryNodes 仅展示层低价值。均否决未改。
+
+### R287 收官
+- 四目标：①目标一 R287 数字字段校验缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R287 洗练共享写守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

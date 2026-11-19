@@ -775,12 +775,15 @@ async function loadGems() {
  * 所以要么 toast 原因、要么明确成功。
  */
 async function doWash(g: OwnedGem) {
-  if (washingId.value !== 0) return
+  // R287：洗练写 user_gems.affixes 并用局部旧快照回填，接入共享写守卫，
+  // 与应用预设/穿戴/穿戴宝石等写同批宝石的入口双向互锁。
+  if (washingId.value !== 0 || presetWriteBusy.value) return
   if ((store.wallet.tokens?.gem_wash_token ?? 0) < 1) {
     uni.showToast({ title: '没有洗练券', icon: 'none' })
     return
   }
   washingId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.washGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -792,6 +795,7 @@ async function doWash(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     washingId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
@@ -1191,6 +1195,7 @@ const presetSaving = ref(false)
 // 同页的 toggleEquip/clearSlot/equip/unequip/doEquipGem/doUnequipGem 这些单入口
 // 也写同一批资源但各自有独立 busy flag —— 它们同样接入本守卫，
 // 避免应用预设在途时被局部旧快照交叉覆盖（双向互锁）。
+// R287：doWash 洗练同样写 user_gems.affixes 并用局部旧快照回填，补接入本守卫。
 const presetWriteBusy = ref(false)
 const SAVING_PRESET_TEXT = '保存中…'
 
