@@ -13,6 +13,7 @@ import { ensureAuthenticated } from '@/utils/auth-guard'
 import { createLatestGate } from '@/utils/latest'
 import { listState, loadList } from '@/utils/loadList'
 import { MEETING_PAGE_SIZE, meetingHasMore, mergeMeetingRows } from './meetingList'
+import { meetingStatusText } from './meetingStatus'
 
 type TabKey = 'wait' | 'confirm' | 'mine'
 
@@ -139,11 +140,7 @@ function fmtRange(m: MeetingRow): string {
   return e ? `${s} ~ ${e}` : s
 }
 function statusText(m: MeetingRow): string {
-  const s = String(m.status ?? '')
-  if (s === '1') return '进行中'
-  if (s === '2') return '已结束'
-  if (s === '3') return '已取消'
-  return '未开始'
+  return meetingStatusText(m)
 }
 const emptyText = computed(() =>
   tab.value === 'wait' ? '暂无待接受的会议邀请' : tab.value === 'confirm' ? '暂无待确认的会议' : '暂无会议',

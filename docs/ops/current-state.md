@@ -3633,3 +3633,22 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### R289 收官
 - 四目标：①目标一 R289 CSV 公式注入防护完成，持续找缺口②目标二 §99 已交付③目标三 R289 战报详情加载竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 150. 第141轮：R290 双端会议状态映射与护盾权威写竞态
+
+### 150.1 oa4rust/mobile 会议页状态恒显未开始（R290，oaopt-r290）
+- 缺口：mobile/src/pages/meeting/meeting.vue statusText(m) 只认历史数字 1/2/3，其余落 default「未开始」；后端三列表端点 meeting_list_invited_wait/meeting_list_wait_confirm/meeting_list_apply_page_size_size（backend meeting_assemble_control/src/lib.rs:1624/1738/1054）SELECT 均不返回 status 列，只给 id/title/content/startTime/endTime/creator/createTime。可达链：用户开会议页→三页签列表无 status→statusText 恒返未开始→点接受/确认出席/签到后 act() 仅 toast+load() 重载同样无 status 列表→状态永不刷新，进行中/已结束/已取消会议全被标未开始。权威值域英文串 wait/accepted/confirmed/processing/completed/denied/rejected，桌面 R266 已修、移动端缺失。
+- 修复：新建纯函数 oa4rust/mobile/src/pages/meeting/meetingStatus.ts（50 行：statusTone 兼容英文串+历史数字、toneFromWindow 按 startTime/endTime 时间窗推断兜底、权威 status 优先，导出 meetingStatusText(source,now)），meeting.vue 加 1 行 import + statusText 函数体改 return meetingStatusText(m)。新增 meetingStatus.test.ts（3 例）+ meetingStatus.contract.test.ts（1 例），均 SPDX 双头。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/r290-meeting.vue.fixed 与 r290-meetingStatus.ts.fixed→checkout 还原 meeting.vue + git clean -f 删 meetingStatus.ts，保留两测试→RED-1 vitest meetingStatus.test.ts -t "权威英文状态值域映射为进行中/已结束/未开始" EXIT=1 Cannot find module ./meetingStatus、RED-2 contract -t "卡片状态委托映射工具，不再在组件内裸比较数字状态" EXIT=1 缺 import 断言→恢复两文件 IMPORT_GUARD=2→GREEN 两测试文件 4 passed EXIT=0）。
+- 门禁：OA 根 pnpm test exit0、mobile vitest run exit0、pnpm typecheck 6 项目 0、biome check 4 改动文件 0error。
+- 负结果：纯英文串映射不推断时间窗被否（列表无 status）、桌面 meetingStatus.ts 直接复用被否（无时间窗推断解决不了无 status 根因）；search id 形状/contacts 并发守卫/login onShow 循环/mine 改密校验/download ObjectURL revoke/会议页签 listGate 竞态均否决未改。
+
+### 150.2 laiyipao/miniapp 护盾开关权威写与在途加载竞态（R290，lybug-r290）
+- 缺口：me.vue loadDefenses()（1219-1236）用 seq !== defensesReqSeq 丢弃在途旧响应，但 toggleShield() 成功写服务端权威防线后只更新 shielded 未递增 defensesReqSeq。可达链：onMounted/onShow 发 loadDefenses 挂起 seq=N→用户点护盾 toggleShield 成功写服务端并更新本地 shielded（seq 仍 N）→弱网旧 loadDefenses 后到 seq==N 守卫失效→用开盾前旧 shielded_until 覆盖刚生效护盾态，玩家开盾却显示未开。与 R282 persistLoadout 成功后 loadoutReqSeq++ 同构，护盾写点遗漏。
+- 修复：toggleShield() 中 api.saveDefense 成功后、myDefense.value=res.defense 前插 3 行注释 + defensesReqSeq++（仅成功路径递增，catch 不递增）。me.vue +4 行（纯 LF 无 BOM）。新增 me_shield_stale_load.test.ts（SPDX 双头 jsdom 1 例：fetchDefenses 首挂起→toggleShield 返回 FUTURE 防线→resolve 旧空 shielded_until 快照→断言仍显示已开盾）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/me_vue_fixed_r290.vue→checkout 还原 me.vue GUARD=0→vitest RED 期望"关闭 24h 护盾"实际"开启 24h 护盾" @test:136→恢复修复版 GUARD=1→GREEN 1 passed）。
+- 门禁：miniapp 156 文件（155 passed/1 skipped）/1525 passed(2 skipped) + type-check + type-check:test 双 0；admin 37 文件/498 passed + type-check 0。tests 首轮 type-check 曾因未用导入 triggerUniHook TS6133 失败，删除后重跑通过并重验 GREEN 与全量 vitest 无回归。server/admin 本轮未涉及。
+- 负结果：submitNickname 无 in-flight 守卫（影响小非权威态回滚）、server v<=0 已有覆盖、battles/rank 竞态已修、economy offlineReward 时钟偏斜已有测试、admin 视图路由无可达缺陷，均否决未改。
+
+### R290 收官
+- 四目标：①目标一 R290 会议页状态映射缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R290 护盾权威写竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

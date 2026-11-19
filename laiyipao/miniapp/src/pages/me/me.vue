@@ -1314,6 +1314,10 @@ async function toggleShield() {
       works: DEFENSE_WORK_CODES,
       shield_hours: shielded.value ? 0 : 24,
     })
+    // R290：护盾开关是服务端权威写，成功后必须递增防线加载序号，
+    // 让此前在途的 loadDefenses 失效。否则弱网下旧响应后到，
+    // 会用开盾前的旧 shielded_until 覆盖刚生效的护盾态（与 R282 persistLoadout 同构）。
+    defensesReqSeq++
     myDefense.value = res.defense
     shielded.value = isShieldActive(res.defense?.shielded_until, store.estimateServerNowMs())
   } catch (e) {
