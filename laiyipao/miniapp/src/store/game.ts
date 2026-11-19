@@ -264,6 +264,12 @@ export const useGameStore = defineStore('game', () => {
   let profileReqSeq = 0
   /** 钱包刷新序号：refreshProfile 与 refreshWallet 共用 wallet 字段，二者按序写钱包。 */
   let walletReqSeq = 0
+  /**
+   * 出战槽位加载序号：me（onMounted+onShow）/bag/reactions 会并发调用 loadLoadout，
+   * 从背包改过槽位再回来时槽位已变，慢的旧响应后到会用旧槽位覆盖新槽位 ——
+   * 而 loadout 参与回放哈希、且是防线快照的权威来源，必须丢弃陈旧响应。
+   */
+  let loadoutReqSeq = 0
 
   /**
    * 本环境是否要求账号登录。
@@ -578,8 +584,11 @@ export const useGameStore = defineStore('game', () => {
    * 真正决定战斗用的是这里的 loadout。
    */
   async function loadLoadout(): Promise<void> {
+    const seq = ++loadoutReqSeq
     try {
       const res = await api.fetchLoadout()
+      // 序号守卫：丢弃陈旧响应，避免并发刷新时旧槽位覆盖新槽位。
+      if (seq !== loadoutReqSeq) return
       const ids = (res.skill_ids ?? []).slice(0, 4)
       while (ids.length < 4) ids.push(0)
       loadout.value = ids

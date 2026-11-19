@@ -342,6 +342,8 @@ async function auditAppealV2(a: A, auditStatus: string) {
   try {
     // POST attendanceappealInfo/audit → UPDATE 审核状态 {id, auditStatus}
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
+    // 服务器权威态已变更：刷新请假申请列表，避免继续显示旧状态（待审批徽标/按钮）误导重复操作。
+    await loadAppeals()
     toast.success('已审核申诉')
   } catch (e: any) {
     toast.error(`审核申诉失败: ${e?.message ?? ''}`)
@@ -351,6 +353,8 @@ async function checkAppeal(a: A) {
   try {
     // POST attendanceappealInfo/check → UPDATE {id, checked}
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已标记检查')
   } catch (e: any) {
     toast.error(`检查申诉失败: ${e?.message ?? ''}`)
@@ -362,6 +366,8 @@ async function updateAppealStatus(a: A, status: string) {
     await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
       status,
     })
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已更新申诉状态')
   } catch (e: any) {
     toast.error(`更新申诉状态失败: ${e?.message ?? ''}`)
@@ -372,6 +378,8 @@ async function archiveAppeal(a: A) {
   try {
     // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
     await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {})
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已归档申诉')
   } catch (e: any) {
     toast.error(`归档申诉失败: ${e?.message ?? ''}`)

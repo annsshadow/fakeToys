@@ -3461,3 +3461,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 138.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 479 文件 0 error(30 info 既有)；miniapp 150 文件/1515 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/BOM）保持、真值不入库。
 - 四目标：①目标一 R279 收藏列表并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R279 档案刷新并发陈旧覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 139. 第130轮：考勤申诉写后权威态刷新 + 出战槽位加载序号守卫
+
+### 139.1 oa4rust/desktop 考勤申诉写操作不刷新列表（R280，oaopt-r280）
+- 缺口：AttendanceApp.vue「请假申请」列表（queryKey [att,apps]），audit() 路径用 useMutation onSuccess invalidateQueries 在写成功后刷新；但 auditAppealV2(审核)/checkAppeal(检查)/updateAppealStatus(改状态)/archiveAppeal(归档) 四个同样改服务端状态的写操作在 await api.post 成功后只 toast 成功、从不刷新列表。服务端权威态已变而 UI 仍显示旧徽标/按钮（appealStatus/appealClass 依赖 a.status）。四函数均由模板可见按钮直接触发（a.status==pending 分支及常驻操作区），用户点成功后停留过期状态，可诱导对同一记录重复操作/误判审批结果。
+- 修复：四处写操作成功后各加 await loadAppeals() 重新拉 GET /api/attendance/appeal/list 写回 appeals.value（复用文件内既有函数，已被 submitLeave 路径使用），失败仍走原 catch 不提前刷新（+8 行）。
+- 测试：新增 AttendanceApp.appealRefresh.contract.test.ts（双头）4 例——逐个截取四函数体断言 api.post 之后、catch 之前调用 loadAppeals()。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/AttendanceApp.appealRefresh.contract.test.ts --root frontend/apps/desktop）：RED exit1 4 failed（成功后必须调用 loadAppeals() expected -1）→恢复 GREEN 4 passed。
+- 负结果（勿重复）：桌面绝大多数 CRUD 已有 saving/deletingId/submitting 守卫与 ListLoadError 空态错误态分离（CategoryApp/CommonApp/CmsIndexApp 等）；hotpicWrite/hotpicMore 与 AttendanceApp 几十个管理按钮属一次性 endpoint 探针无表单在途语义，加守卫价值低。
+
+### 139.2 laiyipao/miniapp 出战槽位加载陈旧响应覆盖（R280，lybug-r280）
+- 线索1（真 bug 已修）：store/game.ts loadLoadout 无序号守卫。调用点实证——me.vue:1524 onMounted、me.vue:1537 onShow 的 Promise.all（注释明确「从背包改过槽位再回来时重新拉权威槽位」）、bag.vue:1052/1303、reactions.vue:273（onLoad+onMounted 双调）。危害：弱网下先发旧响应后到用旧槽位覆盖新槽位，而 loadout 参与回放哈希、是防线快照权威来源，覆盖后把玩家未装备技能写进防线。与同文件 refreshProfile/refreshWallet 序号守卫同构。
+- 修复：walletReqSeq 后新增带注释的 loadoutReqSeq=0；loadLoadout 内 const seq=++loadoutReqSeq，await api.fetchLoadout() 后 if(seq!==loadoutReqSeq) return 再归一化赋值（+9 行）。新增 game.loadout_seq.test.ts（双头 LF）1 例——构造旧挂起/新先返/旧后到，断言 loadout 与 equippedSkillIds 保持新值。主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/store/game.loadout_seq.test.ts）：RED exit1 expected [1,2,0,0] to deeply equal [9,8,7,6]（:70）→恢复 GREEN 1 passed。
+- 线索2（证伪零改动）：shop.vue load()（Promise.all fetchShop+fetchWallet）无序号守卫——仅 onMounted/doBuy 成功/doBuy 失败三处调用，doBuy 有 buyingId 在途守卫串行、商品列表未加载时无法购买、shop 页无 onShow、Promise.all 两字段写不同且统一 await 后赋值、无旧覆盖新窗口，现有 shop_parallel_load.test.ts 已锁结构。不可达无需修改。
+- 后续线索：store 内 wallet/profile/loadout 三跨页并发字段守卫已齐；fetchDefenses 已有 R275/R278 守卫，若未来新增调用点可复查；shop.load 除非新增 onShow 或购买入口改为无需列表加载否则不再作候选。
+
+### 139.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 170 文件/1686 passed + pnpm typecheck 6 项目 0 + biome lint 480 文件 0 error(30 info 既有)；miniapp 151 文件/1516 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
+- 四目标：①目标一 R280 考勤申诉写后权威态刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R280 出战槽位加载陈旧覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
