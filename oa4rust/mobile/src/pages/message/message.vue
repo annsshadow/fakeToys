@@ -32,10 +32,15 @@ function conversationTitle(row: Record<string, unknown>): string {
   return '会话'
 }
 
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   loadError.value = ''
   const result = await loadConversations(() => messageApi.conversationList(), rows.value)
+  // onShow 与两处重试按钮共用本函数；序号只让最新一次回写，避免旧响应后到覆盖新数据。
+  if (seq !== loadSeq) return
   rows.value = result.rows
   if (!result.ok) loadError.value = result.error
   // 列表能拉到就说明网络可用，撤掉断网提示。

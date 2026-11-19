@@ -3427,3 +3427,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 136.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 477 文件 0 error(30 info 既有)；miniapp 149 文件/1512 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
 - 四目标：①目标一 R277 考勤并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R277 穿戴写与预设交叉覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 137. 第128轮：会话列表并发加载序号守卫 + 防线加载陈旧响应守卫
+
+### 137.1 oa4rust/mobile 会话列表旧响应覆盖（R278，oaopt-r278）
+- 缺口：message.vue load() 无「只认最新一次」序号守卫。三入口：onShow 每次显示自动加载 + 模板两处无 disabled 重试按钮（首屏错误态与列表内 error-banner）；loadConversations 封装 uni.request 无 RequestTask 无法 abort。旧请求晚到把 rows/loadError/networkOffline/loading/loaded 全覆盖回去，用户正在看的新会话列表被旧响应替换。与已修 bbs(R265)/calendar(R252)/browse(R243) 的 createLatestGate 及 attendance(R277) 序号守卫同构，本页遗漏。不能用 busy/disabled 守卫（onShow 主动刷新是用户期望，busy 会丢弃合法刷新），故用序号。
+- 修复：新增 let loadSeq=0；load() 开头 const seq=++loadSeq；await loadConversations 之后、所有权威态写回之前 if(seq!==loadSeq) return（+5 行）。新增 message.listRace.contract.test.ts（双头）3 例源码契约（入口可重复触发/序号登记在请求前/过期响应不写任何权威态）。
+- 主线程独立 RED→GREEN（oa4rust/mobile 包内 pnpm exec vitest run src/pages/message/message.listRace.contract.test.ts）：RED exit1 2 failed（source 未含 let loadSeq = 0、guard -1）→恢复 GREEN 3 passed。
+- 负结果（勿重复）：recycle.vue load() 无序号但入口仅 onShow+两重试可后续修；contacts.vue search/loadOrg 无序号但搜索用户显式输入并发窗口窄；meeting.vue 已有 createLatestGate。
+
+### 137.2 laiyipao/miniapp 防线加载陈旧响应清空新数据（R278，lybug-r278）
+- 缺口：me.vue loadDefenses() 无序号守卫，是同实例多入口——onMounted、onShow 的 Promise.all、saveDefense/onDeleteMyDefense/challenge 写后重拉都会触发，且 me 页 onShow 无 mountedDataReady 门控。弱网下先发旧请求失败走 catch 无条件 myDefense.value=null; candidates.value=[]，若晚于后发新请求返回就把已加载好的防线清空——用户明明有防线却看到空列表。与同文件 battleDetailReqSeq 及其他页 loadSeq 同构。
+- 修复：loadDefenses 前新增 let defensesReqSeq=0，函数内 const seq=++defensesReqSeq，成功路径 await fetchDefenses 后与 catch 各加 if(seq!==defensesReqSeq) return（陈旧失败的 catch 也不得清空新数据）。+8 行纯外科手术，CRLF=1782/LF-only=0/BOM 无，既有护盾/服务端时钟注释保留。
+- 测试：新增 src/test/me_defenses_load_seq.test.ts（双头 SPDX+Copyright，jsdom 行为级）1 例——mock api.client 与 @/game/defense，构造「旧请求挂起→新请求返回有 2 候选→旧请求失败迟到」，断言候选卡不被清空、防线名仍显示。主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/test/me_defenses_load_seq.test.ts，仅还原 me.vue 保留新测试）：RED exit1 expected [] to have a length of 2 but got +0（:139）→恢复 GREEN 1 passed。
+- 证伪方向：admin ContentView/EconomyView/UsersView 批量与写操作已被 batchLoading/ElMessageBox/既有 loadSeq 覆盖；rank/signin/battles/stage 序号守卫齐备；announcements.vue 只 onMounted 单次加载。后续线索（未改，R279 候选）：store/game.ts refreshProfile(:478 Promise.all)/refreshWallet/loadLoadout 无 in-flight 守卫且被多页并发调用、shop.vue load()(Promise.all fetchShop+fetchWallet) 无序号守卫。
+
+### 137.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 478 文件 0 error(30 info 既有)；miniapp 150 文件/1513 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R278 会话列表并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R278 防线加载陈旧响应清空真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

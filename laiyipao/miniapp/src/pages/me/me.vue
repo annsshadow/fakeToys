@@ -1211,9 +1211,16 @@ function snapshotOk(c: DefenseView): boolean {
   return validateSnapshot(c, store.estimateServerNowMs()).ok
 }
 
+// R278：防线加载是同实例多入口（onMounted + onShow + 写后重拉），必须按序号丢弃陈旧响应。
+// 弱网下先发的旧请求失败走 catch 会无条件清空 myDefense/candidates；若它晚于后发的新请求返回，
+// 就会把已经加载好的防线清空（用户明明有防线却看到空列表）。与 battleDetailReqSeq 同构。
+let defensesReqSeq = 0
+
 async function loadDefenses() {
+  const seq = ++defensesReqSeq
   try {
     const res = await api.fetchDefenses()
+    if (seq !== defensesReqSeq) return // 已有更新的加载请求，丢弃陈旧响应
     myDefense.value = res.mine ?? null
     candidates.value = res.candidates ?? []
     attackLeft.value = Math.max(0, (res.attempt_limit ?? 3) - (res.mine?.my_attempts_today ?? 0))
@@ -1222,6 +1229,7 @@ async function loadDefenses() {
     // 第 140 轮：「现在」用服务端时钟估算而不是裸 Date.now()。
     shielded.value = isShieldActive(myDefense.value?.shielded_until, store.estimateServerNowMs())
   } catch {
+    if (seq !== defensesReqSeq) return // 陈旧请求的失败也不得清空新数据
     myDefense.value = null
     candidates.value = []
   }
