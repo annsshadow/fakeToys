@@ -145,6 +145,8 @@ const curFamily = ref('flame')
 /** mastery_reset 道具余额（服务端 /wallet 的 tokens 下发） */
 const resetTokens = computed(() => store.wallet.tokens?.['mastery_reset'] ?? 0)
 const resetting = ref(false)
+/** 点亮在途守卫：同一节点连点两次时第二次请求必被服务端拒绝（该节点已点亮），提示很吵 */
+const allocBusy = ref(false)
 
 const families = computed(() => store.config?.mastery_families ?? [])
 
@@ -272,6 +274,7 @@ const investedValue = computed(() => {
 })
 
 async function toggle(n: MasteryNode) {
+  if (allocBusy.value) return
   if (selected.value.includes(n.id)) {
     uni.showToast({ title: '已点亮的节点需通过重置取消', icon: 'none' })
     return
@@ -284,6 +287,7 @@ async function toggle(n: MasteryNode) {
     uni.showToast({ title: '专精点不足（升级可获得更多）', icon: 'none' })
     return
   }
+  allocBusy.value = true
   try {
     const res = await api.allocateMastery(n.id)
     points.value = res.points
@@ -292,6 +296,8 @@ async function toggle(n: MasteryNode) {
   } catch (e) {
     const msg = (e as any)?.error?.message ?? (e as Error).message
     uni.showToast({ title: msg, icon: 'none', duration: 2500 })
+  } finally {
+    allocBusy.value = false
   }
 }
 

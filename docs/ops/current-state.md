@@ -3357,3 +3357,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 132.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 166 文件/1669 passed + pnpm typecheck 6 项目 0 + biome lint 473 文件 0 error(30 info 既有)；miniapp 146 文件/1501 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。三处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R273 BBS 详情浮层竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R273 挑战防线重复上报真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 133. 第124轮：脚本工作台详情回填竞态 + 专精点亮在途守卫
+
+### 133.1 oa4rust/desktop ScriptWorkbench 脚本详情回填竞态（R274，oaopt-r274）
+- 缺口：ScriptWorkbench.vue open(item) 同步置 activeId/creating/versions，await props.adapter.load(item.id) 后无条件回填 form/versions，两段 await 间无校验、无代际守卫。模板列表项 @click=open 无 disabled，加载中可连点不同脚本；旧请求慢返回把先点脚本的 form/versions 覆盖到当前选中脚本，更严重 save() 用 activeId+form 组合提交会把旧表单写入新 activeId=错脚本，属写正确性缺口。该组件被 CmsScriptDesignerApp/PortalScriptDesignerApp/ProcessScriptDesignerApp 三处复用。
+- 修复：新增 let detailSeq=0；open() 开头 const seq=++detailSeq，await load 后、await versions 后、catch 各加 if(seq!==detailSeq) return；createNew() 与 remove() 成功分支各加 detailSeq++ 使在途失效（沿用 BBSForum/QueryViewDesigner 的 detailSeq 范式，未重构、LF）。
+- 测试：新增 ScriptWorkbench.detailRace.contract.test.ts（双头）4 例源码契约（可达性/代际守卫/两段 await 与 catch/新建删除失效）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/components/ScriptWorkbench.detailRace.contract.test.ts --root frontend/apps/desktop）：RED exit1 3 failed（缺 let detailSeq=0、守卫数不足 3、createNew 缺 detailSeq++）→恢复 GREEN 4 passed。
+- 负结果（勿重复）：ProgramCenterApp.openDictData/openScriptEditor 属弹窗独立态优先级低；QueryDesigner.openEdit 回读失败保留列表态影响轻；MindApp.openMind 可达性弱；ProcessWork.openStart 已有 R261 守卫；mobile 95 处 await 多为列表 load 已有覆盖。
+
+### 133.2 laiyipao/miniapp 专精点亮双击重复上报（R274，lybug-r274）
+- 缺口：mastery.vue toggle()（:274-296）无 in-flight 守卫，本地仅挡「已点亮/被锁/点数不足」，第 288 行 await api.allocateMastery(n.id) 期间 selected/points 未更新，快速双击同一节点发两次请求；服务端 progression.go:95-97 对已点亮节点直接 ErrForbidden「该节点已点亮（取消请走重置）」，第二笔必失败弹错误 toast。同文件 resetMastery() 已有 resetting 守卫并注释「第二次必失败，失败提示很吵」，本处不对称属明确遗漏。
+- 修复：新增 const allocBusy=ref(false)（含注释），toggle() 开头 if(allocBusy.value) return，try 前置 allocBusy.value=true，finally 复位（与 resetMastery 的 resetting 模式一致，CRLF 545/0 裸 LF 无 BOM 保持）。mastery.test.ts 在 toggle describe 内加 1 例回归（deferred promise 首笔挂起时双击断言只调 1 次）。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/mastery/mastery.test.ts，仅还原 mastery.vue 保留新测试）：RED exit1 19 测试 1 失败 expected "vi.fn()" to be called 1 times, but got 2 times（:212）→恢复 GREEN 19 passed。
+- 证伪方向：ContentView submitAnnouncement/toggle 发布、EconomyView moveShopItem 交换 sort_order 服务端幂等、UsersView/LevelsView/DefensesView ban/grant/reset/regen/delete 有 confirm/prompt 或 loadSeq、login submit/battle startBattle 均有守卫。后续线索（未改，可达性待论证）：me.vue saveDefense(1269)/toggleShield(1289) 设置类写、bag/equipment/skills 装配类写；R272 redemption 服务端批量幂等缺仍需服务端论证。
+
+### 133.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 167 文件/1673 passed + pnpm typecheck 6 项目 0 + biome lint 474 文件 0 error(30 info 既有)；miniapp 146 文件/1502 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R274 脚本工作台详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R274 专精点亮双击重复上报真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

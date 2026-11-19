@@ -98,6 +98,8 @@ const activeId = ref<string | null>(null)
 const creating = ref(false)
 const versions = ref<ScriptVersion[]>([])
 const form = ref({ name: '', category: '', code: '' })
+// 详情回填代际：连点列表/新建/删除时让在途 load 失效，旧响应不得覆盖当前编辑态
+let detailSeq = 0
 
 const filtered = computed(() =>
   search.value
@@ -121,19 +123,27 @@ function errorMessage(error: unknown): string {
 }
 
 async function open(item: ScriptListItem): Promise<void> {
+  const seq = ++detailSeq
   activeId.value = item.id
   creating.value = false
   versions.value = []
   try {
     const detail = await props.adapter.load(item.id)
+    if (seq !== detailSeq) return
     form.value = { name: detail.name, category: detail.category ?? '', code: detail.code }
-    if (props.adapter.versions) versions.value = await props.adapter.versions(item.id)
+    if (props.adapter.versions) {
+      const loaded = await props.adapter.versions(item.id)
+      if (seq !== detailSeq) return
+      versions.value = loaded
+    }
   } catch (error: unknown) {
+    if (seq !== detailSeq) return
     toast.error(`加载脚本失败: ${errorMessage(error)}`)
   }
 }
 
 function createNew(): void {
+  detailSeq++
   activeId.value = null
   creating.value = true
   versions.value = []
@@ -164,6 +174,7 @@ async function remove(): Promise<void> {
   deleting.value = true
   try {
     await props.adapter.remove(activeId.value)
+    detailSeq++
     activeId.value = null
     creating.value = false
     form.value = { name: '', category: '', code: '' }
