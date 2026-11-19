@@ -160,6 +160,7 @@ const items = liveQueryItems<Item>(() => data.value),
   form = ref<PageForm>({}),
   editingId = ref<string | null>(null)
 const pageMeta = ref('')
+let detailSeq = 0
 const qc = useQueryClient()
 
 const { data, isError, error } = useQuery({
@@ -224,12 +225,14 @@ function editItem(item: Item) {
 }
 // 消费 page/{id} 详情 + pageversion 版本族 3 条真实 distinct 路由（x_portal_page / x_portal_page_version）
 async function loadPageMeta(id: string) {
+  const seq = ++detailSeq
   pageMeta.value = ''
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [detail, versions] = await Promise.all([
     settle(api.get(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)),
     settle(api.get(`/api/portal/assemble/designer/pageversion/list/page/${encodeURIComponent(id)}`)),
   ])
+  if (seq !== detailSeq) return
   const vrows = (Array.isArray((versions as any)?.data) ? (versions as any).data : []) as Array<Record<string, unknown>>
   let latest = ''
   const vid = vrows[0] ? String(vrows[0].id ?? '') : ''
@@ -237,6 +240,7 @@ async function loadPageMeta(id: string) {
     const vd: any = await api
       .get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`)
       .catch(() => null)
+    if (seq !== detailSeq) return
     latest = vd?.data?.version ? ` · 最新版本 v${vd.data.version}` : ''
   }
   const cat = (detail as any)?.data?.category ?? '—'

@@ -3508,3 +3508,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 负结果：服务端复活币退款/SettleBattle 双守卫/时区口径/离线收益串行/兑换码防超发、列表分页导出口径、LIMIT clamp 均到位；后续线索 refreshProfile/refreshWallet 成功写后是否对称 bump 序号待审。
 
 - 四目标：①目标一 R282 ApiClient 非法 JSON 归一化完成，持续找缺口②目标二 §99 已交付③目标三 R282 槽位写读竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime complete 400 穷举后定性环境负结果（唯一 active→expired 写点需认证端点、前端无调用、后台任务不写）。
+## 142. 第133轮：PortalPageDesigner 详情回填竞态（R283，oaopt-r283）
+
+### 142.1 oa4rust/desktop loadPageMeta 序号守卫
+- 缺口：PortalPageDesignerApp.vue 编辑按钮无 disabled，连续点 editItem() 并发发 3 条 API（page 详情/pageversion list/最新版本详情），loadPageMeta 全程无序号守卫，旧 id 慢响应在 pageMeta.value=说明文字处覆盖新 id 内容（编辑浮层直接渲染），属用户可见错误辅助信息；与已修 QueryTable/QueryView/Meeting detailSeq 守卫同构，未被已覆盖清单收录。
+- 修复：新增 let detailSeq=0，loadPageMeta 进入 const seq=++detailSeq，Promise.all 后与第二次 await 后各加 if(seq!==detailSeq)return（+4 行，UTF-8/LF/零 BOM）；新增 PortalPageDesignerApp.detailRace.contract.test.ts（SPDX 双头，2 例）。
+- 复核：主线程独立 RED→GREEN（备份→checkout 还原源文件保留新测试→vitest RED expected source to contain let detailSeq = 0 @test:24，可达性用例 passed 非假绿→恢复 GREEN 2 passed）。
+- 门禁：OA 172 文件/1691 passed + typecheck6 + lint 482 文件 0error(30 info) + mobile 53 文件/349 passed。
+- 负结果：ApiClient 全通道归一化(R282)、QueryView/QueryTable/ScriptWorkbench/Meeting 详情守卫、FormDesigner/ProcessDesigner/QueryDesigner JSON.parse 校验上下文均已到位，未重复改动。
+
+### 142.2 laiyipao 负结果（R283，lybug-r283）
+- 侦察 20+ 方向全部证伪或已有充分覆盖，零改动（依硬纪律「宁可负结果零改动，也不滥竽充数」）。
+- R282 线索证伪：game.ts:495-502 refreshProfile 同时 ++profileReqSeq/++walletReqSeq 且写前校验序号、:563-569 refreshWallet 对称 bump，game.test.ts:529-576 与 game.loadout_seq.test.ts:51-93 已覆盖。
+- 新线索「gem_instance 多份少发」证伪：economy.go:1117 gem_instance 分支忽略数量 v，但 AdminUpdateShopItem(adminapi.go:1124-1136) 用 validWalletCurrency 白名单校验 payload，不含 gem_instance，后台 API 无法写入 {"gem_instance":3}；种子固定 {"gem_instance":1}(seed.go:421)，admin UI 无 payload 编辑入口(EconomyView.vue:565-569)，生产路径不可达。
+- 其余证伪方向：store 序号竞态/写后同步/在途守卫/服务端事务并发/RunIdempotent/401 单飞/admin 批量守卫/日期边界/经济校验均到位；stats.go:1928 toInt64 截断属理论小瑕疵非可达 bug。
+
+- 四目标：①目标一 R283 PortalPageDesigner 详情回填竞态修复完成，持续找缺口②目标二 §99 已交付③目标三 R283 laiyipao 20+ 方向侦察全证伪、零改动负结果结案④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
