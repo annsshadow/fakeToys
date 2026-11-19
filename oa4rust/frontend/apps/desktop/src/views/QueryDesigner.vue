@@ -123,7 +123,7 @@
         </div>
         <div class="mf">
           <button class="bc" @click="showModal=false">取消</button>
-          <button class="bs" :disabled="!mform.name" @click="saveQuery">{{ editingQuery ? '更新' : '创建' }}</button>
+          <button class="bs" :disabled="!mform.name || querySaving" @click="saveQuery">{{ editingQuery ? '更新' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -306,6 +306,7 @@ const rLoading = ref(false)
 const showModal = ref(false)
 const editingQuery = ref<QueryDef | null>(null)
 const mform = ref({ name: '', category: '', sql: '' })
+const querySaving = ref(false)
 
 const resultHeaders = computed(() => (resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []))
 
@@ -585,10 +586,12 @@ async function openEdit() {
 }
 
 async function saveQuery() {
+  if (querySaving.value) return
   if (!mform.value.name.trim()) {
     toast.info('请输入查询名称')
     return
   }
+  querySaving.value = true
   try {
     const data = {
       name: mform.value.name,
@@ -604,6 +607,8 @@ async function saveQuery() {
     loadQueries()
   } catch (e: any) {
     toast.error(`保存失败: : ${e?.message ?? ''}`)
+  } finally {
+    querySaving.value = false
   }
 }
 

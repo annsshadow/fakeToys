@@ -1170,6 +1170,10 @@ function goShop() {
 const presetBusyId = ref(0)
 /** 保存预设在途标志：与 apply/delete/setCurrent 一样防连点（同名连发会造出多套预设）。 */
 const presetSaving = ref(false)
+// R276：save/apply/delete/setCurrent 四个入口都写同一份 /me/presets，且各自成功后
+// loadPresets() 整表覆盖；交叉点击会让先完成的列表被后到的陈旧快照覆盖。
+// 共享在途守卫：任一入口在途时其余入口直接返回。
+const presetWriteBusy = ref(false)
 const SAVING_PRESET_TEXT = '保存中…'
 
 async function loadPresets() {
@@ -1182,13 +1186,14 @@ async function loadPresets() {
 }
 
 async function doSavePreset() {
-  if (presetSaving.value) return // 防连点：弱网下重复点会建出多套同名预设
+  if (presetSaving.value || presetWriteBusy.value) return // 防连点：弱网下重复点会建出多套同名预设
   const name = presetName.value.trim()
   if (!name) {
     uni.showToast({ title: '请输入预设名', icon: 'none' })
     return
   }
   presetSaving.value = true
+  presetWriteBusy.value = true
   try {
     await api.saveCurrentPreset(name)
     presetName.value = ''
@@ -1200,32 +1205,42 @@ async function doSavePreset() {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     presetSaving.value = false
+    presetWriteBusy.value = false
   }
 }
 
 async function doDeletePreset(p: api.PresetView) {
+  if (presetWriteBusy.value) return
+  presetWriteBusy.value = true
   try {
     await api.deletePreset(p.id)
     await loadPresets()
     uni.showToast({ title: '已删除', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetWriteBusy.value = false
   }
 }
 
 async function doSetCurrent(p: api.PresetView) {
+  if (presetWriteBusy.value) return
+  presetWriteBusy.value = true
   try {
     await api.setCurrentPreset(p.id)
     await loadPresets()
     uni.showToast({ title: '已设为当前', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetWriteBusy.value = false
   }
 }
 
 /** 应用预设：依次写技能槽 → 装备 → 宝石（先卸全部再按预设佩戴）。 */
 async function doApplyPreset(p: api.PresetView) {
-  if (presetBusyId.value !== 0) return
+  if (presetBusyId.value !== 0 || presetWriteBusy.value) return
+  presetWriteBusy.value = true
   presetBusyId.value = p.id
   try {
     // 1. 出战技能（槽位参与回放哈希，必须走服务端）
@@ -1253,6 +1268,7 @@ async function doApplyPreset(p: api.PresetView) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     presetBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 

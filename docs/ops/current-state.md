@@ -3391,3 +3391,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 134.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 168 文件/1677 passed + pnpm typecheck 6 项目 0 + biome lint 475 文件 0 error(30 info 既有)；miniapp 147 文件/1504 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R275 表单保存弹窗在途守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R275 防线保存/护盾交叉提交真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 135. 第126轮：查询设计器保存连点守卫 + 阵型预设四入口交叉写守卫
+
+### 135.1 oa4rust/desktop QueryDesigner 创建查询重复建单（R276，oaopt-r276）
+- 缺口：QueryDesigner.vue saveQuery() 新建查询无在途守卫，模板创建/更新按钮 :126 仅 :disabled="!mform.name"（只校验名称非空），saveQuery 有 api.put/api.post 两处 await，成功后才 showModal=false，整个网络往返期间按钮可点、弹窗可重复回车。后端 crates/query_assemble_designer/src/lib.rs:510 create_designer() 每次 Uuid::new_v4 生成新 id 直接 INSERT INTO x_query_design，无按名去重/唯一约束/幂等键，双击必然建两条重复查询定义。原函数无 querySaving 标志也无 finally 复位，与 QueryManager.vue:201 createQ() 的守卫范式不一致。
+- 修复：新增 const querySaving=ref(false)，saveQuery 开头 if(querySaving.value) return + 请求前置位、catch 后 finally 复位；按钮 :disabled="!mform.name || querySaving"（+6/-1 LF）。
+- 测试：新增 query-designer-save-guard.test.ts（双头）5 例源码契约（按花括号配对切函数体，断言守卫标志/入口守卫/置位/finally 复位/按钮禁用）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/query-designer-save-guard.test.ts --root frontend/apps/desktop）：RED exit1 5 failed（缺 querySaving/入口守卫/置位/finally/按钮 disabled）→恢复 GREEN 5 passed。
+- 负结果（勿重复）：ProcessWork.submitStart/submit、Personal.savePassword 模板已有 disabled 且可达性弱；AppInfoApp 写操作被 prompt/confirmMsg 模态串行化；ProgramCenterApp.addCollect/generateScript 无调用点属死代码；mobile 端写守卫与详情回填令牌普查无漏网；API success:false 信封缺口不成立（后端 HTTP 状态表达错误，desktop/mobile 口径一致）。
+
+### 135.2 laiyipao/miniapp 阵型预设四入口交叉写（R276，lybug-r276）
+- 明确线索证伪（勿重复）：me.vue 无翻页逻辑（loadChallengeHistory 一次性拉全）、兑换码提交入口在 signin 页已有守卫、me.vue 现有守卫稠密（savingDefense/deletingDefense/simulating/passwordSubmitting/upgradeSubmitting/loggingOut/battleDetailReqSeq）——「R275 遗留第三处守卫遗漏」全部证伪。
+- 真缺口：bag.vue 阵型预设区四入口共享 /me/presets 且各自成功后 loadPresets() 整表覆盖，但只有 doSavePreset(presetSaving)/doApplyPreset(presetBusyId) 防自身连点，doDeletePreset/doSetCurrent 完全无守卫，四者无共享守卫。弱网下交叉点击（应用预设在途点删除/设为当前）后完成的 loadPresets 用陈旧快照覆盖先完成的列表→「刚删的预设又回来/应用没生效」；doApplyPreset 还写 loadout/equipment/gems，交叉写更乱。与 R275 防线保存/护盾共享守卫同构。
+- 修复：新增共享 const presetWriteBusy=ref(false)（含 R276 注释），四入口各加 if(presetWriteBusy.value) return + 置位 + finally 复位，保留原 presetSaving/presetBusyId 不变（+18/-2，LF 无 BOM）。新增 bag_preset_inflight.test.ts（双头）4 例 deferred 挂起首写、在途交叉点击断言只发一次写。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/bag/bag_preset_inflight.test.ts，仅还原 bag.vue 保留新测试）：RED exit1 4 failed（saveLoadout/setCurrentPreset 不该被调用却被调用、deletePreset 2 次）→恢复 GREEN 4 passed。中间教训：初版第 1 例「保存预设在途重复点保存」因 UI 用 v-if=presetSaving 替换 link 致二次 find 拿空 wrapper（该入口已有 UI 防连点非本 bug 面），已删除；并修复 type-check 未使用变量 um（TS6133）。
+- 后续线索（未改）：me.vue submitNickname(:1111) 无在途守卫但危害存疑；admin ContentView onToggleAnnPublished/onDeleteAnn/onToggleRedeemCode 无弹窗在途守卫但多为单行更新危害存疑；同类「同端点多入口、各自独立 flag、成功后整表刷新」模式可继续在 miniapp 战斗/技能/换装交叉面排查。
+
+### 135.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 476 文件 0 error(30 info 既有)；miniapp 148 文件/1508 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
+- 四目标：①目标一 R276 查询设计器保存连点守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R276 阵型预设四入口交叉写真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
