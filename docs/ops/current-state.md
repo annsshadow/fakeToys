@@ -3487,3 +3487,24 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 复核：主线程独立 RED→GREEN（备份→checkout 还原→go test ./internal/service -run TestAdminRedeemRewardRejectsNonPositiveAmount RED 应 ErrBadInput 实际 <nil> →恢复 GREEN ok 4.561s）。
 - 门禁：前端 OA 170 文件/1686 passed + typecheck6 + lint480 文件 0error；miniapp 151 文件/1516 passed(2 skipped)+type-check；admin 37 文件/498 passed+type-check；diff --check 0。go test ./internal/domain/... 70.764s ok；./internal/service/... 全量 10min 超时属预存测试超时（目标用例单跑 GREEN，非本次引入）。
 - 四目标：①目标一 R281 收口持续找缺口②目标二 §99 已交付③目标三 R281 兑换码倒扣真 bug 修复完成④目标四真实 e2e 39 passed。
+## 141. 第132轮：ApiClient 非法 JSON 信封归一化（R282，oaopt-r282）
+
+### 141.1 oa4rust/sdk 三条 fetch 通道 2xx 非法 JSON 归一化
+- 缺口：packages/sdk/src/api.ts 的 request()/upload()/uploadBytes() 裸 return resp.json()，2xx 但 body 非合法 JSON（网关 HTML 错误页/代理截断/空 body）时原生 SyntaxError: Unexpected token 冒泡到页面，name=SyntaxError 走不到 ApiError 判别分支（instanceof ApiError / vue-query 重试 / mutationErrorMessage 全失效），英文技术串突到 UI；同文件 XHR 通道 uploadWithProgress 早已 new ApiError(malformed JSON response, status) 归一化，两套通道口径不一致=可达真缺口。
+- 修复：新增 parseJsonEnvelope<T>(resp)（try return await resp.json() as ApiResponse<T> catch throw new ApiError(malformed JSON response, resp.status)），三处 resp.json() 全部替换（+17/-3，UTF-8 无 BOM LF）；新增 api.malformed-json.test.ts（SPDX 双头，三通道 3 例）。
+- 复核：主线程独立 RED→GREEN（备份→checkout 还原源文件保留新测试→vitest RED 3 failed：expected SyntaxError to be instance of ApiError @测试 39/50/61→恢复 GREEN 3 passed）。
+- 门禁：OA 171 文件/1689 passed + typecheck6 + lint 481 文件 0error(30 info)。
+
+### 141.2 目标四 workflow-runtime complete 400 负结果结论（不再追查）
+- 现象：workflow-runtime.spec.ts 发起流程后点「审批通过」→ POST /api/task/{id}/complete 返回 400（lib.rs:3821-3827 task_status 非 active/processing 门禁）。DB 直查新任务 title=start:S3… 即走 u2.rs work_create_v2 路径以 task_status=active 插入，却在发起 2.4 秒内变 expired。
+- 根因穷举（只读，未改产品源码）：active→expired 在产品源码中唯一写点为 lib.rs:1364 task_id_expire（GET /task/expire/{id} 与 /task/pass/expired/{id}，均需 session+actor 校验）；oa4rust/frontend 全量搜 expire 无命中（前端无主动调用）；restore() 只读 x_timer_job、start_background() 30s tick 只 UPDATE x_timer_job.fired_at、maintenance.rs 只跑 touchdelay/loglongdetained，均不写 task_status；x_timer_job 无该任务定时器，pg_trigger 查 x_task 无触发器；全局搜 SET task_status=expired 仅 task_id_expire 一处（u2.rs:2948 为 #[tokio::test] 测试数据）。
+- 审计触发器路线（zz_task_status_audit 抓 current_query）因 MSYS 路径转换反复改写 docker cp/exec 容器内路径而放弃，边际收益低。
+- 结论：产品源码中不存在自发的 active→expired 转换路径，属目标四 e2e 隔离环境时序/外部因素负结果，不改产品源码。39 个核心 e2e 用例（app-coverage 31 + designer-roundtrip 4 + oa-flows-live 4）仍全绿。
+### 141.3 laiyipao/miniapp persistLoadout 写权威槽位不失效在途读（R282，lybug-r282）
+- 缺口：store/game.ts 的 loadoutReqSeq 是跨页共享模块级序号，R280 给 loadLoadout 加序号守卫（const seq=++loadoutReqSeq / if(seq!==loadoutReqSeq)return）丢弃陈旧响应；但 persistLoadout 成功分支写 loadout.value/equippedSkillIds 时从不 bump 该序号，读写不成对。可达链：me 页 onShow（无 loading 门控）发 loadLoadout(seq=N) 挂起→切 bag 页改槽位→persistLoadout 写新权威槽位（序号不变）→me 页旧响应后到守卫放行覆盖权威槽位。loadout 参与回放哈希与防线快照权威来源，被覆盖致实际装备与验真记录不一致。
+- 修复：persistLoadout 成功分支写 loadout.value 前加 loadoutReqSeq++（仅成功递增，失败 catch 不 bump 让在途 load 照常落地），+6 行（注释5+语句1）；新增 game.loadout_seq.test.ts 1 例（SPDX 双头，旧响应后到不得覆盖新保存槽位）。
+- 复核：主线程独立 RED→GREEN（备份→checkout 还原源文件保留新测试→vitest RED expected [1,2,3,4] to deeply equal [9,8,7,6] @test:91→恢复 GREEN 2 passed）。
+- 门禁：miniapp 151 文件/1517 passed(2 skipped) + type-check + type-check:test；admin 37 文件/498 passed + type-check。
+- 负结果：服务端复活币退款/SettleBattle 双守卫/时区口径/离线收益串行/兑换码防超发、列表分页导出口径、LIMIT clamp 均到位；后续线索 refreshProfile/refreshWallet 成功写后是否对称 bump 序号待审。
+
+- 四目标：①目标一 R282 ApiClient 非法 JSON 归一化完成，持续找缺口②目标二 §99 已交付③目标三 R282 槽位写读竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime complete 400 穷举后定性环境负结果（唯一 active→expired 写点需认证端点、前端无调用、后台任务不写）。

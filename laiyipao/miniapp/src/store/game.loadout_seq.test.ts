@@ -70,4 +70,25 @@ describe('loadLoadout 并发序号守卫（R280）', () => {
     expect(store.loadout).toEqual([9, 8, 7, 6])
     expect(store.equippedSkillIds).toEqual([9, 8, 7, 6])
   })
+
+  it('persistLoadout 成功后，在途的旧 loadLoadout 响应不得覆盖新保存的权威槽位（R282）', async () => {
+    // 跨页竞态：me 页 onShow 发起 loadLoadout（弱网挂起），用户切到 bag 页改槽位并
+    // persistLoadout 成功写入新权威槽位；此时挂起的旧 loadLoadout 响应才后到。
+    // loadoutReqSeq 是跨页共享的序号，persist 的权威写必须让在途 load 失效，
+    // 否则旧槽位会覆盖刚保存的权威槽位（loadout 参与回放哈希、是防线快照权威来源）。
+    let resolveStale!: (v: any) => void
+    const staleResp = new Promise<any>((r) => { resolveStale = r })
+    mockApi.fetchLoadout.mockImplementationOnce(() => staleResp)
+    const stale = store.loadLoadout() // seq=N，挂起
+
+    mockApi.saveLoadout.mockResolvedValueOnce({ skill_ids: [9, 8, 7, 6] })
+    expect(await store.persistLoadout([9, 8, 7, 6])).toBe(true)
+    expect(store.loadout).toEqual([9, 8, 7, 6])
+
+    // 旧 loadLoadout 响应后到，携带保存前的旧槽位。
+    resolveStale({ skill_ids: [1, 2, 3, 4] })
+    await stale
+    expect(store.loadout).toEqual([9, 8, 7, 6])
+    expect(store.equippedSkillIds).toEqual([9, 8, 7, 6])
+  })
 })

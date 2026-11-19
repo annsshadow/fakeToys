@@ -62,6 +62,20 @@ function httpStatusError(status: number, statusText?: string): ApiError {
   return new ApiError(statusText ? `HTTP ${status}: ${statusText}` : `HTTP ${status}`, status)
 }
 
+/**
+ * R282：2xx 响应体非法 JSON 的错误信封归一化。
+ * 网关误插 HTML 错误页 / 代理截断 / 空 body 边缘都会让 2xx body 不是合法 JSON；
+ * 原生 SyntaxError 会绕过所有 ApiError 判别分支，并把英文技术串突到页面/toast。
+ * 与 XHR 通道 uploadWithProgress 的 `new ApiError('malformed JSON response', status)` 同口径。
+ */
+async function parseJsonEnvelope<T>(resp: Response): Promise<ApiResponse<T>> {
+  try {
+    return (await resp.json()) as ApiResponse<T>
+  } catch {
+    throw new ApiError('malformed JSON response', resp.status)
+  }
+}
+
 /** 查询选项（传给 TanStack Query） */
 export interface QueryOptions {
   enabled?: boolean
@@ -256,7 +270,7 @@ export class ApiClient {
     if (options?.discardResponse || resp.status === 204) {
       return { success: true, data: undefined as T }
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   get<T>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
@@ -325,7 +339,7 @@ export class ApiClient {
       if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
       throw httpStatusError(resp.status)
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   /** 文件上传（带真实进度回调；fetch 拿不到上传字节流，走 XHR）。 */
@@ -468,7 +482,7 @@ export class ApiClient {
       if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
       throw httpStatusError(resp.status)
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   /**

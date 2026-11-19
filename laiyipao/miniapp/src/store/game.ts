@@ -604,6 +604,12 @@ export const useGameStore = defineStore('game', () => {
     while (normalized.length < 4) normalized.push(0)
     try {
       const res = await api.saveLoadout(normalized)
+      // R282：persist 是对服务端权威槽位的写。成功后必须递增加载序号，
+      // 让此前发起、此刻仍在途的 loadLoadout 响应失效 —— 否则弱网下
+      // 旧 load 后到会用它携带的旧槽位覆盖刚保存的权威槽位。
+      // 与 loadLoadout 的 `seq !== loadoutReqSeq` 守卫同构；只在成功时
+      // 递增（失败没有写权威态，在途 load 仍应照常落地）。
+      loadoutReqSeq++
       loadout.value = (res.skill_ids ?? normalized).slice(0, 4)
       equippedSkillIds.value = loadout.value.filter((x) => x > 0)
       return true
