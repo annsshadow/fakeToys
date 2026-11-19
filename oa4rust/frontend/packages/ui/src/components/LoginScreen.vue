@@ -217,8 +217,14 @@ function initParticles(): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
+  // 高 DPR 屏按 2 倍封顶：再高的像素密度对 0.5px 粒子线没有可见收益，
+  // 却让 GPU 合成面积翻 4~9 倍；ctx.setTransform 把绘制坐标仍保持在 CSS 像素。
+  const dpr = Math.min(2, window.devicePixelRatio || 1)
+  canvas.width = Math.floor(window.innerWidth * dpr)
+  canvas.height = Math.floor(window.innerHeight * dpr)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  const viewWidth = window.innerWidth
+  const viewHeight = window.innerHeight
 
   interface Particle {
     x: number
@@ -230,12 +236,12 @@ function initParticles(): void {
   }
 
   const particles: Particle[] = []
-  const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000))
+  const count = Math.min(80, Math.floor((viewWidth * viewHeight) / 15000))
 
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: Math.random() * viewWidth,
+      y: Math.random() * viewHeight,
       vx: (Math.random() - 0.5) * 0.5,
       vy: (Math.random() - 0.5) * 0.5,
       size: Math.random() * 2 + 1,
@@ -244,15 +250,15 @@ function initParticles(): void {
   }
 
   function animate(): void {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, viewWidth, viewHeight)
 
     // 绘制粒子
     for (const p of particles) {
       p.x += p.vx
       p.y += p.vy
 
-      if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-      if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+      if (p.x < 0 || p.x > viewWidth) p.vx *= -1
+      if (p.y < 0 || p.y > viewHeight) p.vy *= -1
 
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
@@ -260,8 +266,11 @@ function initParticles(): void {
       ctx.fill()
     }
 
-    // 绘制连线
-    for (let i = 0; i < particles.length; i++) {
+    // 绘制连线：每帧最多 LINE_LIMIT 条，避免 80 个粒子做 3160 次
+    // 连线计算 + stroke 把低端设备的主线程打死。
+    const LINE_LIMIT = 60
+    let links = 0
+    outer: for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x
         const dy = particles[i].y - particles[j].y
@@ -274,6 +283,8 @@ function initParticles(): void {
           ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - dist / 150)})`
           ctx.lineWidth = 0.5
           ctx.stroke()
+          links++
+          if (links >= LINE_LIMIT) break outer
         }
       }
     }
@@ -290,20 +301,33 @@ function cleanupParticles(): void {
 
 function handleResize(): void {
   const canvas = canvasRef.value
-  if (canvas) {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+  if (!canvas) return
+  // resize 后粒子坐标按 CSS 像素保存，重设尺寸会清空画布；下一帧重绘即可。
+  const dpr = Math.min(2, window.devicePixelRatio || 1)
+  canvas.width = Math.floor(window.innerWidth * dpr)
+  canvas.height = Math.floor(window.innerHeight * dpr)
+  canvas.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0)
+}
+
+/** 页面切到后台时暂停 rAF；回到前台再续，减少无意义的后台 CPU/GPU 占用。 */
+function handleVisibility(): void {
+  if (document.hidden) {
+    cleanupParticles()
+  } else if (!animFrame) {
+    initParticles()
   }
 }
 
 onMounted(() => {
   initParticles()
   window.addEventListener('resize', handleResize)
+  document.addEventListener('visibilitychange', handleVisibility)
 })
 
 onBeforeUnmount(() => {
   cleanupParticles()
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('visibilitychange', handleVisibility)
 })
 </script>
 

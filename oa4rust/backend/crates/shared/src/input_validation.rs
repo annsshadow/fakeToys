@@ -63,14 +63,16 @@ pub fn validate_required(field: &'static str, value: &str) -> Result<(), Validat
     }
 }
 
-/// 验证字符串长度范围
+/// 验证字符串长度范围（按 Unicode 字符数，与错误文案 "characters" 及
+/// 数据库 VARCHAR(n) 的字符计数口径一致；不能用 value.len() 的字节数，
+/// 否则中文等非 ASCII 合法值会被误判超长）
 pub fn validate_length(
     field: &'static str,
     value: &str,
     min: usize,
     max: usize,
 ) -> Result<(), ValidationError> {
-    let len = value.len();
+    let len = value.chars().count();
     if len < min {
         Err(ValidationError::TooShort {
             field,
@@ -190,6 +192,20 @@ mod tests {
         assert!(validate_length("name", "abc", 1, 5).is_ok());
         assert!(validate_length("name", "", 1, 5).is_err());
         assert!(validate_length("name", "abcdef", 1, 5).is_err());
+    }
+
+    #[test]
+    fn validate_length_counts_unicode_characters_not_bytes() {
+        // 回归：错误文案承诺 "characters"，数据库列 VARCHAR(255) 也按字符计数，
+        // 但实现曾用 value.len()（字节），使 100 个中文字符（300 字节）的合法文件名
+        // 被误判为 TooLong。长度必须按 Unicode 字符数计算。
+        let name = "中".repeat(100);
+        assert_eq!(name.chars().count(), 100);
+        assert_eq!(name.len(), 300, "fixture: 100 个中文字符占 300 字节");
+        assert!(
+            validate_length("name", &name, 1, 255).is_ok(),
+            "100 个字符应通过 1..=255 校验（按字符而非字节）"
+        );
     }
 
     #[test]

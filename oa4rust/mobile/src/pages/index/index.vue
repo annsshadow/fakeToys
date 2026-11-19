@@ -8,6 +8,7 @@ import { annApi, attendanceApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { loadList } from '@/utils/loadList'
+import { cachedRequest } from '@/utils/requestCache'
 import { PENDING_PROBE_SIZE, pendingBadge } from './pendingCount'
 
 type Notice = { id?: string; title?: string; content?: string; createTime?: string }
@@ -43,10 +44,11 @@ async function loadPending() {
 }
 
 /** 公告：后端 create_time 倒序，取前 5 条展示；点击看全文。 */
-async function loadNotices() {
+async function loadNotices(force = false) {
   // R137：重试前必须清空上一次的错误，否则成功之后横幅仍挂着旧错误（列表页唯一漏点）。
   noticesError.value = ''
-  const result = await loadList<Notice>(() => annApi.list(), {
+  // 公告为只读高频端点：onShow 复用 TTL 缓存；重试按钮 force 绕过。
+  const result = await loadList<Notice>(() => cachedRequest('announcement:list', () => annApi.list(), { ttlMs: 30_000, force }), {
     previousRows: notices.value,
     label: '公告加载失败',
     map: (data) => (Array.isArray(data) ? (data as Notice[]).slice(0, 5) : []),
@@ -103,14 +105,14 @@ function goPage(url: string) {
       <view class="sec-title">📢 公告</view>
       <view v-if="notices.length === 0 && noticesError" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices()">重试</view>
+        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
       </view>
       <view v-else-if="notices.length === 0" class="sec-empty">暂无公告</view>
       <view v-if="noticesError && notices.length > 0" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices()">重试</view>
+        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
       </view>
-      <view v-for="n in notices" :key="n.id" class="notice" @tap="viewNotice = n">
+      <view v-for="n in notices" :key="n.id" class="notice o2-list-item" @tap="viewNotice = n">
         <view class="notice-title">{{ n.title || '无标题' }}</view>
         <view class="notice-meta">{{ (n.createTime || '').slice(0, 10) }}</view>
       </view>

@@ -4,7 +4,7 @@
 <template>
   <div class="app-shell" :class="{ 'collapsed': sidebarCollapsed, 'mobile': isMobile }">
     <!-- 侧边栏 -->
-    <aside class="sidebar" :style="{ width: sidebarCollapsed ? '64px' : '240px' }">
+    <aside class="sidebar" :style="{ width: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
       <div class="sidebar-header">
         <div class="logo" role="button" tabindex="0" aria-label="切换侧边栏" @click="toggleSidebar" @keydown.enter="toggleSidebar" @keydown.space.prevent="toggleSidebar">
           <span class="logo-icon">◆</span>
@@ -33,7 +33,7 @@
     <!-- 主区域 -->
     <div class="main-area">
       <!-- 顶栏 -->
-      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
+      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
         <div class="topbar-left">
           <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
@@ -91,7 +91,7 @@
       </header>
 
       <!-- 内容区 -->
-      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
+      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />
@@ -253,12 +253,12 @@ function onDocClick(e: Event): void {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 240px;
+  width: var(--sidebar-width);
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   transition: width var(--transition-normal);
 }
 
@@ -357,7 +357,7 @@ function onDocClick(e: Event): void {
 }
 
 .sidebar-footer {
-  padding: 12px;
+  padding: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -384,7 +384,7 @@ function onDocClick(e: Event): void {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-left: 240px;
+  margin-left: var(--sidebar-width);
   transition: margin-left var(--transition-normal);
 }
 
@@ -393,15 +393,15 @@ function onDocClick(e: Event): void {
   height: var(--topbar-height);
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 20px;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
   background: var(--bg-glass);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: var(--z-sticky);
   transition: margin-left var(--transition-normal);
 }
 
@@ -567,7 +567,7 @@ function onDocClick(e: Event): void {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 200;
+  z-index: var(--z-dropdown);
 }
 
 .dropdown-item {
@@ -602,7 +602,7 @@ function onDocClick(e: Event): void {
 .content {
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: var(--space-5);
   margin-left: 0;
   transition: margin-left var(--transition-normal);
   background: var(--bg-base);
@@ -635,8 +635,8 @@ function onDocClick(e: Event): void {
   background: var(--bg-glass);
   backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--border-subtle);
-  z-index: 100;
-  padding: 0 8px;
+  z-index: var(--z-dropdown);
+  padding: 0 var(--space-2);
 }
 
 .tab-item {
@@ -683,8 +683,8 @@ function onDocClick(e: Event): void {
   }
 
   .content {
-    padding: 12px;
-    padding-bottom: calc(var(--tabbar-height) + 12px);
+    padding: var(--space-3);
+    padding-bottom: calc(var(--tabbar-height) + var(--space-3));
   }
 
   .topbar-center {

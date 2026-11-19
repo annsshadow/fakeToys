@@ -1,3 +1,29 @@
-/* uni-app 全局样式变量（可选）。保持最小，避免与主题系统冲突。 */
+/* uni-app 全局样式变量：与 App.vue / 桌面 tokens.css 同名的 Sass 编译期镜像。
+ * 运行时样式一律消费 CSS 变量 var(--token)；此处仅供 scss 中需要常量的场景使用，
+ * 色值保持单点维护——修改时必须同步 App.vue（契约测试会校验）。 */
 $brand-primary: #2d8cf0;
 $brand-bg: #f5f7fa;
+
+/* 间距（4px 栅格） */
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+
+/* 字号 */
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+
+/* 圆角 / 阴影 / 触控 */
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+$radius-full: 9999px;
+$shadow-card-mobile: 0 1px 4px rgba(0, 0, 0, 0.1);
+$touch-target-min: 44px;

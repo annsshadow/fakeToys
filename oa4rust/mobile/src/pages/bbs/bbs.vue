@@ -95,7 +95,7 @@ function newTopic() {
         <text class="error-text">{{ bbsError }}</text>
         <view class="retry-btn" @tap="load">重试</view>
       </view>
-      <view v-for="(row, i) in rows" :key="i" class="topic" @tap="openTopic(row)">
+      <view v-for="(row, i) in rows" :key="i" class="topic o2-list-item" @tap="openTopic(row)">
         <view class="topic-title">{{ titleOf(row) }}</view>
         <view v-if="excerptOf(row)" class="topic-excerpt">{{ excerptOf(row) }}</view>
         <view class="topic-meta">{{ creatorOf(row) }} · {{ timeOf(row) }}</view>

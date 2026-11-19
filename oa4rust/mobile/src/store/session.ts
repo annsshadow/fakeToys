@@ -38,21 +38,26 @@ export const useSessionStore = defineStore('mobile-session', () => {
     }
   }
 
+  // 在途普通 init 合并：多个页面 onShow 同时触发只打一次 /who。
+  // force 不复用在途请求（身份已变，旧响应可能把新身份覆盖回去）。
+  let pendingInit: Promise<void> | null = null
+
   async function init(force = false): Promise<void> {
     if (initialized.value && !force) return
-    // force 表示身份已变（login/refresh）：必须发起新的 /who 读取，不能复用
-    // 身份变更前发起的在途普通 init()，否则旧响应会把新身份覆盖回去。
+    if (!force && pendingInit) return pendingInit
     const ticket = ++initTicket
     loading.value = true
-    try {
-      await restoreCurrentUser(ticket)
-    } finally {
+    const task = restoreCurrentUser(ticket).finally(() => {
       // 只有当前代才收尾：被 force 取代的旧请求后完成不得提前解锁或覆盖状态。
       if (ticket === initTicket) {
         loading.value = false
         initialized.value = true
       }
-    }
+      // force 发起的新代不会覆盖 pendingInit；旧代完成后自行清理。
+      if (pendingInit === task) pendingInit = null
+    })
+    if (!force) pendingInit = task
+    return task
   }
 
   async function login(
