@@ -122,24 +122,35 @@ const apiVersion = ref('')
 const myLoading = ref(false)
 const mineError = ref('')
 
+let loadMineSeq = 0
+
 async function loadMine(): Promise<void> {
+  // onShow 与两个重试按钮共用本函数；用序号只让最新一次回写，避免旧响应后到覆盖新数据。
+  const seq = ++loadMineSeq
   myLoading.value = true
   mineError.value = ''
-  const [statResp, detailResp, verResp] = await Promise.allSettled([
-    attendanceApi.myStatistic(),
-    attendanceApi.myDetailList(),
-    attendanceApi.myVersion(),
-  ])
-  if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
-  if (detailResp.status === 'fulfilled') myDetails.value = toMyDetailRows(detailResp.value.data)
-  if (verResp.status === 'fulfilled')
-    apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
-  const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
-  if (failed && failed.status === 'rejected') {
-    // 部分失败也保留已拿到的统计/明细，同时把错误显示出来。
-    mineError.value = describeLoadError('月度考勤加载失败', failed.reason)
+  try {
+    const [statResp, detailResp, verResp] = await Promise.allSettled([
+      attendanceApi.myStatistic(),
+      attendanceApi.myDetailList(),
+      attendanceApi.myVersion(),
+    ])
+    if (seq !== loadMineSeq) return
+    if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
+    if (detailResp.status === 'fulfilled') myDetails.value = toMyDetailRows(detailResp.value.data)
+    if (verResp.status === 'fulfilled')
+      apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
+    const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
+    if (failed && failed.status === 'rejected') {
+      // 部分失败也保留已拿到的统计/明细，同时把错误显示出来。
+      mineError.value = describeLoadError('月度考勤加载失败', failed.reason)
+    }
+  } catch (e) {
+    if (seq === loadMineSeq) mineError.value = describeLoadError('月度考勤加载失败', e)
+  } finally {
+    // 过期请求的 finally 不得复位最新请求的加载态。
+    if (seq === loadMineSeq) myLoading.value = false
   }
-  myLoading.value = false
 }
 
 function statText(): string {

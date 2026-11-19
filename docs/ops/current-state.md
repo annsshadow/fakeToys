@@ -3409,3 +3409,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 135.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 476 文件 0 error(30 info 既有)；miniapp 148 文件/1508 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
 - 四目标：①目标一 R276 查询设计器保存连点守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R276 阵型预设四入口交叉写真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 136. 第127轮：考勤并发加载序号守卫 + 穿戴写双向互锁守卫
+
+### 136.1 oa4rust/mobile 月度考勤并发加载旧响应覆盖（R277，oaopt-r277）
+- 缺口：attendance.vue loadMine() 并发加载无请求序号保护，也无 try/finally。三个入口：onShow 自动加载 + 模板两个无 disabled 的「重试」按钮；myStatistic/myDetailList/myVersion 经 Promise.allSettled 并发返回顺序不定。序列：进页自动加载 A（慢）→点重试 B（快）→B 先回写新数据、A 后回覆盖旧数据；且原实现无 catch，网络异常时 myLoading 永久卡 true（「加载中…」死显）。为何不用 busy 守卫：onShow 自动加载无法 UI 禁用，if(myLoading.value) return 会丢弃更新的第二次自动加载反致数据陈旧，故用序号只让最新一次回写。
+- 修复：模块级 let loadMineSeq=0；loadMine 内 const seq=++loadMineSeq，三 API 包进 try/catch/finally，await 后 if(seq!==loadMineSeq) return，catch 与 finally 复位均以 seq===loadMineSeq 为条件（过期请求不写权威态也不复位最新加载态）。+25/-14，仅此函数。
+- 测试：新增 attendanceLoadRace.test.ts（双头）1 例源码契约（序号声明/入口递增/新鲜度检查在 await 后且三处写回之前/异常与复位受序号约束）。主线程独立 RED→GREEN（oa4rust/mobile 包内 pnpm exec vitest run src/pages/attendance/attendanceLoadRace.test.ts）：RED exit1 expected source to contain let loadMineSeq = 0→恢复 GREEN 1 passed。
+- 负结果（勿重复）：BBSForum saveSection/deleteSection 有 sectionBusy、meeting.vue act() 有 busyId、recycle/collect/process 写操作均有守卫且契约钉住；ProgramCenterApp/MeetingApp 写多为 prompt 阻塞可达性弱；attendance.applyLeave 有 :disabled 且纯 UI 连点可达性弱，本轮选并发覆盖更强面。
+
+### 136.2 laiyipao/miniapp 穿戴写与预设交叉覆盖（R277，lybug-r277）
+- R276 遗留三线索证伪：me.vue submitNickname 是 PUT /me/nickname 幂等覆盖无双扣；ContentView onDeleteAnn/onToggleRedeemCode 均先 await ElMessageBox.confirm 弹窗串行化；onToggleAnnPublished 幂等切换连点翻回原值结果自洽，危害弱。
+- 真缺口：R276 给四个预设入口加了 presetWriteBusy 共享守卫，但 doApplyPreset 整组写 persistLoadout→saveEquippedEquipment→equipGem/unequipGem 是多步顺序 await，同页写同一批资源的六个单入口（toggleEquip/clearSlot→persistLoadout 用 saving、equip/unequip→saveEquippedEquipment 用 equipping、doEquipGem/doUnequipGem→equipGem/unequipGem 用 gemBusyId）各自独立 flag、不检查该守卫。应用预设在途点单入口用局部旧快照覆盖预设已写好部分→玩家看到「应用了预设但槽位/装备/宝石不对」，反向同理。
+- 修复：六个单入口全部接入 presetWriteBusy 双向互锁——guard 加 || presetWriteBusy.value（toggleEquip/clearSlot 用 if(presetWriteBusy.value) return），进入置 true、finally/await 后置 false；doWash 不动（洗练不改装备集合）。定义处补 R277 注释（+22/-4，LF 保持）。新增 bag_gear_crosswrite_inflight.test.ts（双头 jsdom）4 例覆盖双向四个交叉面。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/bag/bag_gear_crosswrite_inflight.test.ts，仅还原 bag.vue 保留新测试）：RED exit1 4 failed（saveLoadout expected 1 got 2、saveEquippedEquipment/equipGem 不该调用却调用）→恢复 GREEN 4 passed。
+- 后续线索：ContentView.onToggleAnnPublished 若升为高频并发可加行级发布切换令牌（当前危害弱未修）；穿戴写体系已由 presetWriteBusy 统一覆盖，doWash 若将来涉及装备集合变化需纳入同一守卫。
+
+### 136.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 169 文件/1682 passed + pnpm typecheck 6 项目 0 + biome lint 477 文件 0 error(30 info 既有)；miniapp 149 文件/1512 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
+- 四目标：①目标一 R277 考勤并发加载序号守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R277 穿戴写与预设交叉覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

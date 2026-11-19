@@ -629,10 +629,11 @@ async function loadEquipment() {
  * —— 否则服务端会以「同部位只能装一件」拒绝，而那个错误对玩家毫无意义。
  */
 async function equip(id: number) {
-  if (equipping.value) return
+  if (equipping.value || presetWriteBusy.value) return
   const target = myEquipments.value.find((e) => e.id === id)
   if (!target) return
   equipping.value = true
+  presetWriteBusy.value = true
   equipError.value = ''
   try {
     const next = myEquipments.value
@@ -648,13 +649,15 @@ async function equip(id: number) {
     equipError.value = `装备失败：${(e as Error).message}`
   } finally {
     equipping.value = false
+    presetWriteBusy.value = false
   }
 }
 
 /** 卸下某件装备。 */
 async function unequip(id: number) {
-  if (equipping.value) return
+  if (equipping.value || presetWriteBusy.value) return
   equipping.value = true
+  presetWriteBusy.value = true
   equipError.value = ''
   try {
     const next = myEquipments.value.filter((e) => e.equipped && e.id !== id).map((e) => e.id)
@@ -666,6 +669,7 @@ async function unequip(id: number) {
     equipError.value = `卸下失败：${(e as Error).message}`
   } finally {
     equipping.value = false
+    presetWriteBusy.value = false
   }
 }
 const gems = computed<any[]>(() => store.config?.gems ?? [])
@@ -816,8 +820,9 @@ const equippedAffixTotal = computed(() => {
  * 服务端把 equipped_slot 写上之后，构筑侧立刻吃到词条。
  */
 async function doEquipGem(g: OwnedGem) {
-  if (gemBusyId.value !== 0) return
+  if (gemBusyId.value !== 0 || presetWriteBusy.value) return
   gemBusyId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.equipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -829,13 +834,15 @@ async function doEquipGem(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     gemBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
 /** 卸下一颗宝石（幂等；同样刷新档案）。 */
 async function doUnequipGem(g: OwnedGem) {
-  if (gemBusyId.value !== 0) return
+  if (gemBusyId.value !== 0 || presetWriteBusy.value) return
   gemBusyId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.unequipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -846,6 +853,7 @@ async function doUnequipGem(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     gemBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
@@ -1120,9 +1128,12 @@ async function toggleEquip(id: number) {
     }
     next[empty] = id
   }
+  if (presetWriteBusy.value) return
   saving.value = true
+  presetWriteBusy.value = true
   const ok = await store.persistLoadout(next)
   saving.value = false
+  presetWriteBusy.value = false
   if (!ok) {
     uni.showToast({ title: '保存失败，出战配置未变更', icon: 'none' })
     return
@@ -1134,9 +1145,12 @@ async function clearSlot(idx: number) {
   const next = [...selected.value]
   if (!next[idx]) return
   next[idx] = 0
+  if (presetWriteBusy.value) return
   saving.value = true
+  presetWriteBusy.value = true
   const ok = await store.persistLoadout(next)
   saving.value = false
+  presetWriteBusy.value = false
   if (!ok) {
     uni.showToast({ title: '保存失败，出战配置未变更', icon: 'none' })
     return
@@ -1173,6 +1187,10 @@ const presetSaving = ref(false)
 // R276：save/apply/delete/setCurrent 四个入口都写同一份 /me/presets，且各自成功后
 // loadPresets() 整表覆盖；交叉点击会让先完成的列表被后到的陈旧快照覆盖。
 // 共享在途守卫：任一入口在途时其余入口直接返回。
+// R277：doApplyPreset 整组写 loadout/equipment/gems 是多步顺序 await，
+// 同页的 toggleEquip/clearSlot/equip/unequip/doEquipGem/doUnequipGem 这些单入口
+// 也写同一批资源但各自有独立 busy flag —— 它们同样接入本守卫，
+// 避免应用预设在途时被局部旧快照交叉覆盖（双向互锁）。
 const presetWriteBusy = ref(false)
 const SAVING_PRESET_TEXT = '保存中…'
 
