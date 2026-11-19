@@ -274,7 +274,7 @@ const investedValue = computed(() => {
 })
 
 async function toggle(n: MasteryNode) {
-  if (allocBusy.value) return
+  if (allocBusy.value || resetting.value) return // 与 resetMastery 共享在途守卫：两处写同一份 selected/points，防交叉提交
   if (selected.value.includes(n.id)) {
     uni.showToast({ title: '已点亮的节点需通过重置取消', icon: 'none' })
     return
@@ -325,7 +325,7 @@ async function load() {
  * 再拉一次 `GET /mastery` 是白跑一趟，而且会有一个中间闪烁。
  */
 async function resetMastery() {
-  if (resetting.value) return // 防连点：道具扣完第二次必失败，但失败提示很吵
+  if (resetting.value || allocBusy.value) return // 防连点 + 与 toggle 共享在途守卫：两处写同一份 selected/points，防交叉提交
   if (resetTokens.value <= 0) {
     uni.showToast({ title: '没有重铸道具（商城可购）', icon: 'none' })
     return

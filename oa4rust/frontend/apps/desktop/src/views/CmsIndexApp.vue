@@ -890,3 +890,4 @@ async function loadCmsTwin3() {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+</style>

@@ -3554,3 +3554,27 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 复核：主线程独立 RED→GREEN（基线跑 verify_inflight.test.ts RED：expected vi.fn() to be called 1 times but got 2 @test:128→加守卫后 GREEN 1 passed）。
 - 门禁：miniapp 152 文件/1518 passed(2 skipped)+type-check+type-check:test；admin 37 文件/498 passed+vue-tsc；新测试真值扫描无命中。
 - 四目标：①目标一 R285 移动端非法 JSON 归一化修复完成，持续找缺口②目标二 §99 已交付③目标三 R285 verify 验真在途守卫修复完成（代理失败主线程接手）④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+## 145. 第136轮：桌面前端生产 build 失败根因修复（R286，主线程）
+
+### 145.1 CmsIndexApp.vue 缺失 </style> 导致 pnpm build 完全失败
+- 背景：§144 已诚实记录 pnpm build 失败（CmsIndexApp.vue:861 Element is missing end tag，基线既存非 R285 引入）。本轮定位真根因并修复——这是真实用户可见缺陷：整个桌面前端无法产出生产包。
+- 定位过程：compiler-sfc parse 报 code24 @861:1（template 4-144、script 145-860）；排除泛型箭头假设（8 处 `<T>` 批量改 `<T,>` 后仍失败，已还原）；compiler-dom 单独编译 template 无错、内存二分三块重组无错；最终全文件结构标签扫描发现 CmsIndexApp.vue 只有 `<style scoped>`（861 行）到 EOF（892 行）无 `</style>` 闭合。全仓 103 个 .vue 仅此 1 个结构失衡（ScriptCodeEditor.vue 的第二个 `<script` 是注释 `// <script setup>`，误报）。
+- 修复：文件末尾 `@keyframes pulse{...}` 后补 `</style>`（+1 行，无 BOM/LF 保持）；新增 vueStructure.contract.test.ts（SPDX 双头，2 例：扫描桌面 views 下所有 .vue 的 template/script/style 开闭标签平衡）。
+- 复核：主线程独立 RED→GREEN（git checkout 还原源文件到缺闭合态→vitest RED 1 failed/1 passed：unbalanced=["...CmsIndexApp.vue style open=1 close=0"] @test:35→CAS 补回 `</style>`→GREEN 2 passed）。
+- 门禁：pnpm build ✓ built in 3.55s（CmsIndexApp-DhIVqmHS.js 33.30 kB 正常产出）；OA 174 文件/1695 passed + typecheck 6 项目 0 + lint 485 文件 0error(33 info)；新测试经 biome check --write 规范化后无 error。
+- 四目标：①目标一 R286 生产 build 缺口修复完成，双代理 R286 常规轮次并行进行中②目标二 §99 已交付③目标三 laiyipao R286 常规轮次并行进行中④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 146. 第137轮：专精页点亮/重铸共享写守卫（R286，lybug-r286 + 主线程）
+
+### 146.1 miniapp mastery.vue toggle/resetMastery 共享在途守卫
+- 缺口：mastery.vue toggle()（点亮，用 allocBusy）与 resetMastery()（重铸，用 resetting）写同一份 selected/points 却互不设防；弱网下 alloc 在途点重铸会用旧 selected 消耗重铸券，反序点节点则被 reset nodes:[] 回执吞掉。服务端 TestConcurrentMasteryResetOnlyOnce 只保护并发消费，管不到客户端交叉请求。
+- 修复：toggle 入口改 if (allocBusy.value || resetting.value) return、resetMastery 入口改 if (resetting.value || allocBusy.value) return（+3/-3，noBOM/CRLF 保持）；新增 mastery_shared_write_guard.test.ts（双头 2 例交叉入口）。
+- 复核：主线程独立 RED（还原基线→RED 2 failed：expected vi.fn() not to be called 实际 1 次 @:101、expected allocateMastery not to be called 实际 1 次 @:126）→ ops_edit_file CAS 恢复修复→GREEN 2 passed。
+- 插曲：代理交付后主线程 RED 完成时工作树被还原成基线态，ops_copy CAS 因 source/target revision 不一致失败，改用 ops_edit_file 精确替换两行恢复（教训：仓库文件用 ops SDK 不用 shell cp/Node fs）。
+
+### 146.2 R286 oaopt 负结果（无产出）
+- oaopt-r286 代理 failed 无收尾、零改动；按硬纪律负结果结案，不滥竽充数。build 缺口已由 §145 主线程独立修复。
+
+### R286 收官全量门禁
+- OA 174 文件/1695 passed + typecheck 6 项目 0 + lint 485 文件 0error(33 info)；miniapp 154 文件（153 passed/1 skipped）/1520 passed(2 skipped) + type-check；admin 37 文件/498 passed + type-check；diff --check 0。
+- 四目标：①目标一 R286 生产 build 缺口已修（§145）、常规轮次负结果，持续找缺口②目标二 §99 已交付③目标三 R286 专精页共享写守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
