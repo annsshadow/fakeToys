@@ -400,7 +400,13 @@ async function doSignIn() {
   }
 }
 
+/** R269 任务领取在途守卫：防止网络慢时双击同一任务发出两次请求，
+ * 二次请求报「奖励已领取」覆盖首次成功提示（与 R268 兑换守卫同构）。 */
+const claimingIds = new Set<number>()
+
 async function claim(id: number) {
+  if (claimingIds.has(id)) return
+  claimingIds.add(id)
   try {
     const res = await api.claimTask(id)
     flashFeedback('task', id) // R34
@@ -409,6 +415,8 @@ async function claim(id: number) {
     await store.refreshWallet()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    claimingIds.delete(id)
   }
 }
 

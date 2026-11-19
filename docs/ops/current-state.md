@@ -3272,3 +3272,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 127.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 162 文件/1657 passed + pnpm typecheck 6 项目 0 + biome lint 468 文件 0 error(29 info 既有)；miniapp 145 文件/1496 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF+BOM）保持、真值不入库。
 - 四目标：①目标一 R268 AI 对话/MCP 写守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R268 兑换码重复提交真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 128. 第119轮：文档上传并发守卫 + 任务领用在途守卫
+
+### 128.1 oa4rust/mobile 文档上传入口并发守卫（R269，oaopt-r269）
+- 缺口：doc.vue doUpload(filePath,fileName) 入口无并发在途守卫。上传由 pickFromAlbumOrCamera（uni.chooseImage success 回调 void doUpload）与 pickFromFilePicker（chooseMessageFile/H5 回退）两条路径以 void 发起，不等待不检查在途；唯一防重依赖模板两按钮 :disabled="uploading"，但 uploading.value=true 在异步函数内部、disabled 依赖 Vue nextTick 生效，回调重入/快速双击可在置位前穿透第二份 doUpload→同一文件写两次附件 + 两个成功 toast。
+- 修复：doUpload 函数体首行加 1 行 if (uploading.value) return，位于 const folder=myFolder() 之前（uploading 既有 true 置位 :125 / false 复位 :137 保持）。新增 doc.uploadGuard.contract.test.ts（双头）1 例源码契约（守卫存在且位于 uploading.value=true 之前）。
+- 主线程独立 RED→GREEN（oa4rust/mobile 包内 pnpm exec vitest run src/pages/doc/doc.uploadGuard.contract.test.ts）：RED exit1 AssertionError expected -1 to be greater than -1（守卫不存在）→恢复 GREEN 1 passed。
+- 负结果（勿重复）：IMChat.vue refreshFirstPage 无 seq 但切会话被 convId 校验挡住、同会话 clear 可达性不足；message.vue load 无 latest gate 但只读列表有保底；index.vue loadTodayAttendance 取 resp.data?.[0]?.records 后端顺序契约未证；meeting/attendance/chat/BBSForum/process/login 写操作均已有在途守卫。
+
+### 128.2 laiyipao/miniapp 任务领取在途守卫（R269，lybug-r269）
+- 缺口：signin.vue 任务领取 claim(id) 模板 :151-158 仅用 :class="{'btn-disabled':!(t.done&&!t.claimed)}" 做视觉禁用、无 :disabled，@click="claim(t.id)" 仍可触发；claim() 无在途守卫。网络慢时双击同一任务发两次 api.claimTask(id)，服务端 ClaimTask（game.go:1351-1419）条件 UPDATE+RowsAffected 保证只有一次发奖、第二次报 ErrForbidden「奖励已领取」被前端 catch toast 覆盖首次成功提示。与 R268 兑换守卫同构。
+- 修复：新增模块级 const claimingIds=new Set<number>()，claim() 入口 if(claimingIds.has(id)) return + add(id)，try/finally 中 finally{claimingIds.delete(id)}（按 id 独立守卫，允许不同任务并发领取）。signin.test.ts 追加 1 例回归（可控 Promise pending + 双击断言只调一次 + resolve 后成功 toast + 再点可再次调用验证守卫复位）。CRLF 无 BOM 保持。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/signin/signin.test.ts，仅还原 signin.vue 保留新测试）：RED exit1 expected "vi.fn()" to be called 1 times, but got 2 times（:332）→恢复 GREEN 27 passed。
+- 后续线索（未改，供下轮）：同文件 doSignIn()（:372-401）canSign 仅在成功后置 false，网络慢双击签到按钮同样可能双发（服务端幂等报错覆盖成功提示），可参照本轮 Set 守卫模式修复；claim 与 doRedeem 守卫结构一致，可维护时抽取共用工具（本轮遵守外科手术原则未重构）。
+
+### 128.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 162 文件/1657 passed + pnpm typecheck 6 项目 0 + biome lint 469 文件 0 error(30 info 既有)；miniapp 145 文件/1497 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R269 文档上传并发守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R269 任务领用双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

@@ -314,6 +314,32 @@ describe('signin.vue 签到页', () => {
     expect(mockApi.redeem).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('兑换成功：钻石 200')
   })
+
+  // ── R269 任务领取在途守卫（第 119 轮）──────────────────────────────
+  it('R269 任务领取在途守卫：网络慢时双击同一任务只发一次请求，复位后可再次领取', async () => {
+    type Res = { reward: Record<string, number> }
+    let resolveFirst!: (v: Res) => void
+    const first = new Promise<Res>((r) => { resolveFirst = r })
+    mockApi.claimTask.mockImplementationOnce(() => first as any)
+    mockApi.claimTask.mockResolvedValueOnce({ reward: { coin: 500 } } as any)
+
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+
+    const claimBtn = () => wrapper.findAll('.task .btn')[0]!
+    await claimBtn().trigger('click') // 第一次：发出请求，在途未 resolve
+    await claimBtn().trigger('click') // 第二次：在途，应被守卫拦截
+    expect(mockApi.claimTask).toHaveBeenCalledTimes(1)
+
+    resolveFirst({ reward: { coin: 500 } })
+    await flushPromises()
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已领取 金币 500', icon: 'none' })
+
+    // 守卫复位后可再次领取
+    await claimBtn().trigger('click')
+    await flushPromises()
+    expect(mockApi.claimTask).toHaveBeenCalledTimes(2)
+  })
   // ── R20 签到三态 + 任务进度完成态（2026-11-17 100 轮打磨 W 批）─────
   it('R20 签到三态：已签有对勾、今日脉冲、未来天降权', async () => {
     mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 2, signed_today: false, can_sign: true })

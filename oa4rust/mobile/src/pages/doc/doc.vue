@@ -116,6 +116,7 @@ async function downloadAttachment(row: Record<string, unknown>) {
 
 // ── 上传（二进制写入附件存储）────────────────────────────────
 async function doUpload(filePath: string, fileName: string): Promise<void> {
+  if (uploading.value) return
   const folder = myFolder()
   if (!folder || !filePath) {
     uni.showToast({ title: '未登录或无文件', icon: 'none' })
