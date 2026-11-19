@@ -56,6 +56,7 @@ const loading = ref(false)
 const saving = ref(false)
 const executing = ref(false)
 const executeResult = ref<unknown>(null)
+let detailSeq = 0
 const form = ref<{ name: string; queryFlag: string; columns: TableColumnDefinition[] }>({
   name: '',
   queryFlag: '',
@@ -74,6 +75,7 @@ function removeColumn(index: number) {
   form.value.columns.splice(index, 1)
 }
 function newTable() {
+  detailSeq++
   activeFlag.value = ''
   form.value = { name: '', queryFlag: '', columns: [{ name: 'title', type: 'text', nullable: false }] }
   executeResult.value = null
@@ -86,10 +88,12 @@ function openTable(item: TableSummary) {
     columns: (item.columns ?? []).map((column) => ({ ...column })),
   }
   executeResult.value = null
+  const seq = ++detailSeq
   // GET designer/table/{flag} —— 表设计器单表详情（x_query_table），回填最新列/状态
   void api
     .get<any>(`/api/query/assemble/designer/table/${encodeURIComponent(item.tableFlag)}`)
     .then((r) => {
+      if (seq !== detailSeq) return
       const d = r?.data
       if (d && typeof d === 'object' && Array.isArray(d.columns)) {
         form.value.columns = d.columns.map((c: Record<string, unknown>) => ({ ...c }))

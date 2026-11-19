@@ -375,7 +375,8 @@
             maxlength="20"
             :focus="presetFocus"
           />
-          <text class="link" @click="doSavePreset">保存当前构筑</text>
+          <text v-if="presetSaving" class="dim">{{ SAVING_PRESET_TEXT }}</text>
+          <text v-else class="link" @click="doSavePreset">保存当前构筑</text>
         </view>
         <!-- R52 空态可直接聚焦输入框，少一次手动寻找 -->
         <view v-if="presets.length === 0" class="dim" style="margin-top: 8rpx">
@@ -1167,6 +1168,9 @@ function goShop() {
   uni.navigateTo({ url: '/pages/shop/shop' })
 }
 const presetBusyId = ref(0)
+/** 保存预设在途标志：与 apply/delete/setCurrent 一样防连点（同名连发会造出多套预设）。 */
+const presetSaving = ref(false)
+const SAVING_PRESET_TEXT = '保存中…'
 
 async function loadPresets() {
   try {
@@ -1178,11 +1182,13 @@ async function loadPresets() {
 }
 
 async function doSavePreset() {
+  if (presetSaving.value) return // 防连点：弱网下重复点会建出多套同名预设
   const name = presetName.value.trim()
   if (!name) {
     uni.showToast({ title: '请输入预设名', icon: 'none' })
     return
   }
+  presetSaving.value = true
   try {
     await api.saveCurrentPreset(name)
     presetName.value = ''
@@ -1192,6 +1198,8 @@ async function doSavePreset() {
     uni.showToast({ title: '预设已保存', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetSaving.value = false
   }
 }
 

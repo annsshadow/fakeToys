@@ -1015,3 +1015,55 @@ describe('bag.vue 背包可用性（100 轮打磨）', () => {
     expect(wrapper.find('.hb-head .dim').text()).toContain('40 / 120')
   })
 })
+
+
+describe('bag.vue 预设保存连点守卫（R271）', () => {
+  const SAVE_LINK = '.preset-save-row .link'
+
+  it('保存预设在途时重复点击不再发出第二次写入', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    mockApi.saveCurrentPreset.mockImplementation(() => gate.then(() => ({ preset: {} as any })))
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    await wrapper.find('.preset-input')!.setValue('我的连点套')
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+    // 在途期间按钮让位给「保存中…」，连点无处落脚
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(false)
+    expect(wrapper.text()).toContain('保存中…')
+
+    await wrapper.find('.preset-save-row').trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+
+    release()
+    await flushPromises()
+    // 完成后按钮恢复，可再次保存新预设
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(true)
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+  })
+
+  it('保存失败后守卫复位：反馈可见且可再次点击保存', async () => {
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    mockApi.saveCurrentPreset
+      .mockRejectedValueOnce(new Error('服务不可用'))
+      .mockResolvedValueOnce({ preset: {} as any })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    await wrapper.find('.preset-input')!.setValue('重试套')
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '服务不可用', icon: 'none' })
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(true)
+
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(2)
+  })
+})

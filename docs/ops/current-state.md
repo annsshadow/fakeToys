@@ -3306,3 +3306,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 129.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 163 文件/1663 passed + pnpm typecheck 6 项目 0 + biome lint 470 文件 0 error(30 info 既有)；miniapp 145 文件/1498 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF-BOM）保持、真值不入库。
 - 四目标：①目标一 R270 文件列表竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R270 签到双发真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 130. 第121轮：数据表设计器详情回填竞态守卫 + 预设保存连点守卫
+
+### 130.1 oa4rust/desktop 表设计器详情回填竞态（R271，oaopt-r271）
+- 缺口：QueryTableDesignerApp.vue openTable() 点击表项时同步把 activeFlag/form.name/form.queryFlag 设为所选表，随后 GET designer/table/{flag} 详情的 .then 无条件写 form.value.columns。快速连点 A→B 时若 A 响应晚于 B，A 的列定义覆盖已切为 B 的表单——权威态（名称/queryFlag）是 B、列定义是 A，按此保存/执行建表会把错表列提交后端。newTable() 同样会让在途详情回填到空白表单。该文件此前无任何序号/守卫，现有测试无竞态覆盖。
+- 修复：新增 let detailSeq=0；newTable() 内 detailSeq++ 使在途详情失效；openTable() 内 const seq=++detailSeq，.then 首行 if(seq!==detailSeq) return，过期响应不写列定义（+4 行源码，LF 保持）。新增 QueryTableDesignerApp.detailRace.contract.test.ts（双头）2 例源码契约（序号登记+守卫先于写 columns、newTable 使在途失效）。
+- 主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/QueryTableDesignerApp.detailRace.contract.test.ts --root frontend/apps/desktop）：RED exit1 2 failed（expected source to contain let detailSeq = 0、newTable 体 to contain detailSeq++）→恢复 GREEN 2 passed。
+- 负结果（勿重复）：QueryViewDesignerApp.vue simulate 只读预览、QueryDesigner.vue saveQuery/doImport 属 CRUD 弹窗保存、ConfigDesignerApp.vue 无 saving 基础设施均低优先级未动；桌面 designer 页 saveTable/editTableStructure/executeTable 已有 saving/executing + 按钮禁用，无遗漏面。
+
+### 130.2 laiyipao/miniapp 预设保存连点双写（R271，lybug-r271）
+- 缺口：bag.vue doSavePreset()（保存当前构筑）是全页写按钮唯一无在途守卫者——equip/unequip/wash/gem/upgrade/synthesize/applyPreset/persistLoadout 均有守卫。服务端 SaveCurrentPreset（presets.go:137）事务内只按 COUNT(*) 校验 20 个上限、无同名去重，user_presets 表 name 非唯一、唯一索引只约束 is_current。弱网双击即建出多套同名预设，快速耗尽 20 个配额。
+- 修复：bag.vue 新增 presetSaving/SAVING_PRESET_TEXT，doSavePreset 入口 if(presetSaving.value) return + 置位、try/finally 复位，模板在途时按钮让位「保存中…」（+10/-1，LF 无 BOM 保持）。bag.test.ts 加 describe 2 例（在途连点不二次写入、失败后守卫复位可重试）。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/bag/bag.test.ts）：RED exit1 41 测试 1 失败 expected true to be false（bag.test.ts:1036 在途按钮未消失）→恢复 GREEN 41 passed。
+- 证伪方向：battle.vue settled/abandoning/paused 齐全、settle settled 防重、takeCard/discardCard/skipCards 同步；stage.vue startBattle 同步导航无双扣面、detailReqSeq 守卫在；admin 提交函数本轮未见新遗漏。后续线索：服务端 SaveCurrentPreset 仍缺同名去重与唯一约束（defence-in-depth，本轮仅前端守卫未越界改 server/迁移）；admin 批量操作（ContentView submitCodeBatch 等）并发守卫待深验。
+
+### 130.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 164 文件/1665 passed + pnpm typecheck 6 项目 0 + biome lint 471 文件 0 error(30 info 既有)；miniapp 145 文件/1500 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
+- 四目标：①目标一 R271 表设计器详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R271 预设保存连点双写真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
