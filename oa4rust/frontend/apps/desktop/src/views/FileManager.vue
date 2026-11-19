@@ -794,17 +794,22 @@ async function loadTopAttachments(): Promise<void> {
     toast.error(`加载顶层附件失败: ${e?.message ?? ''}`)
   }
 }
+// R270：快速切换文件夹时只认最新一次列表响应，旧响应不得覆盖新目录的文件与状态。
+let fileListSeq = 0
 async function loadFiles(folderId?: string): Promise<void> {
+  const seq = ++fileListSeq
   loading.value = true
   loadError.value = ''
   try {
     const resp = await api.get(`/api/file/assemble/control/file/list/${folderId || ''}`)
+    if (seq !== fileListSeq) return
     files.value = ((resp as any)?.data ?? []) as FileItem[]
   } catch (e) {
+    if (seq !== fileListSeq) return
     // 失败保留旧文件并显式报错，不能和「真的空文件夹」混成同一种空态。
     loadError.value = describeListError('文件列表加载失败', e)
   } finally {
-    loading.value = false
+    if (seq === fileListSeq) loading.value = false
   }
 }
 

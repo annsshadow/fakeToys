@@ -3289,3 +3289,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 128.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 162 文件/1657 passed + pnpm typecheck 6 项目 0 + biome lint 469 文件 0 error(30 info 既有)；miniapp 145 文件/1497 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
 - 四目标：①目标一 R269 文档上传并发守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R269 任务领用双请求真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 129. 第120轮：文件列表导航竞态守卫 + 签到在途守卫
+
+### 129.1 oa4rust/desktop FileManager 列表响应覆盖导航状态（R270，oaopt-r270）
+- 缺口：FileManager.vue loadFiles() 无「只认最新一次」守卫。openItem(f)（:813）双击进文件夹、navigateTo(index)（:821）点面包屑返回上级均同步改 currentFolder/breadcrumbs 后异步 loadFiles；两请求并发时旧目录响应晚到会用旧列表覆盖 files.value，而 breadcrumbs 已显示新目录→用户看到「根目录」标题下列出 A 文件夹内容，渲染与导航错乱。删除成功回调 loadFiles(currentFolder.value) 刷新亦可能与导航竞态。同项目 IMChat.vue msgRequestSeq 与 mobile createLatestGate 已有同构解法，属遗漏面。
+- 修复：新增模块级 let fileListSeq=0；loadFiles 入口 const seq=++fileListSeq，成功分支与 catch 分支各加 if(seq!==fileListSeq) return（过期响应不写 files/loadError），finally 改 if(seq===fileListSeq) loading.value=false（旧请求不提前复位新请求 loading）。外科手术式，LF 保持。
+- 测试：新增 FileManager.listRace.contract.test.ts（双头）6 条源码契约（序号登记、成功/失败分支守卫、finally 条件复位、所有导航入口覆盖）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/FileManager.listRace.contract.test.ts --root frontend/apps/desktop）：RED exit1 4 failed（缺 fileListSeq 声明、成功/失败分支守卫、finally 条件复位断言）→恢复 GREEN 6 passed。
+- 负结果（勿重复）：mobile collect/message 列表 load() 无 seq 但触发面仅 onShow+重试、无与列表异步解耦的同步导航状态，后果仅重复渲染同一列表不构成可达错乱；FileManager 大量写端点均 confirmMsg+prompt 逐次独立操作；process/start.vue 附件选择已有 formGate+提交守卫(R261/R269)。
+
+### 129.2 laiyipao/miniapp 签到按钮双击双发（R270，lybug-r270）
+- 缺口：signin.vue 签到按钮（:38-45）仅 :class 视觉禁用 btn-disabled，无 :disabled，@click=doSignIn；doSignIn()（:372-401）原 if(!canSign.value) return 后直接 await api.signIn()，只在成功后才 canSign=false，catch 路径仍可点。在途窗口双击并发两发；服务端幂等（routes_e2e_test.go 断言当天重复签到 403），第二发「今日已签到」错误覆盖首次成功提示。同页 claimOffline/claim(id)/doRedeem 均已有守卫，签到是最后一处无守卫写按钮。
+- 修复：新增 const signingIn=ref(false)（含 R270 注释），doSignIn 入口 if(signingIn.value||!canSign.value) return + 置位，catch 后 finally{ signingIn.value=false } 保证异常后可重试（+6/-1，CRLF/BOM 保持）。signin.test.ts 加 1 例可控 Promise 回归（双击断言只调一次、成功后提示「签到成功，获得 金币 4000」且不含「签到失败」）。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/signin/signin.test.ts，仅还原 signin.vue 保留新测试）：RED exit1 28 测试 1 失败 expected "vi.fn()" to be called 1 times, but got 2 times（:522）→恢复 GREEN 28 passed。
+- 后续线索：miniapp 全量写按钮本轮横向排查已无新无守卫点；其余页面写按钮（积分兑换、battle 结算等）此前轮已覆盖守卫。
+
+### 129.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 163 文件/1663 passed + pnpm typecheck 6 项目 0 + biome lint 470 文件 0 error(30 info 既有)；miniapp 145 文件/1498 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF/CRLF-BOM）保持、真值不入库。
+- 四目标：①目标一 R270 文件列表竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R270 签到双发真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。

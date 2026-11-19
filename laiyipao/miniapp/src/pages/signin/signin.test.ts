@@ -503,4 +503,27 @@ describe('signin.vue 签到页', () => {
     expect(wrapper.findAll('.task .btn')[0]!.text()).toBe('领取')
     expect(wrapper.find('.task').text()).toContain('1 / 1')
   })
+
+  // ── R270 签到在途守卫（第 120 轮）─────────────────────────────────
+  it('R270 签到在途守卫：网络慢时双击只发一次请求，二次拒绝不覆盖首次成功提示', async () => {
+    type Res = { already: boolean; day_index?: number; reward?: Record<string, number> }
+    let resolveFirst!: (v: Res) => void
+    const first = new Promise<Res>((r) => { resolveFirst = r })
+    mockApi.signIn.mockReset()
+    // 第一次挂起；修复前第二次点击会发出第二发，被服务端「今日已签到」拒绝。
+    mockApi.signIn.mockImplementationOnce(() => first as any)
+    mockApi.signIn.mockRejectedValueOnce(new Error('今日已签到'))
+
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const btn = () => wrapper.find('.btn-primary')
+    await btn().trigger('click') // 第一次：发出，在途未 resolve
+    await btn().trigger('click') // 第二次：在途，应被守卫拦截
+    expect(mockApi.signIn).toHaveBeenCalledTimes(1)
+
+    resolveFirst({ already: false, day_index: 4, reward: { coin: 4000 } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('签到成功，获得 金币 4000')
+    expect(wrapper.text()).not.toContain('签到失败')
+  })
 })

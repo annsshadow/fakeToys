@@ -369,8 +369,13 @@ function switchScope(k: ScopeKey) {
   load()
 }
 
+/** R270 签到在途守卫：防止网络慢时双击发出两次签到请求，
+ * 二次请求报「今日已签到」覆盖首次成功提示（与 R268 兑换守卫同构）。 */
+const signingIn = ref(false)
+
 async function doSignIn() {
-  if (!canSign.value) return
+  if (signingIn.value || !canSign.value) return
+  signingIn.value = true
   try {
     const res = await api.signIn()
     if (res.already) {
@@ -397,6 +402,8 @@ async function doSignIn() {
     //
     // 正确做法：保持可点（网络抖一下重试就好），把错误如实显示出来。
     lastResult.value = `签到失败：${(e as Error).message}`
+  } finally {
+    signingIn.value = false
   }
 }
 
