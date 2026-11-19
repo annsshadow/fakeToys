@@ -5,7 +5,7 @@
 
 ## 适用范围
 
-- 用例目录：`oa4rust/e2e/**`（`live-gui-expanded.spec.ts` 为本轮新增的真实 GUI 交互扩充）
+- 用例目录：`oa4rust/e2e/**`（`live-gui-expanded.spec.ts` 为真实 GUI 交互扩充）
 - 全局预检：`oa4rust/e2e/global-setup.ts`
 - 运行配置：`oa4rust/playwright.config.ts`
 - 会话/响应审计辅助：`oa4rust/e2e/support/live.ts`
@@ -36,38 +36,58 @@
   - 本地代理：监听本地回环 `<LOCAL_PROXY_PORT>`，负责 (a) TLS 终止并注入正确 Host/SNI；(b) 路径重写：`/oa4rust-api/*` → 后端 `/api/*`、`/oa4rust/assets/*` → 静态资源、`/login` 等裸路径 → `/oa4rust/*`；(c) 把浏览器 Origin 规范化为后端可信源 `<TRUSTED_ORIGIN>`，恢复隧道破坏的同源语义。
   - `BASE_URL` = `http://127.0.0.1:<LOCAL_PROXY_PORT>`（回环地址 + 占位端口）。
 - 凭证：经 captain 授权，在**测试库**中新建专用 E2E 账号（随机口令 + bcrypt hash，绑定 admin 角色），口令只在运行时从本地注入的环境变量读取，全程未回显、未写入仓库/本文档；测试库原有 admin 账号未被修改。
-- 部署布局（占位符）：后端服务 `<BACKEND_SERVICE>` 监听远端本地端口；web 产物在 `<WEB_DIST_PATH>`，含桌面与 H5 两套；BUG-D 修复（commit `<COMMIT_HASH>`）已部署到测试服务器，线上 bundle 确认防御逻辑生效。
+- 部署布局（占位符）：后端服务 `<BACKEND_SERVICE>` 监听远端本地端口；web 产物在 `<WEB_DIST_PATH>`，含桌面与 H5 两套；BUG-D 修复（commit `<COMMIT_HASH_BUG_D>`）与 BUG-E 修复（commit `<COMMIT_HASH_BUG_E>`）均已部署。线上 BUG-E 修复 bundle（`<PROCESSWORK_CHUNK>`）只读核对：`task/expire` 出现 0 次、`end_time` 出现 1 次，确认前端不再调用会改写任务状态的 expire 端点。
 
-## 最终全量实跑结果（t12 复验轮，脱敏，真实 GUI 交互）
+## 最终全量实跑结果（t16 补种后最终轮，脱敏，真实 GUI 交互）
 
-- 命令：`pnpm exec playwright test` 覆盖 `live-gui-expanded.spec.ts`（15 条）+ `workflow-runtime.spec.ts`（1 条），live-chromium + coverage-chromium 双 project（**16 条唯一用例 × 2 project = 32 条**）。
-- 权威全量实跑结果：**32 条中 26 passed / 6 failed**（3 个唯一用例各在 2 个 project 失败）。
-  - `live-gui-expanded.spec.ts` 双 project 共 30 条：**26 passed / 4 failed**（#10 / #11 各在 live+coverage 双 project 失败）。
-  - `workflow-runtime.spec.ts` 双 project 共 2 条：**0 passed / 2 failed**（#16 在 live+coverage 双 project 失败，BUG-E RED 证据）。
-- **BUG-D 修复上线验证通过**：部署 bundle 中 `e.catch is not a function` 错误已消失，`Promise.resolve(...).catch(...)` 防御生效；通讯录「查询本页」不再抛 TypeError。但两用例仍失败且**形态变化**为「表格 0 行 / 分页超时」，根因为测试库组织数据全空（详见 BUG-D 更新与 BUG-F），非 BUG-D 代码回归。
-- 逐条（唯一用例 16 条；#1–#15 在 live-chromium + coverage-chromium 双 project 结果一致，#16 双 project 均为 failed）：
+- 命令：`pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spec.ts --workers=1`，live-chromium + coverage-chromium 双 project（**16 条唯一用例 × 2 project = 32 条**）。
+- 权威全量实跑结果（line reporter 逐条 + 结束汇总）：**32 条全部 passed / 0 failed / 0 flaky / 0 skipped**（多次串行复跑一致：`32 passed (27.7s)` / `32 passed (28.1s)`）。
+  - `live-gui-expanded.spec.ts` 双 project 共 30 条：**30 passed / 0 failed**（#10 / #11 补种组织 seed 后由 RED 转 GREEN）。
+  - `workflow-runtime.spec.ts` 双 project 共 2 条：**2 passed / 0 failed**（#16 双 project 均 `passed`；BUG-E 修复持续 GREEN）。
+- **BUG-E 修复上线验证通过**：`POST /api/task/{id}/complete` 不再 400，workflow 闭环用例双 project 全部通过；线上 bundle 不再包含 `GET /task/expire/{id}` 写端点调用（改为只读来源 `end_time`），发起→打开→审批闭环恢复。
+- **BUG-D 修复持续有效**：通讯录查询不再出现 `TypeError: e.catch is not a function`。
+- **#10/#11 由测试数据阻塞转为 GREEN**：补种测试库组织 seed 后，通讯录表格渲染出行 + 表头 +「命中 N 行」，人员分页可推进到第 2 页。
+- 逐条（唯一用例 16 条；#1–#16 在 live-chromium + coverage-chromium 双 project 结果均一致，全部 passed）：
 
 | # | 用例 | 结果 |
 | --- | --- | --- |
-| 1 | 登录页空表单提交按钮禁用 | passed |
-| 2 | 密码显隐切换 input type | passed |
-| 3 | 错误密码显示行内错误且不进入工作台 | passed |
-| 4 | 侧边栏导航切换路由并同步面包屑 | passed |
-| 5 | 用户菜单打开并跳转个人中心 | passed |
-| 6 | 全局搜索快捷键聚焦搜索框 | passed |
-| 7 | 侧边栏折叠与展开切换外壳样式 | passed |
-| 8 | 个人签名填写并提交后更新成功 | passed |
-| 9 | 系统设置分栏切换暴露安全表单字段并操作下拉 | passed |
-| 10 | 通讯录查询本页渲染数据表格与表头 | **failed**（新形态：组织库空数据，表格 0 行；BUG-D TypeError 已消失） |
-| 11 | 通讯录人员分页按钮推进页码 | **failed**（新形态：组织库空数据，分页信息「共 0 人」、推进超时） |
-| 12 | 两次密码不一致时前端校验报错且不发写请求 | passed |
-| 13 | 密码表单填写不完整时校验报错且不发写请求 | passed |
-| 14 | 未登录访问受保护路由重定向并保留 redirect | passed |
-| 15 | 退出登录后受保护路由再次重定向到登录页 | passed |
-| 16 | workflow 发起→填写→提交→审批闭环 | **failed ×2 project**（BUG-E，POST /api/task/{id}/complete 400，产品 bug RED） |
+| 1 | 登录页空表单提交按钮禁用 | passed ×2 |
+| 2 | 密码显隐切换 input type | passed ×2 |
+| 3 | 错误密码显示行内错误且不进入工作台 | passed ×2 |
+| 4 | 侧边栏导航切换路由并同步面包屑 | passed ×2 |
+| 5 | 用户菜单打开并跳转个人中心 | passed ×2 |
+| 6 | 全局搜索快捷键聚焦搜索框 | passed ×2 |
+| 7 | 侧边栏折叠与展开切换外壳样式 | passed ×2 |
+| 8 | 个人签名填写并提交后更新成功 | passed ×2 |
+| 9 | 系统设置分栏切换暴露安全表单字段并操作下拉 | passed ×2 |
+| 10 | 通讯录查询本页渲染数据表格与表头 | **passed ×2**（补种组织 seed 后转 GREEN） |
+| 11 | 通讯录人员分页按钮推进页码 | **passed ×2**（补种 21 条人员后分页可推进） |
+| 12 | 两次密码不一致时前端校验报错且不发写请求 | passed ×2 |
+| 13 | 密码表单填写不完整时校验报错且不发写请求 | passed ×2 |
+| 14 | 未登录访问受保护路由重定向并保留 redirect | passed ×2 |
+| 15 | 退出登录后受保护路由再次重定向到登录页 | passed ×2 |
+| 16 | workflow 发起→填写→提交→审批闭环 | **passed ×2**（BUG-E 修复 GREEN） |
 
-- 失败 trace/截图：`oa4rust/test-results/**/test-failed-1.png` 与同目录 `trace.zip`、`error-context.md`（仓库相对路径，不含真值）。
-- BUG-E 关键 trace：`oa4rust/test-results/workflow-runtime-starts-re-aa680-hrough-visible-web-controls-live-chromium/trace.zip`，解压后 `1-trace.network` L71–L76：GET `task/{id}` → 200（task_status=`active`）、GET `task/v2/{id}` → 200、GET `task/expire/{id}` → 200 后同一任务变 `expired`、POST `task/{id}/complete` → 400。
+- 失败/覆盖率 trace 与截图：`oa4rust/test-results/**`（本轮最终串行全量无失败，故无 test-failed 产物；history 中保留前轮回退样本）。
+- 并发说明（环境配置，非产品 bug）：默认 4 workers 用同一 E2E 账号并发登录时，会话互斥导致偶发 `toHaveURL(/\/app\/)` 失败（停在 login 页，失败用例每次不同）；单 spec 2 workers 与全量 --workers=1 均稳定 32/32。建议真机全量使用 `--workers=1` 串行执行。
+
+## 测试库组织 seed 补种（t16，一次性授权）
+
+- 授权边界：captain 授权仅操作**测试库组织相关表**（RUST_ENV=test、专用测试库、active admin 角色存在），不碰 admin 账号、不碰 laiyipao、不碰生产；真值不回显不入库。
+- 补种内容（幂等、明显测试标记、无真值）：`x_org_person` 21 行（id=`e2e-org-seed-*`、name=E2E 测试标记、deleted_at=NULL）+ `x_org_login_record` 21 行关联。
+- 数据量依据：#10 只需 `all/object` 等任一查询返回非空数组即渲染表格；#11 每页 20 条、需 count ≥ 21 才能推进到第 2 页 → 补 21 条。
+- 归属确认：filter 的 count 带 owner_scope（creator=本人或 admin）；E2E 账号绑定 admin 角色，故补种 creator 用测试标记即可被统计。
+- 归属/安全确认：补种前只读核对 RUST_ENV=test、db_name 与表归属、active admin 角色、组织表基线全空；补种前后各做一次计数与 SQL replay 对照（见 BUG-F）。
+
+## BUG-F 补种前后只读对照（真值不回显）
+
+| 探针 | 补种前 | 补种后 |
+| --- | --- | --- |
+| 组织表计数（person / login_record / identity） | 0 / 0 / 1 | 21 / 21 / 1 |
+| login_after JOIN SQL replay（`login_time > '2026-01-01'`） | 0 行、无 SQL 错误 | 21 行、无 SQL 错误 |
+| `POST /api/person/list/login/after/object`（合法 date） | HTTP 500 `internal server error` | HTTP 500 `internal server error` |
+
+- 结论：SQL 本身合法且补种后能返回 21 行，但 API 仍 500 → BUG-F 为**后端错误语义 bug**（`endpoints_person2.rs:39 login_after` 吞错），与数据量/空库无关；前端 `s()` 能 catch 该 500，不阻塞 #10/#11。因写范围不含后端且有 Rust 工具链阻塞，留 backlog 交 captain。
 
 ## 关键环境阻塞与修复过程（如实记录）
 
@@ -75,16 +95,19 @@
 2. 种子账号口令不可用：测试库种子 admin 的 hash 为占位值、其他已知口令的账号未 seed，导致认证失败；经授权新建专用 E2E 账号后解决。
 3. CSRF Origin 门禁：后端 cookie 写接口要求 Origin 与 `APP_PUBLIC_ORIGIN` 精确一致；隧道代理改变了浏览器 Origin 语义，导致签名保存/登出等写接口 403 `ExceptionAccessDenied`。已在测试代理层规范化 Origin 后消除（非产品 bug）。
 4. 两处测试选择器漂移：密码显隐按钮改为 `.eye-btn`、流程弹窗改为 `#start-process`/`#start-title`（均已修进 spec）。
-5. 本轮新发现：测试库组织数据全空（`x_org_person` / `x_org_unit` / `x_org_group` / `x_org_role` / `x_org_login_record` 均 0 行，仅 `x_org_identity` 1 行），导致通讯录「查询本页」所有只读查询返回 0 行、表格不渲染。补种组织 seed 数据不在本轮授权边界（授权仅限 BUG-E 审批任务，且 captain 已裁决 BUG-E 不补种），交 captain 裁决。
+5. BUG-D（await 位置错误）已修复上线；TypeError 消失，本轮补种后 #10/#11 转 GREEN。
+6. BUG-E（打开任务误调写端点 expire）已由 t13 前端修复、t14 部署；workflow 闭环持续 GREEN。
+7. #10/#11 曾因测试库组织数据全空失败（表格 0 行 / 分页超时）；t16 经授权补种 21 条组织 seed 后转 GREEN（非产品 bug）。
+8. 4 workers 同账号并发登录偶发会话互斥（环境配置）；全量改用 --workers=1 串行后稳定 32/32。
 
 ## 可复现 bug 列表（交 captain 分流）
 
 - **BUG-A**（部署漂移 / fe-desktop，**已修复**）：部署版登录页密码框无 `id="login-password"`、显隐按钮无 `aria-label="显示或隐藏密码"`；新版部署后复验通过。
 - **BUG-B**（后端错误语义 / t9）：登录失败时提示 "Session expired, please login again"（会话过期），非用户名/密码错误提示，属误导性错误语义。
 - **BUG-C**（认证凭证 / 环境问题，**已解决**）：种子 admin 的 hash 为占位值不可登录；经授权新建专用 E2E 账号解决，非产品代码 bug。
-- **BUG-D**（真实前端 bug / fe-desktop，**已修复上线并验证**）：`OrgDirectoryApp.vue` 的 `collect(label, await api...)` await 位置错误 → `s(p)=p.catch` 对已解析值抛 `TypeError: e.catch is not a function`。t10 修复（53 处移除 await + `s` 放宽为 `Promise.resolve(p).catch()`）已随 commit 部署；本轮实测 TypeError 消失、bundle 确认防御生效。**但本轮通讯录两用例仍失败且形态变化**：测试库组织数据全空，所有只读查询 0 行 → `rows.length=0` → 表格/「命中」不渲染（#10）、分页停留「共 0 人」且推进超时（#11）。此为【测试数据】缺失问题，非 BUG-D 代码回归；交 captain 裁决是否补种组织 seed。
-- **BUG-E**（真实产品 bug / e2e-runner-2 实证，非夹具，**本轮保持 RED**）：workflow 发起新流程→打开刚发起任务→审批通过，`POST /api/task/{id}/complete` 返回 **400**。根因：前端 `ProcessWork.vue:1603 loadTaskInfo` 把 GET `/api/processplatform/service/processing/task/expire/{id}` 当只读『超时信息』调用，但该路由 `routes.rs:100` 绑定到写端点 `task_id_expire`（`lib.rs:1363 UPDATE x_task SET task_status='expired'`）；于是打开任务详情就把刚创建的 active 任务置 expired，随后 `task_complete`（`lib.rs:3795`）只接受 active/processing → 400。trace 实证见上方「最终全量实跑结果」。影响面：所有『发起→打开→审批』闭环。判定：产品 bug，**未补种掩盖**；修复方向优先纯前端（移除对写端点的误调，超时信息改只读来源），以免受服务器无 Rust 工具链限制。待 captain 派发修复任务。
-- **BUG-F**（产品代码 bug 候选 / 后端，本轮新发现，交 captain 分流）：`POST /api/person/list/login/after/object` 对合法 `date`（如 `2026-01-01`）返回 **500**。后端 `organization_assemble_express/src/endpoints_person2.rs:39 login_after` 把 DB 错误统一吞为 `Err(AppError::Internal)`，掩盖真实原因；psql 直接 replay 同 SQL/参数成功返回空集，故非 SQL 语法/参数问题。前端 `s()` 已能 catch 该 500（不再触发 BUG-D），不影响主流程，但属错误语义问题，建议后端成员复核。
+- **BUG-D**（真实前端 bug / fe-desktop，**已修复上线并验证**）：`OrgDirectoryApp.vue` 的 `collect(label, await api...)` await 位置错误 → `s(p)=p.catch` 对已解析值抛 `TypeError: e.catch is not a function`。t10 修复已部署；TypeError 消失。
+- **BUG-E**（真实产品 bug / e2e-runner-2 实证，**已修复并 GREEN**）：`ProcessWork.vue:1603 loadTaskInfo` 曾把 GET `/task/expire/{id}` 当只读调用，实为写端点把 active 任务置 expired，导致 `POST /task/{id}/complete` 400。t13 纯前端修复、t14 部署；workflow 闭环双 project 全部 passed。
+- **BUG-F**（产品代码 bug / 后端，**待修 backlog**）：`POST /api/person/list/login/after/object` 对合法 date 稳定返回 500；`endpoints_person2.rs:39 login_after` 把 DB 错误统一吞为 `Err(AppError::Internal)`，补种后 SQL replay 返回 21 行仍 500，证明与数据量无关，属错误语义 bug。前端已能 catch，不阻塞主流程。
 
 ## 实跑命令模板（占位符形式）
 
@@ -98,8 +121,8 @@ export E2E_PASSWORD='<YOUR_E2E_PASSWORD>'
 export BASE_URL='http://127.0.0.1:<LOCAL_PROXY_PORT>'
 # 可选：export E2E_PROCESS_NAME='<YOUR_SEED_PROCESS_NAME>'
 pnpm exec playwright test --project=live-chromium e2e/live-gui-expanded.spec.ts
-# 全量真机回归：
-pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spec.ts
+# 全量真机回归（建议 --workers=1 串行避免同账号会话竞争）：
+pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spec.ts --workers=1
 ```
 
 失败时 `playwright.config.ts` 已配置：`trace: 'retain-on-failure'`、`screenshot: 'only-on-failure'`、`video: 'only-on-failure'`，
@@ -108,4 +131,4 @@ pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spe
 ## 本轮已扩充的真实 GUI 用例（共 15 条，均为可见 DOM 交互）
 
 1. 登录页空表单提交按钮禁用 2. 密码显隐切换 3. 错误密码行内报错 4. 侧边栏导航+面包屑 5. 用户菜单跳个人中心 6. 全局搜索快捷键 7. 侧边栏折叠展开 8. 个人签名填写提交 9. 系统设置分栏+下拉 10. 通讯录查询本页表格 11. 通讯录分页 12. 两次密码不一致校验 13. 表单不完整校验 14. 未登录重定向 15. 退出登录后重定向
-（workflow-runtime 另 1 条：发起→填写→提交→审批闭环）
+（workflow-runtime 另 1 条：发起→填写→提交→审批闭环，本轮已 GREEN）
