@@ -222,11 +222,11 @@
     </div>
 
     <!-- 帖子详情弹窗 -->
-    <div v-if="viewingTopic" class="modal-overlay" @click.self="viewingTopic = null">
+    <div v-if="viewingTopic" class="modal-overlay" @click.self="closeTopic()">
       <div class="modal glass-card topic-detail">
         <div class="modal-header">
           <h3>{{ viewingTopic.title }}</h3>
-          <button class="close-btn" aria-label="关闭帖子详情" @click="viewingTopic = null">✕</button>
+          <button class="close-btn" aria-label="关闭帖子详情" @click="closeTopic()">✕</button>
         </div>
         <div class="modal-body">
           <div class="detail-meta">
@@ -398,6 +398,8 @@ const activeTab = ref<TabKey>('all')
 const searchQuery = ref('')
 const showNewTopic = ref(false)
 const viewingTopic = ref<Topic | null>(null)
+// R273：详情异步回填/延迟 extras 的竞态令牌——关闭或切换帖子时递增，使在途请求作废。
+let detailSeq = 0
 const replyText = ref('')
 const createError = ref('')
 const page = ref(1)
@@ -749,14 +751,22 @@ function handleSearch(): void {
   page.value = 1
 }
 
+/** 关闭详情：递增令牌使在途详情/extras 作废，避免关闭后旧请求重新渲染浮层。 */
+function closeTopic(): void {
+  detailSeq++
+  viewingTopic.value = null
+}
+
 /** 打开详情：列表行只有摘要字段，补拉 /api/bbs/subject/view/{id} 全量（含正文）；
  *  我的回复卡片按 topicRef 点开源主题。 */
 async function openTopic(topic: Topic): Promise<void> {
+  const seq = ++detailSeq
   viewingTopic.value = topic
   replies.value = []
   const targetId = topic.topicRef || topic.id
   try {
     const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
+    if (seq !== detailSeq) return
     const full = resp.data as Topic | null
     if (full?.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
@@ -764,7 +774,7 @@ async function openTopic(topic: Topic): Promise<void> {
   } catch {
     /* 详情拉取失败保留列表行数据，不阻塞阅读 */
   }
-  void loadTopicExtras(targetId)
+  void loadTopicExtras(targetId, seq)
 }
 
 function formatContent(content?: string): string {
@@ -807,7 +817,7 @@ const topicMeta = ref('')
 const replyGate = ref<'' | '允许' | '不允许' | '查询失败'>('')
 const modBusy = ref(false)
 
-async function loadTopicExtras(subjectId: string): Promise<void> {
+async function loadTopicExtras(subjectId: string, seq: number): Promise<void> {
   topicPics.value = []
   replyGate.value = ''
   topicMeta.value = ''
@@ -834,6 +844,8 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   if (rid) {
     await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
   }
+  // 只认最后一次打开/尚未关闭的详情：过期请求不写 pics/gate/meta。
+  if (seq !== detailSeq) return
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (
     Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []

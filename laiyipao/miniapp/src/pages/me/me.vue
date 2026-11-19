@@ -1410,6 +1410,11 @@ function myEquipped(): EquippedSkill[] {
 }
 
 async function challenge(target: DefenseView) {
+  // 第 123 轮（R273）：simulating 之前只驱动按钮文案，没有挡住重复上报。
+  // 模拟完成、challengeDefense 仍在途时（simulating 仍置位）再点另一个目标，
+  // 会并发再发一次 challengeDefense —— 服务端每次上报都记 attempts+1 并发窃取，
+  // 双点即双倍消耗每日挑战次数。与 onDeleteMyDefense 等守卫同族：在途直接返回。
+  if (simulating.value) return
   if (!target.can_challenge) {
     uni.showToast({ title: target.challenge_blocked || '暂时无法挑战', icon: 'none' })
     return

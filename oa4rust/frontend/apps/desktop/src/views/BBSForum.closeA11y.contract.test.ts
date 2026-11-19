@@ -54,7 +54,7 @@ interface Case {
 }
 const CLOSE_CASES: Case[] = [
   { handler: 'showNewTopic = false', label: '关闭发帖弹窗' },
-  { handler: 'viewingTopic = null', label: '关闭帖子详情' },
+  { handler: 'closeTopic()', label: '关闭帖子详情' },
   { handler: 'closeSectionModal', label: '关闭版块编辑弹窗' },
   { handler: 'sectionInfo.open=false', label: '关闭版块详情' },
 ]

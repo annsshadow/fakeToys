@@ -3340,3 +3340,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 131.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 165 文件/1667 passed + pnpm typecheck 6 项目 0 + biome lint 472 文件 0 error(30 info 既有)；miniapp 145 文件/1500 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check(vue-tsc) 0；diff --check 0。两处改动均既有文件内追加、格式（LF）保持、真值不入库。
 - 四目标：①目标一 R272 查询视图详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R272 兑换码批量双击资损真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 132. 第123轮：BBS 帖子详情浮层回填竞态 + 挑战防线下单在途守卫
+
+### 132.1 oa4rust/desktop BBSForum 详情浮层异步回填竞态（R273，oaopt-r273）
+- 缺口：BBSForum.vue openTopic(topic) 先置 viewingTopic 再 await api.get(/api/bbs/subject/view/{id}) 后无条件回填，随后 void loadTopicExtras(targetId) 在 6~7 个 GET 的 await 后无条件写 topicPics/replyGate/topicMeta，全程无令牌守卫。列表行 :162 @click=openTopic 可连点不同帖、浮层 :225 @click.self 与 :229 关闭按钮可关。竞态：点 A（慢）→关→点 B（快），A 详情晚到把 viewingTopic 覆盖回 A、A/B extras 互覆盖；更严重的是关闭后在途的 A 详情回来会重新渲染出已关闭浮层。与 R262 replyRefresh（回复后 refetch）是不同缺陷面。
+- 修复：新增 let detailSeq=0；新增 closeTopic()（detailSeq++ 后 viewingTopic=null），模板背景点击/关闭按钮两处改调；openTopic 开头 const seq=++detailSeq，详情 await 后 if(seq!==detailSeq) return 才回填，末尾传 seq 给 extras；loadTopicExtras(subjectId,seq) 最后一个 await 后写 pics/gate/meta 前 if(seq!==detailSeq) return（源文件 +20/-4）。语义：切换或关闭都作废旧请求，只认最后一次打开且未关闭的详情。
+- 测试：新增 BBSForum.detailRace.contract.test.ts（双头）2 例源码契约（详情回填与 extras 共享序号守卫、关闭作废旧请求）；连带把 BBSForum.closeA11y.contract.test.ts（R240）定位锚点从 viewingTopic=null 改为 closeTopic()，测试意图（关闭按钮可读 aria-label）不变。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/BBSForum.detailRace.contract.test.ts --root frontend/apps/desktop）：RED exit1 2 failed（seqDecl=-1、source 未含 @click.self="closeTopic()"）→恢复 GREEN 2 passed；合并跑 closeA11y+detailRace 8 passed。
+- 负结果（勿重复）：mobile bbs/topic.vue load() 无 latest 令牌但 send() 已有 in-flight 守卫、可达性弱于桌面本次修复；CmsIndexApp 多函数写 overviewText 但均首屏 mounted/useQuery 无快速切换入口，未构成强可达竞态；designer 族同步回填已在前轮证伪。
+
+### 132.2 laiyipao/miniapp 挑战防线在途重复上报（R273，lybug-r273）
+- 缺口：me.vue challenge()（:1412）的 simulating 此前只驱动按钮文案（置位于 :1433、finally 复位 :1492），无 return 守卫。关键辨析：schedulePending 内含 clearTimeout 使 30ms 延迟窗口内连点被取消（证伪「连点双发」直觉），真正可达窗口是模拟完成、challengeDefense 请求在途期间 simulating 仍置位时点另一目标→并发再发一次上报；服务端每次上报记 attempts+1 并发放窃取（challenge 端点 authRateLimit 下 user_daily_challenges INSERT/UPDATE），双点双倍消耗每日挑战次数。与 R263–R272 in-flight 守卫同族。
+- 修复：challenge() 入口加 if (simulating.value) return + 5 行说明注释（CRLF 1761 行无 BOM 保持）。新增 me_challenge_inflight.test.ts（双头完整 jsdom）：首次 challengeDefense 挂起、在途期间再点第二目标，断言只上报 1 次。
+- 主线程独立 RED→GREEN（laiyipao/miniapp 下 pnpm exec vitest run --config vitest.config.ts src/pages/me/me_challenge_inflight.test.ts，仅还原 me.vue 保留新测试）：RED exit1 expected "vi.fn()" to be called 1 times, but got 2 times（:172）→恢复 GREEN 1 passed。真值守卫 TestNoRealSecretsInRepo|TestNoInfraIdentifiersInRepo exit0。
+- 证伪方向：ContentView 批量生成/LevelsView/SkillsView 提交/BattlesView 验真/登录/重置/签到/兑换/购买/删除防线均已守卫或服务端幂等。后续线索（未改）：R272 遗留 redemption 服务端批量幂等仍缺，需服务端可达性论证避免为改而改；admin 批量/导出操作本轮未见可达竞态。
+
+### 132.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 166 文件/1669 passed + pnpm typecheck 6 项目 0 + biome lint 473 文件 0 error(30 info 既有)；miniapp 146 文件/1501 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check 0；diff --check 0。三处新文件 SPDX 双头、格式（LF/CRLF）保持、真值不入库。
+- 四目标：①目标一 R273 BBS 详情浮层竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R273 挑战防线重复上报真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
