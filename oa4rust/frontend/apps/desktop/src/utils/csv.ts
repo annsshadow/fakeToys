@@ -74,7 +74,12 @@ export function rowsToObjects(headers: string[], rows: string[][]): Record<strin
  * 行尾统一 LF，与 parseCsv 的方言互逆。
  */
 export function buildCsv(headers: string[], rows: string[][]): string {
-  const quote = (v: string) => `"${v.replace(/"/g, '""')}"`
+  const quote = (v: string) => {
+    // CWE-1236：以 = + - @（含前导空白/制表符/回车）开头的单元格在 Excel/WPS 中会被当公式求值，
+    // 前置单引号强制其为纯文本；普通值行为不变。
+    const safe = /^\s*[=+\-@]/.test(v) ? `'${v}` : v
+    return `"${safe.replace(/"/g, '""')}"`
+  }
   const line = (cells: string[]) => cells.map((c) => quote(String(c ?? ''))).join(',')
   return [line(headers), ...rows.map(line)].join('\n')
 }

@@ -3615,3 +3615,21 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### R288 收官
 - 四目标：①目标一 R288 剪贴板兜底缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R288 选关页双击导航真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 149. 第140轮：R289 CSV公式注入防护与战报详情加载竞态
+
+### 149.1 oa4rust/desktop CSV 公式注入防护（R289，oaopt-r289）
+- 缺口：QueryManagerDeep.exportResults()/QueryStatementDesigner.exportCSV() 把查询结果交 buildCsv 导出 query_result.csv，原 quote 只做双引号包裹（RFC4180 列对齐），对 = + - @ 及前导空白/制表符/回车后跟危险字符零处理；查询结果是用户可录入业务字符串，导出后被同事用 Excel/WPS 打开即当公式求值（=HYPERLINK/DDE/cmd| 可触发远程请求或命令），CWE-1236。全局 grep 确认无防护。
+- 修复：仅改 frontend/apps/desktop/src/utils/csv.ts 的 buildCsv quote，危险前缀正则 /^\s*[=+\-@]/ 命中时前置单引号强制纯文本，普通值行为完全不变。新增 csv.formula-injection.test.ts（SPDX 双头 3 例）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/csv.ts.r289.bak→checkout 还原基线→vitest RED 1 failed @test:13→恢复修复版→GREEN 3 passed）。测试字面量真实 CR 被 JS 模板字符串规范化为 LF 曾致一次假失败，改用 String.fromCharCode(9/13) 重写后重走 RED→GREEN。
+- 门禁：OA pnpm test 176 文件/1700 passed、pnpm build exit0、pnpm typecheck 6 项目 0、pnpm lint 488 文件 0error(33info)。
+
+### 149.2 laiyipao/miniapp 战报详情加载提示竞态（R289，lybug-r289）
+- 缺口：battles.vue 战报详情展开「加载中」用全局单例 detailLoading=ref(false)，并行拉两条战报详情时先发请求的 finally 误清后发请求的加载提示：展开 A→展开 B→A 响应先回清 loading，此时展开的是 B 但 B 仍在飞、details[B] 未到，模板 v-if=loading 为假且 v-else-if=detail 为 undefined→展开区空白。同文件 listReqSeq/loadDetail 缓存守卫均不涉及该全局 loading。
+- 修复：改为按战报 id 归属的 detailLoadingIds=ref<Set<number>>(new Set())，模板 .has(it.id)、loadDetail .add(it.id)/finally .delete(it.id)，只清当前战报标记。battles.vue 3 处外科手术式修改（模板 149、状态 297、loadDetail 512/519），LF 无 BOM。新增 battles_detail_loading_race.test.ts（SPDX 双头 jsdom 1 例，deferred Promise 钉住双面竞态）。
+- 复核：主线程独立 RED→GREEN（备份 /d/tmp/battles.vue.r289.fixed-final→checkout 还原基线 GUARD=0→vitest RED expected "" to contain "加载中" @test:99→恢复修复版 GUARD=4→GREEN 1 passed）。
+- 门禁：miniapp 155 文件（154 passed/1 skipped）/1524 passed(2 skipped) + type-check + type-check:test 双 0；admin 37 文件/498 passed + type-check 0。admin type-check:test 基线固有 12 错误（全在 admin/tests/*.test.ts，git status 证明与 HEAD 一致未改）；server go test 全量超 10 分钟属长时模拟，纯前端本轮未涉及，以编译级 go test -run ^$ ./... exit0 验证无回归。
+- 负结果方向：offsetPager/format/share/fixed/statusBar/labels 纯函数测试完整、config.go 三守卫、client.ts 令牌刷新 single-flight、admin requestBlob 无软失败线索（getBlob 均管理员登录态端点不可达）、httperr 分类/service 层 csv_safe/normalize/idempotency/export_limit、economy/gems/verification/battle 引擎纯函数、ContentView/UsersView/login/store 全完善，均否决未改。
+
+### R289 收官
+- 四目标：①目标一 R289 CSV 公式注入防护完成，持续找缺口②目标二 §99 已交付③目标三 R289 战报详情加载竞态真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。

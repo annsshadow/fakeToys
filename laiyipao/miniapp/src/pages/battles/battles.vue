@@ -146,7 +146,7 @@
 
           <!-- 详情（2026-11-01 新一轮第 41 轮）：展开时按需拉取单局完整回顾 -->
           <view v-if="expandedId === it.id" class="battle-detail">
-            <view v-if="detailLoading" class="dim" style="padding: 8rpx 0">加载中…</view>
+            <view v-if="detailLoadingIds.has(it.id)" class="dim" style="padding: 8rpx 0">加载中…</view>
             <template v-else-if="detail">
               <view class="kv">
                 <text class="muted">发射 / 命中</text>
@@ -293,7 +293,8 @@ async function reload(): Promise<void> {
   }
 }
 const details = ref<Record<number, BattleDetail>>({})
-const detailLoading = ref(false)
+// 第 140 轮：按战报 id 归属「加载中」，避免并行拉取时先回的响应误清后者的提示
+const detailLoadingIds = ref<Set<number>>(new Set())
 
 /** 深链目标战报 id（2026-11-01 新一轮第 43 轮）：结算页跳转时携带。 */
 const focusBattleId = ref(0)
@@ -508,13 +509,14 @@ async function toggleDetail(it: BattleHistoryItem) {
 /** 拉取单局详情（已缓存则直接返回）。 */
 async function loadDetail(it: BattleHistoryItem): Promise<void> {
   if (details.value[it.id]) return
-  detailLoading.value = true
+  detailLoadingIds.value.add(it.id)
   try {
     details.value[it.id] = await api.myBattleDetail(it.id)
   } catch {
     // 详情加载失败：保留展开态，可再次点击重试
   } finally {
-    detailLoading.value = false
+    // 只清当前战报的加载标记，不能触碰其它仍在飞的战报（第 140 轮竞态修复）
+    detailLoadingIds.value.delete(it.id)
   }
 }
 
