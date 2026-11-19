@@ -578,6 +578,7 @@ const batchGeneratedCodes = ref<AdminRedeemCodeView[]>([])
 const batchCodesVisible = ref(false)
 
 async function submitCodeBatch() {
+  if (batchLoading.value) return
   const reward = parseReward(codeForm.value.reward)
   if (!reward) {
     ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')

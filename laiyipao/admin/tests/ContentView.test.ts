@@ -1149,3 +1149,29 @@ describe('ContentView 编辑中预览他条公告不得污染编辑表单（第 
     wrapper.unmount()
   })
 })
+
+describe('ContentView 兑换码批量生成防重（R272）', () => {
+  it('批量生成：首次请求未返回时重复调用不得再次调用批量接口', async () => {
+    let resolve!: (v: { items: Row[] }) => void
+    const promise = new Promise<{ items: Row[] }>((r) => { resolve = r })
+    createRedeemCodesBatch.mockReset()
+    createRedeemCodesBatch.mockImplementation(() => promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      batchCount: number
+      submitCodeBatch: () => Promise<void>
+    }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    const p1 = vm.submitCodeBatch()
+    const p2 = vm.submitCodeBatch()
+    resolve({ items: [{ id: 1, code: 'AAAAAAAAAAAA', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true }] })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createRedeemCodesBatch, '双击「批量生成」只应发出一次请求').toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+})

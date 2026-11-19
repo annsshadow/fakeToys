@@ -42,6 +42,7 @@ const activeId = ref('')
 const saving = ref(false)
 const result = ref<unknown>(null)
 const resultTitle = ref('')
+let detailSeq = 0
 const emptyDefinition = (): QueryViewDefinition => ({
   version: 1,
   sql: '',
@@ -56,6 +57,7 @@ const form = ref<{ name: string; viewFlag: string; definition: QueryViewDefiniti
 })
 const canSave = computed(() => form.value.name.trim() && queryFlag.value.trim() && form.value.definition.sql.trim())
 function newView() {
+  detailSeq++
   activeId.value = ''
   form.value = { name: '', viewFlag: '', definition: emptyDefinition() }
   result.value = null
@@ -76,8 +78,10 @@ async function loadViews() {
   }
 }
 async function openView(id: string) {
+  const seq = ++detailSeq
   try {
     const response = await api.get<any>(designerPaths.viewGet(id))
+    if (seq !== detailSeq) return
     activeId.value = id
     queryFlag.value = response.data?.queryFlag ?? queryFlag.value
     form.value = {

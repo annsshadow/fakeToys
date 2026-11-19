@@ -3323,3 +3323,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 130.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 164 文件/1665 passed + pnpm typecheck 6 项目 0 + biome lint 471 文件 0 error(30 info 既有)；miniapp 145 文件/1500 passed(2 skipped) + type-check 0；admin 37 文件/497 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
 - 四目标：①目标一 R271 表设计器详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R271 预设保存连点双写真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+## 131. 第122轮：查询视图设计器详情回填竞态 + 兑换码批量生成防重
+
+### 131.1 oa4rust/desktop QueryViewDesignerApp 详情回填竞态（R272，oaopt-r272）
+- 缺口：与 R271 已修 QueryTableDesignerApp 同构的遗漏面。QueryViewDesignerApp.vue openView(id) 通过 await api.get(viewGet(id)) 异步拉详情后回填 activeId/queryFlag/form，无序号守卫；newView() 也未让在途详情失效。可达路径 A：快速先后点两个视图，首个慢响应晚于第二个返回→旧详情覆盖 form 且 activeId 被改回旧 id；路径 B：点视图后立刻点「新建视图」→旧视图延迟响应回填刚清空的表单并把 activeId 从空改成旧 id。危害：随后 saveView() 因 activeId 非空走 api.put(viewSave(activeId))，把新编辑内容覆盖写到服务端旧视图记录上，服务端权威态被错误消费，属实质数据破坏而非渲染噪声。
+- 修复：新增 let detailSeq=0；newView() 内 detailSeq++ 作废在途详情；openView() 开头 const seq=++detailSeq，await 后 if(seq!==detailSeq) return 先于任何 activeId/form 回填（源文件仅 +4 行，LF）。
+- 测试：新增 QueryViewDesignerApp.detailRace.contract.test.ts（双头）2 例源码契约（序号守卫顺序、newView 失效在途）。主线程独立 RED→GREEN（oa4rust 下 pnpm exec vitest run src/views/QueryViewDesignerApp.detailRace.contract.test.ts --root frontend/apps/desktop）：RED exit1 2 failed（expected source to contain let detailSeq = 0、newView 体 to contain detailSeq++）→恢复 GREEN 2 passed。
+- 负结果（勿重复）：ConfigDesignerApp selectItem/editItem 同步回填；PortalPageDesignerApp.loadPageMeta 只写 pageMeta ref 且表单同步预填；ProcessFormDesignerApp.loadFormDetails 独立明细面板；CmsDict/Form/View、PortalDict/Widget、ProcessDict、QueryImporter/Stat、ServiceInvoke editItem 均同步 form.value={...item}；QueryDesigner.loadQueryDetail 仅展示串——均无此同族竞态。
+
+### 131.2 laiyipao/admin 兑换码批量生成双击双批（R272，lybug-r272）
+- 缺口：ContentView.vue submitCodeBatch()（:580）函数体开头原无在途守卫，对比同文件 submitAnnouncement(annSaving)/submitCode(codeSaving) 及 BattlesView/LevelsView/SkillsView 的 submit 均有函数内守卫，属同型遗漏。模板 :971 :disabled="editingCodeId !== null || batchLoading" 仅 UI 防护，函数可被快速双击穿透。服务端 createRedeemCodesBatch（api/index.ts:771）未传 idempotencyKey（对比 grantUser:346-351），handlers_admin.go:1328 idemKey 空 key 走无幂等直生成分支，双击真实产生两批码→资损/数据污染。
+- 修复：submitCodeBatch 开头加 1 行 if (batchLoading.value) return（批量语义是"再生成一批同参新码"属合法操作，只补前端守卫不动服务端幂等）；ContentView.test.ts 新增 describe 2 例外的 1 例（deferred promise 模拟在途、连调两次断言接口仅 1 次）。两文件 LF 无 BOM 保持。
+- 主线程独立 RED→GREEN（laiyipao/admin 下 pnpm exec vitest run tests/ContentView.test.ts，仅还原 ContentView.vue 保留新测试）：RED exit1 51 测试 1 失败 expected "vi.fn()" to be called 1 times, but got 2 times（:1174）→恢复 GREEN 51 passed。
+- 预存债务核实（fail-loud）：admin type-check:test（tsc -p tsconfig.vitest.json）11 个 TS 错误经 stash 基线对照——还原本轮两文件后同样 EXIT=2 且 11 错误、diff 错误集 DIFF_EXIT=0（错误全在 1153 行新增测试之前），确认为预存债务非本轮引入；主门禁 type-check（vue-tsc）EXIT=0 绿。后续线索：服务端 redemption 批量生成无幂等可考虑强校验 Idempotency-Key；admin 测试类型检查预存错误建议单独排期清理。
+
+### 131.3 门禁与四目标
+- 门禁（主线程全绿）：OA 根 165 文件/1667 passed + pnpm typecheck 6 项目 0 + biome lint 472 文件 0 error(30 info 既有)；miniapp 145 文件/1500 passed(2 skipped) + type-check 0；admin 37 文件/498 passed + type-check(vue-tsc) 0；diff --check 0。两处改动均既有文件内追加、格式（LF）保持、真值不入库。
+- 四目标：①目标一 R272 查询视图详情竞态守卫复核完成，持续找缺口②目标二 §99 已交付③目标三 R272 兑换码批量双击资损真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
