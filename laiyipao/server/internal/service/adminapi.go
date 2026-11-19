@@ -1263,11 +1263,18 @@ func redeemRewardCurrencyOK(k string) bool {
 	return isWalletToken(k)
 }
 
-// validateRedeemReward 校验兑换码奖励键，未知币种直接 ErrBadInput（HTTP 400）。
+// validateRedeemReward 校验兑换码奖励键与数量，非法输入直接 ErrBadInput（HTTP 400）。
 func validateRedeemReward(reward map[string]int) error {
-	for k := range reward {
+	for k, v := range reward {
 		if !redeemRewardCurrencyOK(k) {
 			return fmt.Errorf("%w: 未知货币 %q", ErrBadInput, k)
+		}
+		// R281：数量必须为正整数。负数量码一旦被兑换，玩家侧走 grantWallet
+		// 的扣减分支（WHERE col >= -delta）会被静默倒扣货币/道具；0 无意义。
+		// HTTP handler 直接收 map[string]int，前端 parseReward 的非负正则
+		// 不构成服务端防线，必须在这里统一拦住。
+		if v <= 0 {
+			return fmt.Errorf("%w: 奖励 %q 数量必须为正整数，实际 %d", ErrBadInput, k, v)
 		}
 	}
 	return nil

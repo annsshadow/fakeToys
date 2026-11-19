@@ -3478,3 +3478,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ### 139.3 门禁与四目标
 - 门禁（主线程全绿）：OA 根 170 文件/1686 passed + pnpm typecheck 6 项目 0 + biome lint 480 文件 0 error(30 info 既有)；miniapp 151 文件/1516 passed(2 skipped) + type-check 0 + type-check:test 0；admin 37 文件/498 passed + type-check 0；diff --check 0。两处新测试 SPDX 双头、格式（LF）保持、真值不入库。
 - 四目标：①目标一 R280 考勤申诉写后权威态刷新复核完成，持续找缺口②目标二 §99 已交付③目标三 R280 出战槽位加载陈旧覆盖真 bug 修复完成④目标四真实 e2e 39 passed，reject/expired 已定性环境时序。
+
+## 140. 第131轮：兑换码奖励数量服务端校验（R281，中断后主线程收口）
+
+### 140.1 laiyipao/server 负数量/零数量兑换码校验
+- 缺口：validateRedeemReward 原只校验奖励键名白名单（walletColumns ∪ walletTokens），不校验数量 v。运营可经 HTTP 直接 POST JSON 绕过前端 parseReward 非负正则，建出 {"coin":-100} 兑换码；玩家兑换走 grantWallet 条件扣减分支（WHERE col>=-delta）被静默倒扣，道具同理 grantToken。完整可达链：运营建码 → 玩家资产损失。
+- 修复：validateRedeemReward 遍历改为 for k,v，v<=0 统一 ErrBadInput；NewTest admin_redeem_reward_amount_test.go 覆盖单建负币/负道具/零值、批量整批拒绝零落库、编辑改负被拒、合法正值可建可兑（SPDX 双头）。
+- 复核：主线程独立 RED→GREEN（备份→checkout 还原→go test ./internal/service -run TestAdminRedeemRewardRejectsNonPositiveAmount RED 应 ErrBadInput 实际 <nil> →恢复 GREEN ok 4.561s）。
+- 门禁：前端 OA 170 文件/1686 passed + typecheck6 + lint480 文件 0error；miniapp 151 文件/1516 passed(2 skipped)+type-check；admin 37 文件/498 passed+type-check；diff --check 0。go test ./internal/domain/... 70.764s ok；./internal/service/... 全量 10min 超时属预存测试超时（目标用例单跑 GREEN，非本次引入）。
+- 四目标：①目标一 R281 收口持续找缺口②目标二 §99 已交付③目标三 R281 兑换码倒扣真 bug 修复完成④目标四真实 e2e 39 passed。
