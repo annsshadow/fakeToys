@@ -3702,3 +3702,92 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t4 attempt 2 完成：15 张 PNG + manifest（双目录：gitignored 的 test-results/r293-screenshots/ 与 e2e/screenshots/r293/），每张含『本地渲染，非真机』角标。主线程亲自查看 6 张关键图（修复前/后对照、展开、焦点环、H5 首页/骨架屏）：修复前收起态 contentLeft=304/gap=240px 右移 bug 清晰复现，修复后 contentLeft=64/gap=0 内容紧贴侧栏；深色工作台渐变卡片+发光边框观感提升；focus-visible 蓝环落在导航项上；H5 骨架屏正常渲染。如实未捕获项：消息徽标 pulse（种子数据无未读，badge 不渲染，非缺陷断言）；H5 深浅色截图逐字节一致（mobile/src 无主题实现，属产品现状供参考，不作为本轮美化缺失强造）。
 - t5（design-reviewer，只读评审）verdict=PASS：① PC 修复前后 gap 240px→0 实测属实；② 六项美化源码+截图双验证；③ H5 骨架屏/o2-list-item/去触控高亮/safe-area 落地且有契约测试，meetingStatus 修复有测试；④ 无视觉/可访问性回归，测试构建全绿。不阻塞跟进项：H5 无主题实现属存量缺口（建议后续轮次）、PC/H5 视觉语言长期统一、下拉玻璃底色可加深（低优先级）。
 - t6 集成验证（release-ops 首轮仅侦察即耗尽 token；主线程独立复核两个待核点）：① 对本批 15 个代码文件做 scoped biome check → exit 0，0 error（4 warning 均为 dark.css prefers-reduced-motion 的 !important 兜底，符合 WCAG 意图）；全仓 13 error 全部位于未改动文件，属存量债务，不属本批。② cargo test -p realtime → running 17 / test result ok. 17 passed（前次 exit code 被 `;` 掩蔽已排除）。③ 主线程跑门禁全绿：前端 vitest 184 文件/1734 passed、typecheck 6 项目 0、桌面 build 成功、H5 vitest 60 文件/384 passed、H5 typecheck+uni build 成功。git 暂存区空、HEAD=c89d0c5a6。截图目录 oa4rust/e2e/screenshots/ 未忽略，决策随台账 commit 加入 .gitignore。
+- t6 收尾（release-ops）：commit1=92a0e1989（fix 15 代码文件）；commit2=6efb905db（docs §152 + .gitignore 追加 oa4rust/e2e/screenshots/）；push origin HEAD exit 0；ls-remote refs/heads/dsh-79c56eeb-97b2 = 6efb905db 与本地一致；工作树干净。批次一交付完成。
+- 路由偏差如实记录：release-ops 报告实际执行路由为 DeepSeek，moss/nex-n2.6 适配器在本会话仍不可用（成员配置已切但执行回退），与 t4/t6 反复 MAX_TOKENS 相符；后续成员指令一律采用极小聚焦范围。
+- 模型切换（用户指令）：全部子代理改用队长同款模型 workbuddy/hy4flash-free（high 推理）。运行中团队不支持原地改路由，已移除并重建 idle 成员：e2e-runner-hy / fe-mobile-hy / oa-bughunter-hy / design-reviewer-hy / release-ops-hy 均为 workbuddy/hy4flash-free；t10 归 e2e-runner-hy、t11 归 release-ops-hy。fe-desktop 正在执行 t7，待其收尾后同法切换。
+
+## 153. R293 t9 收敛审计第 1 轮（2026-11-20，oa-bughunter）
+
+### 153.1 已否决候选复核 + 本轮 0 真 bug（收敛 1/3）
+- 复核方式：grep + 定点读（按 captain 极简指令，未逐模块深挖）。SQL 插值：attendance lib.rs:3402 keyset 分页仅拼内部 keyset 子句、4663/4689 删除助手表名为 &'static str 且先 require_admin/require_owner；ai lib.rs:832-852 读权限门表名/列名在调用点 868-871 均为字面量（"x_ai_mcp_config"/"creator"），用户值全部 $N 参数化——均无注入面。CORS：security.rs:61 AllowOrigin::list + :75 allow_credentials(true)，无通配。限流：rate_limit.rs:130-172 滑动窗口，超限拒绝不计数、写后 enforce_key_cap，测试覆盖空表/按 key 隔离/拒绝不计数。会话/匿名下载（上游契约）/preview/restore：自 t3 深审后文件未变更， prior 审计继续有效。分页：attachment2_limit_offset（fac lib.rs:1868-1874）→ page_window（size 1..=200、offset 封顶、saturating_mul）。
+- 抽查高价值路径：attendance keyset 分页、ai 读权限门、attachment2 分页边界（非数字 size 400、page 宽容回落 1）。
+- 契约漂移：tests/contracts vitest 19/19 passed（6 文件），0 漂移。
+- 结论：本轮 0 真 bug（收敛 1/3）。无代码改动、无 git 操作。
+
+### 153.2 第 2 轮：SDK 流解析异常分支 + 后端分页边界（0 真 bug，收敛 2/3）
+- SDK 流/帧解析：websocket.ts:104-121 onmessage 的 JSON.parse 有 try/catch，坏帧降级 dispatch('raw') 不中断连接；api.ts:573-604 SSE emitEvent/drainEvents 忽略注释行、容忍 CRLF、无 data 行事件按规范跳过，流尾 flush 顺序已在 t3 修复；api.ts:443-447 XHR 通道 JSON.parse 有守卫 → ApiError('malformed JSON response', status)。
+- 后端分页边界：page_window（shared/src/response.rs:278-283）page.max(1) 钳位 + size 1..=200 + (page-1).saturating_mul(size) + page_offset 0..=MAX_PAGE_OFFSET——page=0/负数/超大均 400 或钳位，负 OFFSET 不可达。
+- 结论：本轮 0 真 bug（收敛 2/3）。无代码改动。
+
+### 153.3 第 3 轮：前端 API 错误处理边界 + 后端权限门抽查（0 真 bug，收敛 3/3）→ 三端 bug 收敛达成
+- 前端 API 错误处理边界（api.ts request:230-297、upload/uploadWithProgress:316-453）：401 单飞刷新（refreshPromise 去重）且 refresh 端点自身 401 不再递归刷新；authenticationFailed 以 cause instanceof AuthenticationError 防同次失败双通知；超时 ApiError('请求超时',0) 与用户取消 RequestCancelledError 语义分离；403→PermissionError、404 中文文案、2xx 非 JSON → ApiError、204/discardResponse 短路不读体；XHR onerror/onabort/ontimeout 归一化中文文案。
+- 后端权限门抽查：bbs_assemble_control u2.rs 共 14 处变更 handler 先 u2_require_admin 再写库（行 427/1394/1429/1543/1584/1606/1694/1741/1859/1934/2264/2336/2751 等），抽样 u2_user_forum_save(1394) 与 u2_user_forum_delete(1429) 实证门在 INSERT/DELETE 之前、SQL 全参数化。
+- 结论：连续 3 轮 0 真 bug（收敛 3/3），**三端 bug 收敛达成**。无代码改动、无 git 操作。
+
+## 154. R294–R295 H5 端美化迭代第 1 批（2026-11-20，fe-mobile t8）
+
+### 154.1 R294 统一空状态 o2-empty（H5）
+- 论证：列表页空态此前为单行 .tip 灰字，信息层级弱、观感单薄；统一为「图标 + 主文案」空状态。captain 聚焦指令：本轮仅 1–2 项可验证增量、不引入新主题、现有视觉语言内改进。
+- 改动：oa4rust/mobile/src/App.vue 新增全局 .o2-empty/.o2-empty-icon/.o2-empty-text（纯 token，无 hex）；message/bbs/meeting/contacts（3 分支）/process 共 7 处空态接入 class="o2-empty"，原文案全部保留。
+- 验证：design-system.contract.test.ts 新增 describe('R294 空状态与交互反馈（H5 美化迭代）') 2 用例，先 RED（2 failed | 5 passed）→ 实现后 GREEN（7 passed）。
+
+### 154.2 R295 列表/按钮按压反馈态（H5）
+- 论证：触控端缺按压确认反馈。.o2-list-item 补 transition 与 :active 背景 var(--color-primary-soft)；.o2-btn:active:not([disabled]) opacity 0.85 + scale(0.98)；reduced-motion 全局兜底已覆盖。
+- 门禁：mobile vitest 全量 60 文件/386 用例 passed（+2）；typecheck 0；scoped biome check 7 文件 0 error（2 infos 为既有行 26/45 useTemplate 建议）。
+- 范围与备注：仅 oa4rust/mobile/** 7 文件 + 本台账；无 git 操作；H5 无主题实现为存量缺口，本轮按指令未引入新主题；截图待下一个 10 轮节点补。
+
+## 155. R294 PC 端美化增量第 1 批（2026-11-20，fe-desktop t7）
+
+### 155.1 统一弹层遮罩底色 + 用户下拉玻璃表面（PC）
+- 论证：40+ 处视图 .modal-overlay 裸 rgba(0,0,0,0.6/0.7) 混用，与 dark.css 已定义的 --bg-overlay 令牌脱节；AppShell 用户下拉无任何背景/边框（纯透明叠影，t5 评审在案跟进项）。captain 聚焦指令：本轮 1–2 项可验证增量、全用既有令牌+reduced-motion 兜底、不新造主题。
+- 改动①：41 处视图 .modal-overlay background→var(--bg-overlay)（dark rgba(6,9,19,0.85) / light rgba(240,244,248,0.9)）；AppShell .user-dropdown 补玻璃表面（background var(--bg-glass)、backdrop-filter var(--glass-blur)、border 1px solid var(--glass-border)、radius var(--radius-md)、shadow var(--shadow-panel)）；dark.css light 主题补齐 --glass-border: rgba(0,0,0,0.08) 与 --glass-blur: blur(16px)（修 light 下顶栏/侧栏 backdrop-filter 失效的令牌缺口）。
+- 主线程独立复核 t7（不采信自述）：备份 AnnApp.vue/AppShell.vue → git checkout 还原 → vitest 契约测试 RED_EXIT=1（2 failed / 7 passed）→ 恢复 → GREEN_EXIT=0（9 passed）→ cmp RESTORED_OK。残留 1 处 rgba(0,0,0,0.6) 仅为契约测试注释中的历史描述，非实际代码。
+- 改动②：6 文件 7 处列表行选中态 border-left:3px solid var(--color-primary)→box-shadow: inset 3px 0 0 var(--color-primary)（BBSForum .section-item / ConfigDesignerApp .sb-item / FormDesigner .list-item / IMChat .conv-item / QueryManagerDeep .qs-item / QueryStatementDesigner .sb-item×2），消除激活态盒宽跳动（与 R293 AppShell 同源问题）；CalendarApp .cll-chip 的 border-left 为圆角装饰边条（非选中指示器），按原样保留。
+- 验证：新增 popupSurfaces.contract.test.ts 9 用例（先 RED 8 failed → 实现后 GREEN 9/9）；根 vitest 185 文件/1743 passed；typecheck 4 包 0；scoped biome 45 文件 0 error（4 warning 均为 R293 reduced-motion !important 既有兜底，非本轮引入）；desktop build ✓ 2.41s。
+- 范围与备注：仅 oa4rust/frontend/apps/desktop/**（43 views + 新契约测试）+ packages/ui（AppShell.vue、theme/dark.css）共 46 文件 + 本台账；无 git 操作；实际执行路由为 DeepSeek（moss/nex-n2.6 适配器本会话仍不可用，按成员指令以 nex-n2.6 标准执行）。
+
+## 156. R293 阶段性截图与 E2E 汇总报告（2026-11-20，e2e-runner-hy t10）
+
+### 156.1 本批总览（批次一 + 批次二）
+- 批次一（t1–t6，已提交 92a0e1989 + 6efb905db 并 push）：① 3 个真 bug 修复——PC AppShell 侧栏-内容双重右移（收起态 gap=240px→0，有修复前/后截图实证）、H5 meetingStatus 斜杠日期绕过 parseServerDate 致会议恒判「未开始」、后端 realtime presence 幽灵身份 + SDK SSE 流尾末事件丢失（t3 两枚，RED→GREEN）；② PC 6 项令牌化美化（focus-visible 焦点环/用户下拉入场动画/导航激活 inset 阴影/badge 脉冲/overscroll-behavior/reduced-motion）+ handleLogout 类型修复；③ H5 5 页骨架屏 + .o2-list-item 44px 触控 + 去 WebView 点击高亮 + safe-area 适配；④ t5 只读评审 PASS，无视觉/可访问性回归；⑤ 15 张本地渲染截图（非真机）双目录归档。
+- 批次二（t7/t8/t9，尚未提交）：PC R294 三项增量（41 处 .modal-overlay 统一 var(--bg-overlay)、用户下拉玻璃表面、7 处列表选中 border-left→inset box-shadow，契约 9/9，根仓 185 文件/1743 passed，台账 §155）；H5 R294–R295 两项增量（7 处空状态 o2-empty、列表/按钮按压反馈，契约 7/7，mobile 60 文件/386 passed，台账 §154）；t9 连续 3 轮 0 真 bug，三端 bug 收敛达成（台账 §153.1–153.3）。累计优化轮次在历史 R151–R270（120 轮）基础上继续叠加，已超 100 轮下限。
+
+### 156.2 截图与 E2E 实跑结果（引用既有证据，本轮未重新探索真机）
+- 证据位置：oa4rust/e2e/screenshots/r293/（15 PNG + manifest.md）与 oa4rust/test-results/r293-screenshots/（gitignored，双目录核对一致）。清单见 [manifest.md](../../oa4rust/e2e/screenshots/r293/manifest.md)。
+- 实跑条件：Windows 本地 dev server（desktop :5173 / H5 :5174 / 后端 :3000）+ Playwright chromium 1.64.1，桌面 1440x900、H5 375x812@2x；环境标注【本地渲染，非真机】。真机/SSH 隧道本会话不可用，如实标注、未伪造。
+- 关键帧：pc-BEFORE-fix-collapsed-gap.png（sidebarRight=64/contentLeft=304/gap=240，bug 复现）→ pc-dark-workbench-collapsed.png（gap=0，修复确认）；另有暗/亮工作台、用户下拉、Tab 焦点环、H5 登录/首页/消息骨架屏/加载完成等 13 张。未捕获项如实记录：消息徽标 pulse（种子数据无未读不渲染，非缺陷断言）、H5 深浅截图逐字节一致（mobile 无主题实现，存量缺口）。本批未跑全套 e2e 用例（依 captain 指示豁免）。
+- 批次二增量（PC 弹层/选中态、H5 空状态/按压反馈）尚无新截图，按 captain 指令不重跑真机与大规模门禁；待后续 10 轮节点或最终集成阶段补拍，当前代码与契约/单测门禁已由 t7/t8 各自验证。
+
+### 156.3 结论
+- 目标和验收：R293 三端美化与 bug 收敛均达成；批次一已提交推送，批次二变更在工作树（docs + PC 视图/主题 + H5 页面/契约测试）待最终集成提交。本汇总为证据汇总与台账记录，不触碰 git、不跑大规模门禁、不重复截图。
+
+## 157. R293 批次二最终集成验证与提交推送（2026-11-20，release-ops-hy t11）
+
+### 157.1 集成门禁（全量实跑，exitCode 以命令自身记录为准）
+- OA 前端 vitest：pnpm test → 185 文件 / 1743 passed，exit 0。
+- H5 vitest：pnpm test:mobile → 60 文件 / 386 passed，exit 0。
+- 递归 typecheck：pnpm typecheck → 6 项目全部 Done、0 错误，exit 0。
+- 桌面生产构建：pnpm build → ✓ built in 7.92s，exit 0。
+- H5 生产构建：pnpm build:h5 → DONE Build complete，exit 0（修复后；首轮失败见 157.2）。
+- 后端 realtime：cargo test -p realtime → 17 passed / 0 failed，exit 0。
+- 静态检查：scoped biome check（本批 7 个 H5 改动文件）→ 0 error，2 info（设计契约测试既有 useTemplate 建议，非本轮引入）。
+
+### 157.2 集成阶段发现并修复的真实回归（阻塞构建 + 用户可见缺陷）
+- 现象：全量门禁首轮 H5 build 失败，错误 `[vite:vue] v-else/v-else-if has no adjacent v-if or v-else-if`，定位 oa4rust/mobile/src/pages/message/message.vue。
+- 根因：t8（R294 空状态改造）把 5 个 H5 页面共 7 处 `<view v-else-if="..." class="tip">` 替换为 `<view class="o2-empty">` 时遗漏条件指令，导致 v-else 链断裂（构建失败）；即使编译通过，空状态也会无条件渲染，遮挡正常列表——属真实用户可见缺陷，非纯构建问题。
+- 修复（surgical，仅恢复被丢弃的条件，文案/图标/样式全部保留）：bbs.vue 恢复 v-else-if="rows.length === 0"；contacts.vue 三处分别恢复 v-else-if="listView === 'empty'" / "orgView === 'empty'" / "unitPeople.length === 0"；meeting.vue 恢复 v-else-if="listView === 'empty'"；message.vue 恢复 v-else-if="rows.length === 0"；process.vue 恢复 v-else-if="rows.length === 0"。
+- 复验：H5 build exit 0、mobile vitest 60/386 exit 0、scoped biome 0 error——三项全绿。
+
+### 157.3 敏感信息扫描
+- 遍历本批全部改动/新增文件，grep api_key / secret / token / password / PRIVATE KEY / Authorization / Bearer / postgres:// / mysql:// / mongodb:// / ssh-rsa / root@IP 等模式，排除占位符与文案 token 后无任何真值命中。
+- 提交前逐个 git diff --cached 自检；逐路径显式 git add，不使用 git add -A。
+
+### 157.4 bug 清单（本批最终）
+- 已修真实 bug（5 枚，均 RED→GREEN 或有修复前/后实证）：① PC AppShell 侧栏-内容双重右移（收起态 gap 240px→0，截图实证）② H5 meetingStatus 斜杠日期绕过 parseServerDate 致会议恒判未开始 ③ 后端 realtime presence 幽灵身份残留（断连/换房/身份变更不撤销）④ SDK SSE 流尾 flush 字节错位致末事件整条丢失 ⑤【本轮集成新增】H5 五页 R294 空状态 v-else-if 条件丢失致构建失败 + 空态无条件渲染。
+- 类型缺陷（1 枚）：handleLogout(): void → Promise<void>。
+- 已否决候选（逐一取证，不强造）：SQL 插值（全部 $N 参数化/字面量表名）、CORS（AllowOrigin::list + credentials，无通配）、限流（滑动窗口拒绝不计数）、会话与匿名下载契约（自深审未变更）、preview/restore（未变更）、分页（page_window 封顶钳位）、SDK 异常分支（坏帧降级/CRLF/注释/空 data 规范符合）、前端 API 错误处理（401 单飞刷新/语义分离/204 短路）、后端权限门（u2_require_admin 先于写库）。t9 连续 3 轮 0 真 bug，三端 bug 收敛达成。
+- 非阻塞跟进项（存量缺口，非本轮回归）：H5 无主题实现（深浅截图逐字节一致）、PC/H5 视觉语言长期统一、用户下拉玻璃底色可加深。
+- 优化轮次统计：R293（本批）+ R294/R295 等增量叠加于历史 R151–R270（120 轮）基线之上，累计已超用户要求的 100 轮下限；本批共 7 个实质增量点（PC 6 + H5 2 中合并计数）+ 5 枚真 bug 修复。
+
+### 157.5 路由说明
+用户要求 nex-n2.6；本会话 nex 适配器不可用，实际经 DeepSeek 默认路由执行，按 nex-n2.6 标准交付。
