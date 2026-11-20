@@ -4259,3 +4259,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R305 改造目标细化为两类：①双未消费 20 页（attendance/search + 18 admin）全套落地；②口径差页补 class + 组件下沉；③H5 17 页 branded=0 补 .ai-brand-fill、骨架屏 0/19 补齐。改造后用 t50 同口径脚本复查量化差异。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 226. R305 P0 双端改造（PC 七页）独立复核（2026-11-21）
+- t48（page-work）两提交：48f451d02 精确 6 文件（131+/15-，首轮）+ 29e9ecbf6 精确 4 文件（64+/57-，口径校正增量）。按 t50 校正分两类：口径差页 org(srcVar=4)/bam(13)/bbs(9) 不重复注入令牌，补 ai-page 根标记 + 已有令牌下沉 .ai-page 玻璃/渐变/骨架/8px 栅格；双未消费 attendance(srcVar=0) 全套落地并补空态刷新引导（复用 loadData，不动业务逻辑）。队长定点复跑 Pages.aiStyle.R305.contract.test.ts 4/4 exit0；校正 diff 实读确认真断言（两类语义分别断言，非凑数字）；文档 27 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence r305-p0a-catfix/ 四页 aiPage=2/glass 3-11/h1=1/0 pageerror、source 非物理真机。
+- t49（shell-eng）单提交 c7ba2e2a8 精确 5 文件（154+/22-）。按 t50 校正：口径差页 file/im 补 ai-page 锚点 + 令牌下沉，双未消费 search 全套落地；IMChat 保留 t29 UUID 遮蔽（单聊/群聊·尾号、data-testid=im-conv-N）不回退。队长定点复跑 Pages.aiStyle.R305b.contract.test.ts 3/3 exit0；契约 diff 实读确认真断言（class 令牌规则 hasAiRule 逐选择器断言、aiVarCount≥5、保留 testid 与搜索接口）；文档 28 行合规；evidence r305-p0b-visual/ 三页 aiPage=3/2/2、11 会话 UUID 泄漏 0、0 pageerror、非物理真机。
+- 两任务写域不重叠（t48 desktop views org/attendance/bam/bbs；t49 search/file/im），提交交错（序列 48f451d02→29e9ecbf6→c7ba2e2a8）均已定点按 hash 复核、未依赖 HEAD=@{u}；t48 诚实披露 HEAD 被 t49 在途提交前进、未回滚。改业务接口/路由为零，令牌深度消费与 DOM aiPage 口径对齐达成。t51（H5 品牌渐变/骨架屏）仍在途，t52 终审待 t48/t49/t51 齐备。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
