@@ -4193,3 +4193,7 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：读取 t20 任务终态 status=completed/verdict=pass/findings=[]，output 逐条与源码及 D1 实测证据交叉印证；HEAD=TRACK=818a5285c，暂存区纯净、工作树干净。终审通过，未引入新的阻断项；t21（终审未达标项定向修复）虽已自动 claimed，但无 finding 需修，判定为空操作/无实际改动，随后 t22 全量门禁并入账。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 216. R301 D3 终审未达标项定向修复——空操作裁决（t21，2026-11-21）
+- 交付（design-lead 停工上报 → 队长接管裁决）：t20 终审 verdict=pass/findings=[]，t21 契约 Objective/In scope/Acceptance/Verify 全空，无未达标项可修。design-lead 遵从铁律⑧不臆造 bug 停工上报（attempt a2619861，标 failed，未改动/未提交，工作树干净 HEAD=UP=a4352c94e），队长复核其判断正确。按 t23/t29 先例 reassign_task(assignee=captain, attempt 2) 接管，裁决为空操作完成：未改动任何源码、未提交、工作树保持干净；design-lead 停工不作为失职。t22 全量门禁解锁。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
