@@ -3813,3 +3813,16 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - E2E 失败根因定位（均非代码回归，属环境/配置）：① 代理未重写裸路径 /app/* → 404 → 定位器超时；② 管理员哈希缺 {bcrypt} 前缀 → 登录 fail-closed；③ 代理未覆写 CSRF Origin → 写请求 403。三项逐一取证修复后 32/32 全绿。
 - 结论：本轮部署版本即提交版本，三端在测试服真机 E2E 全绿，无回归。
 
+## 159. 测试服登录 forbidden 修复与口令恢复（2026-11-20，队长）
+### 159.1 用户现象与根因
+- 用户反馈公网登录/操作报 forbidden（ExceptionAccessDenied，14:13:28），并要求把 admin 口令恢复为本地 admin.md 中的值。
+- 取证：登录接口三种 Origin（真实公网 / localhost / 无）均 200 success；口令恢复后公网登录 200，但公网写请求（POST /api/person/signature/save）带真实 Origin 仍 403 forbidden。
+- 根因：测试服 .env 的 APP_PUBLIC_ORIGIN=http://localhost，CSRF 中间件要求请求 Origin 精确等于该值；真实浏览器从公网访问 Origin=https://<测试域名>，与 localhost 不符 → 403。此前 E2E 靠本地代理覆写 Origin=localhost 绕过，掩盖了该真实缺陷。与口令无关，属服务端配置错误。
+
+### 159.2 处置
+- 口令：从用户提供的 admin.md（仓库外，真值不入库不回显）读取，带 {bcrypt} 前缀重算哈希写入 auth_person（person-admin），同步 .admin-credentials（mode 600）。恢复后登录 200 success，账号状态正常（未锁定/失败计数 0/无过期删除）。
+- APP_PUBLIC_ORIGIN：备份 .env（时间戳 .bak）后将值改为真实公网 https origin，systemctl restart oa4rust 后 active。真实浏览器路径复验：公网登录 200、公网写请求 200（saved:true），forbidden 消失。
+- 本地 E2E 代理 Origin 覆写同步改为真实公网 origin；完整 32 用例复跑 32 passed / 0 failed（30.8s）。
+- 结论：用户 forbidden 根因是 APP_PUBLIC_ORIGIN 配置错误（非口令），已修复；口令已按用户要求恢复。真值全程未入库、未回显。
+
+
