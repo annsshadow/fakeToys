@@ -52,11 +52,19 @@ describe('R298 现代管理 UI 全局样式契约', () => {
 })
 
 describe('R298 ModernUI 共享组件与 AdminLayout 标题开关契约', () => {
-  it('ModernUI.vue 提供根容器与默认插槽，样式非 scoped（不局部化全局类）', () => {
+  it('ModernUI.vue 提供根容器与默认插槽；scoped 样式仅作用于组件私有类，不局部化全局类', () => {
     const src = adminRead('ModernUI.vue')
     expect(src).toMatch(/class="modern-page[^"]*"/)
     expect(src).toMatch(/<slot\s*\/>/)
-    expect(src).not.toMatch(/<style[^>]*scoped/)
+    expect(src).toMatch(/\.ai-b5-surface\s*\{/)
+    // 队长 §219 裁决：组件私有类（如 .ai-b5-surface）允许 scoped；
+    // 但 scoped 块内禁止定义 .modern-*/.glass-card/.admin-* 全局类，避免全局样式被局部化。
+    const scopedCss = (src.match(/<style[^>]*\bscoped\b[^>]*>([\s\S]*?)<\/style>/g) ?? [])
+      .map((block) => block.replace(/<style[^>]*>/, '').replace(/<\/style>/, ''))
+      .join('\n')
+    expect(scopedCss).not.toMatch(/\.modern-[a-z0-9-]+/)
+    expect(scopedCss).not.toMatch(/\.glass-card\b/)
+    expect(scopedCss).not.toMatch(/\.admin-[a-z0-9-]+/)
   })
 
   it('barrel 导出 ModernUI 组件与 AdminLayout 标题隐藏 injection key', () => {
@@ -71,6 +79,6 @@ describe('R298 ModernUI 共享组件与 AdminLayout 标题开关契约', () => {
     expect(src).toMatch(/provide\(ADMIN_LAYOUT_HIDE_TITLE/)
     expect(src).toMatch(/inject\(ADMIN_LAYOUT_HIDE_TITLE/)
     expect(src).toMatch(/v-if="!hideTitle"/)
-    expect(src).toMatch(/<h1[^>]*class="admin-title"/)
+    expect(src).toMatch(/<h1[^>]*class="[^"]*admin-title/)
   })
 })

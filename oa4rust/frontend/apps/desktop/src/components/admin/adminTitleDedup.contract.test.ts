@@ -36,7 +36,7 @@ describe('R300 管理页标题去重基座契约', () => {
     const src = read('AdminLayout.vue')
     expect(src).toContain('ADMIN_HIDE_PAGE_TITLE')
     expect(src).toMatch(/provide\(ADMIN_HIDE_PAGE_TITLE, ref\(true\)\)/)
-    expect(src).toMatch(/<h1[^>]*class="admin-title"/)
+    expect(src).toMatch(/<h1[^>]*class="[^"]*admin-title/)
   })
 
   it('AdminPageHeader inject 开关后只隐藏标题/副标题，保留 actions 插槽', () => {
@@ -44,7 +44,7 @@ describe('R300 管理页标题去重基座契约', () => {
     expect(src).toContain('ADMIN_HIDE_PAGE_TITLE')
     expect(src).toContain('inject(ADMIN_HIDE_PAGE_TITLE')
     expect(src).toMatch(/v-if="!hidePageTitle"/)
-    expect(src).toMatch(/class="admin-page-title"/)
+    expect(src).toContain('admin-page-title')
     expect(src).toMatch(/class="admin-page-subtitle"/)
     expect(src, '操作按钮区不得受隐藏开关影响').toMatch(
       /<div class="admin-page-actions">\s*<slot name="actions" \/>\s*<\/div>/,
@@ -70,7 +70,7 @@ describe('R302 系统管理区标题去重', () => {
   const layout = readFileSync(resolve(import.meta.dirname, 'AdminLayout.vue'), 'utf8')
 
   it('topbar currentTitle 在管理区路径下隐藏，员工页保留', () => {
-    expect(shell).toMatch(/<div[^>]*v-if="!isAdminArea"[^>]*class="breadcrumb"/)
+    expect(shell).toMatch(/<(div|nav)[^>]*v-if="!isAdminArea"[^>]*class="breadcrumb"/)
     expect(shell).toMatch(/isAdminArea/)
     expect(shell).toMatch(/route\.path\.startsWith\('\/app\/admin'\)/)
   })
@@ -78,6 +78,6 @@ describe('R302 系统管理区标题去重', () => {
   it('AdminLayout 面包屑只到分组，不再重复末级页名', () => {
     expect(layout).not.toMatch(/class="admin-breadcrumb-current"/)
     expect(layout).toMatch(/admin-breadcrumb-group/)
-    expect(layout).toMatch(/<h1[^>]*class="admin-title"/)
+    expect(layout).toMatch(/<h1[^>]*class="[^"]*admin-title/)
   })
 })

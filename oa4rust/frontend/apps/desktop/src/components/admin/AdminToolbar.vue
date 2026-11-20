@@ -107,7 +107,6 @@ const emit = defineEmits<{
 
 .admin-toolbar-btn.primary {
   background: var(--ai-gradient-brand);
-  color: #fff;
   border-color: var(--color-primary);
   color: var(--bg-base);
 }
