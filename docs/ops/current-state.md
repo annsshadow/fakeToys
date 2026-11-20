@@ -3985,3 +3985,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 部署（2026-11-21 01:06）：部署源 commit 54edb26ea（R303 热帖修复）；ed8dc8e0c..HEAD 的 backend/mobile diff=0，纯前端。
 - 流程：重编 dist（index-Bordjv0s.js，181 文件）→ 打包 web-r303.tgz（807002 字节）→ 远程备份 web.bak-r303-20261121-0106 → scp → tar 解包原子替换 web/ → restart oa4rust=active；冒烟 5/5 全 200，线上服务新 hash index-Bordjv0s.js。
 - 线上真机复验：热帖页 hasGlobalError=false、Test Hotpic 条目正常、总计 1、无加载失败。
+
+## 179. R300 AI 设计令牌层交付与测试服实测（2026-11-21）
+- 背景：团队 oa4rust-pc-ai-refactor 启动，目标为把 oa4rust PC 端重构为最现代、最具 AI 风格的企业办公界面（≥1000 轮、每轮测试服实测+提交）。t1 先交付设计令牌层，作为后续各页改造的共享基座。
+- 交付（design-lead，commit 1ed295f29，精确 4 文件）：新增 packages/ui/src/theme/ai-tokens.css（--ai-* 双主题令牌：8px 栅格、靛蓝→青渐变、克制玻璃 blur(12px)、44px 命令面板、骨架屏 shimmer），经 packages/ui/src/index.ts 全局引入；新增 aiDesignTokens.contract.test.ts（7 例）；design-tokens.md 第 8 章记录对标（Linear/Vercel/Raycast/Notion）与 8px 宏观+4px 微观叠加决策。
+- 验证：契约 vitest 7/7、UI typecheck 0、desktop build ✓；测试服部署新产物 index-BqndLgqS.css、五路由冒烟全 200；真实 Chromium 登录截 4 页（Dashboard/组织/消息/管理）到 gitignored 的 oa4rust/test-results/r300-ai-tokens/，manifest 标注本地渲染、非物理真机。队长独立复核 commit 与 4 文件 stat、截图文件存在性一致。
+- 边界：令牌尚未被页面组件消费，本轮截图仅为基线视觉；后续 t4–t17 逐页接入。真值纪律：口令/私钥/真域名未入库，截图与临时脚本不入库。
