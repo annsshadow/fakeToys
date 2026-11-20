@@ -4019,6 +4019,14 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 确认为精确 3 文件、HEAD=远端追踪=09f24cc23、工作树干净；实读 28 行文档确认真域名/SSH/凭据不入库、截图来源如实标注非真机。非终态，t5/t6/t7 待调度。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 184. R300 B2 工作台与个人域 AI 风格重构（2026-11-21）
+- 交付（page-core，commit 2f95a745bf4a2e4f0166b72f159485a536a3a0e5，精确 6 文件）：oa4rust/docs/ops/oa4rust-pc-pages-r300-b2.md（26 行）+ Dashboard.vue / Personal.vue / Settings.vue / IMChat.vue + Pages.aiStyle.B2.contract.test.ts（69 行）。基于 t1 --ai-* 令牌改造四页：工作台玻璃面板/统计栅格/空态动作入口/骨架 shimmer、个人中心品牌渐变 Hero、设置 AI 栅格与 sr-only 无障碍播报座、消息中心双栏玻璃与会话引导，业务接口/testid 保留。契约 6 项先 RED 后 GREEN（队长独立复跑 6/6 passed，exit 0）。
+- 构建 index-CfiLC8vO.js / index-CcsYol9C.css，部署测试服 PC 静态目录后 Playwright Chromium headless 真实登录逐页实测四页，4 张 1440×900 截图 + evidence.json 落盘 gitignored 的 oa4rust/test-results/r300-b2-pages/（标注非物理真机）；IM 真实会话 11 个；输入中动画样式已定义但本轮未触发，如实记录不伪报。
+- 队长独立复核：git show --stat 精确 6 文件、HEAD=远端追踪=2f95a745b；实读 26 行文档确认真域名/凭据不入库（LEAK_HITS=[]）、截图如实标注；工作树 M/?? 文件系 t6/t7 并行任务在途改动，非 t5 遗留，不混入本提交。非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
 
