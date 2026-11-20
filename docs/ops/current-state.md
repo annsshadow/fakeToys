@@ -4173,3 +4173,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 5 文件、git show diff 确认 api.put(group/list/like) 与 withTimeout(GET /api/departments/tree)、错误条/重试按钮；定点复跑两份 org 契约 9/9 passed（PIPE=0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注、≥1000 轮非终态；evidence.json source 标注 not a physical device；HEAD=TRACK=1d4443c27，暂存区纯净（仅台账）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 212. R301 业务工作域实质升级与回收站数据闭环（t15 / C6，2026-11-21）
+- 交付（page-work，commit 6be5fc649，精确 6 文件 313+/21-）：oa4rust/docs/ops/oa4rust-c301-business-upgrade-r301.md（49 行）+ BusinessWorkUpgrade.C301.contract.test.ts（84 行）+ FileManager.vue（新增 JSON 建文件 UI 入口，复用现役 DELETE 软删端点）+ FileManagerJsonCreate.C301.contract.test.ts（23 行）+ NoteApp.vue（成员字段可读化）+ RecycleApp.vue（133+ 重写：原始列表 + items 计算属性、关键词/类型双筛选、勾选批量恢复/永久删除、双空态主行动）。契约 RED（BusinessWorkUpgrade 4 failed / FileManagerJsonCreate 3 failed）→GREEN，3 files/13 tests 全过、build 通过；测试服原子部署 + Playwright Chromium headless 真浏览器全闭环（新建→删除→回收站回显→筛选/空态→批量恢复→笔记字段），7 张 1440×900 截图+evidence.json 落 gitignored oa4rust/test-results/r301-c301-jsoncreate/（非物理真机，errors=[]）。抓包定位并修复 name/person/reference_type required 根因：session.user 取错层级→session.state.user?.unique。
+- 队长独立复核（不采信自述）：git show --stat 精确 6 文件；定点复跑两份契约 9/9 passed（PIPE=0，含全部 13 用例中桌面侧两份可执行集）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注；evidence.json source 标注 not a physical device；HEAD=TRACK=6be5fc649，暂存区纯净。符合 m00064『数据不足走真实 UI 流程补、不造静态假数据』。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
