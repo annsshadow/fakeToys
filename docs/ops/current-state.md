@@ -4101,6 +4101,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 7 文件、git show diff 确认 EndpointFold 增加 v-if="devToolsEnabled" 与中文化；定点复跑 EndpointFold.devGate.B302.contract.test.ts 4/4 passed（exit 0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、真实页面流程截图标注非物理真机。commit message 自述原子部署后真 Chromium headless 每页独立 context 6 页 h1Count=1/debugText=0/rawEndpointVisible=0/errors=[]，旧截图不一致已全量重拍纠正、未手改最终 evidence，证据 gitignored oa4rust/test-results/r302-dr03a/。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 199. R300 PC/H5 流程待办标题可读性修复（t33，2026-11-21）
+- 交付（shell-eng，commit 89ed6f87d，精确 9 文件）：docs/ops/oa4rust-readable-process-titles-r300.md（29 行）+ PC ProcessTaskCenterApp.vue 及 2 个契约 + H5 process.vue/start.vue 及 3 个契约（272+/7-）。新增 isRawProcessKey/shortId，业务标题优先、原始实例键/UUID 折叠副文本，修复 H5 start:S3 剥键后空白标题回归；可执行运行时契约复现 probe-w-/空白标题。契约 PC 7 项/H5 29 项通过，typecheck 与 PC/H5 build 通过。
+- 队长独立复核（不采信自述）：git show --stat 精确 9 文件、git show diff 确认 process.vue 的 isRawProcessKey/shortId 与 titleOf 候选键扩展；定点复跑 PC ProcessTaskCenterApp.readableTitle.contract.test.ts 5/5 与 H5 三个 readableTitle 契约 11/11 均 passed（exit 0）；实读文档合规。注：首次误跑 message.readableTitle.contract.test.ts 不存在（No test files found），改用 commit stat 中真实契约路径后通过。commit message 自述真 Chromium headless 测试服真页面证据 test-results/r33-readable-titles-final/evidence.json：PC pcTitleHasRawUuid=false、H5 h5BlankTitleCount=0/h5RawTitleCount=0，非物理真机。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
