@@ -3791,3 +3791,25 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### 157.5 路由说明
 用户要求 nex-n2.6；本会话 nex 适配器不可用，实际经 DeepSeek 默认路由执行，按 nex-n2.6 标准交付。
+
+## 158. R293 三端部署测试服与真机 E2E 复验（2026-11-20，队长集成）
+
+### 158.1 部署口径与真值纪律
+- 机制：SSH 别名 oa4rust-test 直连 root → 本地构建 → scp 上传 → 时间戳备份 → 原子切换 → 服务重启 → HTTPS 冒烟。真值（域名/口令/密钥）全部从仓库外 .local.keys / 远端 .admin-credentials / 环境变量读取，绝不入库、不回显、不写入提交信息。
+- 部署源：工作树干净 HEAD=bdcd741a2（即本轮提交版本），保证「部署 = 提交」一致。
+- 版本与备份：
+  - 桌面端产物 frontend/dist/web（201 文件，base /oa4rust/）→ /usr/local/oa4rust/web，备份 web.bak-20261120-132007。
+  - H5 产物 mobile/dist/build/h5（47 文件，base /oa4rust-h5/）→ /usr/local/oa4rust/h5，备份 h5.bak-20261120-132013；bundle 已含 R294 o2-empty 改造与 v-else-if 修复。
+  - 后端：rust:1.98-bullseye Docker 离线交叉编译 x86_64-unknown-linux-gnu（CARGO_TARGET_DIR volume 缓存，15m23s，118MB ELF）→ /usr/local/oa4rust/oa4rust，备份 oa4rust.bak-20261120-133807，systemd restart 后 active，监听 3010（3000 为 grafana，非本服务）。
+- 冒烟 5/5 全 200：/oa4rust/、/oa4rust/login、/oa4rust-h5/、/oa4rust-api/health、/oa4rust-api/api/authentication。
+
+### 158.2 真机 E2E 复验
+- 套件：pnpm exec playwright test e2e/live-gui-expanded.spec.ts e2e/workflow-runtime.spec.ts --workers=1（live-chromium + coverage-chromium 双 project，16 唯一用例 × 2 = 32 条）。
+- 结果：**32 passed / 0 failed（29.7s）**，全程真实 GUI 交互（DOM 点击/填表/提交/分页/键盘/重定向），非 API 打桩。
+- 环境：本机可直连测试站，本地回环代理 127.0.0.1:8899 负责子路径重写与 CSRF Origin 规范化（后端 APP_PUBLIC_ORIGIN=http://localhost；浏览器 Origin 需覆写为该值，否则写请求 403）。代理脚本在仓库外，域名从 .local.keys 读、不入库。
+
+### 158.3 过程中发现并处理的安全与真问题
+- 凭据泄露事故与处置：调试中误将远端 .admin-credentials 的管理员口令明文回显到对话。按 AGENTS.md「发现已泄露=事故：先轮换」立即轮换——生成 24 位随机口令，bcrypt 哈希（带 {bcrypt} 前缀，/auth/src/password.rs verify_password 只认该前缀，缺前缀 fail-closed）写入 auth_person（id=person-admin，管理员身份经 auth_person_role 关联 admin 角色），同步更新 .admin-credentials（mode 600）。旧口令已作废，轮换后登录验证 200 type=success。真值全程不入库。
+- E2E 失败根因定位（均非代码回归，属环境/配置）：① 代理未重写裸路径 /app/* → 404 → 定位器超时；② 管理员哈希缺 {bcrypt} 前缀 → 登录 fail-closed；③ 代理未覆写 CSRF Origin → 写请求 403。三项逐一取证修复后 32/32 全绿。
+- 结论：本轮部署版本即提交版本，三端在测试服真机 E2E 全绿，无回归。
+
