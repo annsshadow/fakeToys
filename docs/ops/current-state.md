@@ -3955,3 +3955,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 修复：CMS 页脚本截断误删 style 尾段致 build/vueStructure 失败，用 git show 精确追回尾部 + biome check --write 规范格式；ScriptCodeEditor.vue 标签正则为既有 baseline 误报（build 可过），未动。
 - 验证：全量 vitest 215 文件 / 1937 passed、typecheck 6 子项目、desktop build EXIT=0（index-DdjsuSpC.js）、R301 改动集 scoped biome 0 error；8901 代理指向新 dist，6 页截图 DOM h1Count=1 / apiLeak=[] / folds=1 / openPanels=0、按钮数 org102/bam32/note6/cms96/ptc161/pm117，队长逐张目视确认达标。
 - 真值纪律：截图/探针脚本/巡检临时产物不入仓库；口令仅截图期读取，台账与提交不含密钥/口令/域名/IP/SSH 端口真值；本轮不部署测试服。
+
+## 176. R301 端点折叠测试服部署（2026-11-21）
+- 部署源：commit 228b50d1d（R301 端点折叠收纳）；5bc4f1307..HEAD 的 backend/mobile diff=0，纯前端变更，后端与 H5 沿用现有产物。
+- 流程：重编 desktop dist（index-DdjsuSpC.js，181 文件）→ 打包 web-r301.tgz（806620 字节）→ 远程备份 web.bak-r301-20261121-0032 → scp 上传 → tar 解包 web.new → 原子替换 web/ → systemctl restart oa4rust=active。
+- 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；远程 web/index.html 已服务新 hash index-DdjsuSpC.js。
+- 偏好：用户要求「每次改完一轮都要部署」，已记入 Hindsight 记忆（doc--1c02f833c3c055da8fec31d1e9f9b22fc5f7c92473870cf7e00bf57f945b02c8）；今后每轮收官默认部署，高风险变更除外。
+- 真值纪律：口令仅部署期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。
