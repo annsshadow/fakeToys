@@ -13,6 +13,8 @@ unpackage/
 *.class
 *.jar
 *.tgz
+# Local cargo vendoring config (environment-specific)
+oa4rust/backend/.cargo/config-vendor.toml
 *.war
 
 # Python
