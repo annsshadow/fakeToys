@@ -4006,3 +4006,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：commit stat 精确 1 文档、HEAD=远端追踪=5bf8fbed7、工作树干净；实读 58 行文档确认来源声明用 <YOUR_TEST_DOMAIN> 占位、口令仅运行期读取不回显、真实测试服登录非静态假数据；H5 截图为桌面宽视口非真机，已如实标注。非终态，缺陷待后续 RED→GREEN 轮次。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 182. R300 A3 全栈真实缺陷审计（第一轮，只审计不修）（2026-11-21）
+- 交付（qa-e2e，commit edebebe54，精确 1 文档、98 行）：docs/ops/oa4rust-defect-audit-r300.md，把 A2 逐页批判升级为可验证缺陷清单，关联 commit 5bf8fbed7 的 docs/ops/oa4rust-page-audit-r300.md。
+- 3 项 P0：BAM /app/bam 报错 `["bam","list"] data is undefined`（定位 BamApp.vue:600-623 / sdk api.ts:82-89 / 后端 bam lib.rs:306；文案全仓源码 grep 无命中且现 queryFn 有 ?? 兜底，如实标注『测试服部署产物滞后』可能，未做猜测性定论）；PC 考勤统计 45/42/3/2 为硬编码假数据（AttendanceApp.vue:329-334，明细走真实接口，确定根因）；H5 bbs/search/mine 连接服务器超时（有落盘截图，message/meeting/browse 属 tabbit 工具链超时未当业务缺陷）。
+- 3 项 P1：PC 工作台待审批 0 vs H5 的 9（Dashboard.vue:219-225 数据源不同、响应未取证）；PC org/directory/file/bbs/meeting/note/recycle 首屏空/落后 H5；端点调试侵入业务页。3 类 P2：可见无障碍提示、原始 UUID、空态缺引导。每条含现象+真浏览器证据路径+源码定位+可复现路径+修复方向+验证方式。
+- 队长独立复核：commit stat 精确 1 文档、HEAD=远端追踪=edebebe54、工作树干净；实读 98 行确认来源声明用 <YOUR_TEST_DOMAIN> 占位、口令仅运行期读取、tabbit 非真机与 H5 桌面宽视口均如实标注；取证限制单列一节，符合只审计不修约定。非终态，真 bug 待后续 RED→GREEN 轮次实施。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+
