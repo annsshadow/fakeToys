@@ -78,13 +78,21 @@ describe('BBSForum contracts', () => {
       '`/api/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`',
     )
     expect(source).toContain("'/api/bbs/assemble/control/reply/filter/list/page/1/count/50'")
-    // 版块筛选走 bbs crate 已注册 GET 路由（bbs_subject_info 实表）
+    // 版块筛选走 bbs crate 已注册 GET 路由（列表读 x_bbs_topic 现役表）。
     expect(source).toContain('`/api/bbs/subject/list/${selectedSection.value.id}`')
     // 不再调用运行时 500 的裸静态路由
     expect(source).not.toContain("api.get('/api/bbs/assemble/control/list/subjects/index')")
     expect(source).not.toContain("api.post('/api/bbs/assemble/control/subject/search'")
     expect(source).not.toContain('api.post(`/api/bbs/assemble/control/list/subjects/filtered`')
     expect(source).not.toContain('api.post(`/api/bbs/assemble/control/list/reply/filter`')
+  })
+
+  it('routes subject creation to the backend handler backed by the active topic table', () => {
+    // R302 BBS 回显缺陷回归：前端仍打同一注册端点，后端必须写 x_bbs_topic；
+    // 此契约钉住调用面不变，并把回显责任明确交给后端 create handler。
+    expect(source).toContain("api.post('/api/bbs/subject/create'")
+    const body = source.slice(source.indexOf('const createMutation = useMutation'))
+    expect(body).toContain("authorId: session.user?.unique ?? ''")
   })
 
   it('wires the add-section control to registered section write routes', () => {

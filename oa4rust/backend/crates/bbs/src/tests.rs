@@ -107,6 +107,41 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
+    #[test]
+    fn test_subject_create_writes_active_bbs_topic_table() {
+        // R302 BBS 回显缺陷回归：PC 默认/我的/版块筛选列表均读 x_bbs_topic，
+        // 发帖接口若继续写遗留表 bbs_subject_info，新建主题刷新后必然消失。
+        let source = include_str!("subject.rs");
+        let create = &source[source
+            .find("pub async fn create(")
+            .expect("subject::create must exist")..];
+        assert!(
+            create.contains("INSERT INTO x_bbs_topic"),
+            "POST /api/bbs/subject/create must insert into active table x_bbs_topic"
+        );
+        assert!(
+            !create.contains("INSERT INTO bbs_subject_info"),
+            "subject::create must not write legacy bbs_subject_info"
+        );
+        assert!(
+            create.contains("reject_impersonation"),
+            "session-authoritative impersonation guard must stay in subject::create"
+        );
+        for column in [
+            "author_id",
+            "creator",
+            "forum_id",
+            "section_id",
+            "section_name",
+            "subject_type",
+        ] {
+            assert!(
+                create.contains(column),
+                "x_bbs_topic insert must map column {column}"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_subject_create() {
         let pool = build_test_pool();
