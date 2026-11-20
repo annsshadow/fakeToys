@@ -4168,3 +4168,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 15 文件；定点复跑 h5Skeleton.emptyState.test.ts 13/13 passed（PIPE=0）；实读文档明确非物理真机、占位非伪造业务数据、≥1000 轮非终态，无真值泄露；LOCAL=UPSTREAM=cc0c47b58。此前 §208 误提交已 mixed reset 修正，本提交为成员 rebase 后正常链上提交。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 211. R301 U-1 组织树/部门树收敛（t14 / C3，2026-11-21）
+- 交付（page-comm，commit 1d4443c27，精确 5 文件 219+/23-）：oa4rust/docs/ops/oa4rust-r301-u1-org-tree.md（23 行）+ OrgViewer.vue（首屏组树改 api.put('/api/organization/assemble/control/group/list/like', {})，消除 GET 400/SPA fallback）+ OrgDirectoryApp.vue（部门树 10s withTimeout、中文错误条+重试、finally 复位 busy、首屏自动加载+中文空态）+ 两份契约（OrgViewer.loadingFallback/OrgDirectoryApp.r301DeptTree）。契约 RED 3 failed/1 passed→GREEN，org 6 files/26 tests 全过、typecheck/build 通过。测试服原子部署 + Playwright Chromium headless 真浏览器登录→/app/org→/app/directory→失败注入→重试，无英文/无端点调试/无常驻 Loading、名册 21 人、重试恢复，6 截图+evidence.json 落 gitignored oa4rust/test-results/r301-u1/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 5 文件、git show diff 确认 api.put(group/list/like) 与 withTimeout(GET /api/departments/tree)、错误条/重试按钮；定点复跑两份 org 契约 9/9 passed（PIPE=0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注、≥1000 轮非终态；evidence.json source 标注 not a physical device；HEAD=TRACK=1d4443c27，暂存区纯净（仅台账）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
