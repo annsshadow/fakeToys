@@ -33,7 +33,7 @@
     <!-- 主区域 -->
     <div class="main-area">
       <!-- 顶栏 -->
-      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
+      <header class="topbar">
         <div class="topbar-left">
           <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
@@ -91,7 +91,7 @@
       </header>
 
       <!-- 内容区 -->
-      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
+      <main id="main-content" class="content">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />
@@ -208,7 +208,7 @@ function focusSearch(): void {
   input?.focus()
 }
 
-async function handleLogout(): void {
+async function handleLogout(): Promise<void> {
   showUserMenu.value = false
   await session.logout()
   router.replace('/login')
@@ -301,6 +301,7 @@ function onDocClick(e: Event): void {
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px 0;
 }
 
@@ -337,9 +338,10 @@ function onDocClick(e: Event): void {
 }
 
 .nav-item.active {
-  background: var(--color-primary-soft);
+  background: linear-gradient(90deg, var(--color-primary-soft), transparent);
   color: var(--color-primary);
-  border-left: 3px solid var(--color-primary);
+  /* 内嵌阴影替代 border-left：激活态不再改变盒宽，消除导航项跳动 */
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .nav-icon {
@@ -388,6 +390,11 @@ function onDocClick(e: Event): void {
   transition: margin-left var(--transition-normal);
 }
 
+/* 折叠态仅收窄这一处偏移，杜绝内联样式与静态 margin 的双重右移 */
+.app-shell.collapsed .main-area {
+  margin-left: var(--sidebar-collapsed);
+}
+
 /* 顶栏 */
 .topbar {
   height: var(--topbar-height);
@@ -402,7 +409,6 @@ function onDocClick(e: Event): void {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  transition: margin-left var(--transition-normal);
 }
 
 .topbar-left {
@@ -508,6 +514,17 @@ function onDocClick(e: Event): void {
   border-radius: 10px;
   min-width: 16px;
   text-align: center;
+  animation: badge-pulse 2s var(--ease-in-out) infinite;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--color-error-glow, rgba(239, 68, 68, 0.35));
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
 }
 
 .user-menu {
@@ -568,6 +585,19 @@ function onDocClick(e: Event): void {
   flex-direction: column;
   gap: 2px;
   z-index: var(--z-dropdown);
+  animation: dropdown-in var(--duration-fast) var(--ease-out);
+  transform-origin: top right;
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dropdown-item {
@@ -603,8 +633,7 @@ function onDocClick(e: Event): void {
   flex: 1;
   overflow: auto;
   padding: var(--space-5);
-  margin-left: 0;
-  transition: margin-left var(--transition-normal);
+  overscroll-behavior: contain;
   background: var(--bg-base);
 }
 
@@ -622,6 +651,19 @@ function onDocClick(e: Event): void {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(-10px);
+}
+
+/* 键盘焦点可见性：统一令牌化焦点环（WCAG 2.4.7） */
+.logo:focus-visible,
+.nav-item:focus-visible,
+.theme-toggle:focus-visible,
+.collapse-btn:focus-visible,
+.icon-btn:focus-visible,
+.user-menu:focus-visible,
+.tab-item:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* 移动端底部 Tab 栏 */
@@ -680,6 +722,12 @@ function onDocClick(e: Event): void {
 
   .main-area {
     margin-left: 0 !important;
+  }
+
+  /* 移动端侧栏仍以固定宽度可见：topbar/content 沿用与桌面同源的偏移令牌 */
+  .topbar,
+  .content {
+    margin-left: var(--sidebar-width);
   }
 
   .content {

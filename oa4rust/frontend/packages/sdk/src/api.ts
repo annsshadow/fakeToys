@@ -599,7 +599,8 @@ export class ApiClient {
       // 流结束时缓冲区可能还留着最后一条事件（服务端未补终止空行），
       // 且解码器内部可能还有未输出的多字节字符；flush 后一并处理，避免
       // 丢失结束事件 / 最后一段 token。
-      buf = decoder.decode() + drainEvents()
+      buf = drainEvents()
+      buf += decoder.decode()
       if (buf.trim()) emitEvent(buf)
     } catch (err) {
       // 用户取消优先：切换会话/离开页面时应静默结束，不报「流式响应超时」。

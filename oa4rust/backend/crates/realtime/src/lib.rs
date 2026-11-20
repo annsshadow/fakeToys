@@ -191,8 +191,8 @@ struct RoomHandle {
     room_id: String,
     tx: broadcast::Sender<RealtimeMessage>,
     connections: Arc<Mutex<HashSet<Uuid>>>,
-    /// P5：在线身份（roster），由 presence/首条消息注册。
-    senders: Arc<Mutex<HashSet<String>>>,
+    /// P5：在线身份（roster）：身份 → 该身份当前在线的连接集合。
+    senders: Arc<Mutex<HashMap<String, HashSet<Uuid>>>>,
 }
 
 #[derive(Clone)]
@@ -221,7 +221,7 @@ impl RealtimeManager {
                 room_id: room_id.to_string(),
                 tx,
                 connections: Arc::new(Mutex::new(HashSet::new())),
-                senders: Arc::new(Mutex::new(HashSet::new())),
+                senders: Arc::new(Mutex::new(HashMap::new())),
             }
         });
         room.connections.lock().await.insert(conn_id);
@@ -254,13 +254,35 @@ impl RealtimeManager {
         }
     }
 
-    /// P5：登记房间在线身份（roster）。
-    pub async fn register_sender(&self, room_id: &str, sender: &str) {
+    /// P5：登记房间在线身份（roster）；同一身份可有多条连接（多端登录）。
+    pub async fn register_sender(&self, room_id: &str, sender: &str, conn_id: Uuid) {
         if sender.is_empty() {
             return;
         }
         if let Some(room) = self.rooms.lock().await.get(room_id) {
-            room.senders.lock().await.insert(sender.to_string());
+            room.senders
+                .lock()
+                .await
+                .entry(sender.to_string())
+                .or_default()
+                .insert(conn_id);
+        }
+    }
+
+    /// P5：连接离线/换房时撤销 roster 登记；身份的最后一条连接离开后移除该身份，
+    /// 避免「幽灵用户」永久留在 online 名单。
+    pub async fn unregister_sender(&self, room_id: &str, sender: &str, conn_id: Uuid) {
+        if sender.is_empty() {
+            return;
+        }
+        if let Some(room) = self.rooms.lock().await.get(room_id) {
+            let mut senders = room.senders.lock().await;
+            if let Some(conns) = senders.get_mut(sender) {
+                conns.remove(&conn_id);
+                if conns.is_empty() {
+                    senders.remove(sender);
+                }
+            }
         }
     }
 
@@ -269,7 +291,7 @@ impl RealtimeManager {
         let rooms = self.rooms.lock().await;
         match rooms.get(room_id) {
             Some(room) => {
-                let mut roster: Vec<String> = room.senders.lock().await.iter().cloned().collect();
+                let mut roster: Vec<String> = room.senders.lock().await.keys().cloned().collect();
                 roster.sort();
                 let count = room.connections.lock().await.len();
                 (roster, count)
@@ -381,6 +403,7 @@ async fn handle_connection(
             reason: "bye".into(),
         })))
         .await;
+    manager.unregister_sender(&current_room, &sender_label, conn_id).await;
     manager.leave(&current_room, conn_id).await;
     info!(conn_id = %conn_id, room = %current_room, "ws closed");
 }
@@ -427,12 +450,13 @@ async fn handle_uplink(
         Uplink::Im(msg) => {
             // 目标房间若与当前不同则切换订阅（channel 消息 / im 事件跨房间）。
             if msg.room != *current_room {
+                manager.unregister_sender(current_room, sender_label, conn_id).await;
                 manager.leave(current_room, conn_id).await;
                 *current_room = msg.room.clone();
                 *rx = manager.join(current_room, conn_id).await;
                 let _ = send_presence(ws_sender, manager, current_room).await;
             }
-            manager.register_sender(current_room, sender_label).await;
+            manager.register_sender(current_room, sender_label, conn_id).await;
             let delivered = manager.broadcast_im(current_room, &msg).await;
             // 回执：向发送者单播投递结果（delivered 为当前在线连接数）。
             let receipt = RealtimeMessage {
@@ -453,12 +477,14 @@ async fn handle_uplink(
             if target == *current_room {
                 return;
             }
+            manager.unregister_sender(current_room, sender_label, conn_id).await;
             manager.leave(current_room, conn_id).await;
             *current_room = target.clone();
             *rx = manager.join(current_room, conn_id).await;
             let _ = send_presence(ws_sender, manager, current_room).await;
         }
         Uplink::LeaveRoom => {
+            manager.unregister_sender(current_room, sender_label, conn_id).await;
             manager.leave(current_room, conn_id).await;
             // 回落到 default 房间，保持连接可用。
             *current_room = "default".to_string();
@@ -468,8 +494,12 @@ async fn handle_uplink(
         Uplink::Presence(sender) => {
             // 声明身份：登记 roster，并作为该连接后续 IM 消息的 sender 标签。
             if !sender.is_empty() {
+                // 先发消息后声明身份的场景：撤销此前以默认连接标签登记的 roster 项。
+                if *sender_label != sender {
+                    manager.unregister_sender(current_room, sender_label, conn_id).await;
+                }
                 *sender_label = sender.clone();
-                manager.register_sender(current_room, &sender).await;
+                manager.register_sender(current_room, &sender, conn_id).await;
             }
             let _ = send_presence(ws_sender, manager, current_room).await;
         }
@@ -738,9 +768,9 @@ mod tests {
         let _ = manager.join("conv-1", c1).await;
         let _ = manager.join("conv-1", c2).await;
 
-        manager.register_sender("conv-1", "bob").await;
-        manager.register_sender("conv-1", "alice").await;
-        manager.register_sender("conv-1", "").await; // 空身份不登记
+        manager.register_sender("conv-1", "bob", c1).await;
+        manager.register_sender("conv-1", "alice", c2).await;
+        manager.register_sender("conv-1", "", c1).await; // 空身份不登记
 
         let (roster, count) = manager.presence("conv-1").await;
         assert_eq!(
@@ -750,6 +780,41 @@ mod tests {
         );
         assert_eq!(count, 2);
         assert_eq!(manager.presence("ghost").await, (Vec::new(), 0));
+    }
+
+    #[tokio::test]
+    async fn p5_presence_roster_cleared_when_connection_leaves() {
+        // 断连后 roster 必须同步清空：否则离线用户会永远留在 online 列表里。
+        let manager = Arc::new(RealtimeManager::new());
+        let conn = Uuid::new_v4();
+        let _ = manager.join("conv-1", conn).await;
+        manager.register_sender("conv-1", "alice", conn).await;
+        assert_eq!(
+            manager.presence("conv-1").await.0,
+            vec!["alice".to_string()]
+        );
+
+        // 同一身份的第二条连接（多端登录）：撤销第一条后 roster 仍保留。
+        let conn2 = Uuid::new_v4();
+        let _ = manager.join("conv-1", conn2).await;
+        manager.register_sender("conv-1", "alice", conn2).await;
+        manager.unregister_sender("conv-1", "alice", conn).await;
+        manager.leave("conv-1", conn).await;
+        assert_eq!(
+            manager.presence("conv-1").await.0,
+            vec!["alice".to_string()],
+            "同身份仍有在线连接时 roster 不得误删"
+        );
+
+        // 最后一条连接离线：roster 必须同步清空。
+        manager.unregister_sender("conv-1", "alice", conn2).await;
+        manager.leave("conv-1", conn2).await;
+        let (roster, count) = manager.presence("conv-1").await;
+        assert!(
+            roster.is_empty(),
+            "连接离线后 roster 必须清空，实际残留 {roster:?}"
+        );
+        assert_eq!(count, 0);
     }
 
     #[tokio::test]
@@ -769,7 +834,7 @@ mod tests {
             current_room = msg.room.clone();
             rx = manager.join(&current_room, conn).await;
         }
-        manager.register_sender(&current_room, "alice").await;
+        manager.register_sender(&current_room, "alice", conn).await;
         let delivered = manager.broadcast_im(&current_room, &msg).await;
 
         assert_eq!(delivered, 2, "A 房间已无人，B 房间 2 连接");

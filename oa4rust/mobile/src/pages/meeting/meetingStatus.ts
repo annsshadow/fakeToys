@@ -1,6 +1,8 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { parseServerDate } from '@/utils/datetime'
+
 // x_meeting.status 的权威值域是英文串（wait/accepted/confirmed/processing/
 // completed/denied/rejected）；历史列表曾以 '1'/'2'/'3' 表示进行中/已结束/已取消。
 // 移动端列表端点（meeting/list/apply|invited/wait|wait/confirm）的 SELECT 不含
@@ -19,9 +21,11 @@ function statusTone(status?: string): StatusTone {
 
 /** 列表端点不返回 status 时，按起止时间推断当前是否正在进行或已结束。 */
 function toneFromWindow(startTime?: string, endTime?: string, now: Date = new Date()): StatusTone {
-  const start = startTime ? new Date(startTime.replace(' ', 'T')).getTime() : NaN
+  // R293：服务端时间串一律走 parseServerDate（对齐 R152/R154 契约）。
+  // 内联 new Date(替换空格) 解析不了斜杠日期等后端历史格式，NaN 会让进行中/已结束的会议恒判「未开始」。
+  const start = startTime ? (parseServerDate(startTime)?.getTime() ?? NaN) : NaN
   if (!Number.isFinite(start)) return 'pending'
-  const end = endTime ? new Date(endTime.replace(' ', 'T')).getTime() : NaN
+  const end = endTime ? (parseServerDate(endTime)?.getTime() ?? NaN) : NaN
   const nowMs = now.getTime()
   if (Number.isFinite(end)) {
     if (nowMs > end) return 'ended'

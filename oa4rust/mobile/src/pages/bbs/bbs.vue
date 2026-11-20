@@ -84,7 +84,9 @@ function newTopic() {
       <view class="toolbar-title">最新主题</view>
       <view class="new-btn" @tap="newTopic">发帖</view>
     </view>
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
+      <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
+    </view>
     <view v-else-if="rows.length === 0 && bbsError" class="tip tip-error">
       <view class="error-text">{{ bbsError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
@@ -186,5 +188,15 @@ function newTopic() {
   margin-top: 6px;
   font-size: 12px;
   color: var(--color-text-muted);
+}
+/* R293：首屏加载用骨架屏替代文字提示。 */
+.skeleton {
+  padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton-row {
+  height: 72px;
 }
 </style>

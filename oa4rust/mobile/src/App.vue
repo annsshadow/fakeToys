@@ -143,6 +143,15 @@ button, .o2-btn, .o2-list-item {
 }
 
 /* ── 基础组件：统一 .o2-* 类名契约（与桌面 UnoCSS shortcut 同名）───────── */
+/* R293 触控打磨：去除 WebView 默认点击高亮，按压反馈统一交给 :active 与按钮态。 */
+page,
+view,
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .o2-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);

@@ -189,6 +189,18 @@ body {
   color: var(--text-primary);
 }
 
+/* 尊重系统"减少动态效果"偏好：关闭装饰性动画/过渡（WCAG 2.3.3） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* 骨架屏 shimmer */
 @keyframes shimmer {
   0% {

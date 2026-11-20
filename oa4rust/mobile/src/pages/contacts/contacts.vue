@@ -212,14 +212,16 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     </view>
 
     <template v-if="mode === 'person'">
-      <view v-if="listView === 'loading'" class="tip">加载中…</view>
+      <view v-if="listView === 'loading'" class="skeleton" aria-hidden="true">
+        <view v-for="i in 5" :key="i" class="o2-skeleton skeleton-row"></view>
+      </view>
       <view v-else-if="listView === 'error'" class="tip tip-error">
         <view class="error-text">{{ loadError }}</view>
         <view class="retry-btn" @tap="search()">重试</view>
       </view>
       <view v-else-if="listView === 'empty'" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
       <view v-else class="list">
-        <view v-for="(row, i) in rows" :key="i" class="item">
+        <view v-for="(row, i) in rows" :key="i" class="item o2-list-item">
           <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
           <view class="body" @tap="openPerson(row)">
             <view class="title">{{ nameOf(row) }}</view>
@@ -233,7 +235,9 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     </template>
 
     <template v-else>
-      <view v-if="orgView === 'loading'" class="tip">加载中…</view>
+      <view v-if="orgView === 'loading'" class="skeleton" aria-hidden="true">
+        <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
+      </view>
       <view v-else-if="orgView === 'error'" class="tip tip-error">
         <view class="error-text">{{ orgError }}</view>
         <view class="retry-btn" @tap="loadOrg()">重试</view>
@@ -242,7 +246,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         {{ mode === 'unit' ? '暂无单位' : '暂无群组' }}
       </view>
       <view v-else class="list">
-        <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item">
+        <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item o2-list-item">
           <text class="avatar">{{ mode === 'unit' ? '🏢' : '👥' }}</text>
           <view class="body" @tap="mode === 'unit' ? openUnit(o) : undefined">
             <view class="title">{{ orgNameOf(o) }}</view>
@@ -258,13 +262,15 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         <text class="detail-title">{{ unitPeopleName }} · 人员</text>
         <text class="detail-close" @tap="closeUnitPeople">关闭</text>
       </view>
-      <view v-if="unitPeopleLoading" class="tip">加载中…</view>
+      <view v-if="unitPeopleLoading" class="skeleton" aria-hidden="true">
+        <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
+      </view>
       <view v-else-if="unitPeople.length === 0 && unitPeopleError" class="tip tip-error">
         <view class="error-text">{{ unitPeopleError }}</view>
         <view v-if="unitPeopleTarget" class="retry-btn" @tap="openUnit(unitPeopleTarget)">重试</view>
       </view>
       <view v-else-if="unitPeople.length === 0" class="tip">该单位暂无人员</view>
-      <view v-for="(p, i) in unitPeople" :key="i" class="item">
+      <view v-for="(p, i) in unitPeople" :key="i" class="item o2-list-item">
         <text class="avatar">{{ nameOf(p).slice(0, 1).toUpperCase() }}</text>
         <view class="body" @tap="openPerson(p)">
           <view class="title">{{ nameOf(p) }}</view>
@@ -447,5 +453,15 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
   font-size: 26rpx;
   color: var(--color-placeholder);
   padding: 8rpx 0;
+}
+/* R293：首屏加载用骨架屏替代文字提示。 */
+.skeleton {
+  padding: 24rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.skeleton-row {
+  height: 96rpx;
 }
 </style>
