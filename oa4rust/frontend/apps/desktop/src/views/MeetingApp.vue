@@ -2,16 +2,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="meeting-view">
-    <div class="view-header glass-card">
-      <h1>会议管理</h1>
-      <p class="subtitle">会议室预订 · 我的会议 · 日程安排</p>
-      <button class="new-btn" @click="showCreate=true">+ 新建会议</button>
-    </div>
+  <div class="meeting-view modern-page">
+    <header class="meeting-hero modern-hero">
+      <div class="hero-copy">
+        <h1 class="admin-title">会议管理</h1>
+        <p class="subtitle">会议室预订 · 我的会议 · 日程安排</p>
+      </div>
+      <div class="modern-hero-actions"><button class="new-btn" @click="showCreate=true">+ 新建会议</button></div>
+    </header>
 
-    <section class="booking glass-card">
+    <section class="booking glass-card modern-section">
       <h2 class="section-title">会议室预订</h2>
-      <form class="booking-form" @submit.prevent="createMeeting">
+      <form class="booking-form modern-grid" @submit.prevent="createMeeting">
         <div class="fg"><label>会议主题</label><input v-model="form.title" class="fi" placeholder="例如：周例会" /></div>
         <div class="fg"><label>楼栋</label><select v-model="form.buildingId" class="fs2" @change="loadRooms"><option value="">选择楼栋</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select></div>
         <div class="fg"><label>会议室</label><select v-model="form.roomId" class="fs2"><option value="">选择会议室</option><option v-for="rm in rooms" :key="rm.id" :value="rm.id">{{rm.name}}</option></select></div>
@@ -25,12 +27,12 @@
       <div class="room-picker">
         <span class="bld-title">可选会议室：</span>
         <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
-        <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}</span>
+        <span v-for="rm in roomList" :key="rm.id" class="bld-chip modern-chip">{{ rm.name }}</span>
         <ListLoadError v-if="roomError" mode="banner" :message="roomError" @retry="loadRoomList" />
       </div>
     </section>
 
-    <section class="mine glass-card">
+    <section class="mine glass-card modern-section">
       <h2 class="section-title">我的会议</h2>
       <form class="mine-search" @submit.prevent="loadMeetings">
         <input v-model="searchKey" placeholder="搜索会议主题/会议室" class="si" />
@@ -44,10 +46,10 @@
         <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
         <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
-        <div v-else-if="meetings.length===0" class="es"><div class="ei">👥</div><p>暂无会议</p></div>
+        <div v-else-if="meetings.length===0" class="es modern-empty"><div class="ei">👥</div><p>暂无会议</p></div>
         <ul v-else class="ml">
-          <li v-for="m in meetings" :key="m.id" class="mc" @click="viewMeeting(m)">
-            <div class="ms" :class="statusCls(m)">{{statusTxt(m)}}</div>
+          <li v-for="m in meetings" :key="m.id" class="mc modern-card" @click="viewMeeting(m)">
+            <div class="ms modern-chip" :class="statusCls(m)">{{statusTxt(m)}}</div>
             <div class="mi"><div class="mt">{{m.title||m.name||'未命名会议'}}</div><div class="mm">
               <span v-if="m.buildingName">🏢{{m.buildingName}}</span>
               <span v-if="m.roomName">🚪{{m.roomName}}</span>
@@ -68,12 +70,12 @@
       </div>
     </section>
 
-    <section class="calendar glass-card">
+    <section class="calendar glass-card modern-section">
       <h2 class="section-title">日历视图</h2>
       <p class="section-hint">未来 7 天会议安排（点击日程查看详情）</p>
       <div class="calendar-grid">
-        <div v-for="day in calendarDays" :key="day.key" class="calendar-day">
-          <div class="calendar-day-head">{{ day.label }}</div>
+        <div v-for="day in calendarDays" :key="day.key" class="calendar-day modern-card">
+          <div class="calendar-day-head"><span class="modern-stat">{{ day.label }}</span><span class="modern-chip">{{ day.meetings.length }} 场</span></div>
           <div v-for="m in day.meetings" :key="m.id" class="calendar-event" @click="viewMeeting(m)">{{ m.title || m.name || '未命名会议' }}</div>
           <div v-if="!day.meetings.length" class="calendar-empty">—</div>
         </div>
@@ -1009,9 +1011,11 @@ async function loadMeetingTwin() {
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.meeting-hero{position:relative}
+.meeting-hero h1{margin:0 0 4px;font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);text-shadow:0 0 15px var(--color-primary-glow)}
+.meeting-hero .hero-copy{display:flex;flex-direction:column}
+.meeting-hero .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+@media(max-width:768px){.meeting-hero{flex-direction:column;align-items:flex-start}}
 .new-btn{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .filter-bar{display:flex;align-items:center;gap:10px;padding:12px 16px}
 .si{flex:1;min-width:160px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:8px 12px;color:var(--text-primary);font-size:13px;outline:none}
@@ -1066,4 +1070,15 @@ async function loadMeetingTwin() {
 .calendar-day-head{font-size:11px;color:var(--text-muted);margin-bottom:4px}
 .calendar-event{font-size:11px;color:var(--color-primary);background:var(--color-primary-soft);border-radius:var(--radius-sm);padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .calendar-empty{font-size:11px;color:var(--text-muted);opacity:.5}
+/* ── R298 t3-B：复用 modern 原语，仅补本页特有布局 ── */
+.meeting-view .view-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.meeting-view .booking-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 16px; }
+.meeting-view .booking-form > .em, .meeting-view .booking-form > .bs { grid-column: 1 / -1; }
+.meeting-view .booking-form > .bs { justify-self: start; }
+.meeting-view .room-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.meeting-view .ml .mc { display: flex; align-items: center; gap: 14px; }
+.meeting-view .ml .mi { flex: 1; min-width: 0; }
+.meeting-view .ma { flex-wrap: wrap; justify-content: flex-end; }
+.meeting-view .calendar-day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.meeting-view .calendar-day-head .modern-stat { font-size: 13px; font-weight: 600; }
 </style>

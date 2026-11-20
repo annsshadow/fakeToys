@@ -2,18 +2,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="work-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>工作流待办</h1>
+  <div class="work-view modern-page">
+    <header class="work-hero modern-hero">
+      <div class="hero-copy">
+        <h1 class="admin-title">工作流待办</h1>
         <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
       </div>
-      <div class="view-header-actions">
+      <div class="modern-hero-actions">
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
-    </div>
+    </header>
 
-    <div class="tabs glass-card">
+    <div class="tabs glass-card modern-grid">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -25,7 +25,7 @@
       </button>
     </div>
 
-    <section class="work-pending" v-show="activeTab === 'pending'">
+    <section class="work-pending" :class="'modern-section'" v-show="activeTab === 'pending'">
       <h2 class="section-title">待我处理</h2>
       <form class="task-search" @submit.prevent="query.refetch()">
         <button type="submit" class="btn-sm">刷新待办</button>
@@ -35,40 +35,61 @@
         加载失败: {{ (query.error.value as Error)?.message }}
         <button class="btn-sm" @click="query.refetch()">重试</button>
       </div>
-      <div v-else-if="!items.length" class="state">暂无待办任务</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无待办任务</div>
       <ul v-else class="item-list" data-testid="work-pending-list">
-        <li v-for="item in items" :key="item.id" class="item-card item-body" @click="openWork(item)">
-          <span class="item-title">{{ item.title || item.processName || item.id }}</span>
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ displayTitle(item) }}</span>
+            <div class="item-meta">
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
+            </div>
+          </div>
+          <span class="item-status modern-chip">待处理</span>
           <button class="btn-sm primary" @click.stop="openWork(item)">办理</button>
         </li>
       </ul>
     </section>
 
-    <section class="work-started" v-show="activeTab === 'started'">
+    <section class="work-started" :class="'modern-section'" v-show="activeTab === 'started'">
       <h2 class="section-title">我发起的</h2>
       <form class="task-search" @submit.prevent="query.refetch()">
         <button type="submit" class="btn-sm">刷新我发起的</button>
       </form>
       <div v-if="query.isLoading.value" class="state">加载中...</div>
-      <div v-else-if="!items.length" class="state">暂无发起的流程</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无发起的流程</div>
       <ul v-else class="item-list" data-testid="work-started-list">
-        <li v-for="item in items" :key="item.id" class="item-card item-body" @click="openWork(item)">
-          <span class="item-title">{{ item.title || item.processName || item.id }}</span>
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
+            <div class="item-meta">
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
+            </div>
+          </div>
+          <span class="item-status modern-chip">我发起</span>
           <button class="btn-sm" @click.stop="openWork(item)">查看</button>
         </li>
       </ul>
     </section>
 
-    <section class="work-completed" v-show="activeTab === 'completed'">
+    <section class="work-completed" :class="'modern-section'" v-show="activeTab === 'completed'">
       <h2 class="section-title">已办</h2>
       <form class="task-search" @submit.prevent="query.refetch()">
         <button type="submit" class="btn-sm">刷新已办</button>
       </form>
       <div v-if="query.isLoading.value" class="state">加载中...</div>
-      <div v-else-if="!items.length" class="state">暂无已办任务</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无已办任务</div>
       <ul v-else class="item-list" data-testid="work-completed-list">
-        <li v-for="item in items" :key="item.id" class="item-card item-body" @click="openWork(item)">
-          <span class="item-title">{{ item.title || item.processName || item.id }}</span>
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
+            <div class="item-meta">
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
+            </div>
+          </div>
+          <span class="item-status modern-chip">已办</span>
           <button class="btn-sm" @click.stop="openWork(item)">查看</button>
         </li>
       </ul>
@@ -281,6 +302,19 @@ const query = useQuery({
   },
   staleTime: 30_000,
 })
+function displayTitle(item: TaskItem): string {
+  const raw = String(item.title || item.processName || item.appName || item.applicationName || '').trim()
+  if (!raw) return '未命名流程'
+  if (/^work-reject-/i.test(raw)) return '驳回的工作'
+  const cleaned = raw
+    .replace(/^start:\s*/i, '')
+    .replace(/\s*work-(?:reject-)?\d+-[a-z0-9]+\s*$/i, '')
+    .trim()
+  if (!cleaned || /^[\w-]+$/.test(cleaned)) {
+    return String(item.processName || item.appName || item.applicationName || '工作实例')
+  }
+  return cleaned
+}
 const items = computed(() => query.data.value ?? [])
 const opened = ref<TaskItem | null>(null)
 const formDefinition = ref<XformDefinition | null>(null)
@@ -3166,8 +3200,11 @@ function fmtTime(value: unknown): string {
 
 <style scoped>
 .work-view { display: flex; flex-direction: column; gap: 16px; height: 100%; }
-.view-header, .content-panel { padding: 20px 24px; }
-.view-header h1, .work-dialog h2 { margin: 0; color: var(--color-primary); }
+.content-panel { padding: 20px 24px; }
+.work-hero { position: relative }
+.work-hero .hero-copy { display: flex; flex-direction: column }
+.work-hero h1, .work-dialog h2 { margin: 0; color: var(--color-primary) }
+@media(max-width:768px){.work-hero{flex-direction:column;align-items:flex-start}}
 .subtitle, .work-dialog p { margin: 4px 0 0; color: var(--text-muted); font-size: 12px; }
 .tabs { display: flex; gap: 4px; padding: 6px; }
 .tab-btn { flex: 1; padding: 9px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-muted); cursor: pointer; }
@@ -3198,4 +3235,12 @@ function fmtTime(value: unknown): string {
 .detail-list li.clickable { cursor: pointer; }
 .detail-list li.clickable:hover .name { color: var(--color-primary); }
 .detail-block .muted { margin: 0; color: var(--text-muted); font-size: 12px; }
+/* ── R298 t3-B：卡片行信息层级，原 id 仅作次级详情 ── */
+.work-view .item-list { display: flex; flex-direction: column; gap: 8px; }
+.work-view .item-card { flex-wrap: wrap; }
+.work-view .item-info { flex: 1; min-width: 0; }
+.work-view .item-title { display: block; }
+.work-view .item-meta { display: flex; flex-wrap: wrap; gap: 12px; }
+.work-view .item-id { font-family: monospace; font-size: 11px; }
+.work-view .item-status { margin-left: auto; }
 </style>

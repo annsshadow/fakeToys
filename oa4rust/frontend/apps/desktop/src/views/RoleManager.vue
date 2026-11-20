@@ -2,20 +2,17 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="role-view">
-    <div class="view-header glass-card">
-      <h1>角色管理</h1>
-      <p class="subtitle">/api/role/* — 角色CRUD与权限分配</p>
-    </div>
-    <div class="content-panel glass-card">
-      <div class="toolbar">
-        <button class="btn-primary" @click="loadRoles">刷新</button>
-        <button class="btn-create" @click="showCreate = true">+ 新建角色</button>
+  <div class="role-view modern-page" data-testid="role-page">
+    <section class="modern-section glass-card content-panel">
+      <div class="toolbar modern-hero">
+        <span class="toolbar-hint">管理角色、Flag 与成员分配</span>
+        <button class="btn-primary" data-testid="role-refresh" @click="loadRoles">刷新</button>
+        <button class="btn-create" data-testid="role-create" @click="showCreate = true">+ 新建角色</button>
       </div>
       <div class="list-panel">
-        <ListLoadError v-if="roles.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadRoles" />
+        <ListLoadError v-if="roles.length > 0 && loadError" mode="banner" :message="loadError" data-testid="role-list-error" @retry="loadRoles" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
-        <ListLoadError v-else-if="roles.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadRoles" />
+        <ListLoadError v-else-if="roles.length === 0 && loadError" mode="empty" :message="loadError" data-testid="role-list-error" @retry="loadRoles" />
         <div v-else-if="roles.length === 0" class="empty"><div class="ei">🔑</div><p>暂无角色</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -27,14 +24,14 @@
             <span class="col-name">{{ r.name || r.roleName || r.title || '未命名' }}</span>
             <span class="col-flag font-mono">{{ r.flag || r.id || '-' }}</span>
             <span class="col-actions">
-              <button class="btn-edit" @click="showRoleMembers(r)">成员</button>
-              <button class="btn-edit" @click="editRole(r)">编辑</button>
-              <button class="btn-del" @click="deleteRole(r)">删除</button>
+              <button class="btn-edit" data-testid="role-members" @click="showRoleMembers(r)">成员</button>
+              <button class="btn-edit" data-testid="role-edit" @click="editRole(r)">编辑</button>
+              <button class="btn-del" data-testid="role-delete" @click="deleteRole(r)">删除</button>
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
     <!-- Create/Edit modal -->
     <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
       <div class="modal glass-card">
@@ -158,9 +155,10 @@ const api_permission_manag_444_data = ref<any[]>([])
 
 <style scoped>
 .role-view { display: flex; flex-direction: column; gap: 16px; height: 100% }
-.view-header { padding: 16px 24px }
-.view-header h1 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--color-primary); margin: 0 0 4px; text-shadow: 0 0 15px var(--color-primary-glow) }
-.subtitle { font-size: 12px; color: var(--text-muted); margin: 0; font-family: 'JetBrains Mono', monospace }
+.modern-page { gap: 16px }
+.modern-hero { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.toolbar-hint { flex: 1; color: var(--text-muted); font-size: 12px }
+.modern-section { padding: 16px; border-radius: var(--radius-md) }
 .content-panel { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px }
 .toolbar { display: flex; gap: 8px }
 .btn-primary { padding: 8px 20px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-weight: 600 }

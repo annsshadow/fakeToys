@@ -2,21 +2,25 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="file-view">
-    <div class="view-header glass-card">
-      <div>
+  <div class="file-view modern-page">
+    <header class="modern-hero">
+      <div class="hero-copy">
         <h1>文件管理</h1>
         <p class="subtitle">我的文件 · 共享 · 回收</p>
       </div>
-      <div class="view-header-actions">
-        <button class="action-btn primary" @click="handleUpload">📤 上传</button>
-        <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
-      </div>
-    </div>
+      <span class="modern-chip hero-chip">FILES</span>
+    </header>
 
-    <div class="file-columns">
-      <section class="files-mine">
-        <h2 class="section-title">我的文件</h2>
+    <section class="modern-section modern-card file-toolbar">
+      <div class="toolbar-actions">
+        <button class="modern-btn primary" @click="handleUpload">📤 上传</button>
+        <button class="modern-btn ghost" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
+      </div>
+    </section>
+
+    <div class="file-columns modern-grid">
+      <section class="files-mine modern-section modern-card">
+        <h2 class="section-title modern-section-title">我的文件</h2>
         <form class="file-search" @submit.prevent="loadFiles(currentFolder)">
           <input v-model="fileKeyword" placeholder="搜索当前文件夹文件名" class="fi" />
           <button type="submit" class="btn-sm">刷新</button>
@@ -31,12 +35,14 @@
 
         <!-- 文件列表/网格 -->
         <div class="file-panel glass-card" :class="'view-' + viewType">
-          <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
+          <div v-if="files.length > 0 && loadError" class="modern-empty error-banner">
+            <ListLoadError mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
+          </div>
           <div v-if="loading" class="loading-state">
             <div class="skeleton-row" v-for="i in 6" :key="i"></div>
           </div>
           <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
-          <div v-else-if="files.length === 0" class="empty-state">
+          <div v-else-if="files.length === 0" class="empty-state modern-empty">
             <div class="empty-icon">📁</div>
             <p>当前文件夹为空</p>
           </div>
@@ -68,8 +74,8 @@
         </div>
       </section>
 
-      <section class="files-shared">
-        <h2 class="section-title">共享</h2>
+      <section class="files-shared modern-section modern-card">
+        <h2 class="section-title modern-section-title">共享</h2>
         <form class="file-search" @submit.prevent="loadSharedFiles">
           <button type="submit" class="btn-sm">刷新共享</button>
         </form>
@@ -79,11 +85,11 @@
             <span class="muted">{{ formatFileSize(item.size) }}</span>
           </li>
         </ul>
-        <p v-if="!sharedFiles.length" class="muted">暂无共享文件</p>
+        <p v-if="!sharedFiles.length" class="muted modern-empty">暂无共享文件</p>
       </section>
 
-      <section class="files-recycle">
-        <h2 class="section-title">回收</h2>
+      <section class="files-recycle modern-section modern-card">
+        <h2 class="section-title modern-section-title">回收</h2>
         <form class="file-search" @submit.prevent="loadRecycleBin">
           <button type="submit" class="btn-sm">刷新回收站</button>
         </form>
@@ -93,17 +99,17 @@
             <span class="muted">{{ fmtTime(item.updateTime) }}</span>
           </li>
         </ul>
-        <p v-if="!recycleFiles.length" class="muted">回收站为空</p>
+        <p v-if="!recycleFiles.length" class="muted modern-empty">回收站为空</p>
       </section>
     </div>
 
     <!-- 引用类型浏览 -->
-    <div v-if="refPanel.open" class="ref-panel glass-card">
+    <div v-if="refPanel.open" class="ref-panel modern-section modern-card">
       <div class="ref-head">
         <span>我的文件引用类型（{{ refPanel.types.length }}）</span>
         <button class="icon-action" aria-label="关闭引用面板" @click="refPanel.open = false">✕</button>
       </div>
-      <div v-if="refPanel.types.length === 0" class="empty-state"><p>暂无引用文件</p></div>
+      <div v-if="refPanel.types.length === 0" class="empty-state modern-empty"><p>暂无引用文件</p></div>
       <div v-else class="ref-chips">
         <span v-for="t in refPanel.types" :key="t.type" class="ref-chip">{{ t.type || '未分类' }} · {{ t.count }}</span>
       </div>
@@ -111,7 +117,7 @@
 
     <!-- 文件详情/预览弹窗（file/{id} + file/{id}/binary/base64） -->
     <div v-if="detail.open" class="upload-overlay" @click.self="detail.open = false">
-      <div class="upload-dialog glass-card">
+      <div class="upload-dialog modern-section modern-card">
         <div class="ref-head">
           <h3>文件详情</h3>
           <button class="icon-action" aria-label="关闭文件详情" @click="detail.open = false">✕</button>
@@ -128,7 +134,7 @@
 
     <!-- 上传弹窗 -->
     <div v-if="showUpload" class="upload-overlay" @click.self="showUpload = false">
-      <div class="upload-dialog glass-card">
+      <div class="upload-dialog modern-section modern-card">
         <h3>上传文件</h3>
         <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop">
           <div class="upload-icon">📤</div>
@@ -1418,6 +1424,20 @@ async function loadFileTwin3() {
 </script>
 
 <style scoped>
+/* Layout/geometry layered on shared ModernUI classes. */
+.file-view.modern-page { display: flex; flex-direction: column; gap: 16px }
+.modern-hero { display: flex; align-items: center; justify-content: space-between }
+.hero-copy { display: flex; flex-direction: column }
+.modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
+.file-toolbar { display: flex; justify-content: flex-end }
+.toolbar-actions { display: flex; gap: 10px }
+.modern-btn { padding: 6px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-primary); cursor: pointer; font-size: 13px }
+.modern-btn.primary { background: var(--color-primary); color: #000; border-color: var(--color-primary); font-weight: 600 }
+.modern-btn.ghost:hover { border-color: var(--color-primary); color: var(--color-primary) }
+.file-columns.modern-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 16px; align-items: start }
+.files-shared, .files-recycle { grid-column: 2 }
+.modern-section-title { margin: 0 0 12px }
+.error-banner { padding: 12px }
 .btn-sm{padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;font-size:12px;background:var(--bg-elevated);color:var(--text-primary)}
 .btn-primary{padding:6px 14px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);cursor:pointer;font-size:13px;font-weight:500}
 .loading-state,.empty-state{display:flex;flex-direction:column;align-items:center;padding:40px;color:var(--text-muted);gap:12px}

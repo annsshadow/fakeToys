@@ -3911,3 +3911,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 真机 E2E（本地代理 BASE_URL 指向测试服子路径）：首轮 32/36，4 红均为 R296/R297 两条导航测试仍找旧「🔧 控制面板」折叠子项；R298 已将管理入口收敛为侧栏单一「⚙ 系统管理」直达管理区，产品行为正确。修正两测试选择器（改点 ⚙ 系统管理并断言 URL + 管理区导航可见）后：定向 4/4、全量 36/36 全绿（EXIT=0）。
 - 门禁：git diff --check=0；scoped biome（spec）0 error；无密钥/口令/域名/IP/SSH 端口真值入库。台账与提交不含真值；口令仅部署期 shell 变量读取。
 
+## 170. R299 八页现代风重构：截图自查驱动的美化（2026-11-20）
+- 背景：用户反馈通讯录/文件/会议/工作流/考勤/个人中心/表单管理样式过时、角色管理三处标题重复，要求先截图自查再全面重构为现代潮流样式。本轮未授权部署测试服。
+- 方式：4 个子代理分片并行（ui-base 共享现代 UI 基座 / ui-pages-a 通讯录·文件·个人中心 / ui-pages-b 会议·工作流 / ui-pages-c 考勤·表单·角色），写范围互斥、禁 git；队长逐片独立复核。
+- 基座：新增 packages/ui/src/theme/modern.css（.modern-page/.modern-hero/.modern-section/.modern-grid/.modern-card/.modern-chip/.modern-btn 等 192 行设计令牌）经 packages/ui/src/index.ts 全局导入；AdminLayout h1 支持 hideTitle 注入。
+- 页面：八页套用现代 Hero/卡片/网格；考勤 86 个端点调试按钮收进「高级操作」折叠面板并按 8 组归类（端点与 @click 逐字保留）；角色/表单页删除页面自带 view-header 与 /api/* 副标题，消除与 AdminLayout 的重复标题；工作流列表用 displayTitle 剥离 work-reject-<n>-<rand> 等技术 id，改显「工作实例/S3 运行闭环」。
+- 截图自查：Playwright 1440x900 逐页截图，首轮发现 7 处可见缺陷（会议/工作流 Hero 副标题被卡片遮挡、原生 ul 圆点、原生 Choose File、双重标题、表单名截断为 S…、技术 id 当标题）——逐项修复后二次截图逐张验收全部达标；角色列表 HTTP 400 属后端既有问题，保留 ListLoadError 错误态。
+- 门禁：全量 vitest 207 文件 / 1869 passed（EXIT=0）；typecheck 6 子项目 EXIT=0；desktop build EXIT=0（3.48s）；scoped biome 20 文件 0 error（11 info）；git diff --check=0；无密钥/口令/域名/IP/SSH 端口真值入库。
+

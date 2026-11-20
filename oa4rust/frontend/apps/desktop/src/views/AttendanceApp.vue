@@ -2,109 +2,156 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="attendance-view">
-    <div class="view-header glass-card">
-      <h1>考勤管理</h1>
-      <p class="subtitle">/api/attendance/assemble/control/*</p>
+  <div class="attendance-view modern-page" data-testid="attendance-page">
+    <header class="view-header glass-card modern-hero">
+      <div class="hero-copy">
+        <h1>考勤管理</h1>
+        <p class="subtitle">按月查看出勤、请假与排班，日常操作使用下方业务分区，端点调试请展开高级操作。</p>
+      </div>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
-        <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
-        <button class="eb" @click="loadAttOverview">📊 汇总</button>
-        <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
-        <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
-        <button class="eb" @click="loadV2Schedule">🗓️ v2排班/群组</button>
-        <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
-        <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
-        <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
-        <button class="eb" @click="loadAttTwin">🔁 孪生端点</button>
-        <button class="eb" @click="loadAttTwin2">🔁 孪生端点B</button>
-        <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
-        <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
-        <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
-        <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
-        <button class="eb" @click="importLeave">📥 批量导入请假</button>
-        <button class="eb" @click="importAttV2Records('rows')">📥 导入打卡记录</button>
-        <button class="eb" @click="importAttV2Records('daily')">📥 按日导入打卡</button>
-        <button class="eb" @click="attAppealWrite('analyseRedo')">🔁 明细重算</button>
-        <button class="eb" @click="attAppealWrite('appealById')">📣 发起申诉</button>
-        <button class="eb" @click="attAppealWrite('sync')">🔄 同步申诉状态</button>
-        <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
-        <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
-        <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
-        <button class="eb" @click="createAttDetail">➕ 新建考勤明细</button>
-        <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
-        <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
-        <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
-        <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
-        <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
-        <button class="eb" @click="loadPersonMonthStats">📈 人员月统计</button>
-        <button class="eb" @click="attV2Write('workplaceCreate')">建打卡点</button>
-        <button class="eb" @click="attV2Write('workplaceDelete')">删打卡点</button>
-        <button class="eb" @click="attV2Write('workplaceListIds')">按ID查打卡点</button>
-        <button class="eb" @click="attV2Write('scheduleListFilter')">排班筛选</button>
-        <button class="eb" @click="attV2Write('shiftUpdate')">改班次</button>
-        <button class="eb" @click="attV2Write('appealStart')">申诉起流程</button>
-        <button class="eb" @click="attV2Write('appealEnd')">申诉结流程</button>
-        <button class="eb" @click="attV2Write('detailStat')">明细统计筛选</button>
-        <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
-        <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
-        <button class="eb" @click="attStatFilters">统计/明细筛选读</button>
-        <button class="eb" @click="attCoreEntity('recordCreate')">建考勤记录</button>
-        <button class="eb" @click="attCoreEntity('recordUpdate')">改考勤记录</button>
-        <button class="eb" @click="attCoreEntity('recordDelete')">删考勤记录</button>
-        <button class="eb" @click="attCoreEntity('ruleCreate')">建考勤规则</button>
-        <button class="eb" @click="attCoreEntity('ruleUpdate')">改考勤规则</button>
-        <button class="eb" @click="attCoreEntity('ruleDelete')">删考勤规则</button>
-        <button class="eb" @click="attWrite3('adminCreate')">建管理员</button>
-        <button class="eb" @click="attWrite3('adminDelete')">删管理员</button>
-        <button class="eb" @click="attWrite3('empCreate')">建员工配置</button>
-        <button class="eb" @click="attWrite3('empDelete')">删员工配置</button>
-        <button class="eb" @click="attWrite3('schedCreate')">建排班设置</button>
-        <button class="eb" @click="attWrite3('schedDelete')">删排班设置</button>
-        <button class="eb" @click="attWrite3('workdayCreate')">建工作日配置</button>
-        <button class="eb" @click="attWrite3('workdayDelete')">删工作日配置</button>
-        <button class="eb" @click="attWrite3('workdayFilter')">工作日筛选</button>
-        <button class="eb" @click="attWrite3('reqlogCreate')">建统计日志</button>
-        <button class="eb" @click="attWrite3('reqlogDelete')">删统计日志</button>
-        <button class="eb" @click="attWrite3('cycleDelete')">删统计周期</button>
-        <button class="eb" @click="attWrite3('importDelete')">删导入文件</button>
-        <button class="eb" @click="attWrite3('appealAudit')">申诉审核</button>
-        <button class="eb" @click="attWrite3('appealCheck')">申诉校验</button>
-        <button class="eb" @click="attWrite3('appealDo')">申诉处理</button>
-        <button class="eb" @click="attWrite3('appealArchive')">申诉归档</button>
-        <button class="eb" @click="attWrite3('appealDelete')">删申诉</button>
-        <button class="eb" @click="attWrite3('detailAnalyse')">明细分析</button>
-        <button class="eb" @click="attWrite3('detailAnalyseId')">按ID分析</button>
-        <button class="eb" @click="attWrite3('detailArchive')">明细归档</button>
-        <button class="eb" @click="attWrite3('ruleToggle')">规则开关</button>
-        <button class="eb" @click="attWrite3('statDo')">执行统计</button>
-        <button class="eb" @click="attWrite3('v2Config')">v2配置</button>
-        <button class="eb" @click="attWrite3('v2ConfigPerson')">v2人员配置</button>
-        <button class="eb" @click="attWrite3('v2DetailList')">v2明细列表</button>
-        <button class="eb" @click="attWrite3('v2AppealMgr')">v2申诉管理</button>
-        <button class="eb" @click="attWrite3('uuid')">UUID</button>
-        <button class="eb" @click="attV2Ops('appealMgrStatus')">v2申诉管理态</button>
-        <button class="eb" @click="attV2Ops('appealResetStatus')">v2申诉重置态</button>
-        <button class="eb" @click="attV2Ops('detailRebuild')">v2按人重建明细</button>
-        <button class="eb" @click="attV2Ops('groupRebuild')">v2群组重建明细</button>
-        <button class="eb" @click="attV2Ops('groupRefresh')">v2群组刷新参与</button>
-        <button class="eb" @click="attV2Ops('recordDelete')">v2删记录(按人日)</button>
-        <button class="eb" @click="attV2Ops('analyse')">明细分析(日期)</button>
-        <button class="eb" @click="attV2Ops('checkCycle')">周期核对</button>
-        <button class="eb" @click="attV2Ops('filterNext')">明细过滤前翻</button>
-        <button class="eb" @click="attV2Ops('appealArchive')">申诉归档(工作流)</button>
-        <button class="eb" @click="attV2Ops('mobileDelete')">删移动明细</button>
+        <button class="eb eb-primary" data-testid="advanced-operations-toggle" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">{{ showAdvanced ? '收起高级操作' : '⚙ 高级操作' }}</button>
+      </div>
+      <div v-if="showAdvanced" class="advanced-operations" data-testid="advanced-operations-panel">
+        <div class="modern-grid advanced-groups">
+          <section class="advanced-group modern-section glass-card">
+            <h2>汇总导出</h2>
+            <div class="hr">
+              <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
+              <button class="eb" @click="loadAttOverview">📊 汇总</button>
+              <button class="eb" @click="loadAttOrg">🏢 按单位/同步</button>
+              <button class="eb" @click="loadAttTwin">🔁 孪生端点</button>
+              <button class="eb" @click="loadAttTwin2">🔁 孪生端点B</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>排班配置</h2>
+            <div class="hr">
+              <button class="eb" @click="loadV2Meta">⚙️ v2配置/控件/请假模板</button>
+              <button class="eb" @click="loadV2Schedule">🗓️ v2排班/群组</button>
+              <button class="eb" @click="loadV2AppealRecord">📝 v2申诉/记录</button>
+              <button class="eb" @click="loadScheduleDetail">📅 排班设置明细</button>
+              <button class="eb" @click="loadV2ConfigTpl">🧾 v2配置/模板/统计</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>打卡记录</h2>
+            <div class="hr">
+              <button class="eb" @click="loadAttBase">🗂️ 打卡/周期/员工</button>
+              <button class="eb" @click="loadCoreLists">🧩 核心记录/规则</button>
+              <button class="eb" @click="reciveMobileDetail">📱 移动端接收考勤</button>
+              <button class="eb" @click="myMobileDetail">📱 我的移动端明细</button>
+              <button class="eb" @click="reciveDetailById">✅ 按id接收明细</button>
+              <button class="eb" @click="createAttDetail">➕ 新建考勤明细</button>
+              <button class="eb" @click="toggleAttType">🔧 启用/禁用考勤类型</button>
+              <button class="eb" @click="loadAppealDetailFilters">🧾 申诉/明细游标</button>
+              <button class="eb" @click="loadAttendanceDetails">📋 考勤明细读</button>
+              <button class="eb" @click="attV2Ops('mobileDelete')">删移动明细</button>
+              <button class="eb" @click="attV2Ops('detailRebuild')">v2按人重建明细</button>
+              <button class="eb" @click="attV2Ops('groupRebuild')">v2群组重建明细</button>
+              <button class="eb" @click="attV2Ops('groupRefresh')">v2群组刷新参与</button>
+              <button class="eb" @click="attV2Ops('recordDelete')">v2删记录(按人日)</button>
+              <button class="eb" @click="attV2Ops('analyse')">明细分析(日期)</button>
+              <button class="eb" @click="attV2Ops('filterNext')">明细过滤前翻</button>
+              <button class="eb" @click="attWrite3('detailAnalyse')">明细分析</button>
+              <button class="eb" @click="attWrite3('detailAnalyseId')">按ID分析</button>
+              <button class="eb" @click="attWrite3('detailArchive')">明细归档</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>申诉假期</h2>
+            <div class="hr">
+              <button class="eb" @click="checkMyRestDate">🏖️ 我的休息日校验</button>
+              <button class="eb" @click="attAppealWrite('analyseRedo')">🔁 明细重算</button>
+              <button class="eb" @click="attAppealWrite('appealById')">📣 发起申诉</button>
+              <button class="eb" @click="attAppealWrite('sync')">🔄 同步申诉状态</button>
+              <button class="eb" @click="loadHolidaySettingDetails">🏖️ 假期/设置明细</button>
+              <button class="eb" @click="attV2Write('appealStart')">申诉起流程</button>
+              <button class="eb" @click="attV2Write('appealEnd')">申诉结流程</button>
+              <button class="eb" @click="attV2Write('selfHolidayDelete')">删自定义假期</button>
+              <button class="eb" @click="attV2Write('holidaySimpleDelete')">删简易假期</button>
+              <button class="eb" @click="attWrite3('appealAudit')">申诉审核</button>
+              <button class="eb" @click="attWrite3('appealCheck')">申诉校验</button>
+              <button class="eb" @click="attWrite3('appealDo')">申诉处理</button>
+              <button class="eb" @click="attWrite3('appealArchive')">申诉归档</button>
+              <button class="eb" @click="attWrite3('appealDelete')">删申诉</button>
+              <button class="eb" @click="attV2Ops('appealMgrStatus')">v2申诉管理态</button>
+              <button class="eb" @click="attV2Ops('appealResetStatus')">v2申诉重置态</button>
+              <button class="eb" @click="attV2Ops('appealArchive')">申诉归档(工作流)</button>
+              <button class="eb" @click="attWrite3('v2AppealMgr')">v2申诉管理</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>统计</h2>
+            <div class="hr">
+              <button class="eb" @click="loadStatisticShow">📈 统计展示筛选</button>
+              <button class="eb" @click="loadStatisticAggregates">📊 统计聚合/平台</button>
+              <button class="eb" @click="loadPersonMonthStats">📈 人员月统计</button>
+              <button class="eb" @click="attV2Write('detailStat')">明细统计筛选</button>
+              <button class="eb" @click="attStatFilters">统计/明细筛选读</button>
+              <button class="eb" @click="attWrite3('statDo')">执行统计</button>
+              <button class="eb" @click="attV2Ops('checkCycle')">周期核对</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>管理员与员工配置</h2>
+            <div class="hr">
+              <button class="eb" @click="attWrite3('adminCreate')">建管理员</button>
+              <button class="eb" @click="attWrite3('adminDelete')">删管理员</button>
+              <button class="eb" @click="attWrite3('empCreate')">建员工配置</button>
+              <button class="eb" @click="attWrite3('empDelete')">删员工配置</button>
+              <button class="eb" @click="attWrite3('schedCreate')">建排班设置</button>
+              <button class="eb" @click="attWrite3('schedDelete')">删排班设置</button>
+              <button class="eb" @click="attWrite3('workdayCreate')">建工作日配置</button>
+              <button class="eb" @click="attWrite3('workdayDelete')">删工作日配置</button>
+              <button class="eb" @click="attWrite3('workdayFilter')">工作日筛选</button>
+              <button class="eb" @click="attWrite3('ruleToggle')">规则开关</button>
+              <button class="eb" @click="attWrite3('v2Config')">v2配置</button>
+              <button class="eb" @click="attWrite3('v2ConfigPerson')">v2人员配置</button>
+              <button class="eb" @click="attV2Write('workplaceCreate')">建打卡点</button>
+              <button class="eb" @click="attV2Write('workplaceDelete')">删打卡点</button>
+              <button class="eb" @click="attV2Write('workplaceListIds')">按ID查打卡点</button>
+              <button class="eb" @click="attV2Write('scheduleListFilter')">排班筛选</button>
+              <button class="eb" @click="attV2Write('shiftUpdate')">改班次</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>导入导出</h2>
+            <div class="hr">
+              <button class="eb" @click="importLeave">📥 批量导入请假</button>
+              <button class="eb" @click="importAttV2Records('rows')">📥 导入打卡记录</button>
+              <button class="eb" @click="importAttV2Records('daily')">📥 按日导入打卡</button>
+              <button class="eb" @click="attWrite3('importDelete')">删导入文件</button>
+            </div>
+          </section>
+          <section class="advanced-group modern-section glass-card">
+            <h2>其它</h2>
+            <div class="hr">
+              <button class="eb" @click="attCoreEntity('recordCreate')">建考勤记录</button>
+              <button class="eb" @click="attCoreEntity('recordUpdate')">改考勤记录</button>
+              <button class="eb" @click="attCoreEntity('recordDelete')">删考勤记录</button>
+              <button class="eb" @click="attCoreEntity('ruleCreate')">建考勤规则</button>
+              <button class="eb" @click="attCoreEntity('ruleUpdate')">改考勤规则</button>
+              <button class="eb" @click="attCoreEntity('ruleDelete')">删考勤规则</button>
+              <button class="eb" @click="attWrite3('reqlogCreate')">建统计日志</button>
+              <button class="eb" @click="attWrite3('reqlogDelete')">删统计日志</button>
+              <button class="eb" @click="attWrite3('cycleDelete')">删统计周期</button>
+              <button class="eb" @click="attWrite3('v2DetailList')">v2明细列表</button>
+              <button class="eb" @click="attWrite3('uuid')">UUID</button>
+            </div>
+          </section>
+        </div>
         <span v-if="attStatText" class="app-meta">{{ attStatText }}</span>
       </div>
       <div v-if="attOverviewText" class="att-note">{{ attOverviewText }}</div>
-    </div>
-    <div class="stats-row">
-      <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
+    </header>
+    <section class="stats-row modern-grid" data-testid="attendance-stats">
+      <div v-for="s in stats" :key="s.label" class="stat-card modern-stat glass-card">
         <div class="sn" :style="{color:s.color}">{{s.value}}</div>
         <div class="sl">{{s.label}}</div>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel">
       <div class="pt"><span class="th">姓名</span><span class="th">日期</span><span class="th">上班</span><span class="th">下班</span><span class="th">工时</span><span class="th">状态</span></div>
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 8" :key="i"></div></div>
       <div v-else-if="records.length===0" class="es"><div class="ei">📋</div><p>暂无考勤记录</p></div>
@@ -129,8 +176,8 @@
         <span class="pgi">第{{page}}/{{totalPages}}页</span>
         <button class="pgb" aria-label="下一页" :disabled="page>=totalPages" @click="page++">›</button>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel" data-testid="attendance-leaves">
       <div class="pt">请假申请</div>
       <ListLoadError v-if="appeals.length > 0 && appealsError" mode="banner" :message="appealsError" @retry="loadAppeals" />
       <ListLoadError v-else-if="appeals.length===0 && appealsError" mode="empty" :message="appealsError" @retry="loadAppeals" />
@@ -151,8 +198,8 @@
           </div>
         </div>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel" data-testid="attendance-workplaces">
       <div class="pt cfg-pt">
         <span>打卡地点</span>
         <button class="mini-add" @click="addWorkplace">+ 新增</button>
@@ -166,8 +213,8 @@
           <button class="cfg-del" @click="removeWorkplace(w)">删除</button>
         </div>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel" data-testid="attendance-settings">
       <div class="pt cfg-pt">
         <span>考勤设置项</span>
         <button class="mini-add" @click="addSetting">+ 新增</button>
@@ -181,8 +228,8 @@
           <button class="cfg-del" @click="removeSetting(s)">删除</button>
         </div>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel" data-testid="attendance-schedule-config">
       <div class="pt cfg-pt">
         <span>排班与配置</span>
         <span class="cfg-tabs" role="group" aria-label="排班与配置切换">
@@ -223,8 +270,8 @@
           </div>
         </div>
       </div>
-    </div>
-    <div class="content-panel glass-card">
+    </section>
+    <section class="modern-section glass-card content-panel" data-testid="attendance-external-sync">
       <div class="pt cfg-pt"><span>外部考勤同步（钉钉/企微，管理员）</span></div>
       <div class="cfg-list sync-row">
         <button class="cfg-mini" @click="syncDingding">钉钉同步打卡</button>
@@ -233,7 +280,7 @@
         <button class="cfg-mini" @click="syncGroupSchedule">v2 群排班同步</button>
       </div>
       <p class="sync-note">同步与统计按日期区间触发；未配置钉钉/企微凭据时后端如实返回错误。</p>
-    </div>
+    </section>
   </div>
 </template>
 <script setup lang="ts">
@@ -249,6 +296,7 @@ import { describeListError, reloadListQueries } from './listQuery'
 import { mutationErrorMessage } from './mutationError'
 
 const session = useSession()
+const showAdvanced = ref(false)
 
 interface R {
   id: string
@@ -1738,7 +1786,18 @@ async function loadAttTwin2() {
 </script>
 <style scoped>
 .attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
+.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;flex-wrap:wrap;gap:12px}
+.hero-copy{min-width:0}
+.hero-copy h1{white-space:nowrap}
+.subtitle{line-height:1.5;max-width:48ch}
+.hr{flex-wrap:wrap;gap:6px}
+.eb-primary{border-color:var(--color-primary);color:var(--color-primary);font-weight:600}
+.advanced-operations{margin-top:12px;border-top:1px solid var(--border-subtle);padding-top:12px;display:flex;flex-direction:column;gap:12px}
+.advanced-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.advanced-group{padding:12px;border-radius:var(--radius-md)}
+.advanced-group h2{font-size:13px;color:var(--color-primary);margin:0 0 8px;font-weight:600}
+.stat-card{border-radius:var(--radius-md);padding:12px;text-align:center}
+.modern-section{border-radius:var(--radius-md)}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
 .hr{display:flex;align-items:center;gap:10px}

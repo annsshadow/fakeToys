@@ -46,7 +46,7 @@ describe('Personal 业务视图契约', () => {
     expect(template).toContain('我发出的')
     expect(template).toContain('授权给我')
     expect(template).toMatch(/role="tablist"/)
-    expect(template).toMatch(/<ul[^>]*class="emp-list"/)
+    expect(template).toMatch(/<ul[^>]*class="[^"]*\bemp-list\b/)
   })
 
   it('默认视图不渲染 /api/* 端点调试按钮，副标题不暴露 API 路径', () => {

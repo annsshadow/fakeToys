@@ -2,18 +2,21 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="personal-view" data-testid="personal-business-view">
-    <div class="profile-header view-header glass-card" data-testid="personal-header">
-      <h1>个人中心</h1>
-      <p class="subtitle">维护个人资料、账户安全与授权委托</p>
-    </div>
+  <div class="personal-view modern-page" data-testid="personal-business-view">
+    <header class="profile-header modern-hero" data-testid="personal-header">
+      <div class="hero-copy">
+        <h1>个人中心</h1>
+        <p class="subtitle">维护个人资料、账户安全与授权委托</p>
+      </div>
+      <span class="modern-chip hero-chip">PROFILE</span>
+    </header>
 
-    <section class="profile-overview profile-card glass-card" data-testid="personal-profile">
-      <h2 class="section-title">我的资料</h2>
+    <section class="profile-overview modern-section modern-card" data-testid="personal-profile">
+      <h2 class="section-title modern-section-title">我的资料</h2>
       <div class="avatar-section">
         <div class="avatar-large" data-testid="personal-avatar">{{ user?.name?.charAt(0) || 'U' }}</div>
         <div class="avatar-actions">
-          <label class="upload-btn">
+          <label class="upload-btn modern-btn primary">
             {{ avatarSaving ? '上传中...' : '📷 更换头像' }}
             <input type="file" accept="image/*" class="hidden-input" :disabled="avatarSaving" @change="handleAvatarUpload" aria-label="更换头像" />
           </label>
@@ -27,8 +30,8 @@
       </ul>
     </section>
 
-    <section class="pwd-card settings-card glass-card" data-testid="personal-password">
-      <h2 class="section-title">修改密码</h2>
+    <section class="pwd-card modern-section modern-card" data-testid="personal-password">
+      <h2 class="section-title modern-section-title">修改密码</h2>
       <form class="pwd-form" @submit.prevent="savePassword">
         <div class="form-group">
           <label for="oldPwd">当前密码</label>
@@ -45,35 +48,35 @@
           </div>
         </div>
         <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>
-        <button type="submit" class="save-btn" :disabled="pwdSaving">{{ pwdSaving ? '保存中...' : '保存修改' }}</button>
+        <button type="submit" class="save-btn modern-btn primary" :disabled="pwdSaving">{{ pwdSaving ? '保存中...' : '保存修改' }}</button>
       </form>
     </section>
 
-    <section class="sig-card settings-card glass-card" data-testid="personal-signature">
-      <h2 class="section-title">个人签名</h2>
+    <section class="sig-card modern-section modern-card" data-testid="personal-signature">
+      <h2 class="section-title modern-section-title">个人签名</h2>
       <form @submit.prevent="saveSignature">
         <textarea v-model="signature" class="form-textarea" rows="3" placeholder="设置您的个性签名..." maxlength="200" aria-label="个人签名" />
         <div class="char-count">{{ signature.length }}/200</div>
-        <button type="submit" class="save-btn">保存签名</button>
+        <button type="submit" class="save-btn modern-btn primary">保存签名</button>
       </form>
       <div v-if="sigManagers.length" class="sig-mgr-list">
-        <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip">{{ sm.personName || sm.name || sm.id }}</span>
+        <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip modern-chip">{{ sm.personName || sm.name || sm.id }}</span>
       </div>
     </section>
 
-    <section class="auth-card settings-card glass-card" data-testid="personal-security">
-      <h2 class="section-title">账户安全与绑定</h2>
+    <section class="auth-card modern-section modern-card" data-testid="personal-security">
+      <h2 class="section-title modern-section-title">账户安全与绑定</h2>
       <ul class="auth-info">
         <li v-if="authMetaText" class="auth-note">{{ authMetaText }}</li>
         <li v-if="authOAuthText" class="auth-note">{{ authOAuthText }}</li>
         <li v-if="authDetailText" class="auth-note">{{ authDetailText }}</li>
         <li v-if="personalExtraText" class="muted">{{ personalExtraText }}</li>
       </ul>
-      <p v-if="!authMetaText && !authOAuthText && !authDetailText && !personalExtraText" class="muted">账户安全信息暂无更新</p>
+      <p v-if="!authMetaText && !authOAuthText && !authDetailText && !personalExtraText" class="muted modern-empty">账户安全信息暂无更新</p>
     </section>
 
-    <section class="emp-card settings-card glass-card" data-testid="personal-empower">
-      <h2 class="section-title">授权委托</h2>
+    <section class="emp-card modern-section modern-card" data-testid="personal-empower">
+      <h2 class="section-title modern-section-title">授权委托</h2>
       <div class="emp-tabs" role="tablist" aria-label="授权范围">
         <button class="emp-tab" role="tab" :aria-selected="empScope==='mine'" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMineTotal }}）</button>
         <button class="emp-tab" role="tab" :aria-selected="empScope==='to'" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empToTotal }}）</button>
@@ -83,10 +86,10 @@
         当前显示前 {{ (empScope==='mine'?empMine:empTo).length }} 条（共 {{ empScope==='mine'?empMineTotal:empToTotal }} 条）
       </div>
       <ListLoadError v-else-if="(empScope==='mine'?empMine:empTo).length===0 && empError" mode="empty" :message="empError" @retry="loadEmpower(empScope)" />
-      <div v-else-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
-      <ul v-else class="emp-list">
-        <li v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item">
-          <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
+      <div v-else-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty modern-empty">暂无授权记录</div>
+      <ul v-else class="emp-list modern-grid">
+        <li v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item modern-card">
+          <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status modern-chip" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
           <div v-if="empScope==='mine'" class="emp-acts">
             <button class="emp-btn" @click="toggleEmpower(e, true)">启用</button>
             <button class="emp-btn" @click="toggleEmpower(e, false)">禁用</button>
@@ -739,6 +742,21 @@ async function loadPersonalTwin2() {
 </script>
 
 <style scoped>
+/* Layout/geometry layered on shared ModernUI classes. */
+.personal-view.modern-page { display: flex; flex-direction: column; gap: 16px }
+.modern-hero { display: flex; align-items: center; justify-content: space-between }
+.hero-copy { display: flex; flex-direction: column }
+.modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
+.hero-chip { background: var(--color-primary); color: #000 }
+.modern-section-title { margin: 0 0 12px }
+.upload-btn.modern-btn { display: inline-flex; align-items: center; cursor: pointer }
+.hidden-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0 }
+.profile-info { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px }
+.profile-info .info-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-elevated) }
+.profile-info .info-row + .info-row { margin-top: 0 }
+.modern-empty { padding: 20px; text-align: center; color: var(--text-muted) }
+.emp-list.modern-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px }
+.emp-item.modern-card { display: flex; align-items: center; justify-content: space-between; gap: 10px }
 .profile-card{display:flex;gap:16px;align-items:flex-start;padding:16px}
 .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .form-input{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px 12px;color:var(--text-primary);font-size:14px}

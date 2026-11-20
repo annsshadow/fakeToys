@@ -7,9 +7,9 @@ const template = src.slice(src.indexOf('<template>'), src.indexOf('</template>')
 
 describe('FileManager 业务契约', () => {
   it('默认视图提供我的文件 / 共享 / 回收三个业务栏', () => {
-    expect(template).toContain('class="files-mine"')
-    expect(template).toContain('class="files-shared"')
-    expect(template).toContain('class="files-recycle"')
+    expect(template).toMatch(/<section[^>]*class="[^"]*\bfiles-mine\b/)
+    expect(template).toMatch(/<section[^>]*class="[^"]*\bfiles-shared\b/)
+    expect(template).toMatch(/<section[^>]*class="[^"]*\bfiles-recycle\b/)
     expect(template).toContain('>我的文件<')
     expect(template).toContain('>共享<')
     expect(template).toContain('>回收<')

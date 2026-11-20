@@ -36,7 +36,7 @@
           <span class="admin-breadcrumb-sep">/</span>
           <span class="admin-breadcrumb-current">{{ pageTitle }}</span>
         </div>
-        <h1 class="admin-title">{{ pageTitle }}</h1>
+        <h1 v-if="!hideTitle" class="admin-title">{{ pageTitle }}</h1>
       </header>
       <div class="admin-content">
         <router-view />
@@ -45,9 +45,18 @@
   </div>
 </template>
 
+<script lang="ts">
+/**
+ * R298 页面标题隐藏开关：自带大标题的管理页 inject 该 key 并将 Ref 置 true，
+ * AdminLayout 即隐藏自身 h1；默认 false，既有页面行为不变。
+ */
+export { ADMIN_LAYOUT_HIDE_TITLE } from './adminInjection'
+</script>
+
 <script setup lang="ts">
 import { isNavActive } from '@oa4rust/ui/components/navActive'
-import { computed } from 'vue'
+import { computed, inject, provide, ref } from 'vue'
+import { ADMIN_LAYOUT_HIDE_TITLE } from './adminInjection'
 import { useRoute } from 'vue-router'
 import { adminNavGroups } from './adminNav'
 
@@ -63,6 +72,11 @@ const currentGroupLabel = computed<string>(() => {
   const group = adminNavGroups.find((g) => g.items.some((item) => isNavActive(route.path, item.path)))
   return group?.label ?? '概览'
 })
+
+// 允许更上层统一控制，也向子路由提供开关；默认不隐藏标题。
+const inheritedHideTitle = inject(ADMIN_LAYOUT_HIDE_TITLE, undefined)
+const hideTitle = inheritedHideTitle ?? ref(false)
+provide(ADMIN_LAYOUT_HIDE_TITLE, hideTitle)
 </script>
 
 <style scoped>
