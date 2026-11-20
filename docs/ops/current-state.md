@@ -4096,6 +4096,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 3 文件、git show diff 确认 stats 改为 deriveAttendanceStats 且副标题为 t27 队友改动保留；定点复跑 AttendanceApp.stats.contract.test.ts 5/5 passed（exit 0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、口令运行时读取不回显、非物理真机。commit message 自述原子部署 STAMP=r31x-20261121-0350、远程 index-BM6UG1wT.js active、真 Chromium 真 UI 登录+月份切换 match=true/zeroOk=true/apiBadCount=0/pass=true，证据 gitignored oa4rust/test-results/r31x-attendance-verify/（2 PNG+evidence）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 198. R302 DR-03a+DR-07 修复：端点调试门控与标题语义（t27，2026-11-21）
+- 交付（page-work，commit 638a4d311，精确 7 文件）：docs/ops/oa4rust-r302-dr03a-debug-gate.md（38 行）+ EndpointFold.vue（+9/-1）+ CmsIndexApp.vue/DeploymentApp.vue/ProcessManagerApp.vue/ProcessTaskCenterApp.vue + EndpointFold.devGate.B302.contract.test.ts（65 行，160+/26-）。EndpointFold 改 import.meta.env.DEV + devToolsEnabled 门控、默认标签/提示中文化，6 调用页不再显示『端点调试』；管理区页内 h1 降 h2、保留 AdminLayout shell 唯一 h1，部署管理页接入 ai-page-b5。契约 RED 4 failed→（收紧断言后）2 failed→GREEN 专项 4 files/18 tests；typecheck/build 通过。
+- 队长独立复核（不采信自述）：git show --stat 精确 7 文件、git show diff 确认 EndpointFold 增加 v-if="devToolsEnabled" 与中文化；定点复跑 EndpointFold.devGate.B302.contract.test.ts 4/4 passed（exit 0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、真实页面流程截图标注非物理真机。commit message 自述原子部署后真 Chromium headless 每页独立 context 6 页 h1Count=1/debugText=0/rawEndpointVisible=0/errors=[]，旧截图不一致已全量重拍纠正、未手改最终 evidence，证据 gitignored oa4rust/test-results/r302-dr03a/。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
