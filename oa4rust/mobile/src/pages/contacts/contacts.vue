@@ -190,7 +190,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="search">
       <input
         v-model="keyword"

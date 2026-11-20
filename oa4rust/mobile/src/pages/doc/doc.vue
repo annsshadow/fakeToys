@@ -169,7 +169,7 @@ function pickFromFilePicker(): void {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="toolbar">
       <button class="tool" size="mini" :disabled="uploading" @tap="pickFromAlbumOrCamera">
         拍照 / 相册

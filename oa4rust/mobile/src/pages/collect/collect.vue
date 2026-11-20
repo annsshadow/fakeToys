@@ -72,7 +72,7 @@ onShow(async () => {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view v-if="loading && !loaded" class="tip">加载中…</view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>

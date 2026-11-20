@@ -148,7 +148,7 @@ const emptyText = computed(() =>
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="tabs">
       <view
         v-for="t in TABS"

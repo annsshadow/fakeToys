@@ -168,7 +168,7 @@ function statText(): string {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="hero">
       <view class="date">{{ pre?.date || '今日' }}</view>
       <view class="group">{{ pre?.group?.groupName || '未加入考勤组' }}</view>

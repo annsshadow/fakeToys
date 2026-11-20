@@ -228,7 +228,7 @@ async function send() {
 </script>
 
 <template>
-  <view class="chat">
+  <view class="chat ai-surface-gradient">
     <view class="head">
       {{ title }}
     </view>

@@ -127,7 +127,7 @@ async function emptyAll(): Promise<void> {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view v-if="listView === 'loading'" class="tip">加载中…</view>
     <view v-else-if="listView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>

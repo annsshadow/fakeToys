@@ -262,7 +262,7 @@ function removeAttachment(field: MobileFormField, id: string): void {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="card">
       <view class="card-title">选择流程</view>
       <view v-if="loading" class="tip">加载中…</view>

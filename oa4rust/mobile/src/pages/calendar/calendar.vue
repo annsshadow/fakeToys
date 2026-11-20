@@ -249,7 +249,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="tabs">
       <view v-for="r in ranges" :key="r.key" class="tab" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
         {{ r.label }}

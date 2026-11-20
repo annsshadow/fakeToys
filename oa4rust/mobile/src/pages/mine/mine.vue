@@ -86,7 +86,7 @@ async function changePassword() {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="card">
       <view class="avatar">{{ (session.user?.name || 'U').slice(0, 1).toUpperCase() }}</view>
       <view class="info">

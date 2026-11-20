@@ -71,7 +71,7 @@ function openRow(r: Row) {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="searchbar">
       <input
         v-model="keyword"

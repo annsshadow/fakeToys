@@ -115,7 +115,7 @@ function detailText(): string {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="tabs">
       <view v-for="t in tabs" :key="t.key" class="tab" :class="{ on: tab === t.key }" @tap="switchTab(t.key)">
         {{ t.label }}

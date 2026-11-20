@@ -76,7 +76,7 @@ onLoad(async () => {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="form-card">
       <view class="field">
         <text class="label">版块</text>

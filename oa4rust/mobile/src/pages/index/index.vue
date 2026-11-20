@@ -83,20 +83,20 @@ function goPage(url: string) {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="hero">
       <view class="hello">你好，{{ displayName() }}</view>
       <view class="sub">OA4Rust 工作台</view>
     </view>
 
-    <view class="stat-card" @tap="goTab('/pages/process/process')">
+    <view class="stat-card ai-brand-fill" @tap="goTab('/pages/process/process')">
       <view class="stat-num">
         {{ loading ? '…' : pendingBadgeText }}
       </view>
       <view class="stat-label">待办审批{{ pendingOverflow ? ' · 超过 50' : '' }}</view>
     </view>
 
-    <view class="stat-card" @tap="goTab('/pages/attendance/attendance')">
+    <view class="stat-card ai-brand-fill" @tap="goTab('/pages/attendance/attendance')">
       <view class="stat-num">{{ todayRecords === null ? '–' : todayRecords }}</view>
       <view class="stat-label">今日出勤</view>
     </view>
