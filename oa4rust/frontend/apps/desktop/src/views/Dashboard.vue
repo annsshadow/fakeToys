@@ -182,7 +182,7 @@ const stats = computed(() => [
   {
     icon: '📋',
     label: '待审批',
-    value: statCount(0, procFailed.value, procCounts.value),
+    value: approvalCount.value,
     color: 'var(--color-warning)',
     trendText: '↑ 较昨日',
     trendDir: 'up',
@@ -212,6 +212,13 @@ const pendingError = ref('')
 const pendingItems = ref<
   Array<{ id: string; title?: string; processName?: string; appName?: string; createTime?: string }>
 >([])
+const pendingLoaded = ref(false)
+
+// DR-02: 「待审批」统计卡与「我的待办」列表同源，避免同屏出现「统计 0 / 列表 5 条」矛盾。
+// 首次加载完成前与取数失败时返回 null（模板渲染占位），成功后返回真实分页待办条数。
+const approvalCount = computed<number | null>(() =>
+  !pendingLoaded.value || pendingError.value ? null : pendingItems.value.length,
+)
 
 async function loadPending(): Promise<void> {
   pendingLoading.value = true
@@ -221,6 +228,7 @@ async function loadPending(): Promise<void> {
     // 旧的 work/list/filter/manage 路由为 3 占位符坏桩（handler 仅 2 参），必 500，弃用。
     const resp = await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
+    pendingLoaded.value = true
   } catch (e) {
     // 失败保留旧待办并显式报错，不能和「真的没有待办」混成同一种空态。
     pendingError.value = describeListError('待办加载失败', e)
