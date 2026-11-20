@@ -3982,3 +3982,6 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 修复：doSearch 解包嵌套结构（Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []），items 始终为数组；保留 loadError 错误态。
 - 契约：新增 HotpicListShape.contract（3 例）RED→GREEN；全量 vitest 217 文件 / 1945 passed、typecheck 6 子项目、build exit0（index-Bordjv0s.js）、scoped biome exit0、git diff --check 0、密钥扫描无命中。
 - 验证：8901 新 dist 真机复验，热帖页「1 总计」并渲染 Test Hotpic 条目，错误提示消失，失败 API 请求为空。
+- 部署（2026-11-21 01:06）：部署源 commit 54edb26ea（R303 热帖修复）；ed8dc8e0c..HEAD 的 backend/mobile diff=0，纯前端。
+- 流程：重编 dist（index-Bordjv0s.js，181 文件）→ 打包 web-r303.tgz（807002 字节）→ 远程备份 web.bak-r303-20261121-0106 → scp → tar 解包原子替换 web/ → restart oa4rust=active；冒烟 5/5 全 200，线上服务新 hash index-Bordjv0s.js。
+- 线上真机复验：热帖页 hasGlobalError=false、Test Hotpic 条目正常、总计 1、无加载失败。
