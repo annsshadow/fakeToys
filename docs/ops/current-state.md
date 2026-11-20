@@ -3671,3 +3671,34 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 ### R291 收官
 - 四目标：①目标一 R291 改密预校验缺口修复完成，持续找缺口②目标二 §99 已交付③目标三 R291 防线构筑加载假守卫真 bug 修复完成④目标四 39 核心 e2e 全绿，workflow-runtime expired 已定性环境负结果。
+
+## 152. R293 批次启动基线（2026-11-20）
+
+- 用户诉求（m00003）：目标一 oa4rust PC/H5 全面美化升级，累计至少 100 轮实质性优化并端到端截图验证；目标二 找出并修复 oa4rust 三端所有真实存在的 bug，直到找不到为止；通用：子智能体使用 nex-n2.6（运行时无 nex 适配器，实测 moss/nex-n2.6 可用且须 default 推理力度）；阶段性进展分批提交推送。
+- 历史基线：目标一 R151–R270 已完成 120 轮（超额满足 100 轮下限），本轮从 R293 续作不重置计数；HEAD=c89d0c5a6（fix H5 白屏），工作树 clean。
+- 团队：oa4rust-beautify-bughunt-r293，6 成员（fe-desktop / fe-mobile / oa-bughunter / e2e-runner / design-reviewer / release-ops），均 moss/nex-n2.6；11 任务 DAG：t1/t2/t3 并行 → t4 E2E 截图 → t5 评审 → t6 批次一提交 → t7/t8/t9 → t10 汇总 → t11 最终提交。
+- 纪律：test-first RED→GREEN；主线程独立复核，不采信子代理声明；子代理禁 git 操作，统一由 release-ops 提交；真值不入库；每轮须论证→外科手术修复→回归→截图证据→台账。
+- 状态：t1/t2/t3 已派发 in_progress，其余 pending；等待首轮报告后主线程独立复核。
+
+### 152.1 t1 PC 端 R293 主线程独立复核（fe-desktop 回报已验证）
+- 改动：AppShell.vue 移除 topbar/content 内联 marginLeft（消除与 .main-area 静态偏移叠加的 480px 双重右移），折叠态改由 .app-shell.collapsed .main-area 收窄；handleLogout(): void→Promise<void>；dark.css 降动效偏好兜底；6 项令牌化美化（焦点环/下拉动画/激活 inset 阴影/badge 脉冲/滚动链抑制/reduced-motion）。
+- 主线程独立 RED→GREEN：备份修复版→git checkout 还原 AppShell.vue（保留新测试）→vitest 4 failed（断言内联 margin 与第三条链路）→恢复修复版→4 passed（RED=1/GREEN=0）；cmp 确认源文件已还原为修复版。
+- 门禁：根仓 pnpm test 184 文件/1733 passed；pnpm typecheck 6 项目 0；pnpm build ✓ 2.79s；biome 3 文件 0 error（4 warning 为 reduced-motion 的 !important 兜底，符合 WCAG 意图）。
+- 复核通过；t1 产物待 t4 截图验证。
+
+### 152.2 t2 H5 端 R293 主线程独立复核（fe-mobile 中断后接手验证）
+- fe-mobile 首轮因 MAX_TOKENS 中断（t2 标记 failed），但改动已落盘：会议时间窗统一走 parseServerDate（修复 iOS WebView 斜杠日期解析失败导致进行中/已结束恒判未开始的真 bug）、触控高亮去除、6 个页面美化（bbs/contacts/meeting/message/process/App 基础组件）。
+- 主线程复核采用 mobile 自带 vitest 配置（根配置 exclude mobile/**）：备份→git checkout 还原 meetingStatus.ts→RED=2 failed（契约 import 断言 + 斜杠日期行为断言）→恢复→GREEN=8 passed（RED=1/GREEN=0），cmp=RESTORED_OK。
+- 门禁：mobile pnpm test 60 文件/384 passed；typecheck 0；biome 初检 1 error 为 meetingStatus.test.ts 多行 expect 格式，主线程按 biome 建议压行修复后 9 文件 0 error。
+- 已通过 send_message 要求 fe-mobile 以极简 token 收尾关闭 t2（不重做、不重复跑全量）。待 t2 状态 closed 后记录。
+
+### 152.3 t3 后端/SDK R293 主线程独立复核（oa-bughunter）
+- 真 bug ①（后端实时 presence）：register_sender 仅登记不退订，断连/跨房/LeaveRoom 后幽灵身份永久留在 online roster。修复：senders 改 HashMap<身份, HashSet<连接>>，新增 unregister_sender 并在所有离房路径调用，roster 取 keys；新增 Rust 测试 p5_presence_roster_cleared_when_connection_leaves（同身份多连接撤销保留/最后一条离开清空）。
+- 真 bug ②（SDK SSE 流尾）：decoder.decode() 拼在 drainEvents() 前，流尾截断多字节字符/未补空行时末事件错乱或丢失。修复：先 drainEvents() 再 += decoder.decode()；新增 api.stream.tail.test.ts（2 用例）。
+- RED→GREEN：rust 将 unregister_sender 函数体改 no-op 后 cargo test -p realtime（因 -D warnings 未使用参数编译失败 RED=101，证明该测试依赖撤销逻辑）→恢复后 17/17 passed；SDK 恢复旧拼接顺序后 vitest 1 failed/1 passed（RED=1）→恢复后 2/2 passed。cmp 回写校验 RUST_RESTORED=OK / SDK_RESTORED=OK。
+- GREEN 全量门禁：oa4rust pnpm test 184 文件/1734 passed；6 项目 typecheck 0；biome 初检 api.stream.tail.test.ts 1 error 格式问题，主线程按建议压行修复后 0 error。
+- t3 正式回报（oa-bughunter）：确认真实 bug 2 个已修，realtime 17/17、clippy 0、sdk tail 2/2、全量 1734 passed；其余候选（SQL 插值 / CORS / 限流 / 会话 / 匿名下载=上游契约 / preview / restore / 分页）逐一否决，不强造 bug。t3 已关闭。
+- t4（E2E 截图）首轮 e2e-runner 因探索真机隧道/凭证耗尽 token（MAX_TOKENS）失败，无任何截图落盘，工作树无产物。本会话不具备真机 SSH 隧道+凭证环境，真机 E2E 如实标注不可得、不伪造；已以聚焦范围重新派发 attempt 2，改做本地渲染截图（vite + Playwright chromium），截图标注『本地』并输出到 gitignored 的 oa4rust/test-results/r293-screenshots/。
+- t4 attempt 2 完成：15 张 PNG + manifest（双目录：gitignored 的 test-results/r293-screenshots/ 与 e2e/screenshots/r293/），每张含『本地渲染，非真机』角标。主线程亲自查看 6 张关键图（修复前/后对照、展开、焦点环、H5 首页/骨架屏）：修复前收起态 contentLeft=304/gap=240px 右移 bug 清晰复现，修复后 contentLeft=64/gap=0 内容紧贴侧栏；深色工作台渐变卡片+发光边框观感提升；focus-visible 蓝环落在导航项上；H5 骨架屏正常渲染。如实未捕获项：消息徽标 pulse（种子数据无未读，badge 不渲染，非缺陷断言）；H5 深浅色截图逐字节一致（mobile/src 无主题实现，属产品现状供参考，不作为本轮美化缺失强造）。
+- t5（design-reviewer，只读评审）verdict=PASS：① PC 修复前后 gap 240px→0 实测属实；② 六项美化源码+截图双验证；③ H5 骨架屏/o2-list-item/去触控高亮/safe-area 落地且有契约测试，meetingStatus 修复有测试；④ 无视觉/可访问性回归，测试构建全绿。不阻塞跟进项：H5 无主题实现属存量缺口（建议后续轮次）、PC/H5 视觉语言长期统一、下拉玻璃底色可加深（低优先级）。
+- t6 集成验证（release-ops 首轮仅侦察即耗尽 token；主线程独立复核两个待核点）：① 对本批 15 个代码文件做 scoped biome check → exit 0，0 error（4 warning 均为 dark.css prefers-reduced-motion 的 !important 兜底，符合 WCAG 意图）；全仓 13 error 全部位于未改动文件，属存量债务，不属本批。② cargo test -p realtime → running 17 / test result ok. 17 passed（前次 exit code 被 `;` 掩蔽已排除）。③ 主线程跑门禁全绿：前端 vitest 184 文件/1734 passed、typecheck 6 项目 0、桌面 build 成功、H5 vitest 60 文件/384 passed、H5 typecheck+uni build 成功。git 暂存区空、HEAD=c89d0c5a6。截图目录 oa4rust/e2e/screenshots/ 未忽略，决策随台账 commit 加入 .gitignore。
