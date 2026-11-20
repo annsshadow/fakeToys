@@ -4,165 +4,97 @@
 <template>
   <div class="file-view">
     <div class="view-header glass-card">
-      <h1>文件管理</h1>
-      <div class="header-actions">
+      <div>
+        <h1>文件管理</h1>
+        <p class="subtitle">我的文件 · 共享 · 回收</p>
+      </div>
+      <div class="view-header-actions">
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
-        <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
-        <button class="action-btn" @click="loadFileMeta">🗄️ 附件2/编辑器</button>
-        <button class="action-btn" @click="loadAttachmentSearch">🔎 附件检索</button>
-        <button class="action-btn" @click="loadAttachmentShares">📤 附件分享/附件2</button>
-        <button class="action-btn" @click="loadFolderShare">📂 文件夹/分享/容量</button>
-        <button class="action-btn" @click="loadShareScopes">🔗 文件夹2/我的分享/收到分享</button>
-        <button class="action-btn" @click="loadRefTypes">🏷️ 引用类型</button>
-        <button class="action-btn" @click="loadDocFileInfo">📄 文档文件信息</button>
-        <button class="action-btn" @click="loadFileCoreEntities">🗂️ 文件实体</button>
-        <button class="action-btn" @click="loadFolderTopByRef">🌳 顶层文件夹/按引用</button>
-        <button class="action-btn" @click="loadFileDeepReads">🔬 文件深度读</button>
-        <button class="action-btn" @click="fileRead2">📋 文件清单/翻页</button>
-        <button class="action-btn" @click="fileRead3">🗂️ 附件/共享只读补消费</button>
-        <button class="action-btn" @click="fileRest3('fiDocGet')">fileinfo文档</button>
-        <button class="action-btn" @click="fileRest3('fiDelete')">删fileinfo</button>
-        <button class="action-btn" @click="uploadWithReference">📎 引用上传</button>
-        <button class="action-btn" @click="uploadFolderAttachment">📁 文件夹附件</button>
-        <button class="action-btn" @click="uploadFolderAttachment2">📁 附件2上传</button>
-        <button class="action-btn" @click="fileUploadOps('folderCbParam')">📁 文件夹附件(回调)</button>
-        <button class="action-btn" @click="fileUploadOps('folderCbLiteral')">📁 文件夹附件(字面回调)</button>
-        <button class="action-btn" @click="fileUploadOps('fileAssemble')">📤 文件上传(JSON)</button>
-        <button class="action-btn" @click="fileUploadOps('u2Multipart')">📤 引用上传(PUT)</button>
-        <button class="action-btn" @click="fileUploadOps('u2Callback')">📤 引用上传(回调)</button>
-        <button class="action-btn" @click="fileUploadOps('legacyRefCb')">🏷️ 遗留引用(字面回调)</button>
-        <button class="action-btn" @click="fiDocUpload">📤 文档附件登记</button>
-        <button class="action-btn" @click="uploadFileCore">📤 核心上传</button>
-        <button class="action-btn" @click="uploadToExistingFile">📤 追加上传</button>
-        <button class="action-btn" @click="uploadLegacyRef">🏷️ 遗留引用上传</button>
-        <button class="action-btn" @click="uploadOctet">📦 octet 上传</button>
-        <button class="action-btn" @click="fiDocSaveAs">📤 附件另存</button>
-        <button class="action-btn" @click="fiDocUploadCallback">📤 登记(回调)</button>
-        <button class="action-btn" @click="fiDocUpdate">♻️ 附件更新</button>
-        <button class="action-btn" @click="fileRest3('fiListFilter')">fileinfo筛选</button>
-        <button class="action-btn" @click="fileRest3('fiCopyDoc')">复制到文档</button>
-        <button class="action-btn" @click="fileRest3('fiReplaceDoc')">替换到文档</button>
-        <button class="action-btn" @click="fileRest3('fiDocStream')">文档流下载</button>
-        <button class="action-btn" @click="fileRest3('fiTransfer')">传输下载</button>
-        <button class="action-btn" @click="fileRest3('fiEditDoc')">编辑文档文件</button>
-        <button class="action-btn" @click="fileRest3('fiContent')">改文件内容</button>
-        <button class="action-btn" @click="fileRest3('fiUpdateAtt')">更新文档附件</button>
-        <button class="action-btn" @click="fileRest3('fileDelete')">删文件REST</button>
-        <button class="action-btn" @click="fileRest3('filePut')">改文件REST</button>
-        <button class="action-btn" @click="fileRest3('fileDownload')">下载文件REST</button>
-        <button class="action-btn" @click="fileRest3('fileAppInfo')">文件按应用</button>
-        <button class="action-btn" @click="fileRest3('fileStream')">文件流下载</button>
-        <button class="action-btn" @click="fileRest3('fileDownloadById')">按ID下载</button>
-        <button class="action-btn" @click="fileRest3('attDownload')">下载附件</button>
-        <button class="action-btn" @click="fileRest3('attStream')">附件流</button>
-        <button class="action-btn" @click="fileRest3('attScale')">附件缩放</button>
-        <button class="action-btn" @click="fileRest3('attWH')">附件宽高</button>
-        <button class="action-btn" @click="fileRest3('att2Download')">下载附件2</button>
-        <button class="action-btn" @click="fileRest3('att2Stream')">附件2流</button>
-        <button class="action-btn" @click="fileRest3('att2WH')">附件2宽高</button>
-        <button class="action-btn" @click="fileRest3('att2Scale')">附件2缩放</button>
-        <button class="action-btn" @click="fileRest3('att2WHB64')">附件2图片base64</button>
-        <button class="action-btn" @click="fileRest3('fiDocBind')">fileinfo文档绑定</button>
-        <button class="action-btn" @click="fileRest3('fiBatchDl')">fileinfo批量下载</button>
-        <button class="action-btn" @click="fileRest3('fileAppInfoDl')">文件按应用下载</button>
-        <button class="action-btn" @click="loadFileTwin">文件孪生端点</button>
-        <button class="action-btn" @click="loadFileTwin2">文件孪生端点B</button>
-        <button class="action-btn" @click="loadFileTwin3">文件桶外端点C</button>
-        <span v-if="fileRead2Text" class="app-meta">{{ fileRead2Text }}</span>
-        <span v-if="fileRead3Text" class="app-meta">{{ fileRead3Text }}</span>
-        <button class="action-btn" @click="fileCreate('control')">建文件</button>
-        <button class="action-btn" @click="fileCreate('entity')">建实体文件</button>
-        <button class="action-btn" @click="fileDelete('controlPost')">删文件P</button>
-        <button class="action-btn" @click="fileDelete('controlDel')">删文件D</button>
-        <button class="action-btn" @click="fileDelete('entityPost')">删实体P</button>
-        <button class="action-btn" @click="fileDelete('entityDel')">删实体D</button>
-        <button class="action-btn" @click="fileUpdate('entityPost')">实体更新P</button>
-        <button class="action-btn" @click="fileUpdate('entityPut')">实体更新U</button>
-        <button class="action-btn" @click="fileUpdate('attPost')">附件更新P</button>
-        <button class="action-btn" @click="fileUpdate('attPut')">附件更新U</button>
-        <button class="action-btn" @click="fileUpdate('attIdPut')">附件id更新</button>
-        <button class="action-btn" @click="fileUpdate('attCbPost')">附件回调P</button>
-        <button class="action-btn" @click="fileUpdate('attCbPut')">附件回调U</button>
-        <button class="action-btn" @click="fileUpdate('attIdCbPost')">附件id回调</button>
-        <button class="action-btn" @click="fileSaveConfig">存文件配置</button>
-        <button class="action-btn" @click="fileNetDisk('folderCreate')">建文件夹</button>
-        <button class="action-btn" @click="fileNetDisk('folderUpdate')">改文件夹</button>
-        <button class="action-btn" @click="fileNetDisk('folderRemove')">删文件夹</button>
-        <button class="action-btn" @click="fileNetDisk('permissionSet')">设权限</button>
-        <button class="action-btn" @click="fileNetDisk('u2FolderCreate')">建网盘夹</button>
-        <button class="action-btn" @click="fileNetDisk('u2FolderRename')">网盘夹改名</button>
-        <button class="action-btn" @click="fileNetDisk('u2FolderDelete')">删网盘夹</button>
-        <button class="action-btn" @click="fileNetDisk('shareCreate')">建分享</button>
-        <button class="action-btn" @click="fileNetDisk('shareDelete')">删分享</button>
-        <button class="action-btn" @click="fileNetDisk('recycleDelete')">回收站删除</button>
-        <button class="action-btn" @click="fileNetDisk('recycleResume')">回收站恢复</button>
-        <button class="action-btn" @click="fileNetDisk('entityFolderCreate')">建实体夹</button>
-        <button class="action-btn" @click="fileNetDisk('entityFileCreate')">建实体文件2</button>
-        <button class="action-btn" @click="fileNetDisk('entityFolderDelete')">删实体夹</button>
-        <button class="action-btn" @click="fileAtt('attUpdate')">改附件REST</button>
-        <button class="action-btn" @click="fileAtt('attDelete')">删附件REST</button>
-        <button class="action-btn" @click="fileAtt('attContent')">改附件内容</button>
-        <button class="action-btn" @click="fileAtt('att2Update')">改附件2</button>
-        <button class="action-btn" @click="fileAtt('att2Delete')">删附件2</button>
-        <button class="action-btn" @click="fileAtt('att2List')">附件2按类型</button>
-        <button class="action-btn" @click="fileAtt('fileById')">删文件byId</button>
-        <button class="action-btn" @click="fileAtt('fileClean')">清未用文件</button>
-        <button class="action-btn" @click="fileAtt('fileByRef')">按引用删文件</button>
-        <button class="action-btn" @click="fileAtt('coreFolderDel')">删核心文件夹</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
 
-    <!-- 面包屑 -->
-    <div class="breadcrumb glass-card">
-      <span v-for="(seg, i) in breadcrumbs" :key="i" class="bc-seg">
-        <span class="bc-item" :class="{ active: i === breadcrumbs.length - 1 }" @click="navigateTo(i)">{{ seg }}</span>
-        <span v-if="i < breadcrumbs.length - 1" class="bc-arrow">›</span>
-      </span>
-    </div>
+    <div class="file-columns">
+      <section class="files-mine">
+        <h2 class="section-title">我的文件</h2>
+        <form class="file-search" @submit.prevent="loadFiles(currentFolder)">
+          <input v-model="fileKeyword" placeholder="搜索当前文件夹文件名" class="fi" />
+          <button type="submit" class="btn-sm">刷新</button>
+        </form>
+        <!-- 面包屑 -->
+        <div class="breadcrumb glass-card">
+          <span v-for="(seg, i) in breadcrumbs" :key="i" class="bc-seg">
+            <span class="bc-item" :class="{ active: i === breadcrumbs.length - 1 }" @click="navigateTo(i)">{{ seg }}</span>
+            <span v-if="i < breadcrumbs.length - 1" class="bc-arrow">›</span>
+          </span>
+        </div>
 
-    <!-- 文件列表/网格 -->
-    <div class="file-panel glass-card" :class="'view-' + viewType">
-      <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
-      <div v-if="loading" class="loading-state">
-        <div class="skeleton-row" v-for="i in 6" :key="i"></div>
-      </div>
-      <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
-      <div v-else-if="files.length === 0" class="empty-state">
-        <div class="empty-icon">📁</div>
-        <p>当前文件夹为空</p>
-      </div>
-      <template v-else>
-        <div v-if="viewType === 'list'" class="file-list">
-          <div class="file-header">
-            <span class="col-name">名称</span>
-            <span class="col-size">大小</span>
-            <span class="col-time">修改时间</span>
-            <span class="col-actions">操作</span>
+        <!-- 文件列表/网格 -->
+        <div class="file-panel glass-card" :class="'view-' + viewType">
+          <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
+          <div v-if="loading" class="loading-state">
+            <div class="skeleton-row" v-for="i in 6" :key="i"></div>
           </div>
-          <div v-for="f in files" :key="f.id" class="file-row" @dblclick="openItem(f)">
-            <span class="col-name">
-              <span class="file-icon">{{ iconForFile(f) }}</span>
-              {{ f.name }}
-            </span>
-            <span class="col-size">{{ formatFileSize(f.size) }}</span>
-            <span class="col-time">{{ fmtTime(f.updateTime) }}</span>
-            <span class="col-actions">
-              <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
-              <button class="icon-action" @click.stop="downloadFile(f)" title="下载">⬇</button>
-              <button class="icon-action" @click.stop="shareFile(f)" title="分享">↗</button>
-              <button class="icon-action danger" :disabled="deletingId === f.id" @click.stop="deleteFile(f)" title="删除">🗑</button>
-            </span>
+          <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
+          <div v-else-if="files.length === 0" class="empty-state">
+            <div class="empty-icon">📁</div>
+            <p>当前文件夹为空</p>
           </div>
-        </div>
-        <div v-else class="file-grid">
-          <div v-for="f in files" :key="f.id" class="file-card" @dblclick="openItem(f)">
-            <div class="file-thumb">{{ iconForFile(f) }}</div>
-            <div class="file-name">{{ f.name }}</div>
-            <div class="file-meta">{{ formatFileSize(f.size) }}</div>
+          <div v-else class="file-content">
+            <ul v-if="viewType === 'list'" class="file-list" data-testid="files-mine-list">
+              <li v-for="f in visibleFiles" :key="f.id" class="file-row item-body" @dblclick="openItem(f)">
+                <span class="col-name">
+                  <span class="file-icon">{{ iconForFile(f) }}</span>
+                  {{ f.name }}
+                </span>
+                <span class="col-size">{{ formatFileSize(f.size) }}</span>
+                <span class="col-time">{{ fmtTime(f.updateTime) }}</span>
+                <span class="col-actions">
+                  <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
+                  <button class="icon-action" @click.stop="downloadFile(f)" title="下载">⬇</button>
+                  <button class="icon-action" @click.stop="shareFile(f)" title="分享">↗</button>
+                  <button class="icon-action danger" :disabled="deletingId === f.id" @click.stop="deleteFile(f)" title="删除">🗑</button>
+                </span>
+              </li>
+            </ul>
+            <div v-else class="file-grid">
+              <div v-for="f in visibleFiles" :key="f.id" class="file-card item-body" @dblclick="openItem(f)">
+                <div class="file-thumb">{{ iconForFile(f) }}</div>
+                <div class="file-name">{{ f.name }}</div>
+                <div class="file-meta">{{ formatFileSize(f.size) }}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </template>
+      </section>
+
+      <section class="files-shared">
+        <h2 class="section-title">共享</h2>
+        <form class="file-search" @submit.prevent="loadSharedFiles">
+          <button type="submit" class="btn-sm">刷新共享</button>
+        </form>
+        <ul class="item-list" data-testid="files-shared-list">
+          <li v-for="item in sharedFiles" :key="item.id" class="item-body">
+            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="muted">{{ formatFileSize(item.size) }}</span>
+          </li>
+        </ul>
+        <p v-if="!sharedFiles.length" class="muted">暂无共享文件</p>
+      </section>
+
+      <section class="files-recycle">
+        <h2 class="section-title">回收</h2>
+        <form class="file-search" @submit.prevent="loadRecycleBin">
+          <button type="submit" class="btn-sm">刷新回收站</button>
+        </form>
+        <ul class="item-list" data-testid="files-recycle-list">
+          <li v-for="item in recycleFiles" :key="item.id" class="item-body">
+            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="muted">{{ fmtTime(item.updateTime) }}</span>
+          </li>
+        </ul>
+        <p v-if="!recycleFiles.length" class="muted">回收站为空</p>
+      </section>
     </div>
 
     <!-- 引用类型浏览 -->
@@ -185,12 +117,12 @@
           <button class="icon-action" aria-label="关闭文件详情" @click="detail.open = false">✕</button>
         </div>
         <div v-if="detail.loading" class="loading-state"><p>加载中…</p></div>
-        <template v-else>
+        <div v-else>
           <div class="detail-line">名称：{{ detail.name || '—' }}</div>
           <div class="detail-line">大小：{{ formatFileSize(detail.size) }}</div>
           <img v-if="detail.preview" :src="detail.preview" class="detail-preview" alt="预览" />
           <div v-else class="detail-line">（无图片预览）</div>
-        </template>
+        </div>
       </div>
     </div>
 
@@ -218,7 +150,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import { formatFileSize } from '../utils/formatSize'
@@ -248,6 +180,19 @@ const loadError = ref('')
 const showUpload = ref(false)
 const uploadProgress = ref(0)
 const queryClient = useQueryClient()
+const fileKeyword = ref('')
+const sharedFiles = ref<FileItem[]>([])
+const recycleFiles = ref<FileItem[]>([])
+
+const visibleFiles = computed(() => {
+  const kw = fileKeyword.value.trim().toLowerCase()
+  return kw ? files.value.filter((f) => f.name.toLowerCase().includes(kw)) : files.value
+})
+
+function toFileItems(payload: unknown): FileItem[] {
+  const data = (payload as { data?: unknown })?.data ?? payload
+  return Array.isArray(data) ? (data as FileItem[]) : []
+}
 
 // 加载文件列表
 async function loadFileMeta(): Promise<void> {
@@ -871,6 +816,29 @@ function iconForFile(f: FileItem): string {
 
 function fmtTime(ts?: string): string {
   return ts ? formatServerDateTime(ts) : '—'
+}
+
+async function loadSharedFiles(): Promise<void> {
+  try {
+    const [mine, toMe] = await Promise.all([api.get('/api/share/list/my'), api.get('/api/share/list/to/me')])
+    const seen = new Set<string>()
+    sharedFiles.value = [...toFileItems(mine), ...toFileItems(toMe)].filter((f) => {
+      const key = String(f.id ?? f.name)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  } catch (e: any) {
+    toast.error(`共享列表加载失败: ${e?.message ?? ''}`)
+  }
+}
+
+async function loadRecycleBin(): Promise<void> {
+  try {
+    recycleFiles.value = toFileItems(await api.get('/api/recycle/list'))
+  } catch (e: any) {
+    toast.error(`回收站加载失败: ${e?.message ?? ''}`)
+  }
 }
 
 const deletingId = ref('')

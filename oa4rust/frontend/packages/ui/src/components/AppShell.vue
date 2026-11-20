@@ -13,13 +13,55 @@
       </div>
 
       <nav class="sidebar-nav" aria-label="主导航">
-        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :aria-current="isActive(item.path) ? 'page' : undefined" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+        <div v-for="group in navGroups" :key="group.label" class="nav-group">
+          <div class="nav-section-label">{{ group.label }}</div>
+          <div
+            v-for="item in group.items"
+            :key="item.path"
+            class="nav-item"
+            role="button"
+            tabindex="0"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
+            :class="{ active: isActive(item.path) }"
+            @click="navigate(item)"
+            @keydown.enter="navigate(item)"
+            @keydown.space.prevent="navigate(item)"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+          </div>
         </div>
-        <div v-for="item in sectionNavItems" :key="item.label" class="nav-section-label">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+
+        <!-- 系统管理折叠区：管理员专用，默认收起，避免把调试入口推给普通员工 -->
+        <div class="nav-group admin-group">
+          <button
+            class="nav-section-label nav-section-toggle"
+            type="button"
+            :aria-expanded="adminExpanded"
+            aria-controls="admin-nav-items"
+            @click="adminExpanded = !adminExpanded"
+          >
+            <span class="nav-icon">⚙</span>
+            <span v-show="!sidebarCollapsed" class="nav-label">系统管理</span>
+            <span v-show="!sidebarCollapsed" class="nav-caret">{{ adminExpanded ? '▾' : '▸' }}</span>
+          </button>
+          <div v-show="adminExpanded" id="admin-nav-items" class="admin-nav-items">
+            <div
+              v-for="item in adminGroup.items"
+              :key="item.path"
+              class="nav-item"
+              role="button"
+              tabindex="0"
+              :aria-current="isActive(item.path) ? 'page' : undefined"
+              :class="{ active: isActive(item.path) }"
+              @click="navigate(item)"
+              @keydown.enter="navigate(item)"
+              @keydown.space.prevent="navigate(item)"
+            >
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -144,33 +186,78 @@ const currentTitle = computed(() => {
 
 const user = computed(() => session.state.user ?? null)
 
-// PC 端导航项
-type NavItem = { path?: string; label: string; icon: string; disabled?: boolean }
-const navItems: NavItem[] = [
-  { path: '/app/dashboard', label: '工作台', icon: '🏠' },
-  { path: '/app/org', label: '组织', icon: '🏢' },
-  { path: '/app/directory', label: '通讯录', icon: '📒' },
-  { path: '/app/process', label: '工作流', icon: '📋' },
-  { path: '/app/im', label: '消息', icon: '💬' },
-  { path: '/app/calendar', label: '日历', icon: '📅' },
-  { path: '/app/meeting', label: '会议', icon: '👥' },
-  { path: '/app/file', label: '文件', icon: '📁' },
-  { path: '/app/bbs', label: '论坛', icon: '💭' },
-  { path: '/app/control-panel', label: '管理', icon: '🔧' },
-  { label: '工具', icon: '🧰', disabled: true },
-  { path: '/app/mind', label: '思维导图', icon: '🧠' },
-  { path: '/app/document', label: '文档管理', icon: '📄' },
-  { path: '/app/program', label: '程序中心', icon: '⚙️' },
-  { path: '/app/queryview', label: '查询视图', icon: '📊' },
-  { path: '/app/recycle', label: '回收站', icon: '🗑️' },
-  { path: '/app/server', label: '服务器', icon: '🖥️' },
-  { path: '/app/unit', label: '单元管理', icon: '🏗️' },
-  { path: '/app/form', label: '表单管理', icon: '📝' },
-  { path: '/app/view', label: '视图管理', icon: '👁️' },
-  { path: '/app/fileinfo', label: '文件信息', icon: '📎' },
+// PC 端导航：四组员工常用业务 + 管理员折叠区（系统管理单独渲染，不塞进员工侧栏）
+type NavItem = { path: string; label: string; icon: string }
+type NavGroup = { label: string; icon: string; admin?: boolean; items: NavItem[] }
+const navGroups: NavGroup[] = [
+  {
+    label: '工作台',
+    icon: '🏠',
+    items: [
+      { path: '/app/dashboard', label: '工作台', icon: '🏠' },
+      { path: '/app/directory', label: '通讯录', icon: '📒' },
+      { path: '/app/calendar', label: '日历', icon: '📅' },
+      { path: '/app/file', label: '文件', icon: '📁' },
+      { path: '/app/search', label: '全局搜索', icon: '🔍' },
+    ],
+  },
+  {
+    label: '沟通',
+    icon: '💬',
+    items: [
+      { path: '/app/im', label: '消息', icon: '💬' },
+      { path: '/app/meeting', label: '会议', icon: '👥' },
+      { path: '/app/bbs', label: '论坛', icon: '💭' },
+    ],
+  },
+  {
+    label: '协作',
+    icon: '📋',
+    items: [
+      { path: '/app/process', label: '工作流', icon: '📋' },
+      { path: '/app/attendance', label: '考勤', icon: '⏰' },
+      { path: '/app/note', label: '笔记', icon: '📝' },
+    ],
+  },
+  {
+    label: '个人',
+    icon: '👤',
+    items: [
+      { path: '/app/personal', label: '个人中心', icon: '👤' },
+      { path: '/app/settings', label: '系统设置', icon: '⚙️' },
+      { path: '/app/recycle', label: '回收站', icon: '🗑️' },
+    ],
+  },
 ]
-const enabledNavItems = navItems.filter((i) => !i.disabled)
-const sectionNavItems = navItems.filter((i) => i.disabled)
+
+const adminExpanded = ref(false)
+const adminGroup: NavGroup = {
+  label: '系统管理',
+  icon: '⚙',
+  admin: true,
+  items: [
+    { path: '/app/admin/mind', label: '思维导图', icon: '🧠' },
+    { path: '/app/admin/document', label: '文档管理', icon: '📄' },
+    { path: '/app/admin/program', label: '程序中心', icon: '⚙️' },
+    { path: '/app/admin/queryview', label: '查询视图', icon: '📊' },
+    { path: '/app/admin/server', label: '服务器', icon: '🖥️' },
+    { path: '/app/admin/unit', label: '单元管理', icon: '🏗️' },
+    { path: '/app/admin/form', label: '表单管理', icon: '📝' },
+    { path: '/app/admin/view', label: '视图管理', icon: '👁️' },
+    { path: '/app/admin/fileinfo', label: '文件信息', icon: '📎' },
+    { path: '/app/admin/control-panel', label: '控制面板', icon: '🔧' },
+    { path: '/app/admin/design-center', label: '设计中心', icon: '🎨' },
+    { path: '/app/admin/process-designer', label: '流程设计器', icon: '🧩' },
+    { path: '/app/admin/form-designer', label: '表单设计器', icon: '📐' },
+    { path: '/app/admin/query', label: '查询管理', icon: '🔎' },
+    { path: '/app/admin/portal', label: '门户管理', icon: '🌐' },
+    { path: '/app/admin/role', label: '角色管理', icon: '🔑' },
+    { path: '/app/admin/cms-module', label: 'CMS模块', icon: '📦' },
+    { path: '/app/admin/deployment', label: '部署管理', icon: '🚀' },
+    { path: '/app/admin/log-viewer', label: '日志查看', icon: '📜' },
+    { path: '/app/admin/ftsearch', label: '全文搜索', icon: '🔍' },
+  ],
+}
 
 // 移动端导航项（精简）
 const mobileNavItems: NavItem[] = [
@@ -318,6 +405,34 @@ function onDocClick(e: Event): void {
   color: var(--text-muted);
   border-top: 1px solid var(--border-subtle);
   margin-top: 8px;
+}
+
+.nav-group {
+  display: block;
+}
+
+.nav-section-toggle {
+  width: calc(100% - 16px);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text-muted);
+}
+
+.nav-section-toggle:hover {
+  color: var(--color-primary);
+}
+
+.nav-caret {
+  margin-left: auto;
+  font-size: 10px;
+}
+
+.admin-nav-items {
+  padding-left: 0;
 }
 
 .nav-item {

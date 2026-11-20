@@ -3849,4 +3849,32 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 路线：P0 修死链（已完成）→ P1 导航收敛（低风险）→ P2 样板重构（工作流/会议/文件三选一）→ P3 推广 → P4 管理区迁移与去重下线。
 - 待用户拍板 4 点：先做 P1 还是直接 P2；样板选哪个；B 类迁管理区还是下线；D 类可删清单确认。
 
+## 162. 用户拍板 R297 重构路线（2026-11-20，队长）
+- 用户对 4 个决策点的选择：①范围=P1+P2 并行推进；②样板=custom「全部重构」（即不止一个样板，全部 A 类页面都要按任务导向重构）；③管理后台=迁到管理区保留（按角色授权，普通员工不可见）；④D 类空壳=按清单删除。
+- 已创建 5 个共享任务：task-1 P1 导航收敛、task-2 P2 会议管理样板、task-3 P2 推广（工作流待办+文件管理）、task-4 P4 B 类迁管理区+D 类删除、task-5 R297 台账+分批提交推送+测试服部署复验。
+- 执行纪律：子代理独占写范围互不重叠；队长独立 RED→GREEN 复核；子代理不写台账、不提交推送；真值不入库不回显。
+
+## 163. P2 会议管理样板重构 + 队长独立复核（2026-11-20）
+- 执行者：p2-meeting（workbuddy/hy4flash-free，继承 high）。
+- 改动：MeetingApp.vue 的 <template> 段替换为「会议室预订 / 我的会议 / 日历视图」三业务区块（真实表单/列表/月历控件），保留 script 层全部 API 调用与 ListLoadError/viewMeeting 等锚点；副标题由 /api/meeting/assemble/control/* 改为业务描述；新增 MeetingApp.business.contract.test.ts（5 用例）；新增 e2e/meeting-business.spec.ts（子路径感知登录，当前子路径部署形态下唯一能正确到达会议页的形态，队长接受为最终产物）。
+- 子代理自报：契约 5 failed→5 passed；9 相关契约 49/49；biome 3 文件 0 error（2 info）；desktop build exit 0；全量 pnpm test 187 文件/1753 passed。
+- 队长独立复核（不采信自述）：备份 MeetingApp.vue → git checkout HEAD 还原（副标题确为 /api/meeting/assemble/control/*）→ vitest RED_EXIT=1（5 failed）→ 恢复（cmp RESTORE=OK）→ GREEN_EXIT=0（5 passed）。复核通过。
+- 真机 E2E：登录成功、会议页可打开、h1 可见；业务区块断言超时，因测试服仍是重构前旧产物（副标题为 API 路径、41 按钮平铺），属部署版本问题非代码缺陷，待新前端产物部署后转绿。
+- 注意：中途全量测试 4 failed、build EOF 均为 p1-nav 并行编辑 main.ts 的临时态，p1-nav 完成后已恢复。
+
+## 164. P1 导航信息架构收敛 + 队长独立复核（2026-11-20）
+- 执行者：p1-nav（workbuddy/hy4flash-free，high）。
+- 改动：AppShell.vue 侧栏从 20 项平铺收敛为 4 个员工分组（工作台/沟通/协作/个人）+ 管理员折叠区「系统管理」，移除 disabled「工具」占位；main.ts 中 67 个 B 类管理/设计器路由 path 改为 /app/admin/* 并保留 67 条旧路径重定向别名（避免组件内硬编码旧链接死链），recycle/search 保留业务路径；navIntegrity 契约重写为 5 例；layoutTokens/navLandmarkA11y 的 aria-current 计数 2→3（管理员折叠区为合法第三导航区）；live-gui-expanded.spec.ts R296 更新为展开「系统管理→控制面板→/app/admin/control-panel」并新增 R297 分组切换不跳登录。
+- 子代理自报：RED 1（3 failed/2 passed）→ GREEN 0（5 passed）；scoped biome 6 文件 0 warning；desktop build exit 0；navIntegrity 5/5。
+- 队长独立复核：备份 AppShell.vue/main.ts → git checkout HEAD 还原 → vitest RED_EXIT=1（3 failed/2 passed）→ 恢复（APPSHELL_RESTORE=OK、MAIN_RESTORE=OK）→ GREEN_EXIT=0（5 passed）。另 grep 确认 main.ts 的 createApp/queryClient/app.use/app.mount 锚点完整（此前曾因读文件截断尾部导致 build EOF，已完整恢复），grep -c redirect=70。复核通过。
+- 真机 E2E：R296/R297 2 failed，截图证据显示测试服仍是旧前端（平铺导航、无系统管理、无 /app/admin/*），属部署滞后非代码缺陷，待新前端产物部署后重跑。
+- 并行中间态：全量 pnpm test 曾 2 文件/6 用例 failed，全部来自 p2-spread 尚未完成的 FileManager/ProcessWork 契约测试，非 p1-nav 造成。
+
+## 165. P2 推广：工作流待办 + 文件管理重构 + 全量门禁（2026-11-20）
+- 执行者：p2-spread（workbuddy/hy4flash-free，high）。
+- 改动：ProcessWork.vue 模板重写为 header +「待我处理 / 我发起的 / 已办」三业务区块（业务表单/列表、删除流程引擎动作调试按钮块、startProcess*→startFlow*）；FileManager.vue 模板重写为「我的文件 / 共享 / 回收」三栏（搜索/面包屑/上传弹窗保留，新增 fileKeyword 过滤、loadSharedFiles/loadRecycleBin）；新增两份 *.business.contract.test.ts（各 3 用例，断言三区块/业务控件/无 /api/* 调试 handler）；6 个 data-testid 供后续 E2E。
+- 队长独立复核：备份两源文件 → git checkout HEAD 还原 → vitest RED_EXIT=1（2 files/6 tests failed）→ 恢复（PROCESS_RESTORE=OK、FILE_RESTORE=OK）→ GREEN_EXIT=0（6 passed）。复核通过。
+- 全量门禁（P1+P2 全部完成后）：oa4rust pnpm test 189 文件/1759 passed（EXIT=0）；pnpm typecheck 6 包 0（EXIT=0）；pnpm build ✓4.15s（EXIT=0）；scoped biome 13 文件 0 error（2 info，meeting-business.spec.ts 字符串拼接，队长已改为模板字面量）。
+- 说明：本工作树为隔离 worktree，p2-spread 未做真机 E2E；已加 data-testid，待部署测试服后由队长统一真机复验。
+
 

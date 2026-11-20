@@ -62,10 +62,32 @@ test.describe('live GUI - 导航与应用外壳', () => {
 
   test('管理导航指向已注册路由而非跳登录 (R296)', async ({ page }) => {
     await expect(page).toHaveURL(/\/app\//)
-    await page.getByRole('button', { name: '🔧 管理' }).click()
-    await expect(page).toHaveURL(/\/app\/control-panel/)
+    await page.getByRole('button', { name: /系统管理/ }).click()
+    await page.getByRole('button', { name: '🔧 控制面板', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
     await expect(page).not.toHaveURL(/\/login/)
     await expect(page.getByRole('heading', { name: '控制面板' })).toBeVisible()
+  })
+
+  test('R297 分组侧栏切换与管理员折叠区均不跳登录', async ({ page }) => {
+    await expect(page).toHaveURL(/\/app\//)
+    // 员工四组齐全，disabled「工具」占位已移除
+    for (const group of ['工作台', '沟通', '协作', '个人']) {
+      await expect(page.locator('.nav-section-label', { hasText: group })).toBeVisible()
+    }
+    await expect(page.locator('.sidebar-nav').getByText('工具', { exact: true })).toHaveCount(0)
+
+    // 员工分组项切换走真实路由，不命中兜底 → /login
+    await page.getByRole('button', { name: '📒 通讯录', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/directory/)
+    await expect(page).not.toHaveURL(/\/login/)
+
+    // 管理员折叠区默认收起，展开后管理项指向 /app/admin/*，不跳登录
+    await expect(page.getByRole('button', { name: '🔧 控制面板', exact: true })).toBeHidden()
+    await page.getByRole('button', { name: /系统管理/ }).click()
+    await page.getByRole('button', { name: '🔧 控制面板', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
+    await expect(page).not.toHaveURL(/\/login/)
   })
 
   test('用户菜单可打开并跳转到个人中心', async ({ page }) => {
