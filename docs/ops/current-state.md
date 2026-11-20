@@ -4049,6 +4049,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 1 文档、HEAD=远端追踪=dc95aa8c；实读 79 行文档用 <YOUR_TEST_DOMAIN> 占位；源码定点确认 CalendarApp.vue:324 调用早于 :338 声明、calendar.vue:164 断言数组而 :169 .map；r300-c1-pc-calendar-repro.json 3 次相同 pageerror 堆栈、r300-c1-api-probe2.json 真实响应体 data 为对象；证据目录 PC 78 文件/H5 22 文件齐备。工作树仅 ?? test-results/（gitignored）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 189. R300 C2 首轮独立设计评审：needs_revision（2026-11-21）
+- 交付（design-reviewer，只读评审、无新提交）：对照 t1 设计规范（design-tokens.md 第 8 章 + ai-tokens.css + 5 份契约）逐页核查 C1 证据（PC 74/H5 19 路由 evidence.json + 7 张代表截图，Playwright Chromium 测试服真浏览器，非物理真机）。分组评分：PC 外壳 A / 沟通 B / 工作台 C / 业务 C / 管理 C；H5 首页 B / 消息 D / 日历 F。方向正确（令牌层+外壳命令面板/面包屑/主题切换已落地，渐变玻璃栅格真浏览器可见），但 verdict=needs_revision、质量门 failed。
+- 必整改 findings：DR-01 blocker PC/H5 日历错误文案暴露、页面不可用（PC TDZ / H5 map is not a function），已由 t24/t25 test-first RED→GREEN 承接；DR-02 high 工作台统计卡全 0 vs 待办 5 条 vs H5 9 条口径矛盾，须统一数据源+一致性断言；DR-03 high 端点调试面板与英文技术串侵入业务页、org loading 常驻，须移入 dev 开关/中文化/超时兜底。中低优先级：DR-04 h1 缺失+aiPage=0/aria-live 可见、DR-05 业务空态无引导+H5 首页空白、DR-06 原始 UUID 暴露、DR-07 管理区标题层级与部署页 aiPageB5=0。
+- 队长独立复核：t11 以 verdict=needs_revision、status=failed 完成，8 条结构化 findings 随 task 提交；本轮只读未改源码、无新提交；与 t10 C1 两个确定性 P0 的源码级复核一致，DR-01 与 t24/t25 修复任务一一对应，DR-02/DR-03 待后续独立任务承接。≥1000 轮非完成态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
