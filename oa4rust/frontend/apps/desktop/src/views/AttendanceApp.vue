@@ -6,7 +6,7 @@
     <header class="view-header glass-card modern-hero">
       <div class="hero-copy">
         <h1>考勤管理</h1>
-        <p class="subtitle">按月查看出勤、请假与排班，日常操作使用下方业务分区，端点调试请展开高级操作。</p>
+        <p class="subtitle">按月查看出勤、请假与排班，更多维护操作可展开高级操作。</p>
       </div>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
@@ -326,12 +326,30 @@ const month = ref(businessTodayYM()),
   totalPages = ref(1),
   appealsError = ref(''),
   qc = useQueryClient()
-const stats = computed(() => [
-  { label: '应出勤', value: 45, color: 'var(--color-info)' },
-  { label: '实际出勤', value: 42, color: 'var(--color-success)' },
-  { label: '迟到', value: 3, color: 'var(--color-warning)' },
-  { label: '请假', value: 2, color: 'var(--color-accent)' },
-])
+/**
+ * R300 P1：统计卡由当月真实明细派生，统一「人员×日期」去重口径；
+ * 明细为空时四项归零，不再展示与明细不一致的固定 45/42/3/2。
+ */
+function deriveAttendanceStats(rows: R[]): Array<{ label: string; value: number; color: string }> {
+  const keyOf = (r: R) => `${(r.personName ?? r.name ?? r.id ?? '').trim()}|${(r.date ?? '').slice(0, 10)}`
+  const unique = new Map<string, R>()
+  for (const r of rows) {
+    const key = keyOf(r)
+    if (!unique.has(key)) unique.set(key, r)
+  }
+  const all = [...unique.values()]
+  const actual = all.filter((r) => Boolean(r.checkInTime ?? r.checkOutTime) || r.status === '1' || r.status === '2')
+  const late = all.filter((r) => r.isLate === true || r.status === '2')
+  const leave = all.filter((r) => r.status === '3')
+  return [
+    { label: '应出勤', value: all.length, color: 'var(--color-info)' },
+    { label: '实际出勤', value: actual.length, color: 'var(--color-success)' },
+    { label: '迟到', value: late.length, color: 'var(--color-warning)' },
+    { label: '请假', value: leave.length, color: 'var(--color-accent)' },
+  ]
+}
+
+const stats = computed(() => deriveAttendanceStats(records.value))
 useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
