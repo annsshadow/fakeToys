@@ -3998,3 +3998,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 验证：mobile 全量 61 文件 / 393 tests passed；H5 构建与测试服部署通过；真实 Chromium（390x844，isMobile/hasTouch）真实 UI 登录 + 19 路由逐页截图审计——audit.json loggedIn=true、BAD=0、API_FAILURES=0，manifest 声明真浏览器真实测试服、非物理真机、非静态假数据。证据在 gitignored 的 oa4rust/test-results/r300-h5-visual/（audit.json + 20 PNG）。
 - 队长独立复核：commit stat 22 文件、HEAD=远端追踪=32b7ec1b4、工作树干净；契约定点复跑 7/7；证据目录 22 文件与文档存在；确认 §179 台账提交 a24beb65d 为 HEAD 祖先，迭代链连续。非终态，按评审结论续作。
 - 真值纪律：账号口令仅运行时从凭据源读取，真域名/口令/会话数据不入库（证据目录 gitignored）。
+
+## 181. R300 A2 基线真浏览器实测与逐页批判（2026-11-21）
+- 交付（qa-e2e，commit 5bf8fbed7，精确 1 文件）：脱敏入库 docs/ops/oa4rust-page-audit-r300.md（58 行），记录 PC 16 路由 + H5 十余路由真实登录后逐页批判；真浏览器截图与 DOM 指标 50 张 PNG + 脚本落盘 gitignored 的 Temp/qa-e2e-r300/（本地证据，未入库）。
+- 核心缺陷：P0 BAM 页 `["bam","list"] data is undefined`、H5 bbs/search/mine 连接服务器超时、PC 考勤统计(45/42/3/2)与空列表矛盾；P1 PC org 长期 Loading/directory 0 人/file|bbs|meeting|note|recycle 空态、PC 工作台待审批 0 与 H5 9 冲突；P2 可见“已切换到：XXX”无障碍提示、原始 UUID 暴露、端点调试侵入业务页。
+- 如实缺口：H5 message/meeting/browse 因 tabbit EVALUATION_TIMEOUT 未稳定落盘截图，已在批判清单标注，后续 E2E 改用 CDP Page.captureScreenshot + hash 赋值补拍。
+- 队长独立复核：commit stat 精确 1 文档、HEAD=远端追踪=5bf8fbed7、工作树干净；实读 58 行文档确认来源声明用 <YOUR_TEST_DOMAIN> 占位、口令仅运行期读取不回显、真实测试服登录非静态假数据；H5 截图为桌面宽视口非真机，已如实标注。非终态，缺陷待后续 RED→GREEN 轮次。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
