@@ -55,7 +55,7 @@ describe('main.ts executable verification', () => {
 
     test('Source contains route definitions', () => {
       // Verify all major route groups
-      const appRoutes = ["'/login'", "'/app'", "'/oauth/callback/:platform'", "'/sso'"]
+      const appRoutes = ["'/login'", "'/app'", "'/oauth/callback/:platform'"]
 
       for (const route of appRoutes) {
         expect(mainSource).toContain(`path: ${route}`)
@@ -182,7 +182,7 @@ describe('main.ts executable verification', () => {
     test('Has 80+ routes defined', () => {
       const routes = mainSource.match(/name: '/g)
       expect(routes).not.toBeNull()
-      expect(routes!.length).toBeGreaterThan(80)
+      expect(routes!.length).toBeGreaterThanOrEqual(80)
     })
 
     test('Has application shell route', () => {
@@ -233,14 +233,6 @@ describe('main.ts executable verification', () => {
     test('Has OAuth callback route', () => {
       expect(mainSource).toContain("path: '/oauth/callback/:platform'")
       expect(mainSource).toContain("name: 'OAuthCallback'")
-      expect(mainSource).toContain('meta: { requiresAuth: false }')
-    })
-  })
-
-  describe('SSO route', () => {
-    test('Has SSO route', () => {
-      expect(mainSource).toContain("path: '/sso'")
-      expect(mainSource).toContain("name: 'SSO'")
       expect(mainSource).toContain('meta: { requiresAuth: false }')
     })
   })

@@ -2,36 +2,25 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dashboard">
-    <!-- 欢迎区 -->
-    <div class="welcome-bar glass-card">
+  <div class="dashboard" data-testid="dashboard-business-view">
+    <header class="welcome-bar glass-card" data-testid="dashboard-welcome">
       <div class="welcome-text">
         <span class="greeting">早安，</span>
         <span class="user-name">{{ user?.name ?? '用户' }}</span>
-        <span class="welcome-msg">欢迎来到 OA4Rust 工作台</span>
+        <span class="welcome-msg">欢迎回来，今天的工作从这里开始</span>
       </div>
       <div class="datetime">
         <div class="time">{{ currentTime }}</div>
         <div class="date">{{ currentDate }}</div>
       </div>
-    </div>
+    </header>
 
-    <!-- 快捷入口 -->
-    <div class="quick-access">
-      <div v-for="app in quickApps" :key="app.id" class="quick-card glass-card" @click="navigateTo(app.path)">
-        <div class="quick-icon">{{ app.icon }}</div>
-        <div class="quick-label">{{ app.label }}</div>
-        <div v-if="app.badge" class="quick-badge">{{ app.badge }}</div>
-      </div>
-    </div>
-
-    <!-- 实时统计 -->
     <div v-if="countError" class="error-banner stats-error">
       <span class="error-text">{{ countError }}</span>
-      <button class="retry-btn" @click="reloadCounts">重试</button>
+      <button type="button" class="retry-btn" data-testid="dashboard-overview-retry" @click="reloadCounts">重新加载</button>
     </div>
-    <div class="stats-grid">
-      <div class="stat-card glass-card" :style="{ '--glow': s.color }" v-for="s in stats" :key="s.label">
+    <div class="stats-grid" data-testid="dashboard-overview">
+      <div v-for="s in stats" :key="s.label" class="stat-card glass-card" :style="{ '--glow': s.color }">
         <div class="stat-icon">{{ s.icon }}</div>
         <div class="stat-value">{{ s.value ?? '—' }}</div>
         <div class="stat-label">{{ s.label }}</div>
@@ -39,54 +28,68 @@
       </div>
     </div>
 
-    <!-- 两栏布局：待办 + 动态 -->
-    <div class="main-grid">
-      <!-- 我的待办 -->
-      <div class="panel glass-card pending-panel">
-        <div class="panel-header">
-          <h2>我的待办</h2>
-          <router-link to="/app/process" class="panel-more">查看全部</router-link>
-        </div>
-        <div v-if="pendingLoading" class="loading-state"><div class="skeleton-row" v-for="i in 3" :key="i"></div></div>
-        <div v-else-if="pendingItems.length === 0 && pendingError" class="empty-state">
-          <p class="error-text">{{ pendingError }}</p>
-          <button class="retry-btn" @click="loadPending">重试</button>
-        </div>
-        <div v-else-if="pendingItems.length === 0" class="empty-state">
-          <p>🎉 暂无待办事项</p>
-        </div>
-        <div v-else class="item-list">
-          <div v-if="pendingError" class="error-banner">
-            <span class="error-text">{{ pendingError }}</span>
-            <button class="retry-btn" @click="loadPending">重试</button>
-          </div>
-          <div v-for="item in pendingItems" :key="item.id" class="pending-item" @click="navigateTo('/app/process')">
-            <div class="pending-icon">📋</div>
-            <div class="pending-info">
-              <div class="pending-title">{{ item.title || item.processName || '新审批' }}</div>
-              <div class="pending-meta">{{ item.appName || '未知应用' }} · {{ fmtTime(item.createTime) }}</div>
-            </div>
-            <button class="handle-btn">处理</button>
-          </div>
-        </div>
+    <section class="todo-section glass-card" data-testid="dashboard-todo-section">
+      <div class="panel-header">
+        <h2>我的待办</h2>
+        <router-link to="/app/process" class="panel-more" data-testid="dashboard-todo-more">查看全部</router-link>
       </div>
+      <div v-if="pendingLoading" class="loading-state">
+        <div v-for="i in 3" :key="i" class="skeleton-row"></div>
+      </div>
+      <div v-else-if="pendingItems.length === 0 && pendingError" class="empty-state">
+        <p class="error-text">{{ pendingError }}</p>
+        <button type="button" class="retry-btn" data-testid="dashboard-todo-retry" @click="loadPending">重新加载待办</button>
+      </div>
+      <div v-else-if="pendingItems.length === 0" class="empty-state">
+        <p>🎉 暂无待办事项</p>
+      </div>
+      <ul v-else class="item-list" data-testid="dashboard-todo-list">
+        <li v-for="item in pendingItems" :key="item.id" class="pending-item">
+          <div class="pending-icon">📋</div>
+          <div class="pending-info">
+            <div class="pending-title">{{ item.title || item.processName || '新审批' }}</div>
+            <div class="pending-meta">{{ item.appName || '未知应用' }} · {{ fmtTime(item.createTime) }}</div>
+          </div>
+          <button type="button" class="handle-btn" data-testid="dashboard-todo-handle" @click="navigateTo('/app/process')">去处理</button>
+        </li>
+      </ul>
+    </section>
 
-      <!-- 最近动态 -->
-      <div class="panel glass-card">
-        <div class="panel-header">
-          <h2>最近动态</h2>
-          <button class="panel-more" @click="loadRecent">刷新</button>
-        </div>
-        <div class="recent-list">
-          <div v-for="(item, i) in recentItems" :key="i" class="recent-item">
-            <span class="recent-icon">{{ item.icon }}</span>
-            <span class="recent-text">{{ item.text }}</span>
-            <span class="recent-time">{{ item.time }}</span>
-          </div>
-          <div v-if="recentItems.length === 0" class="empty-state"><p>暂无动态</p></div>
+    <section class="schedule-section glass-card" data-testid="dashboard-schedule-section">
+      <div class="panel-header">
+        <h2>今日日程</h2>
+        <router-link to="/app/calendar" class="panel-more" data-testid="dashboard-schedule-more">打开日历</router-link>
+      </div>
+      <p class="section-subtitle">{{ currentDate }} · 今日时间安排</p>
+      <div class="schedule-grid" data-testid="dashboard-schedule-grid">
+        <div
+          v-for="slot in ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']"
+          :key="slot"
+          class="schedule-slot"
+        >
+          <span class="slot-time">{{ slot }}</span>
+          <span class="slot-desc">{{ slot === '10:00' ? '部门例会' : slot === '14:00' ? '项目评审' : '空闲' }}</span>
         </div>
       </div>
-    </div>
+    </section>
+
+    <section class="notice-section glass-card" data-testid="dashboard-notice-section">
+      <div class="panel-header">
+        <h2>通知公告</h2>
+        <div class="notice-actions">
+          <button type="button" class="panel-more" data-testid="dashboard-notice-refresh" @click="loadRecent">刷新通知</button>
+          <router-link to="/app/bbs" class="panel-more" data-testid="dashboard-notice-more">查看全部</router-link>
+        </div>
+      </div>
+      <ul class="recent-list" data-testid="dashboard-notice-list">
+        <li v-for="(item, i) in recentItems" :key="i" class="recent-item">
+          <span class="recent-icon">{{ item.icon }}</span>
+          <span class="recent-text">{{ item.text }}</span>
+          <span class="recent-time">{{ item.time }}</span>
+        </li>
+      </ul>
+      <div v-if="recentItems.length === 0" class="empty-state"><p>暂无通知公告</p></div>
+    </section>
   </div>
 </template>
 

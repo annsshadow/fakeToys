@@ -3877,4 +3877,20 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 全量门禁（P1+P2 全部完成后）：oa4rust pnpm test 189 文件/1759 passed（EXIT=0）；pnpm typecheck 6 包 0（EXIT=0）；pnpm build ✓4.15s（EXIT=0）；scoped biome 13 文件 0 error（2 info，meeting-business.spec.ts 字符串拼接，队长已改为模板字面量）。
 - 说明：本工作树为隔离 worktree，p2-spread 未做真机 E2E；已加 data-testid，待部署测试服后由队长统一真机复验。
 
+## 166. P1+P2 测试服部署与真机 E2E 复验（2026-11-20）
+- 提交推送：86867e1d4（14 文件 923+/742-）。首次 push 遇 schannel 握手偶发失败，默认 backend 重试成功，LOCAL=REMOTE=86867e1d4...。
+- 前端构建部署：pnpm --filter desktop build EXIT=0；新产物 index-DXXwuW-d.js 含「工作台/系统管理/会议室预订」标签（grep 实证）。scp 首次用 MSYS /d/ 路径失败（Windows OpenSSH scp 不认，SCP_EXIT=255），改 D:/ 路径成功。测试服 /usr/local/oa4rust 原子替换 web/，备份 web.bak-r297-predeploy，index.html mtime 15:16:15。
+- 真机 E2E（本地代理 127.0.0.1:8899 → testmall.zhongxinxinchuang.cn，Origin override 绕 CSRF）：R296/R297 导航 4 passed（live+coverage 各 2）；meeting-business.spec.ts 会议业务区块 2 passed（live+coverage 各 1）。此前因测试服旧产物的 2 例超时失败全部转绿。
+- 结论：P1 导航收敛、P2 会议/工作流/文件业务化在测试服真机浏览器中功能正确，无死链、无端点调试残留。后续「全部重构」（其余 A 类页面 + P4 B 类迁管理区 + D 类删除）待续。
+
+## 167. 全部重构收尾：A 类剩余页面业务化 + P4 管理区授权 + D 类空壳删除（2026-11-20）
+- 用户拍板（m01364）：范围 P1+P2 并行推进；样板「全部重构」；管理后台迁管理区保留并做角色授权，普通员工不可见；D 类空壳按清单删除。以下为「全部重构」本批交付。
+- A 类剩余业务化（subagent a1/a2/a3，workbuddy/hy4flash-free）：① Dashboard.vue 重做「我的待办 / 今日日程 / 通知公告」、OrgDirectoryApp.vue 重做「人员搜索 / 架构树 / 人员列表」，各 6 例契约；② BBSForum.vue 重做「版块导航 / 主题列表 / 发帖区」、IMChat.vue 重做「会话列表 / 消息区 / 输入框」，2 契约共 10 例；③ CalendarApp / Personal / Settings / SearchApp / RecycleApp 五页去端点按钮改业务形态，5 契约共 23 例。全部仅重写 <template>，保留 script 层 API/handler 锚点。
+- P4 管理区授权：后端 crates/auth whoami 联表 auth_role/auth_person_role 填 roleList；SDK session.ts restoreCurrentUser 映射 roleList→roles；main.ts 新增 /app/admin/* 路由守卫（读 session.state.user?.roles，无 admin 重定向 Dashboard，fail-safe 放行加载态）；新增 main.adminGuard.contract.test.ts（6 例）与 main.adminGuard.roles.contract.test.ts（4 例）。
+- D 类空壳删除：按清单删 10 个 .vue（MindApp / UnitApp / AIChatApp / SelectorApp / HomepageApp / FaceSetApp / AnnApp / FtSearchApp / EmptyApp / SSO），同步清理 13 个存量契约测试（整文件删 4 / 定点删 9），main.ts 删 9 个 6 行路由块 + /sso 单行 + 9 条重定向别名（命名路由 89→80，D 类 import=0），重建 docs/audits/w13-w14-repository-closure.manifest.json（total 47→44，W13 32→29，implemented 44→41；Minder 两项转 out_of_scope），新增 main.dCleanup.contract.test.ts（10 例）。
+- 队长独立 RED→GREEN 复核（不采信子代理声明）：a1 备份→checkout HEAD→RED 11 failed/1 passed→恢复→GREEN 12 passed；a2 RED 10 failed→GREEN 10 passed（cmp 双页 OK）；a3 RED 20 failed/3 passed→GREEN 23 passed；d-cleanup RED 16 failed/75 passed→GREEN 首轮残留 searchFieldA11y 1 failed（BBSForum placeholder 已更新为「搜索帖子标题或内容…」），由队长同步更新该断言后转绿。全部 cmp 恢复一致。
+- 全量门禁：oa4rust vitest 197 文件 / 1782 passed（EXIT=0）；@oa4rust/desktop typecheck 0（EXIT=0）；desktop build ✓4.34s（EXIT=0）；scoped biome 14 文件 0 error（3 info 均为既有模板字面量提示）。
+- 陈旧断言修复：abnormalFormGuards（BBSForum 按钮改 data-testid）、BBSForum.closeA11y（新关闭文案）、imMessagePaging（IMChat 恢复 R106 分页面板「上一页/下一页」）、twinBatch（删 D 类基线）、w13-w14-closure（manifest 重建）、IMChat.business（放行分页 handler）、AppShell（删 3 条已删 D 类导航）、main.test.ts（去 /sso 断言、路由数门槛 80→≥80）。四文件复跑 47/47 passed。
+- 真值纪律：无密钥/口令/域名/SSH 端口入库；/.admin-credentials 口径仅部署期 shell 变量，不进入代码、台账或提交。
+
 

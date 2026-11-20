@@ -2,24 +2,57 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="search-view">
-    <div class="view-header glass-card">
-      <div><h1>全局搜索</h1><p class="subtitle">全局搜索</p></div>
+  <div class="search-view" data-testid="search-business-view">
+    <div class="view-header glass-card search-header" data-testid="search-header">
+      <div><h1>全局搜索</h1><p class="subtitle">跨文档、流程与组织的统一检索</p></div>
     </div>
-    <div class="search-panel glass-card">
-      <div class="search-box">
-        <input v-model="query" placeholder="搜索文档、流程、组织..." class="search-input-lg" @keydown.enter="doSearch" />
-        <button class="btn-search" @click="doSearch">🔍</button>
-        <button class="btn-search" title="孪生端点" @click="loadSearchTwin">🔁</button>
-      </div>
+    <div class="search-panel glass-card" data-testid="search-panel">
+      <form class="search-form" @submit.prevent="doSearch" data-testid="search-form">
+        <input v-model="query" type="search" placeholder="搜索文档、流程、组织..." class="search-input-lg" aria-label="搜索关键词" />
+        <button type="submit" class="btn-search">🔍 搜索</button>
+      </form>
       <div v-if="loading" class="loading-state">搜索中...</div>
       <ListLoadError v-else-if="results.length === 0 && searchError" mode="empty" :message="searchError" @retry="doSearch" />
-      <div v-else-if="results.length===0&&queried" class="empty-state"><p>未找到结果</p></div>
-      <div v-else-if="results.length>0" class="results">
+      <div v-else-if="results.length===0&&queried" class="empty-state"><p>未找到结果，请尝试其它关键词</p></div>
+      <div v-else-if="results.length>0" class="results" data-testid="search-results">
         <ListLoadError v-if="searchError" mode="banner" :message="searchError" @retry="doSearch" />
-        <div v-for="r in results" :key="r.id" class="result-item">
-          <div class="ri-icon">{{ r.type==='doc'?'📄':r.type==='process'?'⚡':r.type==='org'?'🏢':'📋' }}</div>
-          <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
+        <div class="result-tabs" role="tablist" aria-label="结果分类" data-testid="search-results-tabs">
+          <details class="result-tab" open>
+            <summary role="tab">全部结果</summary>
+            <ul class="result-list">
+              <li v-for="r in results" :key="r.id" class="result-item">
+                <div class="ri-icon">{{ r.type==='doc'?'📄':r.type==='process'?'⚡':r.type==='org'?'🏢':'📋' }}</div>
+                <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
+              </li>
+            </ul>
+          </details>
+          <details class="result-tab">
+            <summary role="tab">文档</summary>
+            <ul class="result-list">
+              <li v-for="r in results.filter(x=>x.type==='doc')" :key="r.id" class="result-item">
+                <div class="ri-icon">📄</div>
+                <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
+              </li>
+            </ul>
+          </details>
+          <details class="result-tab">
+            <summary role="tab">流程</summary>
+            <ul class="result-list">
+              <li v-for="r in results.filter(x=>x.type==='process')" :key="r.id" class="result-item">
+                <div class="ri-icon">⚡</div>
+                <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
+              </li>
+            </ul>
+          </details>
+          <details class="result-tab">
+            <summary role="tab">组织</summary>
+            <ul class="result-list">
+              <li v-for="r in results.filter(x=>x.type==='org')" :key="r.id" class="result-item">
+                <div class="ri-icon">🏢</div>
+                <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
+              </li>
+            </ul>
+          </details>
         </div>
       </div>
       <div v-else class="empty-state"><p>输入关键词开始搜索</p></div>

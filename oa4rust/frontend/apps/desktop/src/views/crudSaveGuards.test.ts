@@ -15,7 +15,6 @@ function view(name: string): string {
 // 所以 :disabled="saving" 根本挡不住双击。守卫必须落在 saveItem（mutate 前同步占用），
 // 复位必须交给 useMutation 的 onSettled。
 const CRUD_SAVE_PAGES = [
-  'AnnApp.vue',
   'CmsColumnApp.vue',
   'CmsColumnManagerApp.vue',
   'CmsDictDesignerApp.vue',
@@ -27,8 +26,6 @@ const CRUD_SAVE_PAGES = [
   'CollectApp.vue',
   'CommonApp.vue',
   'DeploymentApp.vue',
-  'FaceSetApp.vue',
-  'FtSearchApp.vue',
   'NoteApp.vue',
   'PortalDictDesignerApp.vue',
   'PortalPageDesignerApp.vue',

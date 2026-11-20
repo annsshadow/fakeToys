@@ -236,12 +236,10 @@ const adminGroup: NavGroup = {
   icon: '⚙',
   admin: true,
   items: [
-    { path: '/app/admin/mind', label: '思维导图', icon: '🧠' },
     { path: '/app/admin/document', label: '文档管理', icon: '📄' },
     { path: '/app/admin/program', label: '程序中心', icon: '⚙️' },
     { path: '/app/admin/queryview', label: '查询视图', icon: '📊' },
     { path: '/app/admin/server', label: '服务器', icon: '🖥️' },
-    { path: '/app/admin/unit', label: '单元管理', icon: '🏗️' },
     { path: '/app/admin/form', label: '表单管理', icon: '📝' },
     { path: '/app/admin/view', label: '视图管理', icon: '👁️' },
     { path: '/app/admin/fileinfo', label: '文件信息', icon: '📎' },
@@ -255,7 +253,6 @@ const adminGroup: NavGroup = {
     { path: '/app/admin/cms-module', label: 'CMS模块', icon: '📦' },
     { path: '/app/admin/deployment', label: '部署管理', icon: '🚀' },
     { path: '/app/admin/log-viewer', label: '日志查看', icon: '📜' },
-    { path: '/app/admin/ftsearch', label: '全文搜索', icon: '🔍' },
   ],
 }
 

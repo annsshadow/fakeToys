@@ -54,7 +54,6 @@ describe('孪生端点批处理结果（R139）', () => {
 // 这份基线的作用是「防回退 / 防新增」：新复制一行 const s、或把某个成功提示写死，
 // 都会让下面的 toEqual 变红；有意迁移时需要同步下调基线。
 const LEGACY_INLINE_S: Record<string, number> = {
-  AIChatApp: 5,
   AttendanceApp: 9,
   BamApp: 3,
   BBSForum: 5,
@@ -66,7 +65,6 @@ const LEGACY_INLINE_S: Record<string, number> = {
   IMChat: 3,
   JPushApp: 1,
   MeetingApp: 8,
-  MindApp: 1,
   OrgDirectoryApp: 1,
   OrgViewer: 18,
   Personal: 8,
@@ -88,7 +86,6 @@ const LEGACY_INLINE_S: Record<string, number> = {
 
 // 旧写法里「失败也计入已提交」的行：`toast.success(`...${rs.length} 条已提交`)`
 const LEGACY_TWIN_SUCCESS_LINES: Record<string, number> = {
-  AIChatApp: 2,
   AttendanceApp: 2,
   BBSForum: 2,
   CalendarApp: 1,

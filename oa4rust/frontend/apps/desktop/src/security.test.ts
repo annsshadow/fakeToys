@@ -33,7 +33,6 @@ describe('desktop security regressions', () => {
 
   it('uses the shared safe confirmation dialog in views', () => {
     const views = [
-      'AIChatApp.vue',
       'ConfigDesignerApp.vue',
       'DocumentApp.vue',
       'FormApp.vue',

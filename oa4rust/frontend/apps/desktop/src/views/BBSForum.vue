@@ -2,14 +2,16 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="bbs-view">
-    <!-- 顶部：板块导航 -->
-    <div class="bbs-header glass-card">
+  <div class="bbs-view" data-testid="bbs-root">
+    <!-- 版块导航：顶部论坛标签与搜索，快速进入目标版块 -->
+    <header class="bbs-header glass-card" data-testid="bbs-section-nav">
       <div class="header-left">
-        <h1>论坛</h1>
-        <nav class="forum-tabs" aria-label="论坛板块">
+        <h1 data-testid="bbs-title">团队论坛</h1>
+        <p class="subtitle" data-testid="bbs-subtitle">浏览版块、参与讨论、分享经验</p>
+        <nav class="forum-tabs" aria-label="论坛栏目" data-testid="bbs-forum-tabs">
           <button v-for="tab in tabs" :key="tab.key" class="tab-btn"
-            :aria-pressed="activeTab === tab.key" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
+            :aria-pressed="activeTab === tab.key" :class="{ active: activeTab === tab.key }"
+            :data-testid="'bbs-tab-' + tab.key" @click="activeTab = tab.key">
             {{ tab.label }}
           </button>
         </nav>
@@ -17,117 +19,28 @@
       <div class="header-right">
         <div class="search-box">
           <span class="search-icon">⌕</span>
-          <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子..." class="search-input" />
+          <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子标题或内容…"
+            class="search-input" aria-label="搜索帖子" data-testid="bbs-search-input" />
+          <button class="search-btn" aria-label="搜索" data-testid="bbs-search-btn" @click="handleSearch">搜索</button>
         </div>
-        <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
-        <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
-        <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
-        <button class="new-topic-btn ghost" @click="loadBbsEntities">核心实体</button>
-        <button class="new-topic-btn ghost" @click="loadBbsDeepReads">深度读矩阵</button>
-        <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
+        <button class="new-topic-btn" data-testid="bbs-open-compose" @click="openNewTopic">✏️ 发起主题</button>
       </div>
-    </div>
-    <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
-    <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
-    <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
-    <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
-    <div v-if="bbsDeepText" class="forums-note">{{ bbsDeepText }}</div>
+    </header>
 
-    <!-- rev324：BBS 论坛管理写操作（用户触发，非自动） -->
-    <div class="bbs-write-actions">
-      <button class="new-topic-btn ghost" @click="bbsPost('shutupSave')">存禁言</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('shutupDel')">解禁言</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('delForum')">删帖论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('delReply')">删帖回复</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('delSubject')">删帖主题</button>
-      <button class="new-topic-btn ghost" @click="bbsLogin">论坛登录</button>
-      <button class="new-topic-btn ghost" @click="bbsLogout">论坛登出</button>
-      <button class="new-topic-btn ghost" @click="bbsPictureEncode">图片编码</button>
-      <button class="new-topic-btn ghost" @click="bbsSectionIcon">板块图标</button>
-      <button class="new-topic-btn ghost" @click="bbsSectionSyn">应用同步预览</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('userForum')">建论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('userReply')">发回复</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('userRole')">建角色</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('userSection')">建版块</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('userSubject')">建主题</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('config')">建配置</button>
-      <button class="new-topic-btn ghost" @click="bbsPost('reply')">核心回复</button>
-      <button class="new-topic-btn ghost" @click="bbsUpload(false)">传附件</button>
-      <button class="new-topic-btn ghost" @click="bbsUpload(true)">传附件(回调)</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('sectionSave')">存版块</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('config')">改配置</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('replyAccept')">采纳回复</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('bindObject')">绑对象</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('bindRole')">绑角色</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('roleForum')">角色论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('rolecodeSel')">角色码选</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('roleSection')">角色版块</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('unitSel')">单位选择</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('userSel')">人员选择</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('settingCode')">设置码</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('setting')">存设置</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('changeSection')">迁主题</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('voteSubmit')">投票</button>
-      <button class="new-topic-btn ghost" @click="bbsPut('userinfo')">个人信息</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('section')">删版块</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('attachment')">删附件</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('shutup')">删禁言项</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('subjectattach')">删主题附件</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('userForum')">删论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('userReply')">删回复</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('userRole')">删角色</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('sectionForce')">强删版块</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('userSection')">删用户版块</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('userSubject')">删主题</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('entityForum')">删实体论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsDel('entitySubject')">删实体主题</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('forumCreate')">建实体论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('forumUpdate')">改实体论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('sectionCreate')">建实体版块</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('sectionUpdate')">改实体版块</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('sectionDelete')">删实体版块</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('subjectCreate')">建实体主题</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('subjectUpdate')">改实体主题</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('creamed')">精华列表</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('index')">索引列表</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('recommended')">推荐列表</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('search')">搜索列表</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('filter')">筛选列表</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('replyFilter')">回复筛选</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('myReply')">我的回复</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('mySubject')">我的主题</button>
-      <button class="new-topic-btn ghost" @click="bbsEntity('voterecord')">投票记录</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setOriginal')">设原创</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonOriginal')">取消原创</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setRecommend')">首页推荐</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonRecommend')">取消首页推荐</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToBBS')">置顶BBS</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToBBS')">取消置顶BBS</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToForum')">置顶论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToForum')">取消置顶论坛</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToMain')">置顶主版块</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToMain')">取消置顶主版块</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('acceptReply')">采纳回复</button>
-      <button class="new-topic-btn ghost" @click="bbsSubjectMod('unacceptReply')">取消采纳</button>
-      <button class="new-topic-btn ghost" @click="bbsUserReads">版块/权限读</button>
-      <button class="new-topic-btn ghost" @click="bbsMore2">禁言/主题信息/UUID</button>
-      <button class="new-topic-btn ghost" @click="bbsUpdateNick">更新昵称</button>
-    </div>
-
-    <!-- 左侧：版块列表 -->
-    <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
+    <!-- 版块导航：左侧版块列表 -->
+    <aside class="bbs-sidebar glass-card" data-testid="bbs-section-list">
       <div class="sidebar-header">
-        <h3>版块</h3>
-        <button class="add-section-btn" title="新建版块" aria-label="新建版块" @click="openNewSection()">+</button>
+        <h2 data-testid="bbs-section-list-title">版块导航</h2>
+        <button class="add-section-btn" title="新建版块" aria-label="新建版块"
+          data-testid="bbs-section-add" @click="openNewSection()">+</button>
       </div>
-      <div v-if="sectionsLoading" class="loading-skeleton">
+      <div v-if="sectionsLoading" class="loading-skeleton" data-testid="bbs-section-loading">
         <div v-for="i in 5" :key="i" class="sk-item"></div>
       </div>
       <ul v-else class="section-list">
-        <li v-for="sec in sections" :key="sec.id"
-          class="section-item"
+        <li v-for="sec in sections" :key="sec.id" class="section-item"
           :class="{ active: selectedSection?.id === sec.id }"
-          @click="selectSection(sec)">
+          :data-testid="'bbs-section-' + sec.id" @click="selectSection(sec)">
           <span class="sec-icon">{{ sec.icon || '💬' }}</span>
           <span class="sec-name">{{ sec.name }}</span>
           <span class="sec-actions">
@@ -136,30 +49,35 @@
             <button class="sec-act" title="删除版块" aria-label="删除版块" :disabled="sectionBusy" @click.stop="deleteSection(sec)">✕</button>
           </span>
         </li>
-        <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
+        <li class="section-item all-section" :class="{ active: !selectedSection }"
+          data-testid="bbs-section-all" @click="selectedSection = null">
           <span class="sec-icon">📋</span>
-          <span class="sec-name">全部板块</span>
+          <span class="sec-name">全部版块</span>
         </li>
       </ul>
     </aside>
 
-    <!-- 右侧：帖子列表 -->
-    <main class="bbs-main glass-card">
-      <!-- 帖子列表 -->
-      <div v-if="activeTab==='my'" class="my-subtabs" role="group" aria-label="我的帖子子标签">
+    <!-- 主题列表：帖子卡片、子标签、分页 -->
+    <main class="bbs-main glass-card" data-testid="bbs-topic-list">
+      <div class="list-header">
+        <h2 data-testid="bbs-topic-list-title">主题列表</h2>
+        <span class="section-crumb" v-if="selectedSection" data-testid="bbs-section-crumb">当前版块：{{ selectedSection.name }}</span>
+      </div>
+      <div v-if="activeTab==='my'" class="my-subtabs" role="group" aria-label="我的帖子子标签" data-testid="bbs-my-subtabs">
         <button :aria-pressed="mySub==='topics'" :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
         <button :aria-pressed="mySub==='replies'" :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
       </div>
-      <div v-if="topicsLoading" class="loading-state">
+      <div v-if="topicsLoading" class="loading-state" data-testid="bbs-topic-loading">
         <div v-for="i in 6" :key="i" class="skeleton-row"></div>
       </div>
       <ListLoadError v-else-if="topicsLoadError" mode="empty" :message="topicsLoadError" @retry="reloadTopics" />
-      <div v-else-if="topics.length === 0" class="empty-state">
+      <div v-else-if="topics.length === 0" class="empty-state" data-testid="bbs-topic-empty">
         <div class="empty-icon">💭</div>
-        <p>暂无帖子，快来发帖吧！</p>
+        <p>暂无主题，来发起第一个讨论吧。</p>
       </div>
       <div v-else class="topic-list">
-        <div v-for="topic in topics" :key="topic.id" class="topic-card" @click="openTopic(topic)">
+        <div v-for="topic in topics" :key="topic.id" class="topic-card"
+          :data-testid="'bbs-topic-' + topic.id" @click="openTopic(topic)">
           <div class="topic-avatar">{{ topic.author?.[0] || '?' }}</div>
           <div class="topic-body">
             <div class="topic-title-row">
@@ -181,52 +99,53 @@
           </div>
         </div>
       </div>
-
-      <!-- 分页：后端无 total 信封，用「本页满则可能有下一页」驱动 -->
-      <div v-if="hasMore || page > 1" class="pagination">
+      <div v-if="hasMore || page > 1" class="pagination" data-testid="bbs-topic-pagination">
         <button class="page-btn" aria-label="上一页" :disabled="page <= 1" @click="page--">‹</button>
         <span class="page-info">第 {{ page }} 页</span>
         <button class="page-btn" aria-label="下一页" :disabled="!hasMore" @click="page++">›</button>
       </div>
     </main>
 
-    <!-- 发帖弹窗 -->
+    <!-- 发帖区：发起主题表单 -->
     <div v-if="showNewTopic" class="modal-overlay" @click.self="showNewTopic = false">
-      <div class="modal glass-card">
+      <section class="modal glass-card compose-panel" role="dialog" aria-label="发帖区" data-testid="bbs-compose-panel">
         <div class="modal-header">
-          <h3>新发帖</h3>
-          <button class="close-btn" aria-label="关闭发帖弹窗" @click="showNewTopic = false">✕</button>
+          <h2 data-testid="bbs-compose-title">发起新主题</h2>
+          <button class="close-btn" aria-label="关闭发帖区" @click="showNewTopic = false">✕</button>
         </div>
-        <div class="modal-body">
+        <form class="modal-body" data-testid="bbs-compose-form" @submit.prevent="createTopic">
           <div class="form-group">
-            <label>版块</label>
-            <select v-model="newTopic.sectionId" class="form-select">
+            <label for="bbs-compose-section">所属版块</label>
+            <select id="bbs-compose-section" v-model="newTopic.sectionId" class="form-select" data-testid="bbs-compose-section">
               <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>标题</label>
-            <input v-model="newTopic.title" class="form-input" placeholder="请输入标题..." maxlength="100" />
+            <label for="bbs-compose-title">主题标题</label>
+            <input id="bbs-compose-title" v-model="newTopic.title" class="form-input" placeholder="请输入标题…"
+              maxlength="100" data-testid="bbs-compose-title-input" />
           </div>
           <div class="form-group">
-            <label>内容</label>
-            <textarea v-model="newTopic.content" class="form-textarea" rows="6" placeholder="请输入内容..."></textarea>
+            <label for="bbs-compose-content">正文内容</label>
+            <textarea id="bbs-compose-content" v-model="newTopic.content" class="form-textarea" rows="6"
+              placeholder="分享你的想法…" data-testid="bbs-compose-content"></textarea>
           </div>
-          <div v-if="createError" class="error-msg">{{ createError }}</div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showNewTopic = false">取消</button>
-          <button class="btn-submit" :disabled="!newTopic.title.trim() || topicSaving" @click="createTopic">{{ topicSaving ? '发布中...' : '发布' }}</button>
-        </div>
-      </div>
+          <div v-if="createError" class="error-msg" data-testid="bbs-compose-error">{{ createError }}</div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" @click="showNewTopic = false">取消</button>
+            <button type="submit" class="btn-submit" :disabled="!newTopic.title.trim() || topicSaving"
+              data-testid="bbs-compose-submit">{{ topicSaving ? '发布中…' : '发布主题' }}</button>
+          </div>
+        </form>
+      </section>
     </div>
 
-    <!-- 帖子详情弹窗 -->
+    <!-- 主题详情与回复 -->
     <div v-if="viewingTopic" class="modal-overlay" @click.self="closeTopic()">
-      <div class="modal glass-card topic-detail">
+      <section class="modal glass-card topic-detail" role="dialog" aria-label="主题详情" data-testid="bbs-topic-detail">
         <div class="modal-header">
-          <h3>{{ viewingTopic.title }}</h3>
-          <button class="close-btn" aria-label="关闭帖子详情" @click="closeTopic()">✕</button>
+          <h2>{{ viewingTopic.title }}</h2>
+          <button class="close-btn" aria-label="关闭主题详情" @click="closeTopic()">✕</button>
         </div>
         <div class="modal-body">
           <div class="detail-meta">
@@ -234,37 +153,17 @@
             <span>📅 {{ fmtTime(viewingTopic.createTime) }}</span>
             <span>💬 {{ viewingTopic.replyCount ?? 0 }} 回复</span>
             <span>👁 {{ viewingTopic.viewCount ?? 0 }} 浏览</span>
-            <span v-if="topicMeta">📎 {{ topicMeta }}</span>
           </div>
           <div class="detail-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(viewingTopic.content)}}</div>
-
-          <!-- 图片附件（picture/list） -->
           <div v-if="topicPics.length" class="pic-gallery">
             <img v-for="(u, i) in topicPics" :key="i" :src="u" class="pic-thumb" alt="附图" referrerpolicy="no-referrer" />
           </div>
-
-          <!-- 版主管理工具栏（owner/admin 门禁；失败提示无权限） -->
-          <div class="mod-bar">
-            <span class="mod-label">版主管理：</span>
-            <button class="mod-btn" :class="{on: viewingTopic.creamed}" :disabled="modBusy" @click="toggleMod('cream', !viewingTopic.creamed)">
-              {{ viewingTopic.creamed ? '取消精华' : '设为精华' }}
-            </button>
-            <button class="mod-btn" :class="{on: viewingTopic.isTop}" :disabled="modBusy" @click="toggleMod('topSection', !viewingTopic.isTop)">
-              {{ viewingTopic.isTop ? '取消置顶' : '版块置顶' }}
-            </button>
-            <button class="mod-btn" :class="{on: viewingTopic.locked}" :disabled="modBusy" @click="toggleMod('lock', !viewingTopic.locked)">
-              {{ viewingTopic.locked ? '解锁' : '锁定' }}
-            </button>
-            <button class="mod-btn" :class="{on: viewingTopic.completed}" :disabled="modBusy" @click="toggleMod('complete', !viewingTopic.completed)">
-              {{ viewingTopic.completed ? '取消完结' : '标记完结' }}
-            </button>
-          </div>
         </div>
         <div class="reply-section">
-          <h4>回复 ({{ replies.length }})<span v-if="replyGate" class="reply-gate">· 回复权限：{{ replyGate }}</span></h4>
+          <h3>回复 ({{ replies.length }})<span v-if="replyGate" class="reply-gate">· 回复权限：{{ replyGate }}</span></h3>
           <ListLoadError v-if="repliesLoadError" mode="empty" :message="repliesLoadError" @retry="reloadReplies" />
           <div v-else-if="replies.length === 0" class="empty-replies">暂无回复</div>
-          <div v-for="reply in replies" :key="reply.id" class="reply-card">
+          <div v-for="reply in replies" :key="reply.id" class="reply-card" :data-testid="'bbs-reply-' + reply.id">
             <div class="reply-avatar">{{ reply.author?.[0] }}</div>
             <div class="reply-body">
               <div class="reply-header">
@@ -275,41 +174,45 @@
             </div>
           </div>
           <div class="reply-input">
-            <input v-model="replyText" class="reply-textarea" placeholder="写下你的回复..." @keydown.enter.ctrl="submitReply" />
-            <button class="reply-btn" :disabled="replySaving" @click="submitReply">{{ replySaving ? '发送中...' : '回复' }}</button>
+            <input v-model="replyText" class="reply-textarea" placeholder="写下你的回复…"
+              aria-label="回复内容" data-testid="bbs-reply-input" @keydown.enter.ctrl="submitReply" />
+            <button class="reply-btn" :disabled="replySaving" data-testid="bbs-reply-submit" @click="submitReply">
+              {{ replySaving ? '发送中…' : '回复' }}
+            </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
 
-    <!-- 版块新建/重命名弹窗（POST section/create | POST section/save/{id}） -->
+    <!-- 版块新建/重命名 -->
     <div v-if="showSectionModal" class="modal-overlay" @click.self="closeSectionModal">
-      <div class="modal glass-card">
+      <section class="modal glass-card" role="dialog" :aria-label="sectionModalMode === 'create' ? '新建版块' : '重命名版块'">
         <div class="modal-header">
-          <h3>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h3>
-          <button class="close-btn" aria-label="关闭版块编辑弹窗" @click="closeSectionModal">✕</button>
+          <h2>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h2>
+          <button class="close-btn" aria-label="关闭版块编辑" @click="closeSectionModal">✕</button>
         </div>
-        <div class="modal-body">
+        <form class="modal-body" @submit.prevent="saveSection">
           <div class="form-group">
-            <label>版块名称</label>
-            <input v-model="sectionName" class="form-input" placeholder="版块名称" maxlength="30" @keydown.enter="saveSection" />
+            <label for="bbs-section-name">版块名称</label>
+            <input id="bbs-section-name" v-model="sectionName" class="form-input" placeholder="版块名称"
+              maxlength="30" data-testid="bbs-section-name" />
           </div>
           <div v-if="sectionError" class="error-msg">{{ sectionError }}</div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeSectionModal">取消</button>
-          <button class="btn-submit" :disabled="!sectionName.trim() || sectionBusy" @click="saveSection">
-            {{ sectionBusy ? '保存中…' : '保存' }}
-          </button>
-        </div>
-      </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" @click="closeSectionModal">取消</button>
+            <button type="submit" class="btn-submit" :disabled="!sectionName.trim() || sectionBusy" data-testid="bbs-section-save">
+              {{ sectionBusy ? '保存中…' : '保存' }}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
 
-    <!-- 版块详情弹窗（GET section/{id} + section/viewsub/{sectionId} + permission/section/{sectionId}） -->
+    <!-- 版块详情 -->
     <div v-if="sectionInfo.open" class="modal-overlay" @click.self="sectionInfo.open=false">
-      <div class="modal glass-card">
+      <section class="modal glass-card" role="dialog" aria-label="版块详情">
         <div class="modal-header">
-          <h3>版块详情</h3>
+          <h2>版块详情</h2>
           <button class="close-btn" aria-label="关闭版块详情" @click="sectionInfo.open=false">✕</button>
         </div>
         <div v-if="sectionInfo.loading" class="loading-state"><p>加载中…</p></div>
@@ -323,7 +226,7 @@
           <div class="form-group"><label>描述</label><div>{{ sectionInfo.description || '—' }}</div></div>
         </div>
         <div class="modal-footer"><button class="btn-cancel" @click="sectionInfo.open=false">关闭</button></div>
-      </div>
+      </section>
     </div>
   </div>
 </template>

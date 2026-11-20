@@ -21,10 +21,8 @@ const sources = walk(SRC).filter(
   (file) => !/\.test\.ts$/.test(file) && !/utils[/\\]date\.ts$/.test(file) && !/\.spec\.ts$/.test(file),
 )
 
-/** R154：27 个服务端时间展示/格式化调用点，必须统一走桌面共享解析器。 */
+/** R154：23 个服务端时间展示/格式化调用点，必须统一走桌面共享解析器。 */
 const SERVER_TIME_VIEWS: Array<[string, 'formatServerDateTime' | 'parseServerDate']> = [
-  ['AIChatApp.vue', 'parseServerDate'],
-  ['AnnApp.vue', 'formatServerDateTime'],
   ['AttendanceApp.vue', 'parseServerDate'],
   ['BamApp.vue', 'formatServerDateTime'],
   ['BBSForum.vue', 'parseServerDate'],
@@ -37,10 +35,8 @@ const SERVER_TIME_VIEWS: Array<[string, 'formatServerDateTime' | 'parseServerDat
   ['ConfigDesignerApp.vue', 'formatServerDateTime'],
   ['Dashboard.vue', 'formatServerDateTime'],
   ['DeploymentApp.vue', 'formatServerDateTime'],
-  ['FaceSetApp.vue', 'formatServerDateTime'],
   ['FileManager.vue', 'formatServerDateTime'],
   ['FormApp.vue', 'formatServerDateTime'],
-  ['FtSearchApp.vue', 'formatServerDateTime'],
   ['MeetingApp.vue', 'formatServerDateTime'],
   ['NoteApp.vue', 'formatServerDateTime'],
   ['ProcessApplicationApp.vue', 'formatServerDateTime'],

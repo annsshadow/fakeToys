@@ -2,22 +2,28 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
-    <div class="view-header glass-card">
+  <div class="mod-view recycle-view" data-testid="recycle-business-view">
+    <div class="view-header glass-card recycle-header" data-testid="recycle-header">
       <h1>回收站</h1>
-      <p class="subtitle">/api/recycle/*</p>
+      <p class="subtitle">已删除项目的恢复与永久清理</p>
     </div>
-    <div class="content-panel glass-card">
-      <div class="stats-row">
-        <div class="stat-card glass-card"><div class="stat-num">{{ items.length }}</div><div class="stat-label">回收项目</div></div>
-        <div class="stat-card glass-card"><div class="stat-num" style="color:var(--color-error)">{{ items.filter(i=>i.deleted).length }}</div><div class="stat-label">已删除</div></div>
-      </div>
-      <div class="toolbar">
-        <button class="btn-primary" @click="loadItems">刷新</button>
-        <button class="btn-danger" :disabled="!hasItems || busy" @click="emptyRecycle">清空回收站</button>
-        <button class="btn-primary" @click="loadRecycleTwin">孪生端点</button>
-      </div>
-      <div class="list-panel">
+    <div class="content-panel glass-card" data-testid="recycle-content">
+      <section class="recycle-stats" data-testid="recycle-stats">
+        <h2 class="section-title">回收概览</h2>
+        <div class="stats-row">
+          <div class="stat-card glass-card"><div class="stat-num">{{ items.length }}</div><div class="stat-label">回收项目</div></div>
+          <div class="stat-card glass-card"><div class="stat-num" style="color:var(--color-error)">{{ items.filter(i=>i.deleted).length }}</div><div class="stat-label">已删除</div></div>
+        </div>
+      </section>
+      <section class="recycle-toolbar" data-testid="recycle-toolbar">
+        <h2 class="section-title">批量操作</h2>
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadItems">刷新列表</button>
+          <button class="btn-danger" :disabled="!hasItems || busy" @click="emptyRecycle">清空回收站</button>
+        </div>
+      </section>
+      <section class="recycle-list" data-testid="recycle-list">
+        <h2 class="section-title">回收项目</h2>
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadItems" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <ListLoadError v-else-if="items.length===0 && loadError" mode="empty" :message="loadError" @retry="loadItems" />
@@ -39,7 +45,7 @@
             </span>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>

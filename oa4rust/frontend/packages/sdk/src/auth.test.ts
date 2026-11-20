@@ -24,11 +24,8 @@ describe('browser authentication regressions', () => {
 
   it('does not consume tokens from OAuth URLs or response JSON', () => {
     const oauthSource = readSource('../../ui/src/views/OAuthCallback.vue')
-    const ssoSource = readSource('../../../apps/desktop/src/views/SSO.vue')
 
     expect(oauthSource).not.toMatch(/query\.token|hash|resp\.data|response\.json|setSession/)
     expect(oauthSource).toContain('await session.init(true)')
-    expect(ssoSource).not.toMatch(/query\.token|response\.json|setSession/)
-    expect(ssoSource).toContain('await session.init(true)')
   })
 })

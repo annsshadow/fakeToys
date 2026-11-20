@@ -501,10 +501,35 @@ pub async fn whoami(
             let unique_id: String = row.get("unique_id");
             let name: String = row.get("name");
             let mobile: Option<String> = row.get("mobile");
+            // 管理区授权依赖 whoami 返回真实角色名：查询该用户未删除、未禁用的角色。
+            // 查询失败时 fail-closed 为空列表，不把任何人误判为管理员。
+            let role_list: Vec<String> = {
+                let role_rows = client
+                    .query(
+                        "SELECT r.name FROM auth_role r \
+                         JOIN auth_person_role pr ON r.id = pr.role_id \
+                         WHERE pr.person_id = $1 AND r.deleted_at IS NULL AND r.disable = false",
+                        &[&id],
+                    )
+                    .await
+                    .unwrap_or_default();
+                role_rows
+                    .iter()
+                    .map(|r| r.get::<_, String>("name"))
+                    .collect()
+            };
             let distinguished_name = format!("{}@{}@P", name, unique_id);
             let mut map = serde_json::Map::new();
             map.insert("tokenType".to_string(), Value::String("user".to_string()));
-            map.insert("roleList".to_string(), Value::Array(vec![]));
+            map.insert(
+                "roleList".to_string(),
+                Value::Array(
+                    role_list
+                        .into_iter()
+                        .map(|name| Value::String(name))
+                        .collect(),
+                ),
+            );
             map.insert("passwordExpired".to_string(), Value::Bool(false));
             map.insert("identityList".to_string(), Value::Array(vec![]));
             map.insert("id".to_string(), Value::String(id));

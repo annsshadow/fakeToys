@@ -139,12 +139,6 @@ const router = createRouter({
           meta: { title: '分类管理' },
         },
         {
-          path: 'admin/mind',
-          name: 'MindApp',
-          component: () => import('./views/MindApp.vue'),
-          meta: { title: '思维导图' },
-        },
-        {
           path: 'admin/document',
           name: 'DocumentApp',
           component: () => import('./views/DocumentApp.vue'),
@@ -175,12 +169,6 @@ const router = createRouter({
           meta: { title: '服务器管理' },
         },
         {
-          path: 'admin/unit',
-          name: 'UnitApp',
-          component: () => import('./views/UnitApp.vue'),
-          meta: { title: '单元管理' },
-        },
-        {
           path: 'admin/form',
           name: 'FormApp',
           component: () => import('./views/FormApp.vue'),
@@ -197,12 +185,6 @@ const router = createRouter({
           name: 'FileInfoApp',
           component: () => import('./views/FileInfoApp.vue'),
           meta: { title: '文件信息' },
-        },
-        {
-          path: 'admin/ai-chat',
-          name: 'AIChatApp',
-          component: () => import('./views/AIChatApp.vue'),
-          meta: { title: 'AI助手' },
         },
         {
           path: 'admin/role',
@@ -253,12 +235,6 @@ const router = createRouter({
           name: 'LogViewerApp',
           component: () => import('./views/LogViewerApp.vue'),
           meta: { title: '日志查看器' },
-        },
-        {
-          path: 'admin/selector',
-          name: 'SelectorApp',
-          component: () => import('./views/SelectorApp.vue'),
-          meta: { title: '通用选择器' },
         },
         {
           path: 'admin/query-query',
@@ -446,12 +422,6 @@ const router = createRouter({
           component: () => import('./views/FindDesignerApp.vue'),
           meta: { title: '查找设计器' },
         },
-        {
-          path: 'admin/homepage',
-          name: 'HomepageApp',
-          component: () => import('./views/HomepageApp.vue'),
-          meta: { title: '首页配置' },
-        },
         { path: 'bam', name: 'BamApp', component: () => import('./views/BamApp.vue'), meta: { title: '业务活动监控' } },
         {
           path: 'admin/collect',
@@ -491,38 +461,12 @@ const router = createRouter({
           meta: { title: '三方成员管理' },
         },
         {
-          path: 'admin/face-set',
-          name: 'FaceSetApp',
-          component: () => import('./views/FaceSetApp.vue'),
-          meta: { title: '人脸设置' },
-        },
-        {
-          path: 'admin/ann',
-          name: 'AnnApp',
-          component: () => import('./views/AnnApp.vue'),
-          meta: { title: '神经网络AI配置' },
-        },
-        {
           path: 'admin/common',
           name: 'CommonApp',
           component: () => import('./views/CommonApp.vue'),
           meta: { title: '公共组件库' },
         },
-        {
-          path: 'admin/ftsearch',
-          name: 'FtSearchApp',
-          component: () => import('./views/FtSearchApp.vue'),
-          meta: { title: '全文搜索引擎' },
-        },
-        {
-          path: 'admin/empty',
-          name: 'EmptyApp',
-          component: () => import('./views/EmptyApp.vue'),
-          meta: { title: '占位页面' },
-        },
         // R297：旧路径保留重定向别名，避免组件内部硬编码链接死链（→ 兜底 → /login）。
-        { path: 'ai-chat', redirect: '/app/admin/ai-chat' },
-        { path: 'ann', redirect: '/app/admin/ann' },
         { path: 'appinfo', redirect: '/app/admin/appinfo' },
         { path: 'category', redirect: '/app/admin/category' },
         { path: 'cms-column', redirect: '/app/admin/cms-column' },
@@ -541,18 +485,13 @@ const router = createRouter({
         { path: 'deployment', redirect: '/app/admin/deployment' },
         { path: 'design-center', redirect: '/app/admin/design-center' },
         { path: 'document', redirect: '/app/admin/document' },
-        { path: 'empty', redirect: '/app/admin/empty' },
-        { path: 'face-set', redirect: '/app/admin/face-set' },
         { path: 'fileinfo', redirect: '/app/admin/fileinfo' },
         { path: 'find-designer', redirect: '/app/admin/find-designer' },
         { path: 'form', redirect: '/app/admin/form' },
         { path: 'form-designer', redirect: '/app/admin/form-designer' },
-        { path: 'ftsearch', redirect: '/app/admin/ftsearch' },
-        { path: 'homepage', redirect: '/app/admin/homepage' },
         { path: 'hotpic', redirect: '/app/admin/hotpic' },
         { path: 'jpush', redirect: '/app/admin/jpush' },
         { path: 'log-viewer', redirect: '/app/admin/log-viewer' },
-        { path: 'mind', redirect: '/app/admin/mind' },
         { path: 'pdf-viewer', redirect: '/app/admin/pdf-viewer' },
         { path: 'portal', redirect: '/app/admin/portal' },
         { path: 'portal-designer', redirect: '/app/admin/portal-designer' },
@@ -581,12 +520,10 @@ const router = createRouter({
         { path: 'query-view-designer', redirect: '/app/admin/query-view-designer' },
         { path: 'queryview', redirect: '/app/admin/queryview' },
         { path: 'role', redirect: '/app/admin/role' },
-        { path: 'selector', redirect: '/app/admin/selector' },
         { path: 'server', redirect: '/app/admin/server' },
         { path: 'service-invoke-designer', redirect: '/app/admin/service-invoke-designer' },
         { path: 'template', redirect: '/app/admin/template' },
         { path: 'three-member', redirect: '/app/admin/three-member' },
-        { path: 'unit', redirect: '/app/admin/unit' },
         { path: 'view', redirect: '/app/admin/view' },
       ],
     },
@@ -596,7 +533,6 @@ const router = createRouter({
       component: OAuthCallback,
       meta: { requiresAuth: false },
     },
-    { path: '/sso', name: 'SSO', component: () => import('./views/SSO.vue'), meta: { requiresAuth: false } },
     { path: '/:pathMatch(.*)*', redirect: '/login' },
   ],
 })
@@ -607,6 +543,13 @@ router.beforeEach(async (to) => {
     await session.init()
     if (!session.isAuthenticated && to.name !== 'Login' && !to.path.startsWith('/oauth')) {
       return { name: 'Login', query: { redirect: to.fullPath } }
+    }
+    // 管理区仅向明确拥有 admin 角色的登录用户开放（后端 auth_role.name='admin'）。
+    // fail-safe：whoami 返回的 roleList 由 SDK 映射为 roles，未明确授权者回工作台，不硬拒为登录页。
+    if (to.path.startsWith('/app/admin')) {
+      const roles = session.state.user?.roles ?? []
+      const isAdmin = roles.some((role) => role.toLowerCase() === 'admin')
+      if (!isAdmin) return { name: 'Dashboard' }
     }
   }
 })

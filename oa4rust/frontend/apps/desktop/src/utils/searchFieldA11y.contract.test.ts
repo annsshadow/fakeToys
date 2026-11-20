@@ -111,20 +111,20 @@ describe('搜索输入框可访问名称（R217 / WCAG 4.1.2、3.3.2）', () => 
     expect(later.hasAttribute('aria-label')).toBe(false)
   })
 
-  it('真实视图确有 placeholder-only 搜索框，增强后可被读屏命名', async () => {
+  it('真实视图的搜索框已有读屏名称，增强器保留作者命名', async () => {
     const here = path.dirname(fileURLToPath(import.meta.url))
     const frontendRoot = path.resolve(here, '../../../..')
-    const ann = readFileSync(path.join(frontendRoot, 'apps/desktop/src/views/AnnApp.vue'), 'utf8')
     const bbs = readFileSync(path.join(frontendRoot, 'apps/desktop/src/views/BBSForum.vue'), 'utf8')
 
-    // 缺口真实存在于用户看到的源码：搜索框只有 placeholder，没有任何可访问名称。
-    expect(tagWithPlaceholder(ann, '搜索标题 / 分类...')).not.toContain('aria-label')
-    expect(tagWithPlaceholder(bbs, '搜索帖子...')).not.toContain('aria-label')
+    // R297 BBSForum 业务化后，搜索框已自带 aria-label，不再依赖 placeholder-only 兜底。
+    const tag = tagWithPlaceholder(bbs, '搜索帖子标题或内容…')
+    expect(tag).toContain('aria-label="搜索帖子"')
 
-    // 用与真实视图等价的 DOM 验证增强效果。
-    const real = searchInput('搜索帖子...')
+    // 增强器不得覆盖作者已有的 aria-label。
+    const real = searchInput('搜索帖子标题或内容…')
+    real.setAttribute('aria-label', '搜索帖子')
     dispose = installSearchFieldA11y(document.body)
     await flush()
-    expect(real.getAttribute('aria-label')).toBe('搜索帖子...')
+    expect(real.getAttribute('aria-label')).toBe('搜索帖子')
   })
 })

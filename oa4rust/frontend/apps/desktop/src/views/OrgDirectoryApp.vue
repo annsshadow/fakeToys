@@ -2,70 +2,84 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dir-view">
-    <div class="view-header glass-card">
+  <div class="dir-view" data-testid="org-directory-business-view">
+    <header class="view-header glass-card" data-testid="org-directory-header">
       <h1>组织通讯录</h1>
-      <p class="subtitle">organization/person/unit/identity/group/role — 通讯录查询与成员管理</p>
-    </div>
-    <div class="tabs glass-card">
-      <button v-for="t in tabs" :key="t.key" class="tab-btn" :class="{ on: tab === t.key }" @click="tab = t.key">
-        {{ t.label }}
-      </button>
-    </div>
-    <div class="panel glass-card">
-      <div class="panel-head">
-        <span class="hint">{{ tabHint }}</span>
-        <button class="run-btn" :disabled="busy" @click="runCurrentTab">{{ busy ? '查询中…' : '▶ 查询本页' }}</button>
-      </div>
-      <div v-if="rows.length" class="result-meta">命中 {{ rows.length }} 行 · 最近动作 {{ lastAction }}</div>
-      <!-- 人员页：服务端分页（后端已 clamp page/size，并返回 count）-->
-      <div v-if="tab === 'person'" class="pager-bar">
-        <button class="run-btn" :disabled="busy" @click="loadPersonFilter">按页查询人员</button>
-        <button class="page-btn" :disabled="busy || personPage <= 1" @click="personFilterPage(-1)">上一页</button>
-        <span class="result-meta">第 {{ personPage }} / {{ personPageTotalPages }} 页 · 共 {{ personCount }} 人</span>
-        <button class="page-btn" :disabled="busy || personPage >= personPageTotalPages" @click="personFilterPage(1)">下一页</button>
-      </div>
-      <div class="table-wrap">
-        <table v-if="rows.length" class="data-table">
-          <thead>
-            <tr>
-              <th v-for="k in columns" :key="k">{{ k }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(r, i) in rows.slice(0, 60)" :key="i">
-              <td v-for="k in columns" :key="k" class="cell">{{ fmt(r[k]) }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-else class="empty">点击「查询本页」执行当前页全部真实查询（逐条只读，失败单独提示）</div>
-      </div>
-    </div>
-    <div class="panel glass-card" v-if="tab === 'manage'">
-      <div class="panel-head"><span class="hint">成员/属性管理（写动作，admin 门禁，逐项确认）</span></div>
-      <div class="manage-row">
-        <button class="run-btn" @click="manage('groupAdd')">群组加人</button>
-        <button class="run-btn" @click="manage('groupRemove')">群组移除</button>
-        <button class="run-btn" @click="manage('dutyUpdate')">职务更新成员</button>
-        <button class="run-btn" @click="manage('dutyUpdatePost')">职务更新(POST)</button>
-        <button class="run-btn" @click="manage('personAttr')">人员属性保存</button>
-        <button class="run-btn" @click="manage('unitAttr')">单位属性保存</button>
-      </div>
-    </div>
+      <p class="subtitle" data-testid="org-directory-subtitle">查找同事、浏览部门结构，快速定位组织内的联系人</p>
+    </header>
 
-    <div class="panel glass-card" v-if="tab === 'auth'">
-      <div class="panel-head"><span class="hint">组织认证台 + 人员口令（会话/写动作，用户触发，逐项确认）</span></div>
-      <div class="manage-row">
-        <button class="run-btn" @click="orgAuth('orgLogin')">组织登录</button>
-        <button class="run-btn" @click="orgAuth('orgLogout')">组织登出</button>
-        <button class="run-btn" @click="orgAuth('orgWho')">当前用户</button>
-        <button class="run-btn" @click="orgAuth('orgSafeLogout')">全设备登出</button>
-        <button class="run-btn" @click="orgAuth('orgSwitchUser')">切换用户</button>
-        <button class="run-btn" @click="orgAuth('orgTwoFactorLogin')">两步验证登录</button>
-        <button class="run-btn" @click="orgAuth('personResetPwd')">重置人员口令</button>
-        <button class="run-btn" @click="orgAuth('personPwdExpired')">设口令有效期</button>
-        <button class="run-btn" @click="orgAuth('personCheckPwd')">校验人员口令</button>
+    <section class="search-section glass-card" data-testid="org-search-section">
+      <div class="panel-header">
+        <h2>人员搜索</h2>
+        <span class="hint">按姓名、部门或工号查找同事</span>
       </div>
+      <form class="search-form" data-testid="org-search-form" @submit.prevent="loadPersonFilter">
+        <input
+          ref="personSearch"
+          type="search"
+          class="search-input"
+          placeholder="输入姓名、部门或工号"
+          aria-label="搜索人员"
+          data-testid="org-search-input"
+          @input="lastAction = $event.target.value"
+        />
+        <button type="submit" class="run-btn" :disabled="busy" data-testid="org-search-button">
+          {{ busy ? '查询中…' : '搜索人员' }}
+        </button>
+      </form>
+    </section>
+
+    <div class="directory-grid">
+      <section class="tree-section glass-card" data-testid="org-tree-section">
+        <div class="panel-header">
+          <h2>组织架构</h2>
+          <span class="hint">点击部门筛选人员</span>
+        </div>
+        <ul class="org-tree" data-testid="org-department-tree">
+          <li class="tree-root">
+            <span class="tree-node">公司总部</span>
+            <ul>
+              <li v-for="dept in ['产品部', '研发部', '市场部', '人事行政部', '财务部']" :key="dept" class="tree-branch">
+                <button
+                  type="button"
+                  class="tree-node"
+                  data-testid="org-department-node"
+                  @click="$refs.personSearch.value = dept; lastAction = dept"
+                >
+                  {{ dept }}
+                </button>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+
+      <section class="person-section glass-card" data-testid="org-person-section">
+        <div class="panel-header">
+          <h2>人员列表</h2>
+          <button type="button" class="run-btn" :disabled="busy" data-testid="org-person-reload" @click="loadPersonFilter">加载名册</button>
+        </div>
+        <div class="result-meta" data-testid="org-person-meta">共 {{ personCount }} 人 · 第 {{ personPage }} / {{ personPageTotalPages }} 页</div>
+        <ul class="person-list" data-testid="org-person-list">
+          <li
+            v-for="(r, i) in rows.filter(row => !($refs.personSearch?.value || '').trim() || JSON.stringify(row).toLowerCase().includes(($refs.personSearch?.value || '').trim().toLowerCase())).slice(0, 20)"
+            :key="i"
+            class="person-item"
+          >
+            <span class="person-avatar">{{ fmt(r.name ?? r.unique ?? r.credential ?? '') }}</span>
+            <span class="person-info">
+              <span class="person-name">{{ fmt(r.name ?? r.unique ?? r.credential ?? '') }}</span>
+              <span class="person-dept">{{ fmt(r.unitName ?? r.unit ?? r.department ?? '') }}</span>
+            </span>
+            <span class="person-contact">{{ fmt(r.phone ?? r.email ?? '') }}</span>
+          </li>
+        </ul>
+        <div v-if="rows.length === 0" class="empty" data-testid="org-person-empty">暂无人员数据，请先搜索或加载名册</div>
+        <div class="pager-bar" data-testid="org-person-pager">
+          <button type="button" class="page-btn" :disabled="busy || personPage <= 1" @click="personFilterPage(-1)">上一页</button>
+          <button type="button" class="page-btn" :disabled="busy || personPage >= personPageTotalPages" @click="personFilterPage(1)">下一页</button>
+        </div>
+      </section>
     </div>
   </div>
 </template>
