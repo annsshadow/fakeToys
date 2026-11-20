@@ -4147,3 +4147,14 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：实读 status=completed/verdict=pass/findings=0；四份 gitignored evidence.json 均标注 Playwright Chromium headless、not a physical device，dr06 rawTitle 全业务名、dr07 h1Count=1、bbs 两份回显 PASS 与评审结论一致。R301 实质升级链解锁。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 207. R301 第二轮缺陷收敛审计（t18，2026-11-21）
+- 交付（qa-e2e，attempt bc277913，commit 16f2b7cad，精确 1 文档 58 行 docs/ops/oa4rust-r301-convergence-audit.md，HEAD=远端追踪一致）：用当前测试服产物 index-iaQwn-FZ.js 全量重跑真浏览器回归——PC 13/13 捕获、H5 14/14 捕获，均真实 UI 登录、截图+evidence 落 gitignored 目录（非物理真机）。t3/C1 主要 P0（BAM data undefined、考勤硬编码、PC 日历 TDZ、H5 日历信封、H5 bbs/search/mine 超时）与工作台待办同源、端点调试、UUID 可读化均收敛；PC 校验 passed=false 唯一因 U-1。
+- 唯一未收敛 U-1：PC /app/org 组织树 Loading 常驻（4/4 刷新复现）+ 偶发 GET /api/organization/assemble/control/group/list/like 400。队长源码复核坐实根因方向：OrgDirectoryApp.vue:185/201 的 withTimeout 只包裹名册请求，:403 部门树 `api.get('/api/departments/tree')` 与组树请求无超时/错误兜底；t28 bd7031a9a 只修名册，未覆盖组织树。回流下一轮 test-first RED→GREEN 输入（加超时+catch 持久错误态+重试+finally busy 复位，核对 400 参数）。
+- 队长独立复核（不采信自述）：git show --stat 精确 1 文档、实读 58 行，测试服用 <YOUR_TEST_DOMAIN> 占位、口令运行期读取不回显、截图标注本地 headless 非物理真机；grep 确认 withTimeout 仅 185/201、:403 裸 api.get，与审计根因一致。审计只改文档未碰队友并行 M 文件。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 208. R301 框架层实质升级：命令面板焦点陷阱（t12，2026-11-21）
+- 交付（shell-eng，commit 2d03085e9，精确 4 文件 215+/1-）：新增 packages/ui/src/components/focusTrap.ts（Tab/Shift+Tab 面板内循环、关闭归还触发者焦点、空面板 tabindex=-1 兜底）+ AppShell.vue 集成（ref=commandPaletteRoot、打开安装陷阱、Esc/导航/卸载 release）+ AppShell.focusTrap.contract.test.ts（117 行）+ 文档 oa4rust/docs/ops/oa4rust-pc-focus-trap-r301-t12.md（23 行）。test-first RED→GREEN，ui 包 11 文件 60 契约通过、typecheck/build 通过；测试服 Playwright Chromium headless 真浏览器验证打开后焦点在面板内、首项 Shift+Tab 循环末项、末项 Tab 循环首项、Esc 归还焦点、输入「通讯录」回车真实跳转 /app/directory，3 PNG+evidence.json 落 gitignored oa4rust/test-results/r301-t12-focus-trap/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认 commandPaletteRoot ref 与 installFocusTrap/release 集成；定点复跑 focusTrap 契约 6/6 passed（PIPE=0）、oa4rust 全 workspace typecheck EXIT=0；实读文档 <YOUR_TEST_DOMAIN> 占位、证据标注 Playwright Chromium headless/not a physical device 与焦点循环检查项。HEAD 已含该提交。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
