@@ -4091,6 +4091,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认两页空态 CTA 使用 --ai-gradient-brand、复用既有函数；定点复跑 FirstScreenData.contract.test.ts 4/4 passed（exit 0）；实读文档前 13 行确认真值纪律（本地渲染非物理真机、占位域名）。commit message 自述 typecheck/build exit 0、原子部署+真 Chromium 五页复验 ctaGreen={file:true,note:true,noLongLoading:true,noErrorText:true}，证据 gitignored oa4rust/test-results/r34-firstscreen/。全量 views 套件 11 个失败文件系队友并行未提交改动、与本任务四文件无重叠，已如实记录。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 197. R300 P1 修复：PC 考勤统计硬编码改真实派生（t31，2026-11-21）
+- 交付（qa-e2e，commit 13af398d0，精确 3 文件）：docs/ops/oa4rust-attendance-stats-fix-r300.md（28 行）+ AttendanceApp.stats.contract.test.ts（71 行）+ AttendanceApp.vue（+32/-7，保留队友副标题改动）。stats 由 deriveAttendanceStats(records.value) 按『人员×日期』去重派生、空明细归零，替掉固定 45/42/3/2；test-first RED 4 failed/1 passed→GREEN，2 文件/9 测试，typecheck/build EXIT=0。
+- 队长独立复核（不采信自述）：git show --stat 精确 3 文件、git show diff 确认 stats 改为 deriveAttendanceStats 且副标题为 t27 队友改动保留；定点复跑 AttendanceApp.stats.contract.test.ts 5/5 passed（exit 0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、口令运行时读取不回显、非物理真机。commit message 自述原子部署 STAMP=r31x-20261121-0350、远程 index-BM6UG1wT.js active、真 Chromium 真 UI 登录+月份切换 match=true/zeroOk=true/apiBadCount=0/pass=true，证据 gitignored oa4rust/test-results/r31x-attendance-verify/（2 PNG+evidence）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
