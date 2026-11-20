@@ -4178,3 +4178,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 6 文件；定点复跑两份契约 9/9 passed（PIPE=0，含全部 13 用例中桌面侧两份可执行集）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注；evidence.json source 标注 not a physical device；HEAD=TRACK=6be5fc649，暂存区纯净。符合 m00064『数据不足走真实 UI 流程补、不造静态假数据』。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 213. R301 管理区与系统域实质升级（t16 / C7，2026-11-21）
+- 交付（page-work，commit 2c28335df，精确 5 文件 249+/32-）：oa4rust/docs/ops/oa4rust-c301c7-admin-system-upgrade-r301.md（33 行）+ AdminTable.vue（标准/紧凑密度切换 data-testid=admin-table-density、admin-table--compact）+ RoleManager.vue（成员权限可视化弹窗、Flag 可读标识、空态新建 CTA）+ ThreeMemberApp.vue（单位/状态去技术化徽标+下拉）+ AdminSystemUpgrade.C301.contract.test.ts（76 行）。契约 RED 4 failed/1 passed→GREEN 5/5，目标回归 21/21、typecheck/build 通过；测试服原子部署 + Playwright Chromium headless 真浏览器三页流程 PASS、0 pageerror，6 张 1440×900 截图+evidence.json 落 gitignored oa4rust/test-results/r301-c301c7/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 5 文件；定点复跑 AdminSystemUpgrade.C301.contract.test.ts 5/5 passed（PIPE=0，首次误用不存在路径 AdminZone.r301C7.contract.test.ts 报 No test files found，改用 commit stat 中真实路径）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注；evidence.json source 标注 not a physical device；HEAD=TRACK=2c28335df，暂存区纯净。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
