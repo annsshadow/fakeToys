@@ -2,14 +2,14 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>笔记管理</h1>
-        </div>
+  <div class="crud-view modern-page ai-panel">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <div class="hero-copy">
+        <h1 class="ai-gradient-text">笔记管理</h1><p class="subtitle">沉淀团队知识与待办线索</p>
+      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
-    <div class="content-panel glass-card">
+    <div class="content-panel glass-card modern-section modern-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 内容..." class="search-input" />
@@ -28,7 +28,7 @@
           <tr v-for="item in filtered" :key="item.id">
             <td>{{ item.title||'—' }}</td>
             <td class="desc-cell">{{ item.content||'—' }}</td>
-            <td class="mono">{{ item.personId||'—' }}</td>
+            <td class="mono">{{ item.personName || '团队成员' }}</td>
             <td>{{ fmtTime(item.updateTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
@@ -176,7 +176,12 @@ function fmtTime(t?: string) {
 }
 </script>
 <style scoped>
-.crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.crud-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary,.btn-save{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.skel{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}

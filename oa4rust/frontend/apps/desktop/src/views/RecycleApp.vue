@@ -2,12 +2,12 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view recycle-view" data-testid="recycle-business-view">
-    <div class="view-header glass-card recycle-header" data-testid="recycle-header">
-      <h1>回收站</h1>
+  <div class="mod-view recycle-view modern-page ai-panel" data-testid="recycle-business-view">
+    <div class="view-header glass-card recycle-header modern-hero ai-panel" data-testid="recycle-header">
+      <h1 class="ai-gradient-text">回收站</h1>
       <p class="subtitle">已删除项目的恢复与永久清理</p>
     </div>
-    <div class="content-panel glass-card" data-testid="recycle-content">
+    <div class="content-panel glass-card modern-section modern-card" data-testid="recycle-content">
       <section class="recycle-stats" data-testid="recycle-stats">
         <h2 class="section-title">回收概览</h2>
         <div class="stats-row">
@@ -31,13 +31,13 @@
         <div v-else class="item-table">
           <div class="table-header">
             <span class="col-name">名称</span>
-            <span class="col-id">ID</span>
+            <span class="col-id">来源</span>
             <span class="col-date">删除时间</span>
             <span class="col-actions">操作</span>
           </div>
           <div v-for="item in items" :key="item.id" class="table-row glass-card">
-            <span class="col-name">{{ item.name || item.title || item.fileName || '未知项目' }}</span>
-            <span class="col-id font-mono">{{ item.id?.slice(0,8) }}...</span>
+            <span class="col-name">{{ item.name || item.title || item.fileName || '未命名项目' }}</span>
+            <span class="col-id">已删除项目</span>
             <span class="col-date">{{ formatDate(item.deletedAt || item.deleteTime) }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="resume(item)">恢复</button>
@@ -148,7 +148,14 @@ loadItems()
 </script>
 
 <style scoped>
-.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.mod-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.btn-danger{transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.btn-danger:hover{transform:translateY(-1px)}
+.skel{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}

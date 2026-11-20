@@ -2,10 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="file-view modern-page">
-    <header class="modern-hero">
+  <div class="file-view modern-page ai-panel">
+    <header class="modern-hero ai-panel">
       <div class="hero-copy">
-        <h1>文件管理</h1>
+        <h1 class="ai-gradient-text">文件管理</h1>
         <p class="subtitle">我的文件 · 共享 · 回收</p>
       </div>
       <span class="modern-chip hero-chip">FILES</span>
@@ -81,7 +81,7 @@
         </form>
         <ul class="item-list" data-testid="files-shared-list">
           <li v-for="item in sharedFiles" :key="item.id" class="item-body">
-            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="item-title">{{ item.name || '未命名文件' }}</span>
             <span class="muted">{{ formatFileSize(item.size) }}</span>
           </li>
         </ul>
@@ -95,7 +95,7 @@
         </form>
         <ul class="item-list" data-testid="files-recycle-list">
           <li v-for="item in recycleFiles" :key="item.id" class="item-body">
-            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="item-title">{{ item.name || '未命名文件' }}</span>
             <span class="muted">{{ fmtTime(item.updateTime) }}</span>
           </li>
         </ul>
@@ -1427,7 +1427,10 @@ async function loadFileTwin3() {
 <style scoped>
 /* Layout/geometry layered on shared ModernUI classes. */
 .file-view.modern-page { display: flex; flex-direction: column; gap: 16px }
-.modern-hero { display: flex; align-items: center; justify-content: space-between }
+.modern-hero { display: flex; align-items: center; justify-content: space-between; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border) }
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .hero-copy { display: flex; flex-direction: column }
 .modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
 .file-toolbar { display: flex; justify-content: flex-end }

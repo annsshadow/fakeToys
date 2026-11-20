@@ -2,11 +2,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="bbs-view" data-testid="bbs-root">
+  <div class="bbs-view modern-page ai-panel" data-testid="bbs-root">
     <!-- 版块导航：顶部论坛标签与搜索，快速进入目标版块 -->
-    <header class="bbs-header glass-card" data-testid="bbs-section-nav">
+    <header class="bbs-header glass-card modern-hero ai-panel" data-testid="bbs-section-nav">
       <div class="header-left">
-        <h1 data-testid="bbs-title">团队论坛</h1>
+        <h1 class="ai-gradient-text" data-testid="bbs-title">团队论坛</h1>
         <p class="subtitle" data-testid="bbs-subtitle">浏览版块、参与讨论、分享经验</p>
         <nav class="forum-tabs" aria-label="论坛栏目" data-testid="bbs-forum-tabs">
           <button v-for="tab in tabs" :key="tab.key" class="tab-btn"
@@ -58,7 +58,7 @@
     </aside>
 
     <!-- 主题列表：帖子卡片、子标签、分页 -->
-    <main class="bbs-main glass-card" data-testid="bbs-topic-list">
+    <main class="bbs-main glass-card modern-card" data-testid="bbs-topic-list">
       <div class="list-header">
         <h2 data-testid="bbs-topic-list-title">主题列表</h2>
         <span class="section-crumb" v-if="selectedSection" data-testid="bbs-section-crumb">当前版块：{{ selectedSection.name }}</span>
@@ -219,7 +219,7 @@
         <div v-else class="modal-body">
           <div class="detail-meta">
             <span>🏷️ {{ sectionInfo.name || '—' }}</span>
-            <span>🆔 {{ sectionInfo.id }}</span>
+            <span>版块详情</span>
           </div>
           <div class="form-group"><label>子版块</label><div>{{ sectionInfo.subCount }} 个</div></div>
           <div class="form-group"><label>发帖权限</label><div>{{ sectionInfo.canPublish }}</div></div>
@@ -1333,6 +1333,12 @@ const api_control_list_top_720_data = ref<any[]>([])
 
 <style scoped>
 .bbs-view { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+.bbs-header { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border) }
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.topic-avatar{background:var(--ai-gradient-brand)}
+.new-topic-btn{transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.new-topic-btn:hover{transform:translateY(-1px)}
 
 .bbs-header {
   display: flex; align-items: center; justify-content: space-between;

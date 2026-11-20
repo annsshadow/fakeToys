@@ -2,9 +2,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dash-view">
-    <div class="view-header glass-card">
-      <div><h1>业务活动监控</h1></div>
+  <div class="dash-view modern-page ai-panel">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <div class="hero-copy"><h1 class="ai-gradient-text">业务活动监控</h1><p class="subtitle">流程活动与状态趋势</p></div>
       <span class="hdr-a">
       <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="bam-endpoint-fold">
         <template #group-read>
@@ -41,13 +41,13 @@
       </span>
     </div>
     <div v-if="periodText" class="period-note">{{ periodText }}</div>
-    <div class="stats-grid glass-card">
+    <div class="stats-grid glass-card modern-grid">
       <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.total }}</div><div class="stat-label">总活动</div></div>
       <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.active }}</div><div class="stat-label">活跃中</div></div>
       <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.completed }}</div><div class="stat-label">已完成</div></div>
       <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.failed }}</div><div class="stat-label">失败</div></div>
     </div>
-    <div class="content-panel glass-card">
+    <div class="content-panel glass-card modern-section modern-card">
       <div class="panel-title">最近活动</div>
       <ListLoadError v-if="loadError" mode="banner" :message="loadError" @retry="reload" />
       <div v-if="loading" class="loading-state">加载中...</div>
@@ -611,13 +611,12 @@ const { isError, error } = useQuery({
       const pendingTask = d.pendingTask ?? 0
       const processingTask = d.processingTask ?? 0
       const expiredTask = d.expiredTask ?? 0
-      stats.value = {
-        total: totalWork + totalTask,
-        active: pendingTask + processingTask,
-        completed: completedWork,
-        failed: expiredTask,
-      }
+      const nextStats = { total: totalWork + totalTask, active: pendingTask + processingTask, completed: completedWork, failed: expiredTask }
+      stats.value = nextStats
       events.value = []
+      // TanStack Query 要求 queryFn 返回非 undefined，否则会把 queryKey 与底层消息拼成
+      // `data is undefined` 这类不可读错误；同时这里给出真实统计快照供缓存复用。
+      return { stats: nextStats, events: [] }
     } finally {
       loading.value = false
     }
@@ -648,7 +647,13 @@ function statusCls(s?: string) {
 }
 </script>
 <style scoped>
-.dash-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.dash-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.stat-card{border:1px solid var(--ai-glass-border);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.stat-card:hover{transform:translateY(-2px)}
 .view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
