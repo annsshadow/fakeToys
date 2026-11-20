@@ -4060,6 +4060,16 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 4 文件，HEAD=远端追踪=7355215c8，工作树并行未提交系 t24/t26/t27/t28 在途；独立定点复跑 calendar.envelope.contract.test.ts 3/3 passed（exit 0）；git show 确认 calendar.vue:164 改为 calendars.value=normalizeCalendarRows(cals.data)；实读文档用 /api/... 相对路径无真实域名、无口令回显；commit message 自述 typecheck/build/日历 5 files 22 tests 全绿、测试服原子部署+真 Chromium 390×844 真登录 3/3 次正常空态、0 pageerror、0 API 失败，证据落 gitignored oa4rust/test-results/r300-h5-calendar-fix/（本地渲染非物理真机）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 191. R300 P0 修复：PC 日历页 TDZ 崩溃（t24，2026-11-21）
+- 交付（shell-eng，commit 4a588e6fe，精确 3 文件）：docs/ops/oa4rust-pc-calendar-tdz-fix-r300.md（21 行）+ CalendarApp.tdz.contract.test.ts（166 行）+ CalendarApp.vue（+4/-1）；把 loadCalendars('my') 从 :324 移到 calListError 等 ref 声明之后，业务逻辑/接口/其他路由不变。真实编译 <script setup> 契约 RED 5 failed→GREEN 11 tests。
+- 队长独立复核：git show --stat 精确 3 文件、git show diff 确认调用下移到 calListError 声明后；定点复跑 CalendarApp 套件 3 files/11 tests passed（exit 0）；commit message 自述 typecheck/build/原子部署通过、真 Chromium headless 连续 3 次进入 /app/calendar 均 pageerror=[]、无『页面发生意外错误』、日历网格渲染，证据 gitignored oa4rust/test-results/r300-calendar-tdz-fix/（真实测试服非物理真机）；文档用 <YOUR_TEST_DOMAIN> 占位。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 192. R302 DR-02 修复：工作台待审批统计与待办同源（t26，2026-11-21）
+- 交付（page-core，commit 4eb6ba6b8，精确 3 文件）：oa4rust/docs/ops/oa4rust-r302-dr02-dashboard-consistency.md（50 行）+ Dashboard.dr02.contract.test.ts（37 行）+ Dashboard.vue（+9/-1）；待审批卡由 approvalCount 从分页待办同源派生，加载中/失败返回 null 显示占位而非 0；RED 2 failed→GREEN，Dashboard 套件 3 files/13 tests 通过。
+- 队长独立复核：git show --stat 精确 3 文件、git show diff 确认 value 改为 approvalCount.value 且 approvalCount 由 pendingItems.length 派生；定点复跑 Dashboard 套件 3 files/13 tests passed（exit 0）；commit message 自述 typecheck/build/原子部署通过、真浏览器统计卡 5=待办 5 条 statMatchesList=true，证据 gitignored oa4rust/test-results/r302-dr02/（非物理真机）；实读文档首段用 <YOUR_TEST_DOMAIN> 占位。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
