@@ -4227,3 +4227,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t46 合约修订（captain amend）：inScope 增 oa4rust/frontend/apps/desktop/src/views/w13-w14-closure.test.ts；outOfScope 移除该测试文件；objective/acceptance 改为『守卫 token 匹配 + manifest marker 同步，集合对称性不变量保持，断言不弱化』；verify 仍为该测试 GREEN。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 221. R304 t43 业务视图契约同步收官（2026-11-21）
+- 交付（page-core，commit 6c2240cb1，精确 6 文件 69+/12-）：oa4rust/docs/ops/oa4rust-r304-view-contract-sync.md（31 行）+ 5 契约测试（BusinessWork.aiStyle.B4/destructiveGuards/liveQueryItems/ModernBusinessB/ProcessFold），7 条过时断言语义等价同步、实现零改动。
+- 队长独立复核（不采信自述）：git show --stat 精确 6 文件；并行定点复跑 5 契约 5 files/29 tests 全 GREEN（exit 0）；逐条 diff 确认断言真且语义等价——h1=0 时须有 data-testid 的 h2 主标题、4 个破坏性动作逐函数校验 if(busy)/上锁/finally 复位、占位类+null 回退+错误态分支顺序、class 分项匹配、displayTitle 三等价形态；无 expect(true)/跳过；文档 <YOUR_TEST_DOMAIN> 占位、evidence.json 标注 not a physical device、5 页真实渲染 0 pageerror。工作树 M/?? 系 t42 在途文件、非本任务遗留。evidence_note 已 append。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
