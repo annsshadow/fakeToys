@@ -4129,6 +4129,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 新发现遗留项（非 t36 范围，队长源码复核坐实）：同一 subject.rs:104-119 GET /api/bbs/subject/list/{sectionId} 的 subject::list 仍 SELECT bbs_subject_info（旧表），与已改写的 create 及 u2 列表读 x_bbs_topic 不一致，版块筛选看不到新帖；默认「全部」只列 is_top=true 属既有语义。将另开 test-first 修复任务（t40）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 204. R303 DR-07-R 部署页标题层级与管理页 B5 标记修复（t38，2026-11-21）
+- 交付（page-work，commit a8cc1a56c，精确 7 文件，115+/7-）：docs/ops/oa4rust-r303-dr07-admin-heading.md（32 行）+ DeploymentApp.vue（h2→唯一 h1、描述→p、inject ADMIN_LAYOUT_HIDE_TITLE 隐藏 shell 重复 h1）+ CmsIndexApp.vue/ProcessManagerApp.vue（补 modern-page/ai-page-b5/ai-panel）+ 三份契约（DeploymentApp.heading/AdminZone.modernPage/R303Dr07.contract.test.ts）。契约 RED（2 failed/4 passed）→GREEN 6/6，typecheck/build 通过；测试服原子部署 index-Br4G57bM.js，Playwright Chromium headless 三页 h1Count=1/0 pageerror/无端点调试侵入，截图+evidence.json 落 gitignored oa4rust/test-results/r303-dr07/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 7 文件、git show diff 确认 DeploymentApp h1/p 与 ADMIN_LAYOUT_HIDE_TITLE、两管理页 B5 标记；定点复跑 R303Dr07 3/3 + DeploymentApp.heading/AdminZone.modernPage 6/6 passed（exit0）；实读 evidence.json 标注 Playwright Chromium headless、not a physical device、三页 h1Count=1；入库文档用 <YOUR_TEST_DOMAIN> 占位无真值（evidence.json 为 gitignored 本地证据，含测试服地址不入仓，合规）。HEAD=远端追踪=a8cc1a56c。t38 关闭 t30 的 R302-DR07-R finding。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
