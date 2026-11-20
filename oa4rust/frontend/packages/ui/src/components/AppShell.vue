@@ -68,7 +68,7 @@
           <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
           </button>
-          <div class="breadcrumb">{{ currentTitle }}</div>
+          <div v-if="!isAdminArea" class="breadcrumb">{{ currentTitle }}</div>
         </div>
 
         <div class="topbar-center">
@@ -171,6 +171,9 @@ const isMobile = ref(false)
 const currentTitle = computed(() => {
   return (route.meta.title as string) || 'OA4Rust'
 })
+
+// R302：管理区（/app/admin/*）页名由 AdminLayout h1 单独承载，topbar 不再重复显示。
+const isAdminArea = computed(() => route.path.startsWith('/app/admin'))
 
 const user = computed(() => session.state.user ?? null)
 

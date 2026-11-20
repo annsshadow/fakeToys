@@ -61,3 +61,23 @@ describe('R300 管理页标题去重基座契约', () => {
     expect(forcedVisible, '不允许页面强制显示 AdminPageHeader 标题，避免与 AdminLayout h1 重复').toEqual([])
   })
 })
+
+describe('R302 系统管理区标题去重', () => {
+  const shell = readFileSync(
+    resolve(import.meta.dirname, '../../../../../packages/ui/src/components/AppShell.vue'),
+    'utf8',
+  )
+  const layout = readFileSync(resolve(import.meta.dirname, 'AdminLayout.vue'), 'utf8')
+
+  it('topbar currentTitle 在管理区路径下隐藏，员工页保留', () => {
+    expect(shell).toMatch(/<div[^>]*v-if="!isAdminArea"[^>]*class="breadcrumb"/)
+    expect(shell).toMatch(/isAdminArea/)
+    expect(shell).toMatch(/route\.path\.startsWith\('\/app\/admin'\)/)
+  })
+
+  it('AdminLayout 面包屑只到分组，不再重复末级页名', () => {
+    expect(layout).not.toMatch(/class="admin-breadcrumb-current"/)
+    expect(layout).toMatch(/admin-breadcrumb-group/)
+    expect(layout).toMatch(/<h1[^>]*class="admin-title"/)
+  })
+})

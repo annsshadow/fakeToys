@@ -211,9 +211,10 @@ async function doSearch() {
         const params: Record<string, string> = {}
         if (keyword.value.trim()) params.keyword = keyword.value
         if (tab.value === 'draft') params.type = 'draft'
-        // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
-        const r = await api.post('/api/document/list/document', params, { signal })
-        items.value = r.data?.list ?? r.data ?? []
+        // R302：管理视图列表走 filter/list/{page}/size/{size}/manager（管理员全量口径）。
+        // 旧端点 /document/list/document 需要 ids 参数，空 body 调用会 400 "ids required"。
+        const r: any = await api.post('/api/document/filter/list/1/size/50/manager', params, { signal })
+        items.value = (r.data?.list ?? r.data ?? []) as DocItem[]
       },
       {
         onSettled: () => {

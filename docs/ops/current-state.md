@@ -3962,3 +3962,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；远程 web/index.html 已服务新 hash index-DdjsuSpC.js。
 - 偏好：用户要求「每次改完一轮都要部署」，已记入 Hindsight 记忆（doc--1c02f833c3c055da8fec31d1e9f9b22fc5f7c92473870cf7e00bf57f945b02c8）；今后每轮收官默认部署，高风险变更除外。
 - 真值纪律：口令仅部署期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。
+
+## 177. 系统管理区页标题三处重复消除 + 文档列表端点修复 R302（2026-11-21）
+- 背景：用户截图指出从 CMS 列管理往下所有系统管理菜单顶部标题重复（topbar 页名 + 面包屑末级 + h1 三处同文字），且文档管理加载失败 HTTP 400。
+- 根因：topbar 页名来自 AppShell currentTitle（route.meta.title），管理区页面同时还有 AdminLayout 面包屑末级页名与 h1，三处同源重复；文档列表 doSearch 调用 /api/document/list/document 需 ids 参数，空 body 返回 400 "ids required"。
+- 修复：AppShell 增 isAdminArea computed，管理区路径隐藏 topbar currentTitle（员工页保留）；AdminLayout 面包屑去掉末级页名，只保留「系统管理/分组」两级 + h1 唯一大标题；文档列表 doSearch 改用 /api/document/filter/list/1/size/50/manager（探测 200，管理员全量口径）。
+- 契约：新增 AdminTitleDedup.contract（2 例）+ DocumentListEndpoint.contract（3 例）RED→GREEN；更新 CmsAdminRestyle.contract 的 DocumentApp 端点期望。
+- 验证：全量 vitest 216 文件 / 1937 passed、typecheck 6 子项目、desktop build exit0（index-C8dcK0Oo.js）、scoped biome exit0、git diff --check 0；8901 新 dist 逐页 DOM：6 个管理页 topbar 隐藏 + 面包屑两级 + h1 唯一，员工页 topbar 保留；document 页 400 消除、截图目视达标。
+- 真值纪律：口令仅验证期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。

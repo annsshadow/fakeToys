@@ -25,7 +25,12 @@ const crudPages: CrudCase[] = [
   },
   {
     file: 'DocumentApp.vue',
-    endpoints: ['/api/document/list/document', '/api/document', '/api/document/${item.id}/commend', '/api/uuid/random'],
+    endpoints: [
+      '/api/document/filter/list/1/size/50/manager',
+      '/api/document',
+      '/api/document/${item.id}/commend',
+      '/api/uuid/random',
+    ],
   },
   {
     file: 'TemplateApp.vue',

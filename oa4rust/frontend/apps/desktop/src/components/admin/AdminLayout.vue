@@ -33,8 +33,7 @@
           <router-link to="/app/admin/control-panel" class="admin-breadcrumb-link">系统管理</router-link>
           <span class="admin-breadcrumb-sep">/</span>
           <span class="admin-breadcrumb-group">{{ currentGroupLabel }}</span>
-          <span class="admin-breadcrumb-sep">/</span>
-          <span class="admin-breadcrumb-current">{{ pageTitle }}</span>
+
         </div>
         <h1 v-if="!hideTitle" class="admin-title">{{ pageTitle }}</h1>
       </header>
