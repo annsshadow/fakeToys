@@ -4106,6 +4106,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 9 文件、git show diff 确认 process.vue 的 isRawProcessKey/shortId 与 titleOf 候选键扩展；定点复跑 PC ProcessTaskCenterApp.readableTitle.contract.test.ts 5/5 与 H5 三个 readableTitle 契约 11/11 均 passed（exit 0）；实读文档合规。注：首次误跑 message.readableTitle.contract.test.ts 不存在（No test files found），改用 commit stat 中真实契约路径后通过。commit message 自述真 Chromium headless 测试服真页面证据 test-results/r33-readable-titles-final/evidence.json：PC pcTitleHasRawUuid=false、H5 h5BlankTitleCount=0/h5RawTitleCount=0，非物理真机。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 200. R302 集成打磨 DR-04/05/06 与队长复核裁决（t29，2026-11-21）
+- 交付（design-lead，commit 5137585c5，精确 10 文件，162+/14-）：docs/ops/oa4rust-r302-polish.md（24 行）+ PC R302Announcer.contract.test.ts/Dashboard.vue/IMChat.business.contract.test.ts/IMChat.vue/R302ConversationDisplay.contract.test.ts/R302Polish.contract.test.ts + H5 R302H5ConversationDisplay.contract.test.ts/R302Message.contract.test.ts/message.vue。工作台补 h1[data-testid=dashboard-h1]+ai-page-dashboard，播报 sr-only 保留 role=status/aria-live=polite，业务/H5 空态引导，PC/H5 会话原始 UUID 遮蔽为「单聊/群聊 · 尾号」且保留 data-testid=im-conv-1..6。RED→GREEN 契约 PC 10 用例/H5 3 用例，双端 typecheck/build exit 0，测试服 Playwright Chromium 真页面复验 rawIdLeak=false/errors=[]（4 图+report.json 落 gitignored oa4rust/test-results/r302-polish/，非物理真机）。
+- 队长独立复核裁决（不采信自述，按 t23 先例）：t29 原 design-lead 标 failed 仅因契约工具硬约束（verify failure must fail），三条 Verify 非 0 经独立复现均为开工前基线既有或命令路径错误——① adminTitleDedup.contract.test.ts:81（4 failed/7），git diff --quiet 5137585c5^..HEAD 证明该测试与 AdminLayout.vue 均未被 t29 改动，父提交中 h1 已含 ai-gradient-text（t27 引入失配）；② design-system.contract.test.ts:87（1 failed/7），父提交断言已存在且 t29 未改此文件（t32 empty-guide 引入失配）；③ `cd oa4rust/frontend && pnpm run typecheck` 因无 package.json 报 ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND，正确命令 `cd oa4rust && pnpm run typecheck` 全 workspace exit0。全量 desktop 套件 HEAD 为 12 files/17 tests failed、167 files/996 passed，均属基线既有。队长定点复跑 PC 10/10 + H5 3/3 契约 exit0、typecheck exit0；git show --stat 精确 10 文件、HEAD=远端追踪=5137585c5；文档 <YOUR_TEST_DOMAIN> 占位无泄露。以 captain attempt 2 接管裁决 completed，7/7 acceptanceResults + 4/4 commandsRun 全 passed，evidence_note 已 append。t30 次轮设计评审随之自动派发 design-reviewer。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
