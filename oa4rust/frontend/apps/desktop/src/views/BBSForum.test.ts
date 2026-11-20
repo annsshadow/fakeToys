@@ -127,4 +127,12 @@ describe('BBSForum contracts', () => {
     expect(occupyIdx).toBeGreaterThan(confirmIdx)
     expect(resetIdx).toBeGreaterThan(occupyIdx)
   })
+
+  it('keeps section-filter call surface while backend reads the active topic table', () => {
+    // R303 版块筛选回显修复：前端 GET /api/bbs/subject/list/{sectionId} 调用面不变，
+    // 后端改为读 x_bbs_topic；该路由只回 authorId，前端仍归一到 author 供卡片展示。
+    expect(source).toContain('`/api/bbs/subject/list/${selectedSection.value.id}`')
+    expect(source).toContain('t.author as string | undefined')
+    expect(source).toContain('t.authorId')
+  })
 })

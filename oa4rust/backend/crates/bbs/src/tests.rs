@@ -162,4 +162,60 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
+
+    #[test]
+    fn test_subject_list_reads_active_bbs_topic_table() {
+        // R303 BBS 版块筛选回显缺陷回归：t36 已让 create 写入 x_bbs_topic，
+        // 若 list 仍读遗留表 bbs_subject_info，新帖按 section_id 筛选必然不可见。
+        let source = include_str!("subject.rs");
+        let create = &source[source
+            .find("pub async fn create(")
+            .expect("subject::create must exist")..];
+        let list = &source[source
+            .find("pub async fn list(")
+            .expect("subject::list must exist")..source
+                .find("pub async fn view(")
+                .expect("subject::view must exist")];
+        assert!(
+            create.contains("INSERT INTO x_bbs_topic"),
+            "create must write active table x_bbs_topic"
+        );
+        assert!(
+            list.contains("FROM x_bbs_topic"),
+            "GET /api/bbs/subject/list/{{sectionId}} must read active table x_bbs_topic"
+        );
+        assert!(
+            !list.contains("FROM bbs_subject_info"),
+            "subject::list must not read legacy bbs_subject_info"
+        );
+        assert!(
+            list.contains("section_id = $1"),
+            "subject::list must filter by section_id"
+        );
+        assert!(
+            list.contains("deleted_at IS NULL"),
+            "subject::list must exclude soft-deleted topics"
+        );
+        assert!(
+            list.contains("create_time::text"),
+            "subject::list must cast timestamp create_time to text; row.get::<String> on a timestamp column returns 500"
+        );
+        for column in ["id", "title", "author_id", "section_id", "create_time"] {
+            assert!(
+                list.contains(column),
+                "subject::list must map column {column}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_subject_list_casts_timestamp_to_text() {
+        // x_bbs_topic.create_time 是 timestamp without time zone；row.get::<Option<String>> 会在运行时触发 500。
+        let source = include_str!("subject.rs");
+        let list = &source[source.find("pub async fn list(").expect("subject::list must exist")..source.find("pub async fn view(").expect("subject::view must exist")];
+        assert!(
+            list.contains("create_time::text"),
+            "subject::list must cast timestamp create_time to text; row.get on a timestamp column returns 500"
+        );
+    }
 }

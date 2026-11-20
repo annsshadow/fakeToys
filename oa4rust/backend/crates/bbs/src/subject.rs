@@ -109,9 +109,12 @@ pub async fn list(
 
     let rows = client
         .query(
-            "SELECT id, title, author_id, section_id, reply_count, view_count, is_top, create_time \
-             FROM bbs_subject_info \
-             WHERE section_id = $1 AND disable = false \
+            // R303 BBS 版块筛选回显：create 已写 x_bbs_topic，list 必须读同一张现役表，
+            // 否则按 section_id 筛选看不到新帖。字段映射对齐 u2 列表，响应键保持不变。
+            "SELECT id, title, author_id, section_id, content, creator, forum_id, section_name, \
+             subject_type, reply_count, view_count, is_top, create_time::text \
+             FROM x_bbs_topic \
+             WHERE section_id = $1 AND deleted_at IS NULL \
              ORDER BY create_time DESC LIMIT 50",
             &[&section_id],
         )
