@@ -3991,3 +3991,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 交付（design-lead，commit 1ed295f29，精确 4 文件）：新增 packages/ui/src/theme/ai-tokens.css（--ai-* 双主题令牌：8px 栅格、靛蓝→青渐变、克制玻璃 blur(12px)、44px 命令面板、骨架屏 shimmer），经 packages/ui/src/index.ts 全局引入；新增 aiDesignTokens.contract.test.ts（7 例）；design-tokens.md 第 8 章记录对标（Linear/Vercel/Raycast/Notion）与 8px 宏观+4px 微观叠加决策。
 - 验证：契约 vitest 7/7、UI typecheck 0、desktop build ✓；测试服部署新产物 index-BqndLgqS.css、五路由冒烟全 200；真实 Chromium 登录截 4 页（Dashboard/组织/消息/管理）到 gitignored 的 oa4rust/test-results/r300-ai-tokens/，manifest 标注本地渲染、非物理真机。队长独立复核 commit 与 4 文件 stat、截图文件存在性一致。
 - 边界：令牌尚未被页面组件消费，本轮截图仅为基线视觉；后续 t4–t17 逐页接入。真值纪律：口令/私钥/真域名未入库，截图与临时脚本不入库。
+
+## 180. R300 B6 H5 视觉语言首轮对齐与测试服实测（2026-11-21）
+- 交付（mobile-eng，commit 32b7ec1b4，精确 22 文件）：19 路由页 + App.vue 全局样式接入桌面 R300 --ai-* 令牌（8px 栅格/靛蓝→青渐变/克制玻璃/骨架屏 shimmer），首页统计卡与登录主按钮挂 .ai-brand-fill；未改业务接口与状态流转；新增 ai-visual.contract.test.ts（7 例）与设计文档 h5-r300-visual-alignment.md。
+- 真 bug（test-first RED→GREEN）：uni-app scoped 规则 .stat-card[data-v] 特异性 (0,2,0) 压过普通 .ai-brand-fill (0,1,0)，渐变在 H5 不生效；改用 uni-page-body .ai-brand-fill.ai-brand-fill (0,2,1) 修复，DOM computed style 复验 backgroundImage 为 AI 渐变。
+- 验证：mobile 全量 61 文件 / 393 tests passed；H5 构建与测试服部署通过；真实 Chromium（390x844，isMobile/hasTouch）真实 UI 登录 + 19 路由逐页截图审计——audit.json loggedIn=true、BAD=0、API_FAILURES=0，manifest 声明真浏览器真实测试服、非物理真机、非静态假数据。证据在 gitignored 的 oa4rust/test-results/r300-h5-visual/（audit.json + 20 PNG）。
+- 队长独立复核：commit stat 22 文件、HEAD=远端追踪=32b7ec1b4、工作树干净；契约定点复跑 7/7；证据目录 22 文件与文档存在；确认 §179 台账提交 a24beb65d 为 HEAD 祖先，迭代链连续。非终态，按评审结论续作。
+- 真值纪律：账号口令仅运行时从凭据源读取，真域名/口令/会话数据不入库（证据目录 gitignored）。
