@@ -3970,3 +3970,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 契约：新增 AdminTitleDedup.contract（2 例）+ DocumentListEndpoint.contract（3 例）RED→GREEN；更新 CmsAdminRestyle.contract 的 DocumentApp 端点期望。
 - 验证：全量 vitest 216 文件 / 1937 passed、typecheck 6 子项目、desktop build exit0（index-C8dcK0Oo.js）、scoped biome exit0、git diff --check 0；8901 新 dist 逐页 DOM：6 个管理页 topbar 隐藏 + 面包屑两级 + h1 唯一，员工页 topbar 保留；document 页 400 消除、截图目视达标。
 - 真值纪律：口令仅验证期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。
+
+- 部署（2026-11-21 00:55）：部署源 commit 0fe6ea41a（R302 去重与文档 400 修复）；1372e7f7e..HEAD 的 backend/mobile diff=0，纯前端，后端与 H5 沿用现有产物。
+- 流程：重编 desktop dist（index-C8dcK0Oo.js，181 文件）→ 打包 web-r302.tgz（807719 字节）→ 远程备份 web.bak-r302-20261121-0055 → scp 上传 → tar 解包 web.new → 原子替换 web/ → systemctl restart oa4rust=active。
+- 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；线上服务新 hash index-C8dcK0Oo.js。
+- 线上 DOM 复验：6 个管理页（cms-column/appinfo/document/process-manager/role/control-panel）topbar 页名隐藏 + h1 唯一 + 无 /api 外露 + 无加载失败；员工页 /app/directory topbar「组织通讯录」保留。
