@@ -4118,6 +4118,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：源码级确认上述三处现象属实（Dashboard.vue:50 与 :228-229、IMChat.vue:294-310、DeploymentApp.vue:5-9、CmsIndexApp/ProcessManagerApp h2 标记），t30 以 needs_revision/failed 完成并带 2 findings 与 t10 C1 实测一致；评审依据均为 gitignored test-results/ 下测试服真浏览器 Playwright Chromium headless 截图/JSON（非物理真机）。按 t11 先例 needs_revision 不得作下游依赖，后续将新建次轮修复与评审并改接下游；≥1000 轮非完成态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 202. R303 DR-06-R 工作台待办与 IM 会话名可读性修复（t37，2026-11-21）
+- 交付（page-core，commit 0b394d247，精确 7 文件，238+/17-）：docs/ops/oa4rust-r303-dr06-readability.md（41 行）+ utils/processTitle.ts（共享 displayTodoTitle/foldRawKeySubtext）+ Dashboard.vue/Dashboard.todoTitle.contract.test.ts + IMChat.vue/IMChat.name.contract.test.ts + R303Dr06.contract.test.ts。工作台待办业务名优先、原始 work-… 键折叠副文本；IM 机器会话名改「单聊/群聊 N」稳定序号、摘要为真实 lastMessage。契约 RED→GREEN 7/7，typecheck/build exit0；测试服原子部署后 Playwright Chromium headless 真浏览器两页 UI 流程 rawTitleLeak={dashboard:false,im:false}、pageErrors=[]（5 待办主标题「运行闭环」、11 会话「单聊 N」），证据 test-results/r303-dr06/evidence.json + 2 张 PNG 落 gitignored（非物理真机）。文档 <YOUR_TEST_DOMAIN> 占位无真值。
+- 队长独立复核（不采信自述）：git show --stat 精确 7 文件、git show diff 确认 Dashboard.vue displayTodoTitle/foldRawKeySubtext 与 IMChat.vue 稳定序号逻辑；定点复跑 R303Dr06.contract.test.ts 3/3、Dashboard.todoTitle.contract.test.ts + IMChat.name.contract.test.ts 4/4 共 7/7 passed（exit0）；实读 evidence.json 标注 Playwright Chromium headless against deployed test server、not a physical device，rawTitle 数组为业务名「运行闭环」。HEAD=远端追踪=0b394d247；工作树并行变更系 t36 在途 BBS 文件，未触碰。t37 关闭 t30 的 R302-DR06-R finding。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
