@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="im-view" data-testid="im-root">
+  <div class="im-view ai-grid-2" data-testid="im-root">
     <!-- 会话列表：搜索与会话切换 -->
     <aside class="im-sidebar glass-card" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
       <div class="sidebar-header">
@@ -72,7 +72,7 @@
             <button class="load-more-retry" @click="loadFirstPage">重试</button>
           </div>
           <div v-else-if="messages.length === 0" class="empty-messages">
-            <p>开始对话吧 💬</p>
+            <p>当前会话还没有消息，先从常用语开始</p>
           </div>
           <div v-else class="message-records">
             <div v-for="msg in messages" :key="msg.id" class="message"
@@ -90,7 +90,7 @@
         </div>
 
         <!-- 消息输入框 -->
-        <form class="message-input" data-testid="im-message-composer" @submit.prevent="sendMessage">
+        <form class="message-input ai-panel" data-testid="im-message-composer" @submit.prevent="sendMessage">
           <button type="button" class="input-btn" title="表情" aria-label="表情">😊</button>
           <button type="button" class="input-btn" title="发送文件" aria-label="发送文件" @click="sendFileMessage">📎</button>
           <textarea v-model="inputText" @keydown.enter.ctrl="sendMessage"
@@ -1109,11 +1109,14 @@ async function loadImTwin() {
 </script>
 
 <style scoped>
-.im-view { display: flex; height: 100%; gap: 16px; }
+.im-view { display: flex; height: 100%; gap: var(--ai-grid-2); padding: var(--ai-grid-1); }
+.typing-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.typing-indicator::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ai-indigo); animation: ai-shimmer 1.2s var(--ai-ease-spring) infinite; }
 
 .im-sidebar {
   width: 300px; flex-shrink: 0; display: flex; flex-direction: column;
-  transition: all var(--transition-normal);
+  background: var(--ai-glass-bg); border-color: var(--ai-glass-border);
+  transition: all var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .im-sidebar.collapsed { width: 0; overflow: hidden; }
 
@@ -1152,7 +1155,7 @@ async function loadImTwin() {
 .conv-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary); }
 .conv-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: var(--ai-gradient-brand);
   color: white; display: flex; align-items: center; justify-content: center;
   font-weight: 600; font-size: 16px;
 }
@@ -1285,7 +1288,8 @@ async function loadImTwin() {
 
 .message-input {
   display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--ai-glass-border);
+  transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .input-btn {
   background: none; border: none; font-size: 20px; cursor: pointer;

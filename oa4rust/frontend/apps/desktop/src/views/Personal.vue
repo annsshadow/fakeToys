@@ -3,10 +3,10 @@
 
 <template>
   <div class="personal-view modern-page" data-testid="personal-business-view">
-    <header class="profile-header modern-hero" data-testid="personal-header">
+    <header class="profile-header modern-hero ai-panel" data-testid="personal-header">
       <div class="hero-copy">
         <h1>个人中心</h1>
-        <p class="subtitle">维护个人资料、账户安全与授权委托</p>
+        <p class="subtitle">完善资料，让协作更顺畅 · 维护个人资料、账户安全与授权委托</p>
       </div>
       <span class="modern-chip hero-chip">PROFILE</span>
     </header>
@@ -745,6 +745,11 @@ async function loadPersonalTwin2() {
 /* Layout/geometry layered on shared ModernUI classes. */
 .personal-view.modern-page { display: flex; flex-direction: column; gap: 16px }
 .modern-hero { display: flex; align-items: center; justify-content: space-between }
+.profile-header { background: var(--ai-gradient-surface); border-radius: var(--ai-cmd-radius); padding: var(--ai-grid-3); transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring) }
+.profile-header:hover { box-shadow: var(--ai-shadow-2) }
+.avatar-large { background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring) }
+.avatar-large:hover { transform: scale(1.04) }
+.hero-chip { background: var(--ai-gradient-brand); color: #fff }
 .hero-copy { display: flex; flex-direction: column }
 .modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
 .hero-chip { background: var(--color-primary); color: #000 }
@@ -761,7 +766,7 @@ async function loadPersonalTwin2() {
 .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .form-input{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px 12px;color:var(--text-primary);font-size:14px}
 .form-input:focus{outline:none;border-color:var(--color-primary)}
-.save-btn{padding:10px 24px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600;font-size:13px}
+.save-btn{padding:10px 24px;border-radius:var(--radius-md);border:none;background:var(--ai-gradient-brand);color:white;cursor:pointer;font-weight:600;font-size:13px;transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 .save-btn:disabled{opacity:.6;cursor:not-allowed}
 .error-msg{color:var(--color-error);font-size:13px;padding:8px 0}
 @media(max-width:768px){.profile-card{flex-direction:column;text-align:center}}

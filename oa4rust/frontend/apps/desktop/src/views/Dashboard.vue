@@ -3,7 +3,7 @@
 
 <template>
   <div class="dashboard" data-testid="dashboard-business-view">
-    <header class="welcome-bar glass-card" data-testid="dashboard-welcome">
+    <header class="welcome-bar glass-card ai-panel" data-testid="dashboard-welcome">
       <div class="welcome-text">
         <span class="greeting">早安，</span>
         <span class="user-name">{{ user?.name ?? '用户' }}</span>
@@ -22,7 +22,7 @@
     <div class="stats-grid" data-testid="dashboard-overview">
       <div v-for="s in stats" :key="s.label" class="stat-card glass-card" :style="{ '--glow': s.color }">
         <div class="stat-icon">{{ s.icon }}</div>
-        <div class="stat-value">{{ s.value ?? '—' }}</div>
+        <div class="stat-value" :class="{ 'stat-placeholder': s.value === null }">{{ s.value ?? null }}</div>
         <div class="stat-label">{{ s.label }}</div>
         <div class="stat-trend" :class="s.trendDir">{{ s.trendText }}</div>
       </div>
@@ -41,14 +41,15 @@
         <button type="button" class="retry-btn" data-testid="dashboard-todo-retry" @click="loadPending">重新加载待办</button>
       </div>
       <div v-else-if="pendingItems.length === 0" class="empty-state">
-        <p>🎉 暂无待办事项</p>
+        <p>暂无待办，去流程中心发起</p>
+        <router-link to="/app/process" class="empty-cta" data-testid="dashboard-todo-empty-cta">去发起流程</router-link>
       </div>
       <ul v-else class="item-list" data-testid="dashboard-todo-list">
         <li v-for="item in pendingItems" :key="item.id" class="pending-item">
           <div class="pending-icon">📋</div>
           <div class="pending-info">
             <div class="pending-title">{{ item.title || item.processName || '新审批' }}</div>
-            <div class="pending-meta">{{ item.appName || '未知应用' }} · {{ fmtTime(item.createTime) }}</div>
+            <div class="pending-meta">{{ item.appName || '' }}{{ item.appName && item.createTime ? ' · ' : '' }}{{ fmtTime(item.createTime) }}</div>
           </div>
           <button type="button" class="handle-btn" data-testid="dashboard-todo-handle" @click="navigateTo('/app/process')">去处理</button>
         </li>
@@ -264,7 +265,14 @@ const api_data_doc_386_data = ref<any[]>([])
 .welcome-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--space-5) var(--space-6);
+  background: var(--ai-gradient-surface);
+  border-radius: var(--ai-cmd-radius);
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
 }
+.welcome-bar:hover { transform: translateY(-1px); box-shadow: var(--ai-shadow-2); }
+.stat-placeholder { color: var(--text-muted); font-size: 22px; }
+.empty-cta { display: inline-block; margin-top: 8px; color: var(--color-primary); font-size: 12px; text-decoration: none; transition: color var(--ai-motion-fast) var(--ai-ease-spring); }
+.empty-cta:hover { color: var(--color-accent); }
 .greeting { font-size: 14px; color: var(--text-muted); }
 .user-name { font-size: 20px; font-weight: 700; color: var(--color-primary); margin: 0 8px; font-family: 'Orbitron', sans-serif; }
 .welcome-msg { font-size: 13px; color: var(--text-secondary); }
@@ -285,11 +293,14 @@ const api_data_doc_386_data = ref<any[]>([])
   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
 }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ai-grid-4); padding: var(--ai-grid-1) 0; }
 .stat-card {
   padding: var(--space-5); text-align: center; position: relative; overflow: hidden;
   border: 1px solid var(--border-subtle);
+  gap: var(--ai-grid-4);
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), border-color var(--ai-motion-fast) var(--ai-ease-spring);
 }
+.stat-card:hover { transform: translateY(-2px); border-color: var(--ai-glass-border); }
 .stat-card::before {
   content: ''; position: absolute; inset: 0;
   background: radial-gradient(circle at 50% 0%, var(--glow, transparent), transparent 70%);
@@ -343,7 +354,7 @@ const api_data_doc_386_data = ref<any[]>([])
 .error-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); background: var(--bg-elevated); border: 1px solid var(--color-error); border-radius: var(--radius-md); }
 .error-banner .error-text { margin: 0; }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
-.skeleton-row { height: 40px; border-radius: var(--radius-md); background: var(--bg-elevated); }
+.skeleton-row { height: 40px; border-radius: var(--radius-md); background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); background-size: 200% 100%; animation: ai-shimmer 1.6s var(--ai-ease-spring) infinite; }
 
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
