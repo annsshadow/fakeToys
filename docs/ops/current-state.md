@@ -4111,6 +4111,13 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核裁决（不采信自述，按 t23 先例）：t29 原 design-lead 标 failed 仅因契约工具硬约束（verify failure must fail），三条 Verify 非 0 经独立复现均为开工前基线既有或命令路径错误——① adminTitleDedup.contract.test.ts:81（4 failed/7），git diff --quiet 5137585c5^..HEAD 证明该测试与 AdminLayout.vue 均未被 t29 改动，父提交中 h1 已含 ai-gradient-text（t27 引入失配）；② design-system.contract.test.ts:87（1 failed/7），父提交断言已存在且 t29 未改此文件（t32 empty-guide 引入失配）；③ `cd oa4rust/frontend && pnpm run typecheck` 因无 package.json 报 ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND，正确命令 `cd oa4rust && pnpm run typecheck` 全 workspace exit0。全量 desktop 套件 HEAD 为 12 files/17 tests failed、167 files/996 passed，均属基线既有。队长定点复跑 PC 10/10 + H5 3/3 契约 exit0、typecheck exit0；git show --stat 精确 10 文件、HEAD=远端追踪=5137585c5；文档 <YOUR_TEST_DOMAIN> 占位无泄露。以 captain attempt 2 接管裁决 completed，7/7 acceptanceResults + 4/4 commandsRun 全 passed，evidence_note 已 append。t30 次轮设计评审随之自动派发 design-reviewer。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 201. R302 次轮独立设计评审与残留打磨项（t30，2026-11-21）
+- 交付（design-reviewer，attempt a52234c4，只读无改码无提交）：verdict=needs_revision、status=failed（质量门），带 2 条结构化 findings。逐条复核 t11 DR-01~07：DR-01 PC 日历 TDZ/H5 信封、DR-02 统计同源、DR-03 调试门控+org 兜底、DR-04 h1/播报、DR-05 H5 空态引导均彻底关闭；核心整改达标、设计令牌方向通过。
+- 未关闭项① R302-DR06-R（medium）：PC 工作台「我的待办」widget 主标题仍直出后端原始 work-… UUID（Dashboard.vue:50 `item.title || item.processName || '新审批'`，数据源 GET task/list/my/paging 回带原始 title），t33 只修流程任务中心与 H5 process；IM 会话显示名仍是「单聊 · jf05」随机码而非可读姓名/摘要（IMChat.vue:299-305 displayConversationName，源 name 为机器键）。
+- 未关闭项② R302-DR07-R（low）：部署管理页 h1/h2 同名「部署管理」视觉两层（DeploymentApp.vue:8-9 两个 h2，其中 :9 class=subtitle 实为描述文案）；cms-index/process-manager 的 modernPage=0（CmsIndexApp.vue:10/ProcessManagerApp.vue:11 仅 h2，缺 modern-page/ai-page-b5 标记）。
+- 队长独立复核（不采信自述）：源码级确认上述三处现象属实（Dashboard.vue:50 与 :228-229、IMChat.vue:294-310、DeploymentApp.vue:5-9、CmsIndexApp/ProcessManagerApp h2 标记），t30 以 needs_revision/failed 完成并带 2 findings 与 t10 C1 实测一致；评审依据均为 gitignored test-results/ 下测试服真浏览器 Playwright Chromium headless 截图/JSON（非物理真机）。按 t11 先例 needs_revision 不得作下游依赖，后续将新建次轮修复与评审并改接下游；≥1000 轮非完成态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
