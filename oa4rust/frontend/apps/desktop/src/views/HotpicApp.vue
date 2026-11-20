@@ -230,7 +230,10 @@ async function doSearch() {
   loadError.value = ''
   try {
     const r = await api.get('/api/hotpic/core/entity/list')
-    items.value = r.data ?? []
+    // 响应可能是 { data: { count, data: [...] } } 包装，需解包成数组，否则 stats.filter 抛错。
+    const payload: any = (r as any)?.data
+    const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []
+    items.value = list
   } catch (e) {
     // 失败保留旧热帖并显式报错，不能和「真的没有热帖」混成同一种空态。
     loadError.value = describeListError('热帖加载失败', e)

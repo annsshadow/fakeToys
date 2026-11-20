@@ -3975,3 +3975,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 流程：重编 desktop dist（index-C8dcK0Oo.js，181 文件）→ 打包 web-r302.tgz（807719 字节）→ 远程备份 web.bak-r302-20261121-0055 → scp 上传 → tar 解包 web.new → 原子替换 web/ → systemctl restart oa4rust=active。
 - 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；线上服务新 hash index-C8dcK0Oo.js。
 - 线上 DOM 复验：6 个管理页（cms-column/appinfo/document/process-manager/role/control-panel）topbar 页名隐藏 + h1 唯一 + 无 /api 外露 + 无加载失败；员工页 /app/directory topbar「组织通讯录」保留。
+
+## 178. 热帖管理页面异常处理 R303（2026-11-21）
+- 背景：用户报告「热帖管理报错了」，实际打开 /app/admin/hotpic 显示「页面发生意外错误，请重试」。
+- 根因：/api/hotpic/core/entity/list 返回 { data: { count, data: [...] } } 嵌套包装，doSearch 把 r.data 包装对象直接赋给 items ref，stats computed 的 items.value.filter(...) 抛 TypeError 触发全局错误边界。
+- 修复：doSearch 解包嵌套结构（Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []），items 始终为数组；保留 loadError 错误态。
+- 契约：新增 HotpicListShape.contract（3 例）RED→GREEN；全量 vitest 217 文件 / 1945 passed、typecheck 6 子项目、build exit0（index-Bordjv0s.js）、scoped biome exit0、git diff --check 0、密钥扫描无命中。
+- 验证：8901 新 dist 真机复验，热帖页「1 总计」并渲染 Test Hotpic 条目，错误提示消失，失败 API 请求为空。
