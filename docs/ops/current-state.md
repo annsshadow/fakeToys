@@ -4081,6 +4081,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 3 文件、git show diff 确认错误条/重试按钮/onMounted 自动加载与空态文案；定点复跑 OrgDirectory 套件 14/14 passed（exit 0）；commit message 自述 typecheck/build/测试服哈希一致、真 Chromium headless /app/directory 自动加载 21 人（20 行/页共 2 页）、route abort 失败错误+重试恢复 21 人，证据 gitignored oa4rust/test-results/r302-dr03b/（4 PNG+evidence.json，真实测试服非物理真机）；文档用 <YOUR_TEST_DOMAIN> 占位。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 195. R300 H5 关键业务空态引导与首页空白修复（t32，2026-11-21）
+- 交付（mobile-eng，commit 71237ad94，精确 8 文件）：oa4rust/docs/ops/oa4rust-h5-empty-state-guide-r300.md（36 行）+ emptyGuide.emptyState.test.ts（98 行）+ browse/collect/doc/index/meeting/recycle 6 页 Vue（460+/7-）。test-first RED→GREEN（契约首轮 6 失败、GREEN 后 src/pages 42 files/182 tests；队长定点复跑 emptyGuide.emptyState.test.ts 7/7 passed，exit 0）；文档/会议/收藏/浏览/回收站/首页补可读引导与真实操作入口，保留既有字面量契约、不伪造数据。
+- 队长独立复核（不采信自述）：git show --stat 精确 8 文件、HEAD=上游=71237ad94；定点复跑契约 7/7 passed；实读文档合规，路径偏差已披露（任务 inScope 的 favorite/**、home/** 实为 collect/collect.vue、index/index.vue）；commit message 自述 typecheck/H5 build 全绿、原子部署测试服+真 Chromium 390×844 真 UI 登录 6/6 页通过（bad=0/tapBad=0/pageErrors=0），证据 gitignored oa4rust/test-results/r300-h5-empty-guide/（7 PNG+evidence.json+manifest.md，非物理真机、非静态假数据）。t32 与 t29 原文件重叠，队长已把 t29 依赖扩为含 t32/t33，待两者落地后再启动。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
