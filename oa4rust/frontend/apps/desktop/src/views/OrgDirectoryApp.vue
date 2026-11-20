@@ -63,6 +63,10 @@
           <button type="button" class="run-btn" :disabled="busy" data-testid="org-person-reload" @click="loadPersonFilter">加载名册</button>
         </div>
         <div class="result-meta" data-testid="org-person-meta">共 {{ personCount }} 人 · 第 {{ personPage }} / {{ personPageTotalPages }} 页</div>
+        <div v-if="loadError" class="load-error" data-testid="org-load-error">
+          <span>{{ loadError }}</span>
+          <button type="button" class="run-btn" data-testid="org-load-retry" @click="loadPersonFilter">重试加载</button>
+        </div>
         <ul class="person-list modern-grid" data-testid="org-person-list">
           <li
             v-for="(r, i) in rows.filter(row => !($refs.personSearch?.value || '').trim() || JSON.stringify(row).toLowerCase().includes(($refs.personSearch?.value || '').trim().toLowerCase())).slice(0, 20)"
@@ -79,7 +83,7 @@
         </ul>
         <div v-if="rows.length === 0" class="modern-empty" data-testid="org-person-empty">
           <span class="empty-icon">👥</span>
-          <p>暂无人员数据，请先搜索或加载名册</p>
+          <p>{{ busy ? '名册加载中…' : '暂无人员数据，请点击「加载名册」或搜索人员' }}</p>
         </div>
         <div class="pager-bar" data-testid="org-person-pager">
           <button type="button" class="page-btn" :disabled="busy || personPage <= 1" @click="personFilterPage(-1)">上一页</button>
@@ -92,7 +96,7 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 
 type Tab = 'person' | 'unit' | 'identity' | 'group' | 'role' | 'manage' | 'auth'
@@ -108,6 +112,7 @@ const tabs: Array<{ key: Tab; label: string }> = [
 const tab = ref<Tab>('person')
 const busy = ref(false)
 const rows = ref<Record<string, unknown>[]>([])
+const loadError = ref('')
 const lastAction = ref('—')
 // 服务端分页：页码/页大小/总数都由后端 person_list_filter_paging 负责，
 // 前端只按 count 算总页数；不把「本页拿到几行」当成总人数。
@@ -177,24 +182,45 @@ interface PagedPeople {
   size?: number
   data?: unknown
 }
+function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
+  let timer
+  return Promise.race([
+    p,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('请求超时')), ms)
+    }),
+  ]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer)
+  })
+}
+const PERSON_LOAD_TIMEOUT_MS = 10000
 async function loadPersonFilter(): Promise<void> {
   busy.value = true
+  loadError.value = ''
   try {
-    const resp = await api.post<unknown>(
-      `/api/organization/assemble/control/person/list/filter/${personPage.value}/size/${personPageSize}`,
-      {},
+    const resp = await withTimeout(
+      api.post(
+        `/api/organization/assemble/control/person/list/filter/${personPage.value}/size/${personPageSize}`,
+        {},
+      ),
+      PERSON_LOAD_TIMEOUT_MS,
     )
     const page = (resp as { data?: PagedPeople }).data
     const list = Array.isArray(page?.data) ? (page.data as Record<string, unknown>[]) : []
     personCount.value = Number(page?.count ?? list.length)
     rows.value = list
     lastAction.value = `人员过滤 · 第 ${page?.page ?? personPage.value} 页（${list.length}/${personCount.value} 行）`
-  } catch {
-    toast.error('人员过滤查询失败')
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '未知错误'
+    loadError.value = `名册加载失败：${message}。请检查网络或稍后重试。`
+    toast.error(loadError.value)
   } finally {
     busy.value = false
   }
 }
+onMounted(() => {
+  void loadPersonFilter()
+})
 async function personFilterPage(delta: number): Promise<void> {
   const next = personPage.value + delta
   if (next < 1 || next > personPageTotalPages.value) return
@@ -540,6 +566,7 @@ async function orgAuth(op: string): Promise<void> {
 .person-list.modern-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px }
 .person-item.modern-card { display: flex; align-items: center; gap: 10px }
 .modern-empty { padding: 30px; text-align: center; color: var(--text-muted) }
+.load-error { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 12px; border: 1px solid var(--ai-glass-border); border-radius: calc(var(--ai-grid-1) + 2px); background: var(--ai-glass-bg); color: var(--text-secondary); font-size: 12px }
 .empty-icon { font-size: 30px }
 .view-header { padding: 16px 24px }
 .view-header h1 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--color-primary); margin: 0 0 4px }
