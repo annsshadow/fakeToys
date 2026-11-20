@@ -154,7 +154,7 @@
     <section class="modern-section glass-card content-panel">
       <div class="pt"><span class="th">姓名</span><span class="th">日期</span><span class="th">上班</span><span class="th">下班</span><span class="th">工时</span><span class="th">状态</span></div>
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 8" :key="i"></div></div>
-      <div v-else-if="records.length===0" class="es"><div class="ei">📋</div><p>暂无考勤记录</p></div>
+      <div v-else-if="records.length===0" class="es" data-testid="attendance-empty-cta"><div class="ei">📋</div><p>暂无考勤记录，可刷新后查看最新数据</p><button class="eb eb-primary" @click="loadData">刷新记录</button></div>
       <template v-else>
         <div v-for="r in records" :key="r.id" class="tr" :class="{late:r.isLate}">
           <span class="td">{{r.personName||r.name||'—'}}</span>

@@ -1446,6 +1446,8 @@ const api_control_list_top_720_data = ref<any[]>([])
 .empty-state, .loading-state { display: flex; flex-direction: column; align-items: center; padding: 60px; color: var(--text-muted); gap: 12px; }
 .empty-icon { font-size: 48px; opacity: 0.4; }
 .skeleton-row { height: 56px; border-radius: var(--radius-md); margin-bottom: 8px; background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); }
+.ai-page .bbs-header{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);padding:var(--ai-grid-2)}
+.ai-page .topic-card{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
 
 /* 弹窗 */
 .modal-overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: 200; display: flex; align-items: center; justify-content: center; }
