@@ -2,11 +2,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dash-view modern-page ai-panel">
-    <div class="view-header glass-card modern-hero ai-panel">
+  <div class="dash-view modern-page ai-panel ai-page" data-testid="bam-page">
+    <div class="view-header glass-card modern-hero ai-panel ai-page">
       <div class="hero-copy"><h1 class="ai-gradient-text">业务活动监控</h1><p class="subtitle">流程活动与状态趋势</p></div>
       <span class="hdr-a">
-      <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="bam-endpoint-fold">
+      <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="bam-endpoint-fold">
         <template #group-read>
       <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
       <button class="btn-primary ghost" @click="loadBamConfigs">BAM定义</button>
@@ -50,7 +50,7 @@
     <div class="content-panel glass-card modern-section modern-card">
       <div class="panel-title">最近活动</div>
       <ListLoadError v-if="loadError" mode="banner" :message="loadError" @retry="reload" />
-      <div v-if="loading" class="loading-state">加载中...</div>
+      <div v-if="loading" class="loading-state" data-testid="bam-loading"><div v-for="i in 4" :key="i" class="skeleton-row"></div></div>
       <ListLoadError v-else-if="events.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
       <div v-else-if="events.length===0" class="empty-state"><p>暂无活动记录</p></div>
       <table v-else class="data-table">
@@ -648,6 +648,8 @@ function statusCls(s?: string) {
 </script>
 <style scoped>
 .dash-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.ai-page .skeleton-row{height:56px;border-radius:var(--radius-md);margin-bottom:8px;background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%)}
+.ai-page .content-panel{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border)}
 .view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
 .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
 .ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}

@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="org-view">
-    <div class="view-header glass-card">
+  <div class="org-view modern-page ai-page" data-testid="org-page">
+    <div class="view-header glass-card ai-panel ai-page">
       <h1>组织架构</h1>
       <EndpointFold
         label="高级操作"
@@ -1551,7 +1551,11 @@ async function handleSearch() {
 <style scoped>
 .org-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
 .org-meta-note{font-size:12px;color:var(--text-muted);margin-left:8px}
-.org-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.org-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.ai-page .view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur)}
+.ai-page .org-tree,.ai-page .org-detail{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border)}
+.ai-page .nr.active{background:var(--ai-gradient-brand);color:#fff;transition:background var(--ai-motion-fast) var(--ai-ease-spring)}
+.ai-page .sk{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%)}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}

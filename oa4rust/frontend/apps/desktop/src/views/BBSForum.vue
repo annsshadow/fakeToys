@@ -2,9 +2,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="bbs-view modern-page ai-panel" data-testid="bbs-root">
+  <div class="bbs-view modern-page ai-panel ai-page" data-testid="bbs-root">
     <!-- 版块导航：顶部论坛标签与搜索，快速进入目标版块 -->
-    <header class="bbs-header glass-card modern-hero ai-panel" data-testid="bbs-section-nav">
+    <header class="bbs-header glass-card modern-hero ai-panel ai-page" data-testid="bbs-section-nav">
       <div class="header-left">
         <h1 class="ai-gradient-text" data-testid="bbs-title">团队论坛</h1>
         <p class="subtitle" data-testid="bbs-subtitle">浏览版块、参与讨论、分享经验</p>
@@ -1337,7 +1337,7 @@ const api_control_list_top_720_data = ref<any[]>([])
 .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
 .ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 .topic-avatar{background:var(--ai-gradient-brand)}
-.new-topic-btn{transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.new-topic-btn{gap:var(--ai-grid-1);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .new-topic-btn:hover{transform:translateY(-1px)}
 
 .bbs-header {
@@ -1407,7 +1407,7 @@ const api_control_list_top_720_data = ref<any[]>([])
 .sec-count { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); padding: 1px 6px; border-radius: 8px; }
 .all-section { color: var(--color-primary); font-weight: 500; }
 .loading-skeleton { display: flex; flex-direction: column; gap: 8px; }
-.sk-item { height: 32px; border-radius: var(--radius-sm); background: var(--bg-elevated); }
+.sk-item { height: 32px; border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); }
 
 .bbs-main { flex: 1; overflow: auto; padding: 16px; }
 .topic-list { display: flex; flex-direction: column; gap: 8px; }
@@ -1445,7 +1445,7 @@ const api_control_list_top_720_data = ref<any[]>([])
 
 .empty-state, .loading-state { display: flex; flex-direction: column; align-items: center; padding: 60px; color: var(--text-muted); gap: 12px; }
 .empty-icon { font-size: 48px; opacity: 0.4; }
-.skeleton-row { height: 56px; border-radius: var(--radius-md); margin-bottom: 8px; }
+.skeleton-row { height: 56px; border-radius: var(--radius-md); margin-bottom: 8px; background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); }
 
 /* 弹窗 */
 .modal-overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: 200; display: flex; align-items: center; justify-content: center; }

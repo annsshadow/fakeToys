@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="attendance-view modern-page" data-testid="attendance-page">
-    <header class="view-header glass-card modern-hero">
+  <div class="attendance-view modern-page ai-page" data-testid="attendance-page">
+    <header class="view-header glass-card modern-hero ai-panel ai-page">
       <div class="hero-copy">
         <h1>考勤管理</h1>
         <p class="subtitle">按月查看出勤、请假与排班，更多维护操作可展开高级操作。</p>
@@ -1803,7 +1803,12 @@ async function loadAttTwin2() {
 }
 </script>
 <style scoped>
-.attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.attendance-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.ai-page .view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur)}
+.ai-page .stat-card{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.ai-page .eb-primary{background:var(--ai-gradient-brand);color:#fff}
+.ai-page .sk{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%)}
+.ai-page .advanced-groups{gap:var(--ai-grid-2)}
 .view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;flex-wrap:wrap;gap:12px}
 .hero-copy{min-width:0}
 .hero-copy h1{white-space:nowrap}
