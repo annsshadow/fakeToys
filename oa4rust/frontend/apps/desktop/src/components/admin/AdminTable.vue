@@ -3,7 +3,12 @@
 
 <!-- R298 标准列表表格：表头/数据行/骨架加载/空态；错误态复用 ListLoadError 并转发 retry -->
 <template>
-  <div class="admin-table glass-card ai-page-b5">
+  <div class="admin-table glass-card ai-page-b5" :class="densityClass">
+    <div class="admin-table-density-bar">
+      <span>表格密度</span>
+      <button type="button" data-testid="admin-table-density" :class="['density-btn', { active: density === 'standard' }]" @click="density = 'standard'">标准</button>
+      <button type="button" class="density-btn" :class="{ active: density === 'compact' }" @click="density = 'compact'">紧凑</button>
+    </div>
     <ListLoadError v-if="error" :message="error" mode="empty" @retry="emit('retry')" />
     <table v-else class="admin-table-grid">
       <thead>
@@ -47,6 +52,7 @@ export interface AdminTableColumn {
 </script>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import ListLoadError from '../../views/ListLoadError.vue'
 
 const props = withDefaults(
@@ -72,6 +78,9 @@ const emit = defineEmits<{
   retry: []
 }>()
 
+const density = ref<'standard' | 'compact'>('standard')
+const densityClass = computed(() => (density.value === 'compact' ? 'admin-table--compact' : 'admin-table--standard'))
+
 function rowKey(row: Record<string, unknown>, index: number): string | number {
   const key = row[props.rowKeyField]
   return typeof key === 'string' || typeof key === 'number' ? key : index
@@ -79,6 +88,34 @@ function rowKey(row: Record<string, unknown>, index: number): string | number {
 </script>
 
 <style scoped>
+.admin-table-density-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: 0 0 var(--space-2);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.density-btn {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+.density-btn.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.admin-table--compact .admin-table-th,
+.admin-table--compact .admin-table-td {
+  padding: calc(var(--space-1, 4px)) var(--space-2);
+  font-size: 12px;
+}
 .admin-table.ai-page-b5 {
   background: var(--ai-glass-bg);
   border: 1px solid var(--ai-glass-border);
