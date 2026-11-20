@@ -3904,3 +3904,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 全量门禁（修复后）：真机 E2E 118 passed（59 测试 × live-chromium/coverage-chromium 双 project，1.4m，EXIT=0）；oa4rust vitest 197 文件 / 1782 passed（EXIT=0）；@oa4rust/desktop typecheck EXIT=0；scoped biome 7 文件 0 error（EXIT=0）。
 - 真值纪律：口令仅部署期 shell 变量读取；台账与提交不含密钥/口令/域名/IP/SSH 端口/个人路径。
 
+## 169. R298 管理区重构全面部署测试服 + 真机 E2E 全绿（2026-11-20）
+- 范围：bdcd741a2..688036c3d 共 8 commit 全量部署，含管理区分组侧栏重构、50+ 管理页标准化、后端 whoami roleList 修复（auth_role JOIN auth_person_role，fail-closed 空列表）等。H5 源码 diff=0 沿用旧产物，桌面 dist 重编部署。
+- 构建：前端 pnpm --filter @oa4rust/desktop build EXIT=0（index.html 1255 字节，base=/oa4rust/）；后端因本地无 Linux 链接器，用 Docker rust:1.98-bullseye + 持久化 cargo target/registry 卷编译（RUSTUP_TOOLCHAIN=1.98.0，避开 1.98.1 channel 下载 TLS 失败），产物 118303608 字节 ELF。
+- 部署：备份 web.bak-r298-* / oa4rust.bak-r298-* 后原子替换 web/ 与后端二进制，systemctl restart oa4rust active；冒烟 5/5 全 200（/oa4rust/、/oa4rust/login、/oa4rust-h5/、/oa4rust-api/health、/oa4rust-api/api/authentication）。
+- 真机 E2E（本地代理 BASE_URL 指向测试服子路径）：首轮 32/36，4 红均为 R296/R297 两条导航测试仍找旧「🔧 控制面板」折叠子项；R298 已将管理入口收敛为侧栏单一「⚙ 系统管理」直达管理区，产品行为正确。修正两测试选择器（改点 ⚙ 系统管理并断言 URL + 管理区导航可见）后：定向 4/4、全量 36/36 全绿（EXIT=0）。
+- 门禁：git diff --check=0；scoped biome（spec）0 error；无密钥/口令/域名/IP/SSH 端口真值入库。台账与提交不含真值；口令仅部署期 shell 变量读取。
+

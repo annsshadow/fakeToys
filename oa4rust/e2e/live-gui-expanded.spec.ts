@@ -62,11 +62,11 @@ test.describe('live GUI - 导航与应用外壳', () => {
 
   test('管理导航指向已注册路由而非跳登录 (R296)', async ({ page }) => {
     await expect(page).toHaveURL(/\/app\//)
-    await page.getByRole('button', { name: /系统管理/ }).click()
-    await page.getByRole('button', { name: '🔧 控制面板', exact: true }).click()
+    // R298: 系统管理已收敛为侧栏单一入口，点击直达管理区，不再有折叠子项
+    await page.getByRole('button', { name: '⚙ 系统管理', exact: true }).click()
     await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
     await expect(page).not.toHaveURL(/\/login/)
-    await expect(page.getByRole('heading', { name: '控制面板' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: '管理区导航' })).toBeVisible()
   })
 
   test('R297 分组侧栏切换与管理员折叠区均不跳登录', async ({ page }) => {
@@ -82,12 +82,11 @@ test.describe('live GUI - 导航与应用外壳', () => {
     await expect(page).toHaveURL(/\/app\/directory/)
     await expect(page).not.toHaveURL(/\/login/)
 
-    // 管理员折叠区默认收起，展开后管理项指向 /app/admin/*，不跳登录
-    await expect(page.getByRole('button', { name: '🔧 控制面板', exact: true })).toBeHidden()
-    await page.getByRole('button', { name: /系统管理/ }).click()
-    await page.getByRole('button', { name: '🔧 控制面板', exact: true }).click()
+    // R298: 管理区入口收敛为侧栏单一「⚙ 系统管理」，点击直达 AdminLayout 六组导航，不跳登录
+    await page.getByRole('button', { name: '⚙ 系统管理', exact: true }).click()
     await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
     await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('navigation', { name: '管理区导航' })).toBeVisible()
   })
 
   test('用户菜单可打开并跳转到个人中心', async ({ page }) => {
