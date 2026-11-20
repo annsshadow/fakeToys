@@ -43,9 +43,9 @@
       <div v-if="selectedChat" class="chat-content">
         <div class="chat-header">
           <button class="back-btn" aria-label="返回会话列表" @click="selectedChat = null">←</button>
-          <div class="chat-avatar">{{ selectedChat.avatar || selectedChat.name?.[0] }}</div>
+          <div class="chat-avatar">{{ selectedChat.avatar || displayConversationName(selectedChat)?.[0] }}</div>
           <div class="chat-info">
-            <div class="chat-name" data-testid="im-chat-name">{{ selectedChat.name }}</div>
+            <div class="chat-name" data-testid="im-chat-name">{{ displayConversationName(selectedChat) }}</div>
             <div class="chat-status" :class="{ online: selectedChat.online }">
               {{ selectedChat.online ? '在线' : '离线' }}
             </div>
@@ -150,6 +150,7 @@
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { displayConversationName as readableConversationName, displayConversationPreview as readableConversationPreview } from '../utils/processTitle'
 import { confirmMsg, toast } from '../utils/toast'
 import { fetchImPagingPage, type ImPagingRow } from './imMessagePaging'
 import { fetchMessagePage, mergeMessagePages } from './imPaging'
@@ -158,6 +159,7 @@ import { mutationErrorMessage } from './mutationError'
 interface Conversation {
   id: string
   name: string
+  type?: string
   avatar?: string
   lastMessage?: string
   time: string
@@ -291,22 +293,12 @@ function endCall(notify = true): void {
   if (notify && convId) wsClient.value?.send(convId, { webrtc: 'end', to: convId })
 }
 
-// R302 DR-06：源数据 name 为机器生成键（如 im-conv-<ts>-<rand>），只在检索/追踪中使用，
-// 绝不把原始键直接呈现给用户；无真人姓名接口时降级为「类型 + 脱敏尾号」。
-function isRawConversationName(name: string): boolean {
-  return /^im-conv-[0-9]+-[a-z0-9]+$/i.test(name) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(name)
-}
+// R302 DR-06-R：机器会话名与摘要统一走共享工具，禁止随机尾号冒充姓名。
 function displayConversationName(c: Conversation): string {
-  const name = String(c.name ?? '').trim()
-  if (!name) return '未命名会话'
-  if (!isRawConversationName(name)) return name
-  const tail = name.slice(-4)
-  return c.type === 'group' ? `群聊 · ${tail}` : `单聊 · ${tail}`
+  return readableConversationName(c.name, c.type, c.id)
 }
 function displayConversationPreview(c: Conversation): string {
-  const last = String(c.lastMessage ?? '').trim()
-  if (!last || isRawConversationName(last)) return '暂无消息，点击开始对话'
-  return last
+  return readableConversationPreview(c.lastMessage)
 }
 
 function toggleCall(): void {

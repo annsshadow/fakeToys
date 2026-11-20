@@ -47,8 +47,8 @@
         <li v-for="item in pendingItems" :key="item.id" class="pending-item">
           <div class="pending-icon">📋</div>
           <div class="pending-info">
-            <div class="pending-title">{{ item.title || item.processName || '新审批' }}</div>
-            <div class="pending-meta">{{ item.appName || '' }}{{ item.appName && item.createTime ? ' · ' : '' }}{{ fmtTime(item.createTime) }}</div>
+            <div class="pending-title">{{ displayTodoTitle(item.title, item.processName) }}</div>
+            <div class="pending-meta"><span v-if="foldRawKeySubtext(item.title)" class="raw-key-subtext">{{ foldRawKeySubtext(item.title) }}</span>{{ item.appName || '' }}{{ item.appName && item.createTime ? ' · ' : '' }}{{ fmtTime(item.createTime) }}</div>
           </div>
           <button type="button" class="handle-btn" data-testid="dashboard-todo-handle" @click="navigateTo('/app/process')">去处理</button>
         </li>
@@ -99,6 +99,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { formatServerDateTime } from '../utils/date'
+import { displayTodoTitle, foldRawKeySubtext } from '../utils/processTitle'
 import { describeListError } from './listQuery'
 
 const router = useRouter()
@@ -279,6 +280,7 @@ const api_data_doc_386_data = ref<any[]>([])
 .welcome-heading { display: flex; align-items: baseline; margin: 0; font-size: 20px; }
 .welcome-bar:hover { transform: translateY(-1px); box-shadow: var(--ai-shadow-2); }
 .stat-placeholder { color: var(--text-muted); font-size: 22px; }
+.raw-key-subtext { color: var(--text-muted); font-size: 11px; margin-right: 6px; }
 .empty-cta { display: inline-block; margin-top: 8px; color: var(--color-primary); font-size: 12px; text-decoration: none; transition: color var(--ai-motion-fast) var(--ai-ease-spring); }
 .empty-cta:hover { color: var(--color-accent); }
 .greeting { font-size: 14px; color: var(--text-muted); }
