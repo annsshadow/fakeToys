@@ -4232,3 +4232,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 6 文件；并行定点复跑 5 契约 5 files/29 tests 全 GREEN（exit 0）；逐条 diff 确认断言真且语义等价——h1=0 时须有 data-testid 的 h2 主标题、4 个破坏性动作逐函数校验 if(busy)/上锁/finally 复位、占位类+null 回退+错误态分支顺序、class 分项匹配、displayTitle 三等价形态；无 expect(true)/跳过；文档 <YOUR_TEST_DOMAIN> 占位、evidence.json 标注 not a physical device、5 页真实渲染 0 pageerror。工作树 M/?? 系 t42 在途文件、非本任务遗留。evidence_note 已 append。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 222. R304 t42/t44/t45 三任务收官复核与证据目录卫生修复（2026-11-21）
+- t42（page-work，commit a5ae2ad1b，精确 5 文件 41+/9-）：管理区 8 用例转 GREEN（7 条过时断言语义等价同步 + 用例15 真删 AdminToolbar.vue:110 color:#fff 死代码，被 :112 令牌覆盖视觉无变化）。队长复核：4 契约 23/23 全绿（3 files/17 tests @ admin 真路径 + ModernUI 6 tests @ src/views 真路径）；逐条 diff 确认断言真且等价；文档 <YOUR_TEST_DOMAIN> 占位、evidence.json not a physical device、3 页 h1=1/errors=0。
+- t44（shell-eng，commit a93f360f2，精确 3 文件 54+/5-）：h1 去重断言重对齐，严格遵守 §219 裁决——双合法模式（shell-h1：页内 h2 无 h1；页面自持：恰好 1 h1 + inject ADMIN_LAYOUT_HIDE_TITLE + .value=true），DeploymentApp.vue 实现零改动、未改回 h2 制造 a11y 回归。队长复核：2 契约 2 files/28 tests 全绿；真浏览器 /app/admin/deployment h1=1（可见「部署管理」）、shell admin-title h1=0、pageerror=[]。
+- t45（mobile-eng，commit 50f10f6af，精确 3 文件 34+/4-）：UI 玻璃/H5 空态两条断言同步，实现零改动（popup --ai-glass-* 三件套精确断言、o2-empty \b token 分词正则保留 o2-empty-icon）。队长复核：popup 9/9（src/views 真路径）+ design-system 7/7 全绿；evidence 标注 NOT physical device/NOT fake static data、桌面下拉 --ai-glass-* 三令牌齐全、H5 四页空态可点入口可见。
+- 队长裁决记录（路径偏差）：t41 审计与队长建任务合约把 ModernUI.contract.test.ts 与 popupSurfaces.contract.test.ts 写为 src/components/admin/ 与 packages/ui/src/components/，真实均在 frontend/apps/desktop/src/views/；成员找对真实路径完成，队长补验通过。binding 的 inScope 字面精确匹配导致 changedPaths 漏列，成员已在 output 完整披露，非越界改动。
+- 卫生修复：发现 .gitignore 仅忽略 oa4rust/test-results/ 未忽略 oa4rust/mobile/test-results/（H5 任务证据落点），以单行锚点补规则，git check-ignore 确认生效，避免含真实测试数据的证据误入库。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
