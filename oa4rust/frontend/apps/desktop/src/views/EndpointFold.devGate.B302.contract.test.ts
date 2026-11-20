@@ -45,11 +45,21 @@ describe('R302 DR-03a 端点调试开发模式门控', () => {
 })
 
 describe('R302 DR-07 管理区标题语义与部署页 AI 容器', () => {
-  it('部署管理页有 aiPageB5 标记与 h2 分区标题，页面级不重复 shell h1', () => {
+  it('部署管理页有 aiPageB5 标记，标题层级符合两种合法模式之一，无重复 shell h1', () => {
     const tpl = template(deploy)
     expect(tpl).toContain('ai-page-b5')
-    expect(tpl).toContain('<h2')
-    expect((tpl.match(/<h1[\s>]/g) ?? []).length).toBe(0)
+    const h1Count = (tpl.match(/<h1[\s>]/g) ?? []).length
+    const h2Count = (tpl.match(/<h2[\s>]/g) ?? []).length
+    const hidesShellTitle =
+      /inject\(ADMIN_LAYOUT_HIDE_TITLE/.test(deploy) && /\.value = true/.test(deploy)
+    // 合法模式 (a)：shell h1 模式——页内 h2 分区标题且无本地 h1。
+    // 合法模式 (b)：页面自持唯一 h1——页内恰好 1 个 h1，且同文件注入 ADMIN_LAYOUT_HIDE_TITLE 隐藏 shell h1。
+    const shellH1Mode = h1Count === 0 && h2Count >= 1
+    const selfHeldH1Mode = h1Count === 1 && hidesShellTitle
+    expect(
+      shellH1Mode || selfHeldH1Mode,
+      '标题层级须为 shell-h1 模式(页内 h2 无 h1)或页面自持唯一 h1 模式(1 个 h1 + 隐藏 shell h1)',
+    ).toBe(true)
     expect(tpl).not.toContain('端点调试')
     expect(tpl).not.toContain('class="mono"')
   })
