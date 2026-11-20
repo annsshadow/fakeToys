@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="file-view modern-page ai-panel">
-    <header class="modern-hero ai-panel">
+  <div class="file-view modern-page ai-page ai-panel">
+    <header class="modern-hero ai-panel ai-page">
       <div class="hero-copy">
         <h1 class="ai-gradient-text">文件管理</h1>
         <p class="subtitle">我的文件 · 共享 · 回收</p>
@@ -40,7 +40,7 @@
             <ListLoadError mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
           </div>
           <div v-if="loading" class="loading-state">
-            <div class="skeleton-row" v-for="i in 6" :key="i"></div>
+            <div class="skeleton-row ai-skeleton-line" v-for="i in 6" :key="i"></div>
           </div>
           <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
           <div v-else-if="files.length === 0" class="empty-state modern-empty">
@@ -1464,7 +1464,7 @@ async function loadFileTwin3() {
 
 <style scoped>
 /* Layout/geometry layered on shared ModernUI classes. */
-.file-view.modern-page { display: flex; flex-direction: column; gap: 16px }
+.file-view.modern-page.ai-page { display: flex; flex-direction: column; gap: var(--ai-grid-2) }
 .modern-hero { display: flex; align-items: center; justify-content: space-between; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border) }
 .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
 .ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -1483,7 +1483,8 @@ async function loadFileTwin3() {
 .btn-sm{padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;font-size:12px;background:var(--bg-elevated);color:var(--text-primary)}
 .btn-primary{padding:6px 14px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);cursor:pointer;font-size:13px;font-weight:500}
 .loading-state,.empty-state{display:flex;flex-direction:column;align-items:center;padding:40px;color:var(--text-muted);gap:12px}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
+.skeleton-row{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.sk{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 .empty-icon{font-size:48px;opacity:.4}
 .empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}

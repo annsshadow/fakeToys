@@ -4,7 +4,7 @@
 <template>
   <div class="im-view ai-grid-2" data-testid="im-root">
     <!-- 会话列表：搜索与会话切换 -->
-    <aside class="im-sidebar glass-card" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
+    <aside class="im-sidebar glass-card ai-page" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
       <div class="sidebar-header">
         <h2 data-testid="im-conversation-title">消息</h2>
         <button class="new-chat-btn" title="发起会话" aria-label="发起会话" data-testid="im-new-chat" @click="loadRoomStats">✉</button>
@@ -39,7 +39,7 @@
     </aside>
 
     <!-- 消息区：聊天头部与消息记录 -->
-    <main class="im-main glass-card" :class="{ 'no-chat': !selectedChat }" data-testid="im-message-pane">
+    <main class="im-main glass-card ai-page" :class="{ 'no-chat': !selectedChat }" data-testid="im-message-pane">
       <div v-if="selectedChat" class="chat-content">
         <div class="chat-header">
           <button class="back-btn" aria-label="返回会话列表" @click="selectedChat = null">←</button>
@@ -65,7 +65,7 @@
 
         <div ref="messageContainer" class="message-list" @scroll="handleScroll" data-testid="im-message-list">
           <div v-if="msgLoading" class="loading-state">
-            <div class="skeleton-row" v-for="i in 4" :key="i"></div>
+            <div class="skeleton-row ai-skeleton-line" v-for="i in 4" :key="i"></div>
           </div>
           <div v-else-if="msgLoadMoreError" class="empty-messages">
             <p>{{ msgLoadMoreError }}</p>
@@ -1191,7 +1191,8 @@ async function loadImTwin() {
 
 .im-main {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
-  transition: all var(--transition-normal);
+  background-image: var(--ai-gradient-surface); border-color: var(--ai-glass-border);
+  transition: all var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .im-main.no-chat { border-color: transparent; }
 
@@ -1231,8 +1232,9 @@ async function loadImTwin() {
 .icon-btn:hover { background: var(--color-primary-soft); color: var(--color-primary); }
 
 .message-list {
-  flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: var(--ai-grid-2);
 }
+.message-list .skeleton-row { background: var(--ai-skeleton-base) }
 .empty-messages { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .skeleton-row { height: 48px; border-radius: var(--radius-md); margin-bottom: 8px; }
@@ -1326,7 +1328,7 @@ async function loadImTwin() {
 
 .no-chat-placeholder {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; color: var(--text-muted);
+  gap: var(--ai-grid-2); color: var(--text-muted);
 }
 .placeholder-icon { font-size: 64px; opacity: 0.3; }
 .no-chat-placeholder h2 { font-family: 'Orbitron', sans-serif; color: var(--text-secondary); font-size: 18px; }

@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="search-view" data-testid="search-business-view">
-    <div class="view-header glass-card search-header" data-testid="search-header">
+  <div class="search-view modern-page ai-page" data-testid="search-business-view">
+    <div class="view-header glass-card search-header ai-page ai-panel" data-testid="search-header">
       <div><h1>全局搜索</h1><p class="subtitle">跨文档、流程与组织的统一检索</p></div>
     </div>
     <div class="search-panel glass-card" data-testid="search-panel">
@@ -11,7 +11,10 @@
         <input v-model="query" type="search" placeholder="搜索文档、流程、组织..." class="search-input-lg" aria-label="搜索关键词" />
         <button type="submit" class="btn-search">🔍 搜索</button>
       </form>
-      <div v-if="loading" class="loading-state">搜索中...</div>
+      <div v-if="loading" class="loading-state" data-testid="search-loading-skeleton">
+        <p>搜索中...</p>
+        <span class="ai-skeleton-line"></span><span class="ai-skeleton-line"></span><span class="ai-skeleton-line"></span>
+      </div>
       <ListLoadError v-else-if="results.length === 0 && searchError" mode="empty" :message="searchError" @retry="doSearch" />
       <div v-else-if="results.length===0&&queried" class="empty-state"><p>未找到结果，请尝试其它关键词</p></div>
       <div v-else-if="results.length>0" class="results" data-testid="search-results">
@@ -55,7 +58,7 @@
           </details>
         </div>
       </div>
-      <div v-else class="empty-state"><p>输入关键词开始搜索</p></div>
+      <div v-else class="empty-state ai-page"><p>输入关键词开始搜索</p><p class="empty-hint">试试“请假”、“文件”或同事姓名，快速定位业务上下文</p></div>
     </div>
   </div>
 </template>
@@ -109,19 +112,22 @@ async function loadSearchTwin() {
 }
 </script>
 <style scoped>
-.search-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{padding:16px 24px}
+.search-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{padding:16px 24px;background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.search-panel{padding:24px;flex:1}
+.search-panel{padding:24px;flex:1;background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
 .search-box{display:flex;gap:8px;margin-bottom:24px}
-.search-input-lg{flex:1;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:16px;outline:none}
-.btn-search{padding:12px 20px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-size:16px}
-.results{display:flex;flex-direction:column;gap:8px}
-.result-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-md);background:var(--bg-elevated);cursor:pointer}
+.search-input-lg{flex:1;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:16px;outline:none;transition:border-color var(--ai-motion-fast) var(--ai-ease-spring)}
+.btn-search{padding:12px 20px;border-radius:var(--radius-md);border:none;background:var(--ai-gradient-brand);color:white;cursor:pointer;font-size:16px;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.btn-search:hover{transform:translateY(-1px)}
+.results{display:flex;flex-direction:column;gap:var(--ai-grid-1)}
+.result-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--ai-glass-border);cursor:pointer;transition:background var(--ai-motion-fast) var(--ai-ease-spring)}
 .result-item:hover{background:var(--color-primary-soft)}
 .ri-icon{font-size:24px}
 .ri-body{flex:1}
 .ri-title{font-size:14px;color:var(--text-primary)}
 .ri-desc{font-size:12px;color:var(--text-muted);margin-top:2px}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
+.loading-state .ai-skeleton-line{height:12px;border-radius:var(--radius-md);background:var(--ai-skeleton-base)}
+.empty-hint{margin:8px 0 0;color:var(--text-secondary);font-size:13px}
 </style>
