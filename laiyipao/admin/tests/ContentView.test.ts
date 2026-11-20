@@ -12,6 +12,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fmtTime } from '@/utils/format'
 
 const fetchAnnouncements = vi.hoisted(() => vi.fn())
 const createAnnouncement = vi.hoisted(() => vi.fn())
@@ -21,6 +22,9 @@ const createRedeemCode = vi.hoisted(() => vi.fn())
 const createRedeemCodesBatch = vi.hoisted(() => vi.fn())
 const fetchAuditLogs = vi.hoisted(() => vi.fn())
 const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
+const exportAnnouncementsCsv = vi.hoisted(() => vi.fn())
+const exportRedeemCodesCsv = vi.hoisted(() => vi.fn())
+const exportAuditLogsCsv = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchAnnouncements,
@@ -31,6 +35,9 @@ vi.mock('@/api', () => ({
   createRedeemCodesBatch,
   fetchAuditLogs,
   fetchAdminRedeemUsages,
+  exportAnnouncementsCsv,
+  exportRedeemCodesCsv,
+  exportAuditLogsCsv,
 }))
 
 import ContentView from '@/views/ContentView.vue'
@@ -481,6 +488,45 @@ describe('ContentView 公告玩家端预览（第 54 轮）', () => {
     expect(wrapper.text()).toContain('修复若干问题')
     wrapper.unmount()
   })
+
+  it('发布时间显示服务端真实 published_at，而非打开预览的此刻（第 55 轮）', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2030-06-15T10:00:00Z'))
+    try {
+      const realPublishedAt = '2026-01-01T00:00:00Z'
+      const wrapper = await mountContent({
+        announcements: [
+          { id: 1, title: '时间校对', body: '看发布时间', published: true, published_at: realPublishedAt, created_at: realPublishedAt },
+        ],
+      })
+      const btn = wrapper.findAll('button').find((b) => b.text() === '预览')
+      expect(btn, '找不到公告行「预览」按钮').toBeTruthy()
+      await btn!.trigger('click')
+      await flushPromises()
+
+      // 玩家端真实看到的是 published_at 格式化后的时间
+      expect(wrapper.text()).toContain(fmtTime(realPublishedAt))
+      // 绝不能是「打开预览这一刻」（2030-06-15）——旧实现 new Date().toLocaleString() 会命中
+      expect(wrapper.text()).not.toContain('2030')
+      wrapper.unmount()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('新建公告未发布前的预览不伪造发布时间（第 55 轮）', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '新公告', body: '正文', published: true }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    // 还没有真实 published_at 时应如实说明，而不是编一个当前时间骗运营
+    expect(wrapper.text()).toContain('发布后生成')
+    wrapper.unmount()
+  })
 })
 
 describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {
@@ -891,6 +937,241 @@ describe('ContentView 公告复制正文（第 98 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('修复若干问题，周末双倍掉落。')
     expect(document.body.textContent).toContain('公告正文已复制')
+    wrapper.unmount()
+  })
+})
+describe('ContentView CSV 导出条数真值（第 58 轮）', () => {
+  const csv = '\uFEFFid,title\n1,公告一\n2,公告二\n3,公告三\n'
+
+  type ExportVm = {
+    onExportAnnouncements: () => Promise<void>
+    onExportRedeemCodes: () => Promise<void>
+    onExportAuditLogs: () => Promise<void>
+  }
+
+  it('公告：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportAnnouncementsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ announcements: [{ id: 1, title: '公告一', body: '正文', published: true }] })
+    await (wrapper.vm as unknown as ExportVm).onExportAnnouncements()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条公告')
+    wrapper.unmount()
+  })
+
+  it('兑换码：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportRedeemCodesCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ codes: [{ id: 1, code: 'ABCDEFGHJKLM' }] })
+    await (wrapper.vm as unknown as ExportVm).onExportRedeemCodes()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条兑换码')
+    wrapper.unmount()
+  })
+
+  it('审计日志：当前页 1 条但导出全量 3 行 → 提示 3 条', async () => {
+    exportAuditLogsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent({ logs: [{ id: 1, action: 'ban_user' }] })
+    await (wrapper.vm as unknown as ExportVm).onExportAuditLogs()
+    await flushPromises()
+    expect(document.body.textContent).toContain('已导出 3 条审计日志')
+    wrapper.unmount()
+  })
+})
+describe('ContentView 公告筛选竞态（第 59 轮）', () => {
+  function deferred<T>() {
+    let resolve!: (v: { items: Row[] }) => void
+    const promise = new Promise<{ items: Row[] }>((r) => { resolve = r })
+    return { promise, resolve }
+  }
+
+  it('旧筛选慢响应后到，不得覆盖新筛选的公告列表', async () => {
+    const oldResp = deferred()
+    const newResp = deferred()
+    fetchAnnouncements.mockReset()
+    fetchAnnouncements
+      .mockImplementationOnce(() => Promise.resolve({ items: [] }))
+      .mockImplementationOnce(() => oldResp.promise)
+      .mockImplementationOnce(() => newResp.promise)
+    fetchRedeemCodes.mockResolvedValue({ items: [] })
+    fetchAuditLogs.mockResolvedValue({ items: [] })
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [], total: 0 })
+
+    const router = await makeRouter()
+    const wrapper = mount(ContentView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { loadAnnouncements: () => Promise<void> }
+    const pOld = vm.loadAnnouncements()
+    const pNew = vm.loadAnnouncements()
+
+    // 新筛选响应先到，旧筛选响应后到
+    newResp.resolve({ items: [{ id: 99, title: '新筛选结果', body: '新正文', published: true }] })
+    await pNew
+    await flushPromises()
+    oldResp.resolve({ items: [{ id: 1, title: '旧筛选结果', body: '旧正文', published: true }] })
+    await pOld
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('新筛选结果')
+    expect(wrapper.text()).not.toContain('旧筛选结果')
+    wrapper.unmount()
+  })
+})
+describe('ContentView 导出与列表筛选同口径（第 62 轮）', () => {
+  const csv = '\uFEFFid,name\n1,one\n'
+
+  type ExportVm = {
+    annPublished: boolean | undefined
+    annDateRange: [string, string] | null
+    codeKeyword: string
+    codeEnabled: boolean | undefined
+    codeExpired: boolean | undefined
+    onExportAnnouncements: () => Promise<void>
+    onExportRedeemCodes: () => Promise<void>
+  }
+
+  it('公告：筛选发布状态与日期后导出须把同口径参数传给服务端（当前无参=导出全量）', async () => {
+    exportAnnouncementsCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as ExportVm
+    vm.annPublished = true
+    vm.annDateRange = ['2026-01-01', '2026-01-31']
+    await flushPromises()
+    await vm.onExportAnnouncements()
+    await flushPromises()
+    expect(exportAnnouncementsCsv).toHaveBeenCalledWith({
+      published: true,
+      date_from: '2026-01-01',
+      date_to: '2026-01-31',
+    })
+    wrapper.unmount()
+  })
+
+  it('兑换码：筛选后导出须把 keyword/enabled/expired 传给服务端（当前无参=导出全量）', async () => {
+    exportRedeemCodesCsv.mockResolvedValue(new Blob([csv]))
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as ExportVm
+    vm.codeKeyword = 'LYP'
+    vm.codeEnabled = true
+    vm.codeExpired = false
+    await flushPromises()
+    await vm.onExportRedeemCodes()
+    await flushPromises()
+    expect(exportRedeemCodesCsv).toHaveBeenCalledWith({
+      keyword: 'LYP',
+      enabled: true,
+      expired: false,
+    })
+    wrapper.unmount()
+  })
+})
+describe('ContentView 创建提交防重（第 63 轮）', () => {
+  function deferred<T>() {
+    let resolve!: (v: { item: Row }) => void
+    const promise = new Promise<{ item: Row }>((r) => { resolve = r })
+    return { promise, resolve }
+  }
+
+  it('公告：首次创建请求未返回时重复提交不得再次调用创建接口', async () => {
+    const d = deferred()
+    createAnnouncement.mockReset()
+    createAnnouncement.mockImplementation(() => d.promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      annForm: { title: string; body: string; published: boolean }
+      submitAnnouncement: () => Promise<void>
+    }
+    vm.annForm = { title: '重复提交公告', body: '正文', published: true }
+
+    const p1 = vm.submitAnnouncement()
+    const p2 = vm.submitAnnouncement()
+    d.resolve({ item: { id: 1 } })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createAnnouncement, '双击「创建」只应发出一次创建请求').toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+
+  it('兑换码：首次创建请求未返回时重复提交不得再次调用创建接口', async () => {
+    const d = deferred()
+    createRedeemCode.mockReset()
+    createRedeemCode.mockImplementation(() => d.promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      submitCode: () => Promise<void>
+    }
+    vm.codeForm = { code: 'DUP-CODE', reward: 'coin:100', max_uses: 100, expires_at: '' }
+
+    const p1 = vm.submitCode()
+    const p2 = vm.submitCode()
+    d.resolve({ item: { id: 1 } })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createRedeemCode, '双击「创建」只应发出一次创建请求').toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 编辑中预览他条公告不得污染编辑表单（第 70 轮）', () => {
+  const annA: Row = { id: 1, title: '公告A', body: '正文A', published: false, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' }
+  const annB: Row = { id: 2, title: '公告B', body: '正文B', published: false, published_at: '2026-01-02T00:00:00Z', created_at: '2026-01-02T00:00:00Z' }
+
+  it('编辑 A 时行级预览 B，随后提交应更新 A 而非把 B 的内容写回 A', async () => {
+    updateAnnouncement.mockReset().mockResolvedValue({ id: 1, updated: ['title', 'body'] })
+    const wrapper = await mountContent({ announcements: [annA, annB] })
+    const vm = wrapper.vm as unknown as {
+      annForm: { title: string; body: string; published: boolean }
+      editingAnnId: number | null
+      startEditAnn: (a: Row) => void
+      previewAnnouncement: (a: Row) => void
+      submitAnnouncement: () => Promise<void>
+    }
+
+    // 运营正在编辑公告 A
+    vm.startEditAnn(annA)
+    await flushPromises()
+    expect(vm.editingAnnId).toBe(1)
+    expect(vm.annForm).toEqual({ title: '公告A', body: '正文A', published: false })
+
+    // 点列表里公告 B 的「预览」——只读预览不应改写正在编辑的表单
+    vm.previewAnnouncement(annB)
+    await flushPromises()
+    expect(wrapper.text()).toContain('公告B') // 预览对话框确实展示 B
+
+    // 关闭预览后提交更新
+    await vm.submitAnnouncement()
+    await flushPromises()
+
+    // 关键：更新目标仍是 A(id=1)，内容也必须是 A 自己的，绝不能被 B 覆盖
+    expect(updateAnnouncement).toHaveBeenCalledWith(1, { title: '公告A', body: '正文A', published: false })
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 兑换码批量生成防重（R272）', () => {
+  it('批量生成：首次请求未返回时重复调用不得再次调用批量接口', async () => {
+    let resolve!: (v: { items: Row[] }) => void
+    const promise = new Promise<{ items: Row[] }>((r) => { resolve = r })
+    createRedeemCodesBatch.mockReset()
+    createRedeemCodesBatch.mockImplementation(() => promise)
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      batchCount: number
+      submitCodeBatch: () => Promise<void>
+    }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    const p1 = vm.submitCodeBatch()
+    const p2 = vm.submitCodeBatch()
+    resolve({ items: [{ id: 1, code: 'AAAAAAAAAAAA', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true }] })
+    await Promise.all([p1, p2])
+    await flushPromises()
+
+    expect(createRedeemCodesBatch, '双击「批量生成」只应发出一次请求').toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 })

@@ -19,7 +19,7 @@
         <div class="form-row"><label>名称<input v-model="form.name" /></label><label>所属 Query Flag<input v-model="form.queryFlag" :disabled="!!activeFlag" /></label><label>Table Flag<input :value="activeFlag || '保存后由后端生成'" disabled /></label></div>
         <div class="column-head"><h2>列定义</h2><button class="btn" @click="addColumn">添加列</button></div>
         <table class="columns"><thead><tr><th>列名</th><th>类型</th><th>可空</th><th></th></tr></thead><tbody>
-          <tr v-for="(column,index) in form.columns" :key="index"><td><input v-model="column.name" placeholder="lower_snake_case" /></td><td><select v-model="column.type"><option v-for="type in columnTypes" :key="type" :value="type">{{ type }}</option></select></td><td><input v-model="column.nullable" type="checkbox" /></td><td><button class="remove" @click="removeColumn(index)">删除</button></td></tr>
+          <tr v-for="(column,index) in form.columns" :key="index"><td><input v-model="column.name" :aria-label="'第 ' + (index + 1) + ' 列列名'" placeholder="lower_snake_case" /></td><td><select v-model="column.type" :aria-label="'第 ' + (index + 1) + ' 列类型'"><option v-for="type in columnTypes" :key="type" :value="type">{{ type }}</option></select></td><td><input v-model="column.nullable" type="checkbox" :aria-label="'第 ' + (index + 1) + ' 列可空'" /></td><td><button class="remove" @click="removeColumn(index)">删除</button></td></tr>
         </tbody></table>
         <p class="notice">已有物理表仅允许追加列；删除列、改类型或可空性会由后端拒绝，避免破坏数据。</p>
         <section v-if="executeResult" class="result"><h2>执行结果</h2><pre>{{ JSON.stringify(executeResult, null, 2) }}</pre></section>
@@ -56,6 +56,7 @@ const loading = ref(false)
 const saving = ref(false)
 const executing = ref(false)
 const executeResult = ref<unknown>(null)
+let detailSeq = 0
 const form = ref<{ name: string; queryFlag: string; columns: TableColumnDefinition[] }>({
   name: '',
   queryFlag: '',
@@ -74,6 +75,7 @@ function removeColumn(index: number) {
   form.value.columns.splice(index, 1)
 }
 function newTable() {
+  detailSeq++
   activeFlag.value = ''
   form.value = { name: '', queryFlag: '', columns: [{ name: 'title', type: 'text', nullable: false }] }
   executeResult.value = null
@@ -86,10 +88,12 @@ function openTable(item: TableSummary) {
     columns: (item.columns ?? []).map((column) => ({ ...column })),
   }
   executeResult.value = null
+  const seq = ++detailSeq
   // GET designer/table/{flag} —— 表设计器单表详情（x_query_table），回填最新列/状态
   void api
     .get<any>(`/api/query/assemble/designer/table/${encodeURIComponent(item.tableFlag)}`)
     .then((r) => {
+      if (seq !== detailSeq) return
       const d = r?.data
       if (d && typeof d === 'object' && Array.isArray(d.columns)) {
         form.value.columns = d.columns.map((c: Record<string, unknown>) => ({ ...c }))

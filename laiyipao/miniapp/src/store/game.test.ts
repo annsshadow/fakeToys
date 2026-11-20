@@ -31,6 +31,7 @@ vi.mock('@/api/client', () => ({
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   saveLastUsername: vi.fn(),
+  onAuthFailure: vi.fn(() => () => {}),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -191,6 +192,49 @@ describe('账号登录闸门', () => {
     expect(ok).toBe(false)
     expect(store.loggedIn).toBe(false)
     expect(store.loginError).toBe('用户名或密码错误')
+  })
+})
+
+describe('鉴权失败兜底（api.onAuthFailure → 跳登录页）', () => {
+  /** 拿出 store 注册给 api 层的那个 handler（factory 里 onAuthFailure 是 vi.fn）。 */
+  function registeredHandler(): () => void {
+    const call = mockApi.onAuthFailure.mock.calls.at(-1)
+    expect(call, 'store 初始化时应订阅 onAuthFailure').toBeTruthy()
+    return call![0] as () => void
+  }
+
+  it('已登录时收到鉴权失败 → needLogin、清登录态、跳登录页', () => {
+    const handler = registeredHandler()
+    // 制造「本地以为已登录」的状态（低频用直接置位，避免依赖登录网络流程）
+    ;(store as any).loggedIn = true
+    expect(store.loggedIn).toBe(true)
+
+    handler()
+
+    expect(store.needLogin).toBe(true)
+    expect(store.loggedIn).toBe(false)
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/login/login' })
+  })
+
+  it('并发 N 次信号只跳一次（第一次即清 loggedIn → 后续 handler 直接 return）', () => {
+    const handler = registeredHandler()
+    ;(store as any).loggedIn = true
+
+    handler()
+    handler()
+    handler()
+
+    expect(uni.reLaunch).toHaveBeenCalledTimes(1)
+  })
+
+  it('未登录时收到信号 → 不跳登录页（挡住杂散 401 误跳）', () => {
+    const handler = registeredHandler()
+    expect(store.loggedIn).toBe(false)
+
+    handler()
+
+    expect(uni.reLaunch).not.toHaveBeenCalled()
+    expect(store.needLogin).toBe(false)
   })
 })
 
@@ -397,6 +441,33 @@ describe('档案与钱包刷新', () => {
     expect(store.power).toBe(0)
   })
 
+  it('refreshProfile：以 /me.account 为准刷新账号身份（游客转正后立即切换账号视图）', async () => {
+    // 服务端 UpgradeGuestAccount 把 users.is_guest 写成 FALSE，/me 的
+    // account 字段下发的就是登录态权威快照。此前 refreshProfile 只读了
+    // created_at / last_login_at，忽略 is_guest —— 游客转正后 me 页还显示
+    // 「游客账号」且「修改密码」入口不出现，直到重新登录才恢复。
+    store.isGuest = true
+    store.nickname = '游客7'
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9,
+      account: { created_at: '2026-01-01T00:00:00Z', last_login_at: '2026-01-02T00:00:00Z', is_guest: false, nickname: '转正玩家' },
+    } as any)
+    await store.refreshProfile()
+    expect(store.isGuest).toBe(false)
+    expect(store.nickname).toBe('转正玩家')
+    expect(mockApi.saveProfile).toHaveBeenCalledWith({ nickname: '转正玩家', isGuest: false })
+  })
+
+  it('refreshProfile：/me.account 缺少 is_guest 时保留本地身份（老服务端兜底）', async () => {
+    store.isGuest = true
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9,
+      account: { created_at: '2026-01-01T00:00:00Z', last_login_at: '2026-01-02T00:00:00Z' },
+    } as any)
+    await store.refreshProfile()
+    expect(store.isGuest).toBe(true)
+  })
+
   it('refreshWallet 成功 / 失败都不抛', async () => {
     mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
     await store.refreshWallet()
@@ -432,6 +503,75 @@ describe('进度恢复 max_stage（第 142 轮）', () => {
     } as any)
     await store.refreshProfile()
     expect(store.maxStage).toBe(60)
+  })
+
+  it('refreshProfile：换号后重置上一账号进度（新账号不继承旧解锁关卡）', async () => {
+    // 账号 A（id=7）先把本地进度抬到 57（模拟已打到第 57 关）。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(57)
+
+    // 换成账号 B（id=8），服务端进度是 0。只增不减的 setMaxStage 会忽略 0，
+    // 若不按身份重置，B 会继承 A 的 57 关解锁（unlockedLevel=58）。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 8, build: null, build_rating: null, power: 3, max_stage: 0,
+    } as any)
+    await store.refreshProfile()
+    expect(store.userId).toBe(8)
+    expect(store.maxStage).toBe(0)
+    expect(store.unlockedLevel).toBe(1)
+  })
+})
+
+
+describe('档案刷新并发守卫（第 129 轮）', () => {
+  // 用可控 Promise 让「旧请求先发、新请求后发但先返回、旧请求后到」，
+  // 验证序号守卫丢弃陈旧响应，避免旧账号/旧钱包覆盖最新态。
+  it('refreshProfile：并发时旧响应后到不覆盖新响应的 userId 与 wallet', async () => {
+    let resolveOldWallet!: (v: any) => void
+    let resolveOldMe!: (v: any) => void
+    const oldWallet = new Promise<any>((r) => { resolveOldWallet = r })
+    const oldMe = new Promise<any>((r) => { resolveOldMe = r })
+    mockApi.fetchWallet.mockImplementationOnce(() => oldWallet)
+    mockApi.fetchMe.mockImplementationOnce(() => oldMe)
+    const stale = store.refreshProfile()
+
+    mockApi.fetchWallet.mockResolvedValueOnce({ coin: 99, gem: 99, energy: 99, keys: 99, tokens: {} })
+    mockApi.fetchMe.mockResolvedValueOnce({ user_id: 88, build: null, build_rating: null, power: 321 } as any)
+    const fresh = store.refreshProfile()
+
+    // 新请求先返回并落地。
+    await fresh
+    expect(store.userId).toBe(88)
+    expect((store.wallet as any).coin).toBe(99)
+    expect(store.power).toBe(321)
+
+    // 旧请求后到：必须被序号守卫丢弃，不许把 user_id=7 / coin=1 写回来。
+    resolveOldWallet({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
+    resolveOldMe({ user_id: 7, build: null, build_rating: null, power: 123 } as any)
+    await stale
+    expect(store.userId).toBe(88)
+    expect((store.wallet as any).coin).toBe(99)
+    expect(store.power).toBe(321)
+  })
+
+  it('refreshWallet：并发时旧钱包后到不覆盖新钱包', async () => {
+    let resolveOld!: (v: any) => void
+    const oldWallet = new Promise<any>((r) => { resolveOld = r })
+    mockApi.fetchWallet.mockImplementationOnce(() => oldWallet)
+    const stale = store.refreshWallet()
+
+    mockApi.fetchWallet.mockResolvedValueOnce({ coin: 50, gem: 50, energy: 50, keys: 50, tokens: {} })
+    const fresh = store.refreshWallet()
+
+    await fresh
+    expect((store.wallet as any).coin).toBe(50)
+
+    resolveOld({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
+    await stale
+    expect((store.wallet as any).coin).toBe(50)
   })
 })
 

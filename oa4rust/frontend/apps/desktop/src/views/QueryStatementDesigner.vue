@@ -106,7 +106,7 @@
           <table v-else class="res-table">
             <thead>
               <tr>
-                <th v-for="h in resultHeaders" :key="h" @click="sortResult(h)">{{ h }}</th>
+                <th v-for="h in resultHeaders" :key="h" tabindex="0" role="button" :aria-sort="sortCol !== h ? 'none' : sortAsc ? 'ascending' : 'descending'" @click="sortResult(h)" @keydown.enter="sortResult(h)" @keydown.space.prevent="sortResult(h)">{{ h }}</th>
               </tr>
             </thead>
             <tbody>
@@ -117,9 +117,9 @@
           </table>
         </div>
         <div class="results-pager" v-if="resultData.length > 0">
-          <button class="pg-btn" :disabled="page<=1" @click="page--">‹</button>
+          <button class="pg-btn" aria-label="上一页" :disabled="page<=1" @click="page--">‹</button>
           <span class="pg-info">第 {{ page }} / {{ totalPages }} 页</span>
-          <button class="pg-btn" :disabled="page>=totalPages" @click="page++">›</button>
+          <button class="pg-btn" aria-label="下一页" :disabled="page>=totalPages" @click="page++">›</button>
         </div>
       </aside>
     </div>
@@ -134,7 +134,7 @@
         <div class="form-group"><label>描述</label><input v-model="modalForm.desc" class="form-input" placeholder="可选描述" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showModal=false">取消</button>
-          <button class="btn-save" :disabled="!modalForm.name" @click="modalSave">保存</button>
+          <button class="btn-save" :disabled="!modalForm.name || modalSaving" @click="modalSave">{{ modalSaving ? '保存中...' : '保存' }}</button>
         </div>
       </div>
     </div>
@@ -886,8 +886,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
-import { formatServerDateTime } from '../utils/date'
+import { buildCsv } from '../utils/csv'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
+import { formatPercent } from '../utils/formatNumber'
+import { resultPageView } from '../utils/resultPagination'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -975,22 +978,32 @@ const filtered = computed(() => {
   return list
 })
 
-const sortedResult = computed(() => {
-  let data = resultFilter.value
-    ? resultData.value.filter((row) =>
-        Object.values(row).some((v) => String(v).toLowerCase().includes(resultFilter.value.toLowerCase())),
-      )
-    : resultData.value
-  if (sortCol.value) {
-    data = [...data].sort((a, b) => {
-      const av = a[sortCol.value],
-        bv = b[sortCol.value]
-      return sortAsc.value ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
-    })
-  }
-  return data.slice((page.value - 1) * pageSize, page.value * pageSize)
-})
-const totalPages = computed(() => Math.ceil(resultData.value.length / pageSize))
+const resultView = computed(() =>
+  resultPageView(
+    resultData.value,
+    (row) =>
+      !resultFilter.value ||
+      Object.values(row).some((v) => String(v).toLowerCase().includes(resultFilter.value.toLowerCase())),
+    page.value,
+    pageSize,
+    sortCol.value
+      ? (a, b) => {
+          const av = a[sortCol.value],
+            bv = b[sortCol.value]
+          return sortAsc.value ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
+        }
+      : undefined,
+  ),
+)
+const sortedResult = computed(() => resultView.value.rows)
+const totalPages = computed(() => resultView.value.totalPages)
+// 过滤/排序后页码被夹取时同步回 ref，使分页器显示与实际展示行始终一致。
+watch(
+  () => resultView.value.page,
+  (p) => {
+    if (page.value !== p) page.value = p
+  },
+)
 
 const statusText = computed(() => {
   if (!currentStatement.value) return '未选择语句'
@@ -1011,7 +1024,9 @@ function editStatement(s: Stmt) {
   modalForm.value = { name: s.name || '', flag: s.flag || '', sql: s.sql ?? '', desc: s.desc || '' }
   showModal.value = true
 }
+const modalSaving = ref(false)
 const saveM = useMutation({
+  onSettled: () => (modalSaving.value = false),
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (data: any) => {
     if (editing.value && currentStatement.value?.id)
@@ -1040,7 +1055,9 @@ async function saveByFlag() {
   }
 }
 function modalSave() {
+  if (modalSaving.value) return
   if (!modalForm.value.name.trim()) return
+  modalSaving.value = true
   const payload = {
     name: modalForm.value.name,
     flag: modalForm.value.flag,
@@ -1101,11 +1118,11 @@ function sortResult(col: string) {
 }
 function exportCSV() {
   if (!resultData.value.length) return
-  const header = resultHeaders.value.join(',')
-  const rows = resultData.value.map((r) =>
-    resultHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  const csv = buildCsv(
+    resultHeaders.value,
+    resultData.value.map((r) => resultHeaders.value.map((h) => String(r[h] ?? ''))),
   )
-  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, 'query_result.csv')
 }
 
@@ -1202,9 +1219,9 @@ const maxDuration = computed(() =>
   execHistory.value.length ? Math.max(...execHistory.value.map((h) => h.duration)) : 0,
 )
 const successRate = computed(() => {
-  if (!execHistory.value.length) return '100%'
+  if (!execHistory.value.length) return formatPercent(undefined, 0)
   const ok = execHistory.value.filter((h) => h.success).length
-  return `${Math.round((ok / execHistory.value.length) * 100)}%`
+  return formatPercent(ok / execHistory.value.length, 0)
 })
 const totalRows = computed(() => execHistory.value.reduce((a, h) => a + h.rows, 0))
 const errCount = computed(() => execHistory.value.filter((h) => !h.success).length)
@@ -1937,17 +1954,17 @@ function doExport() {
   }))
   if (exportFmt.value === 'json') {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    downloadBlob(blob, `statements_${new Date().toISOString().slice(0, 10)}.json`)
+    downloadBlob(blob, `statements_${businessTodayYMD()}.json`)
   } else if (exportFmt.value === 'sql') {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `statements_${new Date().toISOString().slice(0, 10)}.sql`)
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `statements_${businessTodayYMD()}.sql`)
   } else {
     const csv =
       'name,flag,sql,category\n' +
       data
         .map((d) => `"${d.name}","${d.flag || ''}","${(d.sql || '').replace(/"/g, '""')}","${d.category || ''}"`)
         .join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `statements_${businessTodayYMD()}.csv`)
   }
   showExportImport.value = false
 }

@@ -41,9 +41,50 @@ const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 const FORBIDDEN_MESSAGE = '没有权限执行该操作'
 const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
 
+/**
+ * BUG-B：认证失败（401）有两类完全不同的语义，不能共用一条文案：
+ *   - 登录接口的 401 = 凭据校验失败（用户名/密码错误或账户锁定）。用户仍在登录页，
+ *     没有会话可「过期」，提示必须以凭据错误为导向，否则会误导用户去刷新会话。
+ *   - 其它业务请求的 401 = 会话/令牌失效，需要重新登录。
+ * 后端 POST /api/authentication/login 对「用户不存在」直接返回 401（AppError::Unauthorized），
+ * 且登录请求 requireAuth:false 不会触发 refresh，因此这条 401 必然是凭据错误。
+ */
+const LOGIN_FAILED_MESSAGE = '用户名或密码错误，请重新输入'
+const SESSION_EXPIRED_MESSAGE = 'Session expired, please login again'
+
+/**
+ * R155 / B1：传输层网络失败文案归一化。
+ * fetch/XHR 的底层错误是英文技术串（Failed to fetch / Network error / Timeout /
+ * Request aborted），直接透到页面会变成「加载失败：Failed to fetch」。
+ * 与移动 services/http.ts（R136）同口径，在这里换成中文可读文案；
+ * status 保持 0，使 shouldRetryQuery 的不重试判定不变。
+ */
+const NETWORK_FAILURE_MESSAGE = '网络连接失败，请检查网络后重试'
+const UPLOAD_FAILURE_MESSAGE = '上传失败，请检查网络后重试'
+const UPLOAD_TIMEOUT_MESSAGE = '上传超时，请检查网络后重试'
+
+/** fetch/XHR 网络失败 → 归一化的 ApiError(status 0)。 */
+function networkFailure(message: string): ApiError {
+  return new ApiError(message, 0)
+}
+
 function httpStatusError(status: number, statusText?: string): ApiError {
   if (status === 404) return new ApiError(NOT_FOUND_MESSAGE, 404)
   return new ApiError(statusText ? `HTTP ${status}: ${statusText}` : `HTTP ${status}`, status)
+}
+
+/**
+ * R282：2xx 响应体非法 JSON 的错误信封归一化。
+ * 网关误插 HTML 错误页 / 代理截断 / 空 body 边缘都会让 2xx body 不是合法 JSON；
+ * 原生 SyntaxError 会绕过所有 ApiError 判别分支，并把英文技术串突到页面/toast。
+ * 与 XHR 通道 uploadWithProgress 的 `new ApiError('malformed JSON response', status)` 同口径。
+ */
+async function parseJsonEnvelope<T>(resp: Response): Promise<ApiResponse<T>> {
+  try {
+    return (await resp.json()) as ApiResponse<T>
+  } catch {
+    throw new ApiError('malformed JSON response', resp.status)
+  }
 }
 
 /** 查询选项（传给 TanStack Query） */
@@ -120,6 +161,11 @@ export class ApiClient {
     this.base = base
   }
 
+  /** 子路径部署时设置 API 前缀（如 '/oa4rust-api'），其后所有请求自动带上该前缀。 */
+  setBase(base: string): void {
+    this.base = base
+  }
+
   setAuthenticationFailureHandler(handler: (() => void) | null): void {
     this.authenticationFailureHandler = handler
   }
@@ -137,7 +183,7 @@ export class ApiClient {
   }
 
   private isRefreshRequest(path: string): boolean {
-    return this.resolveUrl(path).pathname === '/api/authentication/refresh'
+    return path === '/api/authentication/refresh'
   }
 
   async refreshSession(): Promise<void> {
@@ -163,10 +209,22 @@ export class ApiClient {
    * 会通知上层两次（handler 弹 toast 就会弹两条）。传入 `cause` 后，已经通知
    * 过的错误原样透传，只有「refresh 因非认证原因失败」才补一次通知。
    */
-  private authenticationFailed(cause?: unknown): AuthenticationError {
+  private authenticationFailed(cause?: unknown, path?: string): AuthenticationError {
     if (cause instanceof AuthenticationError) return cause
     this.authenticationFailureHandler?.()
-    return new AuthenticationError('Session expired, please login again')
+    // 登录接口的 401 是凭据错误，不是会话过期（用户还没登录，无所谓会话失效）。
+    const message = path && this.isLoginRequest(path) ? LOGIN_FAILED_MESSAGE : SESSION_EXPIRED_MESSAGE
+    return new AuthenticationError(message)
+  }
+
+  /** 登录/认证类端点：这些接口的 401 表示凭据无效，而非已登录会话过期。 */
+  private isLoginRequest(path: string): boolean {
+    return (
+      path === '/api/authentication/login' ||
+      path === '/api/authentication' ||
+      path === '/api/authentication/captcha' ||
+      path.startsWith('/api/authentication/two')
+    )
   }
 
   private async request<T>(
@@ -208,7 +266,7 @@ export class ApiClient {
       if (bridge.cancelled()) throw new RequestCancelledError()
       // 超时映射成 status 0：上层（vue-query 重试策略）据此识别「不会自己好」的失败并停止重试。
       if ((err as { name?: string } | null)?.name === 'AbortError') throw new ApiError('请求超时', 0)
-      throw err
+      throw networkFailure(NETWORK_FAILURE_MESSAGE)
     } finally {
       clearTimeout(timeoutId)
       bridge.dispose()
@@ -224,7 +282,7 @@ export class ApiClient {
           }
           return this.request<T>(method, path, { ...options, retried: true })
         }
-        throw this.authenticationFailed()
+        throw this.authenticationFailed(undefined, path)
       }
       if (resp.status === 403) {
         throw new PermissionError(FORBIDDEN_MESSAGE)
@@ -235,7 +293,7 @@ export class ApiClient {
     if (options?.discardResponse || resp.status === 204) {
       return { success: true, data: undefined as T }
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   get<T>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<T>> {
@@ -265,8 +323,12 @@ export class ApiClient {
     const controller = new AbortController()
     const bridge = bridgeAbort(options?.signal, controller)
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutElapsed = false
     if (options?.timeoutMs) {
-      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => {
+        timeoutElapsed = true
+        controller.abort()
+      }, options.timeoutMs)
     }
     let resp: Response
     try {
@@ -279,9 +341,10 @@ export class ApiClient {
         credentials: 'include',
         signal: controller.signal,
       })
-    } catch (err) {
+    } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
-      throw err
+      if (timeoutElapsed) throw networkFailure(UPLOAD_TIMEOUT_MESSAGE)
+      throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
       bridge.dispose()
@@ -299,7 +362,7 @@ export class ApiClient {
       if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
       throw httpStatusError(resp.status)
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   /** 文件上传（带真实进度回调；fetch 拿不到上传字节流，走 XHR）。 */
@@ -383,9 +446,9 @@ export class ApiClient {
           settleReject(new ApiError('malformed JSON response', xhr.status))
         }
       }
-      xhr.onerror = () => settleReject(new ApiError('Network error', 0))
-      xhr.onabort = () => settleReject(cancelled ? new RequestCancelledError() : new ApiError('Request aborted', 0))
-      xhr.ontimeout = () => settleReject(new ApiError('Timeout', 0))
+      xhr.onerror = () => settleReject(networkFailure(UPLOAD_FAILURE_MESSAGE))
+      xhr.onabort = () => settleReject(cancelled ? new RequestCancelledError() : networkFailure(UPLOAD_FAILURE_MESSAGE))
+      xhr.ontimeout = () => settleReject(networkFailure(UPLOAD_TIMEOUT_MESSAGE))
       xhr.send(formData)
     })
   }
@@ -405,8 +468,12 @@ export class ApiClient {
     const controller = new AbortController()
     const bridge = bridgeAbort(options?.signal, controller)
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let timeoutElapsed = false
     if (options?.timeoutMs) {
-      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => {
+        timeoutElapsed = true
+        controller.abort()
+      }, options.timeoutMs)
     }
     let resp: Response
     try {
@@ -417,9 +484,10 @@ export class ApiClient {
         credentials: 'include',
         signal: controller.signal,
       })
-    } catch (err) {
+    } catch {
       if (bridge.cancelled()) throw new RequestCancelledError()
-      throw err
+      if (timeoutElapsed) throw networkFailure(UPLOAD_TIMEOUT_MESSAGE)
+      throw networkFailure(UPLOAD_FAILURE_MESSAGE)
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId)
       bridge.dispose()
@@ -437,7 +505,7 @@ export class ApiClient {
       if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
       throw httpStatusError(resp.status)
     }
-    return resp.json() as Promise<ApiResponse<T>>
+    return parseJsonEnvelope<T>(resp)
   }
 
   /**
@@ -502,32 +570,46 @@ export class ApiClient {
       const reader = resp.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
+      const emitEvent = (raw: string): void => {
+        let event = 'message'
+        const dataLines: string[] = []
+        for (const line of raw.split(/\r?\n/)) {
+          if (line.startsWith('event:')) event = line.slice(6).trim()
+          else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+        }
+        if (dataLines.length) onEvent(event, dataLines.join('\n'))
+      }
+      // 解析所有以空行分隔的完整事件，返回未闭合的尾部缓冲。
+      const drainEvents = (): string => {
+        for (;;) {
+          const m = buf.match(/(?:\r?\n){2}/)
+          if (!m || m.index === undefined) return buf
+          emitEvent(buf.slice(0, m.index))
+          buf = buf.slice(m.index + m[0].length)
+        }
+      }
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
         armIdle()
         buf += decoder.decode(value, { stream: true })
         // SSE 事件以空行分隔（容忍 \r\n）
-        for (;;) {
-          const m = buf.match(/(?:\r?\n){2}/)
-          if (!m || m.index === undefined) break
-          const raw = buf.slice(0, m.index)
-          buf = buf.slice(m.index + m[0].length)
-          let event = 'message'
-          const dataLines: string[] = []
-          for (const line of raw.split(/\r?\n/)) {
-            if (line.startsWith('event:')) event = line.slice(6).trim()
-            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
-          }
-          if (dataLines.length) onEvent(event, dataLines.join('\n'))
-        }
+        drainEvents()
       }
+      // 流结束时缓冲区可能还留着最后一条事件（服务端未补终止空行），
+      // 且解码器内部可能还有未输出的多字节字符；flush 后一并处理，避免
+      // 丢失结束事件 / 最后一段 token。
+      buf = decoder.decode() + drainEvents()
+      if (buf.trim()) emitEvent(buf)
     } catch (err) {
       // 用户取消优先：切换会话/离开页面时应静默结束，不报「流式响应超时」。
       if (bridge.cancelled()) throw new RequestCancelledError()
       // 只有「我们自己的空闲看门狗」超时才改写错误；其余（401/403/网络/解析）原样抛。
       if (idleTimedOut) throw new ApiError('流式响应超时', 0)
-      throw err
+      // stream 的 try 块包住了状态判定：认证/权限/HTTP 状态/无 body 等语义错误
+      // 都已是 ApiError（含子类），必须原样透传；这里只归一化传输层原始网络异常。
+      if (err instanceof ApiError) throw err
+      throw networkFailure(NETWORK_FAILURE_MESSAGE)
     } finally {
       clearIdle()
       bridge.dispose()

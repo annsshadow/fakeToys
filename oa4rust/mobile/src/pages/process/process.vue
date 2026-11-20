@@ -26,6 +26,7 @@ const loadingMore = ref(false)
 const busy = ref(false)
 // 页签/加载更多的在途请求只认最新一次，见 utils/latest。
 const pageGate = createLatestGate()
+const detailGate = createLatestGate()
 
 // 详情浮层：附件 / 流转记录 / 工作日志（按 work 维度拉取真实后端能力）
 const detailOpen = ref(false)
@@ -48,6 +49,7 @@ function workIdOf(row: Record<string, unknown>): string {
 async function openDetail(row: Record<string, unknown>, i: number) {
   const id = workIdOf(row)
   if (!id) return
+  const token = detailGate.begin()
   detailOpen.value = true
   detailTitle.value = titleOf(row, i)
   detailTarget.value = { row, i }
@@ -61,7 +63,7 @@ async function openDetail(row: Record<string, unknown>, i: number) {
       return (await p).data ?? []
     } catch (e) {
       // 单节失败置空不该静默：记下第一条错误，详情浮层顶部统一展示。
-      if (!detailError.value) detailError.value = describeLoadError(label, e)
+      if (!detailError.value && detailGate.isLatest(token)) detailError.value = describeLoadError(label, e)
       return []
     }
   }
@@ -70,6 +72,7 @@ async function openDetail(row: Record<string, unknown>, i: number) {
     settle(processApi.records(id), '流转记录加载失败'),
     settle(processApi.worklogs(id), '工作日志加载失败'),
   ])
+  if (!detailGate.isLatest(token)) return
   detailAttachments.value = att
   detailRecords.value = rec
   detailWorklogs.value = log
@@ -82,7 +85,9 @@ function retryDetail() {
 }
 
 function closeDetail() {
+  detailGate.begin()
   detailOpen.value = false
+  detailLoading.value = false
   detailError.value = ''
   detailTarget.value = null
 }
@@ -303,32 +308,32 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .tabs {
   display: flex;
-  background: #fff;
+  background: var(--color-surface);
 }
 .tab {
   flex: 1;
   text-align: center;
   padding: 24rpx 0;
   font-size: 30rpx;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 .tab.on {
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-weight: 700;
-  border-bottom: 4rpx solid #2d8cf0;
+  border-bottom: 4rpx solid var(--color-primary);
 }
 .tip {
   padding: 120rpx 0;
   text-align: center;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -339,38 +344,38 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .footer-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-banner {
   padding: 20rpx 24rpx;
-  background: #fdf2f0;
+  background: var(--color-error-tint);
   border-radius: 12rpx;
   margin-top: 16rpx;
 }
 .load-more {
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .list {
-  background: #fff;
+  background: var(--color-surface);
 }
 .item {
   padding: 28rpx 32rpx;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .meta {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .actions {
   margin-top: 16rpx;
@@ -381,7 +386,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 .footer {
   padding: 24rpx;
   text-align: center;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 .fab {
@@ -391,8 +396,8 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   display: flex;
   align-items: center;
   gap: 8rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   padding: 18rpx 28rpx;
   border-radius: 44rpx;
   box-shadow: 0 8rpx 24rpx rgba(45, 140, 240, 0.4);
@@ -415,7 +420,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 .sheet {
   width: 100%;
   max-height: 76vh;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 24rpx 24rpx 0 0;
   display: flex;
   flex-direction: column;
@@ -425,16 +430,16 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   justify-content: space-between;
   align-items: center;
   padding: 28rpx 32rpx;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .sheet-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .sheet-close {
   font-size: 32rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .sheet-body {
   padding: 16rpx 32rpx 40rpx;
@@ -443,12 +448,12 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   margin-top: 20rpx;
   font-size: 26rpx;
   font-weight: 700;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .sec-empty {
   padding: 12rpx 0;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .sec-row {
   display: flex;
@@ -456,11 +461,11 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   gap: 16rpx;
   padding: 14rpx 0;
   font-size: 26rpx;
-  color: #4a5560;
-  border-bottom: 1px solid #f7f8fa;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-divider);
 }
 .sec-time {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
 }
 </style>

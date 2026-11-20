@@ -31,7 +31,7 @@ import {
   type RecomputeModeState,
   type RecomputeSummary,
 } from '@/api'
-import { fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -163,17 +163,24 @@ function shapeHint(level: RecomputeLevelStat): string {
   return ''
 }
 
+// 统计窗口下拉 @change 与刷新按钮均可连续触发且无 loading 守卫：
+// 迟到的旧窗口慢响应不得覆盖新 summary，与 load() 的 loadSeq 同款。
+let statsLoadSeq = 0
 async function loadStats() {
+  const seq = ++statsLoadSeq
   statsLoading.value = true
   try {
-    summary.value = await fetchRecomputeStats(hours.value)
+    const res = await fetchRecomputeStats(hours.value)
+    if (seq !== statsLoadSeq) return
+    summary.value = res
   } catch (e) {
+    if (seq !== statsLoadSeq) return
     // 总账拿不到时**不能**把列表一起阻断：列表是逐条证据，
     // 总账只是个概览。反过来（只有概览没证据）才是没用的。
     ElMessage.warning(`总账加载失败：${(e as Error).message}`)
     summary.value = null
   } finally {
-    statsLoading.value = false
+    if (seq === statsLoadSeq) statsLoading.value = false
   }
 }
 
@@ -228,7 +235,9 @@ async function switchMode(next: string) {
   }
 }
 
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchRecomputes({
@@ -238,12 +247,14 @@ async function load() {
       limit: LEDGER_PAGE_SIZE,
       offset: (ledgerPage.value - 1) * LEDGER_PAGE_SIZE,
     })
+    if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`重算台账加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -259,15 +270,17 @@ async function onExportCsv() {
       level_id: levelId.value,
       only_mismatch: onlyMismatch.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `recomputes_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `recomputes_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${rows.value.length} 条重算记录（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条重算记录（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -564,7 +577,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           placeholder="关卡 ID"
           style="width: 120px"
         />
-        <el-button @click="load">筛选</el-button>
+        <!-- 第 57 轮：改筛选必须回到第一页，否则旧页 offset 会把小结果集误判为空表（与 BattlesView 同款）。 -->
+        <el-button @click="((ledgerPage = 1), load())">筛选</el-button>
         <el-checkbox v-model="onlyMismatch" style="margin-left: 12px">只看不符</el-checkbox>
         <!-- 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮） -->
         <el-button style="margin-left: 12px" @click="onExportCsv">导出 CSV</el-button>

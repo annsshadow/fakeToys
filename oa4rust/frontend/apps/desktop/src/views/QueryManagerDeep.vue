@@ -232,7 +232,7 @@
               <table v-else class="res-table" :class="['tc-' + tableConfig.theme, { sortable: tableConfig.sortable }]">
                 <thead>
                   <tr>
-                    <th v-for="h in viewHeaders" :key="h" @click="toggleSort(h)">
+                    <th v-for="h in viewHeaders" :key="h" tabindex="0" role="button" :aria-sort="sortState?.key !== h ? 'none' : sortState.dir === 'asc' ? 'ascending' : 'descending'" @click="toggleSort(h)" @keydown.enter="toggleSort(h)" @keydown.space.prevent="toggleSort(h)">
                       {{ h }}<span v-if="sortState?.key === h" class="th-sort">{{ sortState.dir === 'asc' ? ' ▲' : ' ▼' }}</span>
                     </th>
                   </tr>
@@ -268,7 +268,7 @@
         <div class="form-group"><label>分类</label><input v-model="nform.category" class="form-input" placeholder="如：query, stat, admin" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="showCreate=false">取消</button>
-          <button class="btn-save" :disabled="!nform.name" @click="createQuery">创建</button>
+          <button class="btn-save" :disabled="!nform.name || createSaving" @click="createQuery">{{ createSaving ? '创建中...' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -434,8 +434,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
-import { parseCsv } from '../utils/csv'
-import { formatServerDateTime } from '../utils/date'
+import { buildCsv, parseCsv } from '../utils/csv'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -852,7 +852,9 @@ async function deleteQuery() {
   delM.mutate(selected.value.id)
 }
 
+const createSaving = ref(false)
 const cm = useMutation({
+  onSettled: () => (createSaving.value = false),
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: () =>
     api.post('/api/query/assemble/designer/create', {
@@ -866,7 +868,10 @@ const cm = useMutation({
   },
 })
 function createQuery() {
-  if (nform.value.name) cm.mutate()
+  if (createSaving.value) return
+  if (!nform.value.name) return
+  createSaving.value = true
+  cm.mutate()
 }
 
 function refresh() {
@@ -1035,12 +1040,12 @@ async function importData() {
 }
 function exportResults() {
   if (!viewRows.value.length) return
-  // 导出跟随视图配置投影（所见即所得）
-  const header = viewHeaders.value.join(',')
-  const rows = viewRows.value.map((r) =>
-    viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  // 导出跟随视图配置投影（所见即所得）；表头/字段统一引号转义，避免列名含逗号时错列
+  const csv = buildCsv(
+    viewHeaders.value,
+    viewRows.value.map((r) => viewHeaders.value.map((h) => String(r[h] ?? ''))),
   )
-  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, 'query_result.csv')
 }
 function fmtTime(t?: string) {
@@ -1158,16 +1163,16 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `queries_${new Date().toISOString().slice(0, 10)}.json`,
+      `queries_${businessTodayYMD()}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${businessTodayYMD()}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${businessTodayYMD()}.sql`)
   }
   showExportImport.value = false
 }

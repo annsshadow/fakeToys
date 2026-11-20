@@ -72,7 +72,7 @@
           此前体力在开战时就扣了，而页面**没有**任何放弃路径 ——
           中途退出等于「什么都没发生，但资源没了」。
         -->
-        <view v-if="!settled" class="abandon-btn" @click="abandon">
+        <view v-if="!settled || (settleResult && settleResult.error)" class="abandon-btn" @click="abandon">
           <Icon name="flag" :size="26" />
           <text>{{ abandoning ? '处理中…' : '放弃' }}</text>
         </view>
@@ -218,6 +218,13 @@
     <!-- 结算界面 -->
     <view v-if="settleResult" class="sheet">
       <text class="result-title">{{ settleResult.win ? '通关' : '防线失守' }}</text>
+      <!-- G91 战斗评级徽章：一个可追求的综合目标 -->
+      <view v-if="battleGrade" class="grade-badge" :style="{ borderColor: battleGrade.color, color: battleGrade.color }">
+        <text class="grade-letter">{{ battleGrade.grade }}</text>
+        <text class="grade-label">{{ battleGrade.label }}</text>
+      </view>
+      <!-- G92 下次目标：一句可执行的改进方向 -->
+      <text v-if="nextGoal" class="next-goal">下一步：{{ nextGoal }}</text>
       <view class="stars-big">
         <text
           v-for="i in 3"
@@ -249,6 +256,9 @@
       </view>
       <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
       <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
+      <!-- 结算失败时 token 仍未 used_at，服务端仍允许放弃退体力；
+           不给出入口，玩家会白白损失开战时已扣的体力（或被迫再来一局再扣一次）。 -->
+      <view v-if="settleResult.error" class="btn" @click="abandon">{{ abandoning ? '处理中…' : '放弃并退回体力' }}</view>
       <view class="reward-row">
         <view v-for="(v, k) in settleResult.loot" :key="k" class="reward">
           <Icon :name="currencyIcon(String(k))" :size="28" />
@@ -327,6 +337,34 @@ const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/** G91 战斗评级：基于星级/漏怪/反应的综合评价，给玩家一个可追求的目标（纯客户端派生）。 */
+const battleGrade = computed(() => {
+  const r = settleResult.value
+  if (!r) return null
+  if (!r.win) return { grade: 'D', label: '防线失守', color: '#ff7b72' }
+  const stars = Number(r.stars ?? 0)
+  const leaked = Number(r.leaked ?? 0)
+  const reactions = Number(r.reactions ?? 0)
+  let score = stars * 30 + Math.min(20, reactions) - leaked * 10
+  if (score >= 95) return { grade: 'S', label: '完美防线', color: '#ffd700' }
+  if (score >= 70) return { grade: 'A', label: '出色', color: '#7ee787' }
+  if (score >= 45) return { grade: 'B', label: '良好', color: '#58a6ff' }
+  return { grade: 'C', label: '过关', color: '#8b949e' }
+})
+
+/** G92 下次目标：基于本局短板给一句可执行的改进方向（纯客户端派生）。 */
+const nextGoal = computed(() => {
+  const r = settleResult.value
+  if (!r || !r.win) return null
+  const leaked = Number(r.leaked ?? 0)
+  const reactions = Number(r.reactions ?? 0)
+  const stars = Number(r.stars ?? 0)
+  if (stars >= 3) return '完美三星！试试更少反应或更高难度关卡。'
+  if (leaked > 0) return `漏了 ${leaked} 只怪 —— 补点溅射/控场技能守住防线即可拿更高星。`
+  if (reactions < 3) return '多凑一种元素触发反应链，反应伤害不吃攻击力加成。'
+  return '再稳一点，冲 3 星拿满钥匙。'
+})
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
 
@@ -731,6 +769,7 @@ async function settle(eng: BattleEngine) {
       res = await api.settleBattle(payload)
     }
     settleResult.value = {
+      battle_id: res.battle_id,
       win: res.win,
       stars: res.stars,
       score: res.score,
@@ -1624,6 +1663,30 @@ onShareAppMessage(() =>
   display: block;
   margin-bottom: 16rpx;
   color: var(--ok);
+}
+
+/* G91 战斗评级徽章 */
+.grade-badge {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 240rpx;
+  margin: 0 auto 16rpx;
+  padding: 8rpx 0;
+  border: 2rpx solid;
+  border-radius: 999rpx;
+}
+.grade-letter { font-size: 40rpx; font-weight: 800; }
+.grade-label { font-size: 22rpx; }
+.next-goal {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--muted);
+  margin: -6rpx 0 16rpx;
+  padding: 0 24rpx;
 }
 
 .stars-big {

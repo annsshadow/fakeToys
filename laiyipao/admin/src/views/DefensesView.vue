@@ -3,7 +3,7 @@ import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
-import { fmtTime } from '@/utils/format'
+import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const router = useRouter()
@@ -56,15 +56,20 @@ const challengePage = ref(1)
 const challengeDefenseId = ref<number | undefined>(undefined)
 const challengeChallengerId = ref<number | undefined>(undefined)
 
+// 挑战记录筛选/翻页可连续触发：旧响应晚到会覆盖新筛选的列表与总数，只认最新一次。
+let challengeReqSeq = 0
 async function loadChallenges() {
+  const seq = ++challengeReqSeq
   try {
     const res = await fetchAdminDefenseChallenges(50, (challengePage.value - 1) * 50, {
       defense_id: challengeDefenseId.value,
       challenger_id: challengeChallengerId.value,
     })
+    if (seq !== challengeReqSeq) return
     challenges.value = res.items
     challengeTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== challengeReqSeq) return
     ElMessage.error(`挑战记录加载失败：${(e as Error).message}`)
   }
 }
@@ -92,7 +97,7 @@ async function onExportChallengesCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `defense_challenges_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `defense_challenges_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -175,7 +180,11 @@ const ownerId = ref<number | undefined>(undefined)
 // 护盾状态筛选（2026-11-01 新一轮第 100 轮）。
 const shieldedFilter = ref<boolean | undefined>(undefined)
 
+// 请求序号守卫（第 76 轮）：快速切换筛选时，丢弃旧筛选的慢响应，避免覆盖新结果。
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE, {
@@ -183,12 +192,14 @@ async function load() {
       owner_id: ownerId.value,
       shielded: shieldedFilter.value,
     })
+    if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

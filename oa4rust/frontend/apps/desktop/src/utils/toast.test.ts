@@ -12,6 +12,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface El {
   tagName: string
+  id: string
+  attributes: Record<string, string>
+  setAttribute: (name: string, value: string) => void
+  getAttribute: (name: string) => string | null
+  focus: () => void
+  blur: () => void
+  tabIndex: number
   style: Record<string, unknown>
   textContent: string
   innerHTML: string
@@ -26,6 +33,7 @@ interface El {
   removeEventListener: (t: string, fn: (e: unknown) => void) => unknown
   querySelectorAll: (sel: string) => unknown[]
   querySelector: (sel: string) => unknown
+  contains: (el: unknown) => boolean
   _fire: (t: string, e: unknown) => void
   [key: string]: unknown
 }
@@ -36,10 +44,25 @@ function byClass(el: El, sel: string): El[] {
   return el.children.filter((c): c is El => c !== null && (c as El).className === cls)
 }
 
+let activeEl: El | null = null
+
 function makeEl(all: El[], tag = 'div'): El {
   const listeners: Record<string, Array<(e: unknown) => void>> = {}
   const el: El = {
     tagName: tag.toUpperCase(),
+    id: '',
+    attributes: {},
+    tabIndex: 0,
+    setAttribute: (name: string, value: string) => {
+      el.attributes[name] = value
+    },
+    getAttribute: (name: string) => el.attributes[name] ?? null,
+    focus: () => {
+      activeEl = el
+    },
+    blur: () => {
+      if (activeEl === el) activeEl = null
+    },
     style: {},
     textContent: '',
     innerHTML: '',
@@ -71,6 +94,16 @@ function makeEl(all: El[], tag = 'div'): El {
     },
     querySelectorAll: (sel: string) => byClass(el, sel),
     querySelector: (sel: string) => byClass(el, sel)[0] ?? null,
+    // 浏览器原生 API：判断某节点是否为本节点后代（含自身）。
+    contains: (c: unknown) => {
+      if (c === el) return true
+      const walk = (node: El): boolean =>
+        node.children.some((child) => {
+          const ce = child as El
+          return ce === c || walk(ce)
+        })
+      return walk(el)
+    },
     _fire: (t: string, e: unknown) => (listeners[t] ?? []).forEach((f) => f(e)),
   }
   all.push(el)
@@ -80,11 +113,15 @@ function makeEl(all: El[], tag = 'div'): El {
 function installDom() {
   const all: El[] = []
   const keydownListeners: Array<(e: { key: string }) => void> = []
+  activeEl = null
   const doc = {
     createElement: (tag: string) => makeEl(all, tag),
     getElementById: (id: string) => all.find((e) => (e as never as { id?: string }).id === id) ?? null,
     body: makeEl(all, 'body'),
     head: makeEl(all, 'head'),
+    get activeElement() {
+      return activeEl
+    },
     addEventListener: (t: string, fn: (e: { key: string }) => void) => {
       if (t === 'keydown') keydownListeners.push(fn)
     },
@@ -201,7 +238,30 @@ describe('confirmMsg', () => {
     ok2.onclick!()
     await expect(p2).resolves.toBe(true)
     expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
-    void p1 // 旧弹窗已被新调用抢占移除，允许其永久挂起
+    // 旧弹窗被新调用抢占后必须以「取消」落地；await 它的调用方不能永远等不到结果。
+    let settled = false
+    p1.then(() => (settled = true))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(settled, '被抢占的确认框不得永久挂起').toBe(true)
+    await expect(p1).resolves.toBe(false)
+  })
+
+  it('re-entrant confirmMsg cancels the old dialog and leaves exactly one keydown handler', async () => {
+    const p1 = toast.confirmMsg('first')
+    const firstOverlay = dom.doc.getElementById('oa4-confirm-overlay')
+    expect(dom.keydownListeners).toHaveLength(1)
+
+    const p2 = toast.confirmMsg('second')
+    // 旧弹窗被取代时必须同步以 false 落地，并注销它自己的 keydown 处理器；
+    // 否则叠加的幽灵处理器会在新弹窗按 Esc 时重复 resolve，且旧 Promise 永远悬挂。
+    expect(dom.keydownListeners, '重入后只能有一个存活的 keydown 处理器').toHaveLength(1)
+    expect(dom.doc.getElementById('oa4-confirm-overlay')).not.toBe(firstOverlay)
+    await expect(p1).resolves.toBe(false)
+
+    // 唯一存活的处理器属于新弹窗：Esc 关闭它，监听器归零。
+    fireKey('Escape')
+    await expect(p2).resolves.toBe(false)
+    expect(dom.keydownListeners).toHaveLength(0)
   })
 
   it('toggles hover styling on both buttons (mouseover brightens, mouseout restores)', () => {
@@ -311,6 +371,36 @@ describe('toast notifications (showToast pipeline)', () => {
     }
   })
 
+  it('keeps a toast visible when the pointer re-enters after a brief leave', () => {
+    // 用户把鼠标短暂移开又移回 toast 上时，它不应在悬停期间开始退场动画。
+    vi.useFakeTimers()
+    try {
+      toast.toast.warning('重新悬停', 1000)
+      const [t] = toastContainer().toasts
+      const removeSpy = vi.spyOn(t, 'remove')
+
+      t._fire('mouseenter', undefined)
+      t._fire('mouseleave', undefined)
+      vi.advanceTimersByTime(200)
+      t._fire('mouseenter', undefined)
+      vi.advanceTimersByTime(600) // 距移开 800ms，远超 duration/2，且鼠标已移回
+      expect(t.style.animation).not.toBe('oa4ToastOut 0.2s ease forwards')
+      expect(removeSpy).not.toHaveBeenCalled()
+      expect(toastContainer().toasts).toHaveLength(1)
+      expect(toastTexts(t)[1]).toBe('重新悬停')
+
+      // 再次移开后仍应能正常消失（用新的定时器，且只退场一次）
+      t._fire('mouseleave', undefined)
+      vi.advanceTimersByTime(500)
+      expect(t.style.animation).toBe('oa4ToastOut 0.2s ease forwards')
+      vi.advanceTimersByTime(200)
+      expect(removeSpy).toHaveBeenCalledTimes(1)
+      expect(toastContainer().toasts).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('dismisses a toast on click', () => {
     vi.useFakeTimers()
     try {
@@ -351,5 +441,142 @@ describe('toast notifications (showToast pipeline)', () => {
 describe('useToast', () => {
   it('returns the same toast object so call sites can grab any helper', () => {
     expect(toast.useToast()).toBe(toast.toast)
+  })
+})
+
+function fireKey(key: string, shiftKey = false) {
+  let prevented = false
+  dom.keydownListeners.forEach((fn) =>
+    fn({
+      key,
+      shiftKey,
+      preventDefault: () => {
+        prevented = true
+      },
+    } as never),
+  )
+  return () => prevented
+}
+
+function active(): El | null {
+  return (dom.doc as unknown as { activeElement: El | null }).activeElement
+}
+
+describe('confirmMsg accessibility (RED → GREEN)', () => {
+  it('exposes dialog semantics: role=dialog, aria-modal and labels wired to title/message', () => {
+    const p = toast.confirmMsg('确定删除该记录？', '危险操作')
+    const overlay = dom.doc.getElementById('oa4-confirm-overlay') as El
+    const box = overlay.children[0] as El
+    const titleEl = box.children[0] as El
+    const msgEl = box.children[1] as El
+
+    expect(box.getAttribute('role')).toBe('dialog')
+    expect(box.getAttribute('aria-modal')).toBe('true')
+    const labelledBy = box.getAttribute('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    expect(titleEl.id).toBe(labelledBy)
+    const describedBy = box.getAttribute('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    expect(msgEl.id).toBe(describedBy)
+
+    const [, ok] = buttons()
+    ok.onclick!()
+    void p
+  })
+
+  it('moves focus into the dialog on open and restores focus to the opener on close', async () => {
+    const trigger = dom.doc.createElement('button')
+    dom.doc.body.appendChild(trigger)
+    trigger.focus()
+    expect(active()).toBe(trigger)
+
+    const p = toast.confirmMsg('删除？')
+    const [cancel, ok] = buttons()
+    expect(active()).toBe(cancel)
+
+    ok.onclick!()
+    await p
+    expect(active()).toBe(trigger)
+  })
+
+  it('restores opener focus when cancelled or dismissed with Escape', async () => {
+    const trigger = dom.doc.createElement('button')
+    dom.doc.body.appendChild(trigger)
+    trigger.focus()
+
+    const p1 = toast.confirmMsg('删除？')
+    const [cancel1] = buttons()
+    cancel1.onclick!()
+    await p1
+    expect(active()).toBe(trigger)
+
+    const p2 = toast.confirmMsg('删除？')
+    fireKey('Escape')
+    await p2
+    expect(active()).toBe(trigger)
+  })
+
+  it('traps Tab/Shift+Tab between the two buttons instead of leaking focus to the background', async () => {
+    const background = dom.doc.createElement('button')
+    dom.doc.body.appendChild(background)
+    background.focus()
+
+    const p = toast.confirmMsg('删除？')
+    const [cancel, ok] = buttons()
+    expect(active()).toBe(cancel)
+
+    fireKey('Tab', false) // 从取消 → 确认
+    expect(active()).toBe(ok)
+    fireKey('Tab', false) // 循环回取消
+    expect(active()).toBe(cancel)
+    fireKey('Tab', true) // Shift+Tab 反向循环到确认
+    expect(active()).toBe(ok)
+    fireKey('Tab', true) // 再反向回取消
+    expect(active()).toBe(cancel)
+    expect(active()).not.toBe(background)
+
+    fireKey('Escape')
+    await p
+  })
+
+  it('a plain key (non Tab / non Escape) never moves focus', async () => {
+    const p = toast.confirmMsg('删除？')
+    const focusAtOpen = active()
+    fireKey('Enter')
+    expect(active()).toBe(focusAtOpen)
+    fireKey('Escape')
+    await p
+  })
+})
+
+describe('toast accessibility (RED → GREEN)', () => {
+  it('marks the toast container as a polite live region', () => {
+    vi.useFakeTimers()
+    try {
+      toast.toast.info('提示', 60_000)
+      const { container } = toastContainer()
+      expect(container.getAttribute('role')).toBe('status')
+      expect(container.getAttribute('aria-live')).toBe('polite')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('gives success/info toasts polite status roles and error toasts an assertive alert role', () => {
+    vi.useFakeTimers()
+    try {
+      toast.toast.success('已保存', 60_000)
+      let toasts = toastContainer().toasts
+      expect(toasts[0].getAttribute('role')).toBe('status')
+      expect(toasts[0].getAttribute('aria-live')).toBe('polite')
+
+      toast.toast.error('保存失败', 60_000)
+      toasts = toastContainer().toasts
+      const err = toasts[toasts.length - 1]
+      expect(err.getAttribute('role')).toBe('alert')
+      expect(err.getAttribute('aria-live')).toBe('assertive')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

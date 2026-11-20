@@ -119,7 +119,7 @@ function fmt(v: unknown): string {
   if (typeof v === 'object') return JSON.stringify(v).slice(0, 60)
   return String(v).slice(0, 60) || '—'
 }
-const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+const s = <T>(p: Promise<T> | T): Promise<T | null> => Promise.resolve(p).catch(() => null)
 function take(resp: unknown): Record<string, unknown>[] {
   const d = (resp as any)?.data
   if (Array.isArray(d)) return d as Record<string, unknown>[]
@@ -183,8 +183,8 @@ async function personFilterPage(delta: number): Promise<void> {
 }
 function runPerson(): void {
   void runAll([
-    async () => collect('全量人员(all/object)', await api.get('/api/person/list/all/object')),
-    async () => collect('人员清单(list/object)', await api.post('/api/person/list/object', {})),
+    async () => collect('全量人员(all/object)', api.get('/api/person/list/all/object')),
+    async () => collect('人员清单(list/object)', api.post('/api/person/list/object', {})),
     async () => {
       const u = prompt('单位标识（多个用逗号分隔）:', '') || ''
       if (!u) return
@@ -192,21 +192,12 @@ function runPerson(): void {
         .split(',')
         .map((x) => x.trim())
         .filter(Boolean)
-      await collect(
-        '按单位直查(sub/direct/object)',
-        await api.post('/api/person/list/unit/sub/direct/object', { unitList }),
-      )
-      await collect(
-        '按单位嵌套(sub/nested/object)',
-        await api.post('/api/person/list/unit/sub/nested/object', { unitList }),
-      )
-      await collect(
-        '按单位模糊(direct/like)',
-        await api.post('/api/person/list/unit/sub/direct/like/object', { unitList }),
-      )
+      await collect('按单位直查(sub/direct/object)', api.post('/api/person/list/unit/sub/direct/object', { unitList }))
+      await collect('按单位嵌套(sub/nested/object)', api.post('/api/person/list/unit/sub/nested/object', { unitList }))
+      await collect('按单位模糊(direct/like)', api.post('/api/person/list/unit/sub/direct/like/object', { unitList }))
       await collect(
         '按单位嵌套模糊(nested/like)',
-        await api.post('/api/person/list/unit/sub/nested/like/object', { unitList }),
+        api.post('/api/person/list/unit/sub/nested/like/object', { unitList }),
       )
     },
     async () => {
@@ -216,10 +207,10 @@ function runPerson(): void {
         .split(',')
         .map((x) => x.trim())
         .filter(Boolean)
-      await collect('下属(直连)', await api.post('/api/person/list/person/sub/direct/object', { personList }))
-      await collect('下属(嵌套)', await api.post('/api/person/list/person/sub/nested/object', { personList }))
-      await collect('上级(直连)', await api.post('/api/person/list/person/sup/direct/object', { personList }))
-      await collect('上级(嵌套)', await api.post('/api/person/list/person/sup/nested/object', { personList }))
+      await collect('下属(直连)', api.post('/api/person/list/person/sub/direct/object', { personList }))
+      await collect('下属(嵌套)', api.post('/api/person/list/person/sub/nested/object', { personList }))
+      await collect('上级(直连)', api.post('/api/person/list/person/sup/direct/object', { personList }))
+      await collect('上级(嵌套)', api.post('/api/person/list/person/sup/nested/object', { personList }))
     },
     async () => {
       const r = prompt('角色标识（逗号分隔）:', '') || ''
@@ -228,7 +219,7 @@ function runPerson(): void {
           .split(',')
           .map((x) => x.trim())
           .filter(Boolean)
-        await collect('按角色查人', await api.post('/api/person/list/role/object', { roleList }))
+        await collect('按角色查人', api.post('/api/person/list/role/object', { roleList }))
       }
       const g = prompt('群组标识（逗号分隔）:', '') || ''
       if (g) {
@@ -236,18 +227,15 @@ function runPerson(): void {
           .split(',')
           .map((x) => x.trim())
           .filter(Boolean)
-        await collect('按群组查人', await api.post('/api/person/list/group/object', { groupList }))
+        await collect('按群组查人', api.post('/api/person/list/group/object', { groupList }))
       }
-      await collect('按身份查人', await api.post('/api/person/list/identity/object', {}))
-      await collect('人员属性清单', await api.post('/api/person/list/personattribute/object', {}))
+      await collect('按身份查人', api.post('/api/person/list/identity/object', {}))
+      await collect('人员属性清单', api.post('/api/person/list/personattribute/object', {}))
     },
     async () => {
-      await collect('最近登录人员', await api.post('/api/person/list/login/recent/object', {}))
+      await collect('最近登录人员', api.post('/api/person/list/login/recent/object', {}))
       const after = prompt('登录时间晚于（YYYY-MM-DD）:', '') || ''
-      await collect(
-        '指定时间后登录',
-        await api.post('/api/person/list/login/after/object', { date: after || '2026-01-01' }),
-      )
+      await collect('指定时间后登录', api.post('/api/person/list/login/after/object', { date: after || '2026-01-01' }))
     },
   ])
 }
@@ -255,7 +243,7 @@ function runPerson(): void {
 // ── 单位 ────────────────────────────────────────────────────────────
 function runUnit(): void {
   void runAll([
-    async () => collect('全量单位(list/object)', await api.post('/api/unit/list/object', {})),
+    async () => collect('全量单位(list/object)', api.post('/api/unit/list/object', {})),
     async () => {
       const u = prompt('单位标识（逗号分隔）:', '') || ''
       const unitList = u
@@ -264,28 +252,28 @@ function runUnit(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('子单位(直连)', await api.post('/api/unit/list/unit/sub/direct/object', { unitList }))
-      await collect('子单位(嵌套)', await api.post('/api/unit/list/unit/sub/nested/object', { unitList }))
-      await collect('上级单位(直连)', await api.post('/api/unit/list/unit/sup/direct/object', { unitList }))
-      await collect('上级单位(嵌套)', await api.post('/api/unit/list/unit/sup/nested/object', { unitList }))
-      await collect('单位下人员(嵌套)', await api.post('/api/person/list/unit/sub/nested/object', { unitList }))
-      await collect('单位下人员(直连)', await api.post('/api/person/list/unit/sub/direct/object', { unitList }))
-      await collect('单位下身份(嵌套)', await api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
+      await collect('子单位(直连)', api.post('/api/unit/list/unit/sub/direct/object', { unitList }))
+      await collect('子单位(嵌套)', api.post('/api/unit/list/unit/sub/nested/object', { unitList }))
+      await collect('上级单位(直连)', api.post('/api/unit/list/unit/sup/direct/object', { unitList }))
+      await collect('上级单位(嵌套)', api.post('/api/unit/list/unit/sup/nested/object', { unitList }))
+      await collect('单位下人员(嵌套)', api.post('/api/person/list/unit/sub/nested/object', { unitList }))
+      await collect('单位下人员(直连)', api.post('/api/person/list/unit/sub/direct/object', { unitList }))
+      await collect('单位下身份(嵌套)', api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
     },
     async () => {
-      await collect('单位层级', await api.post('/api/unit/list/level/object', {}))
-      await collect('按类型查单位(0)', await api.get('/api/unit/list/type/0/object'))
-      await collect('单位类型清单', await api.post('/api/unit/list/types/object', {}))
-      await collect('身份层级', await api.post('/api/unit/identity/level/object', {}))
-      await collect('身份类型', await api.post('/api/unit/identity/type/object', {}))
-      await collect('单位属性', await api.post('/api/unit/list/unitattribute/object', {}))
-      await collect('单位职务', await api.post('/api/unit/list/unitduty/object', {}))
+      await collect('单位层级', api.post('/api/unit/list/level/object', {}))
+      await collect('按类型查单位(0)', api.get('/api/unit/list/type/0/object'))
+      await collect('单位类型清单', api.post('/api/unit/list/types/object', {}))
+      await collect('身份层级', api.post('/api/unit/identity/level/object', {}))
+      await collect('身份类型', api.post('/api/unit/identity/type/object', {}))
+      await collect('单位属性', api.post('/api/unit/list/unitattribute/object', {}))
+      await collect('单位职务', api.post('/api/unit/list/unitduty/object', {}))
       // 十类功能2：单位×身份/人员 交叉清单（object 形态，全空体真实读）
-      await collect('单位下身份清单', await api.post('/api/unit/list/identity/object', {}))
-      await collect('单位上级嵌套身份', await api.post('/api/unit/list/identity/sup/nested/object', {}))
-      await collect('单位下人员清单', await api.post('/api/unit/list/person/object', {}))
-      await collect('单位上级嵌套人员', await api.post('/api/unit/list/person/sup/nested/object', {}))
-      await collect('职务×身份×单位名', await api.post('/api/unitduty/list/identity/unit/name/object', {}))
+      await collect('单位下身份清单', api.post('/api/unit/list/identity/object', {}))
+      await collect('单位上级嵌套身份', api.post('/api/unit/list/identity/sup/nested/object', {}))
+      await collect('单位下人员清单', api.post('/api/unit/list/person/object', {}))
+      await collect('单位上级嵌套人员', api.post('/api/unit/list/person/sup/nested/object', {}))
+      await collect('职务×身份×单位名', api.post('/api/unitduty/list/identity/unit/name/object', {}))
     },
   ])
 }
@@ -293,7 +281,7 @@ function runUnit(): void {
 // ── 身份 ────────────────────────────────────────────────────────────
 function runIdentity(): void {
   void runAll([
-    async () => collect('身份清单(list/object)', await api.post('/api/identity/list/object', {})),
+    async () => collect('身份清单(list/object)', api.post('/api/identity/list/object', {})),
     async () => {
       const p = prompt('人员标识（逗号分隔）:', '') || ''
       const personList = p
@@ -302,9 +290,9 @@ function runIdentity(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('按人员查身份', await api.post('/api/identity/list/person/object', { personList }))
-      await collect('主职身份', await api.post('/api/identity/list/major/person/object', { personList }))
-      await collect('单位+人员身份', await api.post('/api/identity/list/unit/person/object', { personList }))
+      await collect('按人员查身份', api.post('/api/identity/list/person/object', { personList }))
+      await collect('主职身份', api.post('/api/identity/list/major/person/object', { personList }))
+      await collect('单位+人员身份', api.post('/api/identity/list/unit/person/object', { personList }))
     },
     async () => {
       const u = prompt('单位标识（逗号分隔）:', '') || ''
@@ -314,8 +302,8 @@ function runIdentity(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('按单位(直连)查身份', await api.post('/api/identity/list/unit/sub/direct/object', { unitList }))
-      await collect('按单位(嵌套)查身份', await api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
+      await collect('按单位(直连)查身份', api.post('/api/identity/list/unit/sub/direct/object', { unitList }))
+      await collect('按单位(嵌套)查身份', api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
       const g = prompt('群组标识（逗号分隔）:', '') || ''
       const groupList = g
         ? g
@@ -323,7 +311,7 @@ function runIdentity(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('按群组查身份', await api.post('/api/identity/list/group/object', { groupList }))
+      await collect('按群组查身份', api.post('/api/identity/list/group/object', { groupList }))
     },
   ])
 }
@@ -331,7 +319,7 @@ function runIdentity(): void {
 // ── 群组 ────────────────────────────────────────────────────────────
 function runGroup(): void {
   void runAll([
-    async () => collect('群组清单(list/object)', await api.post('/api/group/list/object', {})),
+    async () => collect('群组清单(list/object)', api.post('/api/group/list/object', {})),
     async () => {
       const g = prompt('群组标识（逗号分隔）:', '') || ''
       const groupList = g
@@ -340,14 +328,14 @@ function runGroup(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('子群组(直连)', await api.post('/api/group/list/group/sub/direct/object', { groupList }))
-      await collect('子群组(嵌套)', await api.post('/api/group/list/group/sub/nested/object', { groupList }))
-      await collect('上级群组(直连)', await api.post('/api/group/list/group/sup/direct/object', { groupList }))
-      await collect('上级群组(嵌套)', await api.post('/api/group/list/group/sup/nested/object', { groupList }))
+      await collect('子群组(直连)', api.post('/api/group/list/group/sub/direct/object', { groupList }))
+      await collect('子群组(嵌套)', api.post('/api/group/list/group/sub/nested/object', { groupList }))
+      await collect('上级群组(直连)', api.post('/api/group/list/group/sup/direct/object', { groupList }))
+      await collect('上级群组(嵌套)', api.post('/api/group/list/group/sup/nested/object', { groupList }))
     },
     async () => {
-      await collect('按身份查群组', await api.post('/api/group/list/identity/object', {}))
-      await collect('按人员查群组', await api.post('/api/group/list/person/object', {}))
+      await collect('按身份查群组', api.post('/api/group/list/identity/object', {}))
+      await collect('按人员查群组', api.post('/api/group/list/person/object', {}))
     },
   ])
 }
@@ -355,7 +343,7 @@ function runGroup(): void {
 // ── 角色 / 目录 ─────────────────────────────────────────────────────
 function runRole(): void {
   void runAll([
-    async () => collect('角色清单', await api.post('/api/role/list/object', {})),
+    async () => collect('角色清单', api.post('/api/role/list/object', {})),
     async () => {
       const p = prompt('人员标识（逗号分隔）:', '') || ''
       const personList = p
@@ -364,10 +352,10 @@ function runRole(): void {
             .map((x) => x.trim())
             .filter(Boolean)
         : []
-      await collect('按人员查角色', await api.post('/api/role/list/person/object', { personList }))
+      await collect('按人员查角色', api.post('/api/role/list/person/object', { personList }))
     },
-    async () => collect('部门树', await api.get('/api/departments/tree')),
-    async () => collect('用户清单', await api.get('/api/users/list')),
+    async () => collect('部门树', api.get('/api/departments/tree')),
+    async () => collect('用户清单', api.get('/api/users/list')),
   ])
 }
 

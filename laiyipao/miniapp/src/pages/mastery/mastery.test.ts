@@ -29,6 +29,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -195,6 +196,20 @@ describe('mastery.vue 专精页', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('已选 0/2')
     expect(wrapper.findAll('.node.on').length).toBe(0)
+  })
+
+  it('并发双击同一节点：只发一次点亮请求（第二次必被服务端拒绝，提示很吵）', async () => {
+    let release!: (v: any) => void
+    mockApi.allocateMastery.mockImplementation(() => new Promise((res) => { release = res }))
+    const { wrapper } = mountPage(Mastery)
+    await flushPromises()
+    const node11 = wrapper.findAll('.node').find((n) => n.text().includes('燃料压缩'))!
+    await node11.trigger('click')
+    await flushPromises() // 进入 allocBusy=true，首笔仍挂起、selected 未更新
+    await node11.trigger('click')
+    release({ points: 2, nodes: [11] })
+    await flushPromises()
+    expect(mockApi.allocateMastery).toHaveBeenCalledTimes(1)
   })
 
   it('加载失败 → toast 错误信息', async () => {

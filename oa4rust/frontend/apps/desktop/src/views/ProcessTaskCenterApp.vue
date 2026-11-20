@@ -77,7 +77,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -323,7 +323,7 @@ async function loadTaskCompletedFullCursors() {
   const cnt = '20'
   const app = 'default'
   const proc = 'default'
-  const dt = new Date().toISOString().slice(0, 10)
+  const dt = businessTodayYMD()
   const hr = '9'
   const first: any = items.value[0] ?? {}
   const tid = String(first.id ?? '0')

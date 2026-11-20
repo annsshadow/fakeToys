@@ -200,3 +200,73 @@ describe('useSession()', () => {
     expect(a).toBe(b)
   })
 })
+
+// ── 第 25 轮：在途 init() 与 force init 的竞态（对齐桌面 R172）──────────────
+describe('init(force) 代际竞态', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (error: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('普通 init 在途时 init(true) 发起新 who，旧响应晚到不得覆盖新身份', async () => {
+    const oldWho = deferred<{ success: boolean; data: unknown }>()
+    const newWho = deferred<{ success: boolean; data: unknown }>()
+    mocked.who.mockReturnValueOnce(oldWho.promise).mockReturnValueOnce(newWho.promise)
+    const session = useSession()
+
+    const guardInit = session.init()
+    const forceInit = session.init(true)
+    expect(mocked.who).toHaveBeenCalledTimes(2)
+
+    newWho.resolve({ success: true, data: makeUser({ unique: 'u-new' }) })
+    await Promise.resolve()
+    oldWho.resolve({ success: true, data: { unique: '' } })
+    await Promise.all([guardInit, forceInit])
+
+    expect(session.user).toMatchObject({ unique: 'u-new' })
+    expect(session.isAuthenticated).toBe(true)
+  })
+})
+
+describe('init 在途合并（性能优化）', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    const promise = new Promise<T>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('多个并发普通 init 共享同一次 /who 请求', async () => {
+    const who = deferred<{ success: boolean; data: unknown }>()
+    mocked.who.mockReturnValue(who.promise)
+    const session = useSession()
+    const first = session.init()
+    const second = session.init()
+    const third = session.init()
+    expect(mocked.who).toHaveBeenCalledTimes(1)
+    who.resolve({ success: true, data: makeUser() })
+    await Promise.all([first, second, third])
+    expect(session.isAuthenticated).toBe(true)
+    // 在途项清理后，已初始化的普通 init 不应再发请求（幂等语义保持）。
+    await session.init()
+    expect(mocked.who).toHaveBeenCalledTimes(1)
+  })
+
+  it('在途普通 init 期间 force init 仍独立发起新请求', async () => {
+    const oldWho = deferred<{ success: boolean; data: unknown }>()
+    const newWho = deferred<{ success: boolean; data: unknown }>()
+    mocked.who.mockReturnValueOnce(oldWho.promise).mockReturnValueOnce(newWho.promise)
+    const session = useSession()
+    const guard = session.init()
+    const force = session.init(true)
+    expect(mocked.who).toHaveBeenCalledTimes(2)
+    newWho.resolve({ success: true, data: makeUser({ unique: 'u-force' }) })
+    oldWho.resolve({ success: true, data: makeUser({ unique: 'u-old' }) })
+    await Promise.all([guard, force])
+    expect(session.user).toMatchObject({ unique: 'u-force' })
+  })
+})

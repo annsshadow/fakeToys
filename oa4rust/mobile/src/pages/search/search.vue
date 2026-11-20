@@ -109,7 +109,7 @@ function openRow(r: Row) {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -120,23 +120,23 @@ function openRow(r: Row) {
 }
 .input {
   flex: 1;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12rpx;
   padding: 18rpx 24rpx;
   font-size: 28rpx;
 }
 .btn {
   font-size: 28rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 12rpx;
   padding: 0 32rpx;
 }
 .btn[disabled] {
-  background: #c0c4cc;
+  background: var(--color-placeholder);
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -150,29 +150,29 @@ function openRow(r: Row) {
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   flex: 1;
 }
 .tag {
   font-size: 22rpx;
-  color: #2d8cf0;
-  background: #e8f3ff;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
 }
 .card-desc {
   margin-top: 10rpx;
   font-size: 26rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   line-height: 1.5;
 }
 .card-go {
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
@@ -188,8 +188,8 @@ function openRow(r: Row) {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 13px;
 }
 .error-banner .error-text {
@@ -199,8 +199,8 @@ function openRow(r: Row) {
   flex: none;
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
 }
 </style>

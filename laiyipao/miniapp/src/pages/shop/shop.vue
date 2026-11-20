@@ -24,6 +24,37 @@
         </view>
       </view>
 
+      <!-- G82 今日产出总览：今天还能补哪些资源 -->
+      <view v-if="!loading && todaySupply.length" class="card supply-card">
+        <view class="card-title">今日还可获取</view>
+        <view class="supply-chips">
+          <text v-for="s in todaySupply" :key="s.key" class="supply-chip">{{ s.label }} ×{{ s.count }}</text>
+        </view>
+      </view>
+
+      <!-- G113 今日限购清空成本 -->
+      <view v-if="!loading && clearCost.length" class="card">
+        <view class="card-title">买空今日限购需</view>
+        <view class="clear-cost-row">
+          <text v-for="c in clearCost" :key="c.key" class="clear-cost-chip">
+            {{ c.label }} {{ c.cost }}<text v-if="c.gap > 0" class="cc-gap">（差 {{ c.gap }}）</text>
+            <text v-else class="cc-ok">（够）</text>
+          </text>
+        </view>
+      </view>
+
+      <!-- G126 性价比对照 -->
+      <view v-if="!loading && valueTable.length" class="card">
+        <view class="card-title">性价比对照<text class="dim">同货币内比较</text></view>
+        <view v-for="vg in valueTable" :key="vg.currency" class="value-group">
+          <text class="dim">{{ vg.currency }} · 每单位产出</text>
+          <view v-for="(r, i) in vg.rows" :key="i" class="value-row">
+            <text>{{ i + 1 }}. {{ r.name }}</text>
+            <text class="mono">{{ r.per }}</text>
+          </view>
+        </view>
+      </view>
+
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
@@ -100,7 +131,7 @@
  * 「服务端有扣减逻辑」不等于「玩家能用」—— 前者是代码完成度，
  * 后者才是机制闭环。这个页面补的是后者。
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import * as api from '@/api/client'
 import { useGameStore } from '@/store/game'
 import Icon from '@/components/Icon.vue'
@@ -127,6 +158,65 @@ let boughtTimer: ReturnType<typeof setTimeout> | null = null
 let failedTimer: ReturnType<typeof setTimeout> | null = null
 const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
 
+/* -------------------------------------------------------------------------- */
+/* G82 今日产出总览（第七批）                                                   */
+/* 聚合「今天还能买」的商品，按产出类型统计剩余次数 —— 玩家一眼看到今天还能补什么。 */
+/* 不臆造货币汇率，只统计次数与产出类型。数据来自 items。                         */
+/* -------------------------------------------------------------------------- */
+/** G126 性价比对照：同货币分组内按「每单位货币产出量」排序，不臆造跨货币汇率。 */
+const valueTable = computed(() => {
+  const groups: Record<string, Array<{ name: string; per: number; text: string }>> = {}
+  for (const it of items.value) {
+    const priceEntries = Object.entries(it.price).filter(([, v]) => v > 0)
+    if (priceEntries.length !== 1) continue // 多货币混合商品不做折算，避免误导
+    const [cur, amount] = priceEntries[0]!
+    const payloadTotal = Object.values(it.payload).reduce((s, v) => s + v, 0)
+    if (payloadTotal <= 0) continue
+    ;(groups[cur] ??= []).push({
+      name: it.name,
+      per: Math.round(payloadTotal / amount * 100) / 100,
+      text: priceText(it),
+    })
+  }
+  return Object.entries(groups).map(([cur, list]) => ({
+    currency: CURRENCY_CN[cur] ?? cur,
+    rows: list.sort((a, b) => b.per - a.per).slice(0, 3),
+  }))
+})
+
+/** G113 今日限购清空成本：按货币汇总「买空今日限购」总花费与余额缺口。 */
+const clearCost = computed(() => {
+  const need: Record<string, number> = {}
+  for (const it of items.value) {
+    const left = it.limit_per_day > 0 ? it.limit_per_day - it.bought_today : 0
+    if (left <= 0) continue
+    for (const [k, v] of Object.entries(it.price)) {
+      need[k] = (need[k] ?? 0) + v * left
+    }
+  }
+  return Object.entries(need).map(([k, cost]) => ({
+    key: k,
+    label: CURRENCY_CN[k] ?? k,
+    cost,
+    have: wallet.value[k as keyof typeof wallet.value] ?? 0,
+    gap: Math.max(0, cost - (wallet.value[k as keyof typeof wallet.value] ?? 0)),
+  }))
+})
+
+const todaySupply = computed(() => {
+  const m = new Map<string, { key: string; label: string; count: number }>()
+  for (const it of items.value) {
+    const left = it.limit_per_day > 0 ? it.limit_per_day - it.bought_today : 1
+    if (left <= 0) continue
+    for (const k of Object.keys(it.payload)) {
+      const cur = m.get(k) ?? { key: k, label: PAYLOAD_CN[k] ?? CURRENCY_CN[k] ?? k, count: 0 }
+      cur.count += left
+      m.set(k, cur)
+    }
+  }
+  return [...m.values()]
+})
+
 /** 与服务端 `economy.ShopItemView` 一一对应。 */
 interface ShopItem {
   id: number
@@ -144,10 +234,16 @@ interface ShopItem {
 
 /** 类目分组。顺序即展示顺序。 */
 const CATEGORY_ORDER = [
+  { key: 'currency', label: '货币补给' },
   { key: 'gem', label: '宝石' },
   { key: 'boost', label: '强化道具' },
+  { key: 'starter', label: '新手礼包' },
+  { key: 'equipment', label: '装备' },
   { key: '', label: '其他' },
 ] as const
+
+/** 服务端 ShopItemView.category 的已知取值；未知类目一律归到「其他」，不再静默丢弃。 */
+const KNOWN_CATEGORY_KEYS = new Set<string>(CATEGORY_ORDER.map((c) => c.key))
 
 const groups = ref<{ key: string; label: string; items: ShopItem[] }[]>([])
 
@@ -246,11 +342,18 @@ async function load() {
   }
   if (walletResult.ok) {
     wallet.value = walletResult.wallet
+    // 全局钱包也必须以服务端为准：商城是洗练石/续战令/专精重置券的唯一发放途径，
+    // 不同步的话从商城 navigateBack 回背包（无 onShow）后，doWash 读的
+    // store.wallet.tokens.gem_wash_token 仍是旧值 —— 买了券却被提示「没有洗练券」。
+    store.wallet = { ...store.wallet, ...wallet.value }
   }
   groups.value = CATEGORY_ORDER.map((c) => ({
     key: c.key,
     label: c.label,
-    items: items.value.filter((x) => (x.category || '') === c.key),
+    items: items.value.filter((x) => {
+      const key = x.category || ''
+      return (KNOWN_CATEGORY_KEYS.has(key) ? key : '') === c.key
+    }),
   })).filter((g) => g.items.length > 0)
   loading.value = false
 }
@@ -258,6 +361,11 @@ async function load() {
 async function doBuy(it: ShopItem) {
   if (buyingId.value !== 0) return
   if (soldOut(it)) return
+  // ⚠️ 守卫必须在 showModal **之前**置位（同 battle.vue 放弃局的做法）：
+  // 弹窗 await 期间 buyingId 若还是 0，连点第二件会穿过守卫弹出第二个确认框，
+  // 两个都确认就发两次 buyItem —— 每次调用生成不同幂等键（client.ts），
+  // 服务端按两笔成交，玩家被扣两次币。取消时也必须复位，否则按钮卡在「购买中」。
+  buyingId.value = it.id
   // 购买二次确认（2026-11-01 新一轮第 91 轮）：消耗货币，防止误点误购。
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
@@ -269,8 +377,8 @@ async function doBuy(it: ShopItem) {
       fail: () => resolve(false),
     })
   })
+  if (!confirmed) buyingId.value = 0
   if (!confirmed) return
-  buyingId.value = it.id
   try {
     await api.buyItem(it.id)
     // 购买同时改变「买了几个」与「余额」，两者都必须以服务端为准：
@@ -307,6 +415,27 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G126 性价比对照 */
+.value-group { margin: 12rpx 0; }
+.value-row { display: flex; flex-direction: row; justify-content: space-between; padding: 6rpx 0; font-size: 24rpx; }
+.value-row .mono { color: var(--ok); }
+
+/* G113 买空限购成本 */
+.clear-cost-row { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.clear-cost-chip { background: var(--panel-2); border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 22rpx; }
+.cc-gap { color: var(--bad); }
+.cc-ok { color: var(--ok); }
+
+/* G82 今日产出总览 */
+.supply-chips { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.supply-chip {
+  background: var(--fire-soft);
+  color: var(--fire);
+  border-radius: 999rpx;
+  padding: 6rpx 16rpx;
+  font-size: 22rpx;
+}
+
 .wallet-bar {
   display: flex;
   flex-direction: row;

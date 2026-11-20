@@ -44,6 +44,61 @@
         </view>
       </view>
 
+      <!-- G85 本章难度曲线：折线看章内难度爬升 -->
+      <view v-if="difficultyCurve.pts.length >= 2" class="card diff-curve-card">
+        <view class="card-title">本章难度曲线</view>
+        <svg class="diff-svg" viewBox="0 0 300 92" aria-label="关卡难度曲线">
+          <polyline class="diff-line" :points="difficultyCurve.line" />
+          <circle
+            v-for="p in difficultyCurve.pts"
+            :key="p.id"
+            :cx="p.x" :cy="p.y" r="3"
+            class="diff-dot"
+          />
+        </svg>
+      </view>
+
+      <!-- G129 地形关索引 -->
+      <view v-if="terrainIndex.length" class="card">
+        <view class="card-title">地形关索引</view>
+        <view v-for="t in terrainIndex" :key="t.kind" class="ti-row">
+          <text class="dim ti-name">{{ t.name }}</text>
+          <text class="ti-ids">第 {{ t.ids.join('、') }} 关<text v-if="t.total > t.ids.length"> 等 {{ t.total }} 关</text></text>
+        </view>
+      </view>
+
+      <!-- G115 本章体力预算 -->
+      <view v-if="energyBudget.count > 0" class="card energy-budget">
+        <view class="card-title">清章体力预算<text class="dim">剩 {{ energyBudget.count }} 关未通关</text></view>
+        <text class="dim">总消耗 {{ energyBudget.cost }} · 通关返还 {{ energyBudget.back }} · 净消耗 {{ energyBudget.net }}</text>
+      </view>
+
+      <!-- G111 本章 BOSS 清单 -->
+      <view v-if="bossLevels.length" class="card boss-list-card">
+        <view class="card-title">本章首领关</view>
+        <view v-for="b in bossLevels" :key="b.id" class="bl-row">
+          <text class="bl-name">第 {{ b.id }} 关 · {{ b.name }}</text>
+          <text class="dim">难度 {{ b.difficulty }}‰</text>
+          <text v-if="b.stars > 0" class="bl-cleared">★{{ b.stars }}</text>
+          <text v-else class="dim">未通关</text>
+        </view>
+      </view>
+
+      <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
+      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
+        <view class="card-title">
+          <text>全局进度</text>
+          <text class="mono">{{ allStars }} / {{ allStarCap }} ★</text>
+        </view>
+        <view v-for="ch in chapterOverview" :key="ch.id" class="overview-row">
+          <text class="dim overview-name">{{ ch.name }}</text>
+          <view class="overview-track">
+            <view class="overview-fill" :style="{ width: ch.pct + '%' }" />
+          </view>
+          <text class="mono overview-pct">{{ ch.pct }}%</text>
+        </view>
+      </view>
+
       <!-- 关卡网格 -->
       <view class="grid">
         <view
@@ -210,6 +265,8 @@ const selectedId = ref(0)
 const stars = ref<Record<number, number>>({})
 /** 星级是否已经拉过一次（避免 onLoad + onShow 各拉一次）。 */
 const starsLoaded = ref(false)
+/** 开始战斗的导航在途锁：双击只进一个战斗页，避免叠加实例重复扣体力。 */
+const battleNavigating = ref(false)
 const diagnoseInfo = ref<any>(null)
 
 const chapters = computed(() => store.config?.chapters ?? [])
@@ -228,6 +285,71 @@ const chapterStars = computed(() =>
   chapterLevels.value.reduce((sum, lv) => sum + (starOf(lv.id) ?? 0), 0),
 )
 const chapterTotal = computed(() => chapterLevels.value.length * 3)
+
+/* -------------------------------------------------------------------------- */
+/* G85 本章难度曲线（第七批）                                                   */
+/* 各关 difficulty 折线，直观看到章内难度爬升与陡增点。数据来自 chapterLevels。     */
+/* -------------------------------------------------------------------------- */
+/** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
+/** G129 地形关索引：按地形类型列出哪些关有它 —— 想练/避开某地形时一次找全。 */
+const terrainIndex = computed(() => {
+  const m = new Map<string, number[]>()
+  for (const l of store.config?.levels ?? []) {
+    for (const t of l.terrain ?? []) {
+      const arr = m.get(t.kind) ?? []
+      arr.push(l.id)
+      m.set(t.kind, arr)
+    }
+  }
+  return [...m.entries()]
+    .map(([kind, ids]) => ({ kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }))
+    .sort((a, b) => b.total - a.total)
+})
+
+/** G115 本章通关体力预算：未通关关卡总消耗 / 通关返还 / 净消耗。 */
+const energyBudget = computed(() => {
+  const undone = chapterLevels.value.filter((l) => starOf(l.id) === 0)
+  const cost = undone.reduce((s, l) => s + (l.energy_cost ?? 0), 0)
+  const back = (store.config?.drop_rates?.energy_on_win ?? 0) * undone.length
+  return { count: undone.length, cost, back, net: cost - back }
+})
+
+const bossLevels = computed(() =>
+  chapterLevels.value
+    .filter((l) => l.is_boss)
+    .map((l) => ({ id: l.id, name: l.name, difficulty: l.difficulty, stars: starOf(l.id) })),
+)
+
+const difficultyCurve = computed(() => {
+  const list = chapterLevels.value
+  const max = Math.max(1, ...list.map((l) => l.difficulty ?? 0))
+  const min = Math.min(...list.map((l) => l.difficulty ?? 0), max)
+  const span = Math.max(1, max - min)
+  const pts = list.map((l, i) => ({
+    id: l.id,
+    x: list.length <= 1 ? 150 : (i / (list.length - 1)) * 300,
+    // 难度越高 y 越小（越靠上）
+    y: 80 - ((l.difficulty ?? 0) - min) / span * 64,
+    diff: l.difficulty ?? 0,
+  }))
+  return { pts, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+})
+
+/* -------------------------------------------------------------------------- */
+/* G63 全章节星级总览（第七批）                                                 */
+/* 此前只有「本章」进度；这里汇总全部关卡的已获星/总星，并给每章一个完成度，      */
+/* 玩家一眼看到整体推进度与各章差距。数据来自 stars + config.levels/chapters。   */
+/* -------------------------------------------------------------------------- */
+const allStars = computed(() => (store.config?.levels ?? []).reduce((s, lv) => s + (starOf(lv.id) ?? 0), 0))
+const allStarCap = computed(() => (store.config?.levels ?? []).length * 3)
+const chapterOverview = computed(() =>
+  chapters.value.map((ch) => {
+    const lv = (store.config?.levels ?? []).filter((l) => l.chapter === ch.id)
+    const got = lv.reduce((s, l) => s + (starOf(l.id) ?? 0), 0)
+    const cap = lv.length * 3
+    return { id: ch.id, name: ch.name, got, cap, pct: cap ? Math.round(got / cap * 100) : 0 }
+  }),
+)
 
 // 选关页只读元数据（章节/名称/难度/体力/星级/地形），**不需要 waves** ——
 // 所以这里用摘要类型就够，不必为此把完整关卡拉回来。
@@ -266,16 +388,23 @@ function enemyName(id: number): string {
   return enemyNameMap.value.get(id) ?? `#${id}`
 }
 
+// 第 69 轮：切关竞态守卫。快速点选关卡时，先发请求可能晚到；
+// 没有序号守卫时旧关的 waves 会覆盖新关预览（「击杀金币（约 N 只）」显示成上一关）。
+// 与 battles.vue 的 listReqSeq / signin.vue 的 loadSeq 同一策略。
+let detailReqSeq = 0
 watch(selected, async (lv) => {
+  const seq = ++detailReqSeq
   if (!lv) {
     detailWaves.value = []
     return
   }
   try {
     const detail = await api.fetchLevel(lv.id)
+    if (seq !== detailReqSeq) return
     detailWaves.value = detail.waves ?? []
   } catch {
     // 敌人预览是辅助信息，拉取失败不阻塞选关
+    if (seq !== detailReqSeq) return
     detailWaves.value = []
   }
 }, { immediate: true })
@@ -370,12 +499,17 @@ function enter(id: number) {
 }
 
 function startBattle() {
+  // 导航在途锁（synchronous）：双击 / 连点只进一个战斗页。
+  // navigateTo 是同步的，两个 battle.vue 实例会各自 onLoad→api.startBattle，
+  // 服务端扣两次体力；这里在第一击就锁住，第二击直接返回。
+  if (battleNavigating.value) return
   if (!canEnter.value || !selected.value) {
     if (store.wallet.energy < (selected.value?.energy_cost ?? 0)) {
       uni.showToast({ title: '体力不足', icon: 'none' })
     }
     return
   }
+  battleNavigating.value = true
   // 解锁音频（2026-10-23）。这里是一次真实的用户手势，且是进入战斗前的
   // **最后一个手势** —— 在这里解锁，进战斗后第一发子弹就有声音，
   // 不必等玩家去碰战斗页的屏幕。
@@ -402,6 +536,8 @@ async function refreshStars(): Promise<void> {
 
 /** 从战斗页返回时刷新星级。 */
 onShow(() => {
+  // 从战斗页返回：本次导航在途结束，允许再次进入。
+  battleNavigating.value = false
   // ⚠️ onLoad 也会拉一次 —— 两者都跑就是**两次请求**，
   // 而且 onShow 那次不 await，可能在令牌就绪前发出 → 401 被静默吞掉。
   // 这里用 `starsLoaded` 挡住重复拉取。
@@ -485,6 +621,29 @@ onMounted(() => {
   font-size: 20rpx;
   color: var(--warn);
 }
+
+/* G129 地形关索引 */
+.ti-row { display: flex; flex-direction: row; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.ti-name { width: 140rpx; flex-shrink: 0; }
+.ti-ids { flex: 1; font-size: 22rpx; color: var(--text-2); }
+
+/* G111 本章 BOSS 清单 */
+.bl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.bl-name { flex: 1; font-size: 24rpx; }
+.bl-cleared { color: var(--warn); font-weight: 600; }
+
+/* G85 本章难度曲线 */
+.diff-svg { width: 100%; height: 184rpx; overflow: visible; }
+.diff-line { fill: none; stroke: var(--fire); stroke-width: 2; stroke-linejoin: round; }
+.diff-dot { fill: var(--warn); }
+
+/* G63 全章节星级总览 */
+.overview-card .card-title .mono { color: var(--warn); }
+.overview-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.overview-name { width: 140rpx; flex-shrink: 0; }
+.overview-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.overview-fill { height: 100%; background: var(--warn); border-radius: 999rpx; }
+.overview-pct { width: 72rpx; text-align: right; font-size: 22rpx; color: var(--warn); }
 
 /* 章节星级进度（2026-11-01 新一轮第 52 轮） */
 .star-progress {

@@ -3,7 +3,7 @@ import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { isCancel, fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, isCancel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 import {
   fetchEconomy,
@@ -30,18 +30,12 @@ const orderPage = ref(1)
 
 /**
  * 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 创建日期范围。
- * 服务端 date_to 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 含结束当天，前端不再 +1。
  */
 const orderStatus = ref('')
 const orderDateRange = ref<[string, string] | null>(null)
 // 渠道筛选（2026-11-01 新一轮第 67 轮）。
 const orderProvider = ref('')
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 /**
  * 服务端可作价全集 = `walletColumns`（coin/gem/energy/keys）+ `walletTokens`
@@ -119,33 +113,43 @@ function isOnSale(o: AdminShopItemView): boolean {
   return o.enabled === true
 }
 
+// 写后整页重拉与 keep-alive 返回刷新可重叠（侧栏在 v-loading 遮罩外）：
+// 迟到的旧快照不得覆盖新数据，与 LevelsView/BattlesView 的 loadSeq 同款。
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchEconomy()
+    if (seq !== loadSeq) return
     flows.value = res.flows
     shop.value = res.shop
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`经济数据加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
 /** 加载订单列表（2026-10-31 实质优化第 33 轮）。 */
+let orderLoadSeq = 0
 async function loadOrders() {
+  const seq = ++orderLoadSeq
   try {
     const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE, {
       // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
-      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      date_to: orderDateRange.value?.[1] || undefined,
       // 渠道筛选（2026-11-01 新一轮第 67 轮）
       provider: orderProvider.value || undefined,
     })
+    if (seq !== orderLoadSeq) return
     orders.value = res.items
     orderTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== orderLoadSeq) return
     ElMessage.error(`订单加载失败：${(e as Error).message}`)
   }
 }
@@ -166,19 +170,21 @@ async function onExportOrdersCsv() {
     const blob = await exportOrdersCsv({
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
-      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      date_to: orderDateRange.value?.[1] || undefined,
       // 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径
       provider: orderProvider.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `orders_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${orders.value.length} 条订单（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条订单（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }

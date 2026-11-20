@@ -45,8 +45,8 @@
       <!-- 左侧: 对话列表 -->
       <div class="sidebar glass-card">
         <div class="sidebar-header">
-          <button class="btn-new" @click="createNewChat">+ 新对话</button>
-          <button class="btn-config" title="MCP 配置" @click="openConfig">⚙</button>
+          <button class="btn-new" @click="createNewChat" :disabled="creatingChat">+ 新对话</button>
+          <button class="btn-config" title="MCP 配置" aria-label="MCP 配置" @click="openConfig">⚙</button>
         </div>
         <div class="chat-list">
           <div
@@ -61,7 +61,11 @@
               <div class="chat-title">{{ c.title || c.name || '未命名对话' }}</div>
               <div class="chat-meta">{{ formatDate(c.updatedAt) }}</div>
             </div>
-            <button class="btn-del-sm" @click.stop="deleteChat(c)">✕</button>
+            <button
+              class="btn-del-sm"
+              :aria-label="`删除对话：${c.title || c.name || '未命名对话'}`"
+              @click.stop="deleteChat(c)"
+            >✕</button>
           </div>
           <ListLoadError v-if="conversations.length > 0 && convoError" mode="banner" :message="convoError" @retry="loadConversations" />
           <ListLoadError v-else-if="conversations.length === 0 && convoError" mode="empty" :message="convoError" @retry="loadConversations" />
@@ -105,7 +109,7 @@
             <div v-if="attachments.length" class="attach-chips">
               <span v-for="(a, i) in attachments" :key="i" class="attach-chip">
                 📎 {{ a.name }}
-                <button class="attach-x" @click="attachments.splice(i, 1)">✕</button>
+                <button class="attach-x" aria-label="移除附件" @click="attachments.splice(i, 1)">✕</button>
               </span>
             </div>
             <textarea
@@ -118,7 +122,12 @@
             ></textarea>
             <div class="input-actions">
               <input ref="fileInputRef" type="file" class="file-hidden" @change="onPickFile" />
-              <button class="btn-attach" title="上传附件" @click="fileInputRef?.click()">📎</button>
+              <button
+                class="btn-attach"
+                title="上传附件"
+                aria-label="上传附件"
+                @click="fileInputRef?.click()"
+              >📎</button>
               <label class="stream-toggle" title="切换流式/整段回复">
                 <input v-model="streamMode" type="checkbox" />
                 流式
@@ -150,7 +159,7 @@
       <div v-if="showAddMcp" class="mcp-add">
         <input v-model="mcpForm.name" placeholder="名称（必填）" class="mcp-input" />
         <input v-model="mcpForm.url" placeholder="服务地址 URL" class="mcp-input" />
-        <button class="btn-mcp" @click="addMcp">保存</button>
+        <button class="btn-mcp" @click="addMcp" :disabled="savingMcp">保存</button>
         <button class="btn-mcp" @click="showAddMcp = false">取消</button>
       </div>
       <div class="config-actions">
@@ -192,6 +201,7 @@ const currentChat = ref<ChatItem | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const loading = ref(false)
+const creatingChat = ref(false)
 const streamMode = ref(true)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
@@ -286,35 +296,49 @@ async function loadAiDeep() {
     toast.error(`加载 AI 控制深度读失败: ${e?.message ?? ''}`)
   }
 }
+// R197: bare prompt() cancellation must abort the write/delete operation.
+// Reading || '' used to turn a cancelled prompt into an empty ID/flag and
+// still send the request; return null so callers can bail out instead.
+function aiPrompt(label: string): string | null {
+  return prompt(label, '')
+}
 // rev338：AI 配置/模型/MCP/公告/聊天线索 真实写端点（用户触发，shape 已核 ai_assemble_control handler；全字面量路径）
 async function aiWrite(op: string) {
   try {
     if (op === 'configSave') await api.post('/api/ai_assemble_control/config/save', {})
     else if (op === 'modelCreate') {
-      const name = prompt('模型名称:', '') || ''
+      const name = aiPrompt('模型名称:')
+      if (name === null) return
       await api.post('/api/ai_assemble_control/config/create/model', { name })
     } else if (op === 'modelUpdate') {
-      const flag = prompt('模型 flag:', '') || ''
+      const flag = aiPrompt('模型 flag:')
+      if (flag === null) return
       await api.post(`/api/ai_assemble_control/config/update/model/${encodeURIComponent(flag)}`, {})
     } else if (op === 'mcpCreate') {
-      const name = prompt('MCP 名称:', '') || ''
+      const name = aiPrompt('MCP 名称:')
+      if (name === null) return
       await api.post('/api/ai_assemble_control/config/create/mcp', { name })
     } else if (op === 'mcpUpdate') {
-      const flag = prompt('MCP flag:', '') || ''
+      const flag = aiPrompt('MCP flag:')
+      if (flag === null) return
       await api.post(`/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(flag)}`, {})
     } else if (op === 'mcpDelete') {
-      const flag = prompt('要删除的 MCP flag:', '') || ''
+      const flag = aiPrompt('要删除的 MCP flag:')
+      if (flag === null) return
       if (!(await confirmMsg('确定删除该 MCP 配置？'))) return
       await api.delete(`/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(flag)}`)
     } else if (op === 'annSave') {
-      const id = prompt('公告 ID:', '') || ''
+      const id = aiPrompt('公告 ID:')
+      if (id === null) return
       await api.post(`/api/ai/assemble/control/ann/save/${encodeURIComponent(id)}`, { content: '' })
     } else if (op === 'annDelete') {
-      const id = prompt('要删除的公告 ID:', '') || ''
+      const id = aiPrompt('要删除的公告 ID:')
+      if (id === null) return
       if (!(await confirmMsg('确定删除该公告？'))) return
       await api.delete(`/api/ai/assemble/control/ann/delete/${encodeURIComponent(id)}`)
     } else if (op === 'chatDelete') {
-      const clueId = prompt('聊天线索 ID:', '') || ''
+      const clueId = aiPrompt('聊天线索 ID:')
+      if (clueId === null) return
       if (!(await confirmMsg('确定删除该聊天线索？'))) return
       await api.delete(`/api/ai_assemble_control/chat/delete/${encodeURIComponent(clueId)}`)
     } else if (op === 'chatExtra') {
@@ -332,17 +356,21 @@ async function aiMore(op: string) {
   try {
     if (op === 'indexSync') await api.get('/api/ai/index/sync/to/knowledge')
     else if (op === 'indexDelete') {
-      const f = prompt('索引 flag:', '') || ''
+      const f = aiPrompt('索引 flag:')
+      if (f === null) return
       if (!(await confirmMsg('确定删除该索引？'))) return
       await api.get(`/api/ai/index/delete/${encodeURIComponent(f)}`)
     } else if (op === 'fileDownload') {
-      const id = prompt('文件 ID:', '') || ''
+      const id = aiPrompt('文件 ID:')
+      if (id === null) return
       await api.get(`/api/ai/file/${encodeURIComponent(id)}/download`)
     } else if (op === 'fileScale') {
-      const id = prompt('文件 ID:', '') || ''
+      const id = aiPrompt('文件 ID:')
+      if (id === null) return
       await api.get(`/api/ai/file/${encodeURIComponent(id)}/download/scale`)
     } else if (op === 'fileDelete') {
-      const f = prompt('文件 flag:', '') || ''
+      const f = aiPrompt('文件 flag:')
+      if (f === null) return
       if (!(await confirmMsg('确定删除该文件？'))) return
       await api.get(`/api/ai/file/delete/${encodeURIComponent(f)}`)
     } else if (op === 'fileListPaging') await api.post('/api/ai_assemble_control/file/list/paging/1/size/20', {})
@@ -367,26 +395,34 @@ async function aiMore2(op: string) {
       return
     }
     if (op === 'mcpUpdate') {
-      const id = encodeURIComponent(prompt('MCP ID:', '') || '')
+      const idInput = aiPrompt('MCP ID:')
+      if (idInput === null) return
+      const id = encodeURIComponent(idInput)
       await api.post(`/api/ai/assemble/control/config/update/mcp/${id}`, {})
       toast.success('MCP 配置已更新')
       return
     }
     if (op === 'mcpDelete') {
-      const id = encodeURIComponent(prompt('MCP ID:', '') || '')
+      const idInput = aiPrompt('MCP ID:')
+      if (idInput === null) return
+      const id = encodeURIComponent(idInput)
       if (!(await confirmMsg('确定删除该 MCP 配置？'))) return
       await api.post(`/api/ai/assemble/control/config/delete/mcp/${id}`, {})
       toast.success('MCP 配置已删除')
       return
     }
     if (op === 'modelDelete') {
-      const f = encodeURIComponent(prompt('模型标识:', '') || '')
+      const fInput = aiPrompt('模型标识:')
+      if (fInput === null) return
+      const f = encodeURIComponent(fInput)
       if (!(await confirmMsg('确定删除该模型配置？'))) return
       await api.get(`/api/ai_assemble_control/config/delete/model/${f}`)
       toast.success('模型配置已删除')
       return
     }
-    const clue = encodeURIComponent(prompt('对话线索 ID:', '') || '')
+    const clueInput = aiPrompt('对话线索 ID:')
+    if (clueInput === null) return
+    const clue = encodeURIComponent(clueInput)
     if (!(await confirmMsg('确定删除该对话？'))) return
     await api.get(`/api/ai/chat/delete/${clue}`)
     toast.success('对话已删除')
@@ -468,6 +504,8 @@ function retryMessages() {
 }
 
 async function createNewChat() {
+  if (creatingChat.value) return
+  creatingChat.value = true
   try {
     const r = await api.post('/api/ai_assemble_control/chat/completion', { title: '新对话' })
     const newChat = r.data ?? { id: 'new', title: '新对话' }
@@ -475,6 +513,8 @@ async function createNewChat() {
     selectChat(newChat as ChatItem)
   } catch {
     toast.info('创建对话失败')
+  } finally {
+    creatingChat.value = false
   }
 }
 
@@ -623,6 +663,7 @@ const mcpLoading = ref(false)
 const mcpError = ref('')
 const showAddMcp = ref(false)
 const mcpForm = ref({ name: '', url: '' })
+const savingMcp = ref(false)
 
 async function loadMcps() {
   mcpLoading.value = true
@@ -701,12 +742,14 @@ async function delMcp(id: string) {
 }
 
 async function addMcp() {
+  if (savingMcp.value) return
   const name = mcpForm.value.name.trim()
   const url = mcpForm.value.url.trim()
   if (!name) {
     toast.info('请填写名称')
     return
   }
+  savingMcp.value = true
   try {
     await api.post('/api/ai_assemble_control/config/create/mcp', { name, url, enabled: true })
     mcpForm.value = { name: '', url: '' }
@@ -714,6 +757,8 @@ async function addMcp() {
     await loadMcps()
   } catch (e: any) {
     toast.info(`添加失败: ${e?.message ?? ''}`)
+  } finally {
+    savingMcp.value = false
   }
 }
 // rev478（用户裁定放宽双计口径）：AI alias 轨同 handler 镜像真注册路由 3 条（主轨 /api/ai/* 已消费，alias 轨逐注册路由计；arity 已校验）

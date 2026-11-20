@@ -362,6 +362,20 @@ func Replay(level GeneratedLevel, build BuildSnapshot, seed string,
 	cardPicks []int, expectedHash string,
 	enemies map[int]SeedEnemy, skills map[int]SeedSkill,
 	scoreRules ScoreRules) ReplayOutcome {
+	return ReplayWithExtraBaseHp(level, build, seed, cardPicks, expectedHash,
+		enemies, skills, scoreRules, 0)
+}
+
+// ReplayWithExtraBaseHp 与 Replay 相同，但把额外基础血量计入 replay_hash 的 |X 段。
+//
+// 复活局：客户端 cfg.extraBaseHp = ReviveExtraBaseHP(level)，engine.ts 把它
+// 计入 replay_hash 的 |X 段；服务端重算必须同口径，否则合法复活局会被误判
+// 哈希不符而拒发（第 40 轮）。extraBaseHp 不参与伤害/波次逻辑，只影响哈希
+// 前缀；传 0 时行为与 Replay 完全一致。
+func ReplayWithExtraBaseHp(level GeneratedLevel, build BuildSnapshot, seed string,
+	cardPicks []int, expectedHash string,
+	enemies map[int]SeedEnemy, skills map[int]SeedSkill,
+	scoreRules ScoreRules, extraBaseHp int64) ReplayOutcome {
 	empty := func(err error) ReplayOutcome {
 		return ReplayOutcome{Err: err}
 	}
@@ -391,6 +405,9 @@ func Replay(level GeneratedLevel, build BuildSnapshot, seed string,
 		ActiveSlots: build.ActiveSlots,
 		// 分数规则与原局同口径（调用方从 /config 的 score_rules 转来）。
 		ScoreRules: scoreRules,
+		// 额外基础血量只进 replay_hash 的 |X 段，不参与伤害与波次逻辑。
+		// 复活局必须与原局同口径，否则合法上报会被误判哈希不符。
+		ExtraBaseHp: extraBaseHp,
 	})
 	// 注入选牌脚本：原局玩家点了哪张，重放就点哪张。
 	// 缺脚本（空）时不注入，引擎走交互模式，由 `RunToEnd` 兜底跳过整波 ——

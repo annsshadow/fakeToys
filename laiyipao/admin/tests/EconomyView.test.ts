@@ -336,7 +336,7 @@ describe('EconomyView 商城编辑', () => {
 describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
   it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
     const wrapper = await mountEconomy()
-    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid,status\n1,paid\n']))
 
     // 设置筛选条件（状态 + 日期范围），再点导出
     const selects = wrapper.findAllComponents({ name: 'ElSelect' })
@@ -353,8 +353,8 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
     expect(exportOrdersCsv).toHaveBeenCalledWith({
       status: 'paid',
       date_from: '2026-10-01',
-      // 结束日期传次日（服务端 date_to 是开区间）
-      date_to: '2026-11-01',
+      // 服务端 date_to=YYYY-MM-DD 已由 queryTimeEnd +1 天含当天整天，前端不再重复 +1
+      date_to: '2026-10-31',
     })
     expect(document.body.textContent).toContain('已导出')
     wrapper.unmount()
@@ -362,7 +362,7 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
 
   it('无筛选条件时导出参数为 undefined', async () => {
     const wrapper = await mountEconomy()
-    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid,status\n1,paid\n']))
 
     const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
     await btn!.trigger('click')
@@ -373,6 +373,22 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
       date_from: undefined,
       date_to: undefined,
     })
+    wrapper.unmount()
+  })
+
+  it('导出提示条数来自 CSV 全量数据行，而非当前页列表长度（第54轮）', async () => {
+    // 当前页只有 1 条订单，但导出接口是全量筛选（CSV 含 3 行数据）；
+    // 提示必须报真实导出的 3 条，旧实现用 orders.value.length 会误报 1 条。
+    const wrapper = await mountEconomy([], [], [{ id: 1 }])
+    exportOrdersCsv.mockResolvedValue(
+      new Blob(['\uFEFFid,status\n1,paid\n2,paid\n3,refunded\n']),
+    )
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('已导出 3 条订单')
     wrapper.unmount()
   })
 
@@ -538,6 +554,65 @@ describe('EconomyView 复制商城商品 ID（第 97 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('55')
     expect(document.body.textContent).toContain('已复制商品 ID 55')
+    wrapper.unmount()
+  })
+})
+describe('EconomyView 订单筛选竞态（第 67 轮）', () => {
+  it('旧筛选慢响应后到不得覆盖新筛选结果', async () => {
+    function deferred() {
+      let resolve!: (value: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountEconomy()
+    const vm = wrapper.vm as unknown as { orderProvider: string; applyOrderFilter: () => void }
+    const base = { id: 1, user_id: 1, nickname: '', sku: 'x', amount: 1, status: 'paid', provider: 'mock', created_at: '2026-01-01T00:00:00Z', delivered_at: null }
+    const oldOrder = { ...base, id: 1, nickname: '旧筛选玩家', order_no: 'OLD1' }
+    const newOrder = { ...base, id: 2, nickname: '新筛选玩家', order_no: 'NEW2' }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchAdminOrders.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    vm.orderProvider = 'apple'
+    vm.applyOrderFilter()
+    vm.orderProvider = 'google'
+    vm.applyOrderFilter()
+    dNew.resolve({ items: [newOrder], total: 1 })
+    await flushPromises()
+    dOld.resolve({ items: [oldOrder], total: 1 })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text, '页面应展示新筛选结果').toContain('NEW2')
+    expect(text, '旧筛选慢响应不得覆盖新结果').not.toContain('OLD1')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 经济数据加载竞态（第 91 轮）', () => {
+  it('写后重拉与返回刷新重叠：迟到旧快照不得覆盖新数据', async () => {
+    function deferred() {
+      let resolve!: (value: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountEconomy([], [shopFixture({ id: 1, name: '初始商品' })])
+    const vm = wrapper.vm as unknown as { load: () => Promise<void> }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchEconomy.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 第一次 load 在途（商城写后整页重拉），切走再切回触发第二次
+    void vm.load()
+    void vm.load()
+    dNew.resolve({ flows: [], shop: [shopFixture({ id: 2, name: '新快照商品' })] })
+    await flushPromises()
+    dOld.resolve({ flows: [], shop: [shopFixture({ id: 1, name: '旧快照商品' })] })
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text, '页面应展示最新快照').toContain('新快照商品')
+    expect(text, '迟到的旧快照不得覆盖新数据').not.toContain('旧快照商品')
     wrapper.unmount()
   })
 })

@@ -162,3 +162,24 @@ describe('moduleToFieldType（跨端一致性：文件类模块不得退化为 t
     expect(moduleToFieldType('UnknownModule')).toBe('text') // 未知仍回退 text
   })
 })
+
+describe('validateFormValues 纯空白必填（桌面流程提交校验）', () => {
+  const definition = serializeFormDefinition({
+    name: '申请',
+    application: 'app-1',
+    fields: [{ id: 'subject', type: 'text', label: '标题', key: 'subject', required: true }],
+  })
+
+  it('纯空白必填值按未填处理，不让流程发起/办理提交绕过校验', () => {
+    // ProcessWork.submitStart/submit 用 validateFormValues 做提交前校验；XformRuntime 文本输入不 trim，
+    // 用户敲空格即可通过 value === '' 的旧判断，把空数据 PUT 到 data/work/{id}。
+    // 与移动端 validateSimpleForm / 桌面 validateFieldValue 的 trim 口径对齐。
+    for (const blank of ['   ', '\t', '\n \t', ' \r\n ']) {
+      expect(validateFormValues(definition, { subject: blank })).toEqual({ subject: '标题为必填项' })
+    }
+  })
+
+  it('含非空白字符的值仍判已填，trim 不误伤正常输入', () => {
+    expect(validateFormValues(definition, { subject: '  已填写  ' })).toEqual({})
+  })
+})

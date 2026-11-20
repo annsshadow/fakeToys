@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="page-root">
     <view class="pad safe-bottom">
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
@@ -53,6 +53,14 @@
               @click="clearSlot(i - 1)"
             >移除</text>
           </view>
+        </view>
+        <!-- G122 出战热量预算 -->
+        <view class="heat-budget">
+          <view class="hb-head">
+            <text class="dim">出战热量 {{ heatBudget.used }} / {{ heatBudget.cap }}</text>
+            <text v-if="heatBudget.pct >= 100" class="hb-warn">会过热！</text>
+          </view>
+          <view class="hb-track"><view class="hb-fill" :style="{ width: heatBudget.pct + '%' }" /></view>
         </view>
       </view>
 
@@ -197,6 +205,23 @@
 
           现在：拥有的装备可以穿/脱（整组替换，服务端在一个事务里校验）。
         -->
+        <!-- G65 换装建议：同部位有更强装备时主动提示，把目录变成决策 -->
+        <view v-if="gearSuggestions.length" class="gear-suggest-card">
+          <text class="card-title">换装建议</text>
+          <view v-for="g in gearSuggestions" :key="g.slot" class="gear-suggest-row">
+            <text class="dim">{{ g.slotLabel }}</text>
+            <text class="dim">{{ g.current!.name }} →</text>
+            <text class="gear-better">{{ g.best.name }}</text>
+            <text v-if="g.gainArmor > 0" class="gear-gain">护甲 +{{ g.gainArmor }}‰</text>
+            <text v-if="g.gainBonus > 0" class="gear-gain">攻击 +{{ g.gainBonus }}‰</text>
+          </view>
+        </view>
+
+        <!-- G138 已装备属性贡献 -->
+        <view v-if="equippedContribution.count > 0" class="equip-contrib">
+          <text class="dim">当前穿戴 {{ equippedContribution.count }} 件 · 护甲 +{{ equippedContribution.armor }}‰ · 攻击 +{{ equippedContribution.bonus }}‰</text>
+        </view>
+
         <view v-if="myEquipments.length === 0" class="dim">
           {{ equipError ? '装备读取失败（见下方提示）' : '正在读取装备…' }}
         </view>
@@ -282,6 +307,10 @@
           <text class="dim" style="display: block; margin-bottom: 8rpx">
             我的宝石（已佩戴 {{ equippedGemCount }}/6）
           </text>
+          <!-- G100 已佩戴词条总加成：6 颗宝石一共加了多少 -->
+          <view v-if="equippedAffixTotal.length" class="gem-affix-total">
+            <text v-for="a in equippedAffixTotal" :key="a.key" class="gat-chip">{{ a.name }} +{{ a.value }}</text>
+          </view>
           <!-- R51 空态给可点入口：此前只说「去商城买一颗」却不能点 -->
           <view v-if="ownedGems.length === 0" class="row" style="gap: 8rpx">
             <text class="dim">还没有宝石。</text>
@@ -346,7 +375,8 @@
             maxlength="20"
             :focus="presetFocus"
           />
-          <text class="link" @click="doSavePreset">保存当前构筑</text>
+          <text v-if="presetSaving" class="dim">{{ SAVING_PRESET_TEXT }}</text>
+          <text v-else class="link" @click="doSavePreset">保存当前构筑</text>
         </view>
         <!-- R52 空态可直接聚焦输入框，少一次手动寻找 -->
         <view v-if="presets.length === 0" class="dim" style="margin-top: 8rpx">
@@ -363,6 +393,9 @@
             <text class="dim" style="display: block">
               {{ p.slots.skills.length }} 技能 / {{ p.slots.equipment.length }} 装备 /
               {{ p.slots.gems.length }} 宝石
+            </text>
+            <text v-if="presetElements(p).length" class="preset-elements">
+              元素：<text v-for="el in presetElements(p)" :key="el" class="pe-tag" :class="'badge-' + el">{{ el }}</text>
             </text>
           </view>
           <view class="skill-act">
@@ -432,6 +465,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { skillBaseDamageAtLevel } from '@/game/skill'
+import { HEAT_MAX } from '@/game/heatmap'
 import type { OwnedGem } from '@/api/client'
 import type { SkillDef } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -462,6 +496,34 @@ function tabCount(key: BagTab): number {
 }
 
 const selected = ref<number[]>([0, 0, 0, 0])
+
+/** G138 已装备属性贡献：当前穿戴装备提供的护甲/攻击总和 —— 看清加成从哪来。 */
+const equippedContribution = computed(() => {
+  const eq = myEquipments.value.filter((e) => e.equipped)
+  return {
+    count: eq.length,
+    armor: eq.reduce((s, e) => s + (e.base_armor ?? 0), 0),
+    bonus: eq.reduce((s, e) => s + (e.base_bonus_pct ?? 0), 0),
+  }
+})
+
+/** G122 出战热量预算：4 个已选技能的热量总和 vs 上限，配装当屏就知道会不会过热。 */
+const heatBudget = computed(() => {
+  const skills = selected.value
+    .map((id) => allSkills.value.find((s) => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s)
+  const used = skills.reduce((sum, s) => sum + (s.heat_cost ?? 0), 0)
+  // 与 HeatSystem.cap 同一单位：heat_cap_permille 是千分比加成，
+  // 不是绝对热量；无加成时上限就是 HEAT_MAX（100）。
+  const bonus = BigInt((store.attacker as any).heatCapPermille ?? 0)
+  const cap = Number(bonus <= 0n ? HEAT_MAX : (HEAT_MAX * (1000n + bonus)) / 1000n)
+  return {
+    used,
+    cap,
+    pct: cap > 0 ? Math.min(100, Math.round(used / cap * 100)) : 0,
+    skills: skills.map((s) => ({ id: s.id, name: s.name, heat: s.heat_cost ?? 0, element: s.element })),
+  }
+})
 /** 保存中：保存期间禁用操作，避免连点产生竞态 */
 const saving = ref(false)
 
@@ -510,6 +572,44 @@ const filteredSkills = computed<SkillDef[]>(() => {
 const myEquipments = ref<api.MyEquipment[]>([])
 const equipError = ref('')
 
+/* -------------------------------------------------------------------------- */
+/* G65 同部位换装建议（第七批）                                                 */
+/* 按 slot 分组：当前已装备 vs 该部位已拥有的最强一件（护甲+攻击），
+/* 有更优可换时给出明确提示 —— 把「装备列表」变成「换装决策」。数据全来自 myEquipments。 */
+/* -------------------------------------------------------------------------- */
+interface GearSuggestion {
+  slot: string
+  slotLabel: string
+  current: api.MyEquipment | null
+  best: api.MyEquipment
+  gainArmor: number
+  gainBonus: number
+}
+const gearSuggestions = computed<GearSuggestion[]>(() => {
+  const groups = new Map<string, api.MyEquipment[]>()
+  for (const e of myEquipments.value) {
+    if (!e.owned) continue
+    const arr = groups.get(e.slot) ?? []
+    arr.push(e)
+    groups.set(e.slot, arr)
+  }
+  const out: GearSuggestion[] = []
+  for (const [slot, arr] of groups) {
+    const current = arr.find((e) => e.equipped) ?? null
+    const best = [...arr].sort((a, b) =>
+      (b.base_armor + b.base_bonus_pct) - (a.base_armor + a.base_bonus_pct))[0]!
+    // 只有当最强那件不是当前已装备、且确实更强时才建议
+    if (current && best.id !== current.id) {
+      const gainArmor = best.base_armor - current.base_armor
+      const gainBonus = best.base_bonus_pct - current.base_bonus_pct
+      if (gainArmor > 0 || gainBonus > 0) {
+        out.push({ slot, slotLabel: slotName(slot), current, best, gainArmor, gainBonus })
+      }
+    }
+  }
+  return out
+})
+
 /** 装配请求在途标志：防止连点发出多个 PUT。 */
 const equipping = ref(false)
 
@@ -529,10 +629,11 @@ async function loadEquipment() {
  * —— 否则服务端会以「同部位只能装一件」拒绝，而那个错误对玩家毫无意义。
  */
 async function equip(id: number) {
-  if (equipping.value) return
+  if (equipping.value || presetWriteBusy.value) return
   const target = myEquipments.value.find((e) => e.id === id)
   if (!target) return
   equipping.value = true
+  presetWriteBusy.value = true
   equipError.value = ''
   try {
     const next = myEquipments.value
@@ -541,26 +642,34 @@ async function equip(id: number) {
     next.push(id)
     const res = await api.saveEquippedEquipment(next)
     myEquipments.value = res.items ?? myEquipments.value
+    // 第 102 轮：装备加成经服务端 attackerFromParts 计入 build.attacker，
+    // 穿戴后必须同步 store 的战力/构筑与已装备 id（同页其它写均已刷新）。
+    await Promise.all([store.refreshProfile(), store.loadEquipment()])
   } catch (e) {
     equipError.value = `装备失败：${(e as Error).message}`
   } finally {
     equipping.value = false
+    presetWriteBusy.value = false
   }
 }
 
 /** 卸下某件装备。 */
 async function unequip(id: number) {
-  if (equipping.value) return
+  if (equipping.value || presetWriteBusy.value) return
   equipping.value = true
+  presetWriteBusy.value = true
   equipError.value = ''
   try {
     const next = myEquipments.value.filter((e) => e.equipped && e.id !== id).map((e) => e.id)
     const res = await api.saveEquippedEquipment(next)
     myEquipments.value = res.items ?? myEquipments.value
+    // 第 102 轮：卸下后同步 store 的战力/构筑与已装备 id（同 equip）。
+    await Promise.all([store.refreshProfile(), store.loadEquipment()])
   } catch (e) {
     equipError.value = `卸下失败：${(e as Error).message}`
   } finally {
     equipping.value = false
+    presetWriteBusy.value = false
   }
 }
 const gems = computed<any[]>(() => store.config?.gems ?? [])
@@ -574,7 +683,7 @@ const gems = computed<any[]>(() => store.config?.gems ?? [])
  * 而这恰恰是玩家判断「这颗宝石值不值」的唯一依据。
  */
 const gemQualities = computed<{ name: string; affix_count: number; mult: number }[]>(
-  () => (store.config?.gem_qualities ?? []) as any[],
+  () => (store.config?.gem_qualities ?? []).map((q) => ({ ...q, name: qualityName(q.name) })),
 )
 
 /** 合成配方（`recipes`）：A + B → output(out_tier)。 */
@@ -666,12 +775,15 @@ async function loadGems() {
  * 所以要么 toast 原因、要么明确成功。
  */
 async function doWash(g: OwnedGem) {
-  if (washingId.value !== 0) return
+  // R287：洗练写 user_gems.affixes 并用局部旧快照回填，接入共享写守卫，
+  // 与应用预设/穿戴/穿戴宝石等写同批宝石的入口双向互锁。
+  if (washingId.value !== 0 || presetWriteBusy.value) return
   if ((store.wallet.tokens?.gem_wash_token ?? 0) < 1) {
     uni.showToast({ title: '没有洗练券', icon: 'none' })
     return
   }
   washingId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.washGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -683,6 +795,7 @@ async function doWash(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     washingId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
@@ -692,13 +805,28 @@ const gemBusyId = ref(0)
 /** 已佩戴计数（标题里的 x/6，与服务端 EquipSlotLimit 一致）。 */
 const equippedGemCount = computed(() => ownedGems.value.filter((g) => g.equipped_slot).length)
 
+/** G100 已佩戴宝石词条总加成：跨 6 颗求和，玩家不必自己心算「一共加了多少」。 */
+const equippedAffixTotal = computed(() => {
+  const m = new Map<string, number>()
+  for (const g of ownedGems.value) {
+    if (!g.equipped_slot) continue
+    for (const a of g.affixes ?? []) {
+      m.set(a.affix, (m.get(a.affix) ?? 0) + a.value)
+    }
+  }
+  return [...m.entries()]
+    .map(([key, value]) => ({ key, name: affixName(key), value }))
+    .sort((a, b) => b.value - a.value)
+})
+
 /**
  * 佩戴一颗宝石（第 20 轮）。这是宝石词条生效的唯一开关 ——
  * 服务端把 equipped_slot 写上之后，构筑侧立刻吃到词条。
  */
 async function doEquipGem(g: OwnedGem) {
-  if (gemBusyId.value !== 0) return
+  if (gemBusyId.value !== 0 || presetWriteBusy.value) return
   gemBusyId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.equipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -710,13 +838,15 @@ async function doEquipGem(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     gemBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
 /** 卸下一颗宝石（幂等；同样刷新档案）。 */
 async function doUnequipGem(g: OwnedGem) {
-  if (gemBusyId.value !== 0) return
+  if (gemBusyId.value !== 0 || presetWriteBusy.value) return
   gemBusyId.value = g.id
+  presetWriteBusy.value = true
   try {
     const r = await api.unequipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
@@ -727,6 +857,7 @@ async function doUnequipGem(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     gemBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
@@ -738,7 +869,7 @@ async function doUnequipGem(g: OwnedGem) {
  * 玩家在商城买了之后在任何地方都找不到自己的道具，
  * 那是最容易被当成 bug 报上来的一种状态。
  *
- * 第 150 轮：复活币接上了消费端点（开战扣 1 枚 + 本关基础血量 +50%），
+ * 复活币接上了消费端点（开战扣 1 枚 + 本关当前血量 +30% = 多扛 3 次漏怪），
  * 从下架恢复；洗练石仍无消费端点（且玩家拿不到宝石实例），保持下架并在
  * 这里写明。界面文案跟着服务端状态走 —— 「已下架」与「可用」不能各说各话。
  */
@@ -753,7 +884,7 @@ const tokenRows = computed(() => {
     {
       kind: 'revive_token',
       label: '复活币',
-      status: '开战时自动消耗 1 枚，本关基础血量 +50%（扣币时机与体力一致）。',
+      status: '开战时自动消耗 1 枚，本关当前血量 +30%（约多扛 3 次漏怪；扣币时机与体力一致）。',
     },
     {
       kind: 'gem_wash_token',
@@ -919,8 +1050,11 @@ async function doSynthesize(r: { a: number; b: number; output: number }): Promis
   synthesizing.value = r.output
   try {
     const res = await api.synthesizeSkills(r.a, r.b)
-    // 材料已删、产物已发放、槽位可能被清空 —— build 快照必须重拉
-    await store.refreshProfile()
+    // 材料已删、产物已发放、槽位可能被清空 —— build 快照必须重拉。
+    // 熔炼服务端会清掉指向材料的出战槽位（synthesis.go 第 6 步），
+    // 必须重拉 /me/loadout 并同步页内 selected，否则槽位继续显示已被消耗的技能（幽灵槽）。
+    await Promise.all([store.refreshProfile(), store.loadLoadout()])
+    selected.value = [...store.loadout]
     uni.showToast({ title: `熔炼成功：${skillNameOf(res.output)}`, icon: 'none' })
   } catch (e: any) {
     uni.showToast({ title: e?.message ?? '熔炼失败', icon: 'none' })
@@ -998,9 +1132,12 @@ async function toggleEquip(id: number) {
     }
     next[empty] = id
   }
+  if (presetWriteBusy.value) return
   saving.value = true
+  presetWriteBusy.value = true
   const ok = await store.persistLoadout(next)
   saving.value = false
+  presetWriteBusy.value = false
   if (!ok) {
     uni.showToast({ title: '保存失败，出战配置未变更', icon: 'none' })
     return
@@ -1012,9 +1149,12 @@ async function clearSlot(idx: number) {
   const next = [...selected.value]
   if (!next[idx]) return
   next[idx] = 0
+  if (presetWriteBusy.value) return
   saving.value = true
+  presetWriteBusy.value = true
   const ok = await store.persistLoadout(next)
   saving.value = false
+  presetWriteBusy.value = false
   if (!ok) {
     uni.showToast({ title: '保存失败，出战配置未变更', icon: 'none' })
     return
@@ -1024,6 +1164,16 @@ async function clearSlot(idx: number) {
 
 // ---- 阵型预设（第 49 轮） ----
 const presets = ref<api.PresetView[]>([])
+
+/** G136 预设元素指纹：每套预设的元素覆盖 chip，帮玩家区分各套构筑方向。 */
+function presetElements(p: api.PresetView): string[] {
+  const els = new Set<string>()
+  for (const s of p.slots.skills as any[]) {
+    const def = allSkills.value.find((d) => d.id === (typeof s === 'number' ? s : s?.id))
+    if (def?.element) els.add(def.element)
+  }
+  return [...els]
+}
 const presetName = ref('')
 /** Y 批 R51/R52：空态可执行化。 */
 const presetFocus = ref(false)
@@ -1036,6 +1186,18 @@ function goShop() {
   uni.navigateTo({ url: '/pages/shop/shop' })
 }
 const presetBusyId = ref(0)
+/** 保存预设在途标志：与 apply/delete/setCurrent 一样防连点（同名连发会造出多套预设）。 */
+const presetSaving = ref(false)
+// R276：save/apply/delete/setCurrent 四个入口都写同一份 /me/presets，且各自成功后
+// loadPresets() 整表覆盖；交叉点击会让先完成的列表被后到的陈旧快照覆盖。
+// 共享在途守卫：任一入口在途时其余入口直接返回。
+// R277：doApplyPreset 整组写 loadout/equipment/gems 是多步顺序 await，
+// 同页的 toggleEquip/clearSlot/equip/unequip/doEquipGem/doUnequipGem 这些单入口
+// 也写同一批资源但各自有独立 busy flag —— 它们同样接入本守卫，
+// 避免应用预设在途时被局部旧快照交叉覆盖（双向互锁）。
+// R287：doWash 洗练同样写 user_gems.affixes 并用局部旧快照回填，补接入本守卫。
+const presetWriteBusy = ref(false)
+const SAVING_PRESET_TEXT = '保存中…'
 
 async function loadPresets() {
   try {
@@ -1047,11 +1209,14 @@ async function loadPresets() {
 }
 
 async function doSavePreset() {
+  if (presetSaving.value || presetWriteBusy.value) return // 防连点：弱网下重复点会建出多套同名预设
   const name = presetName.value.trim()
   if (!name) {
     uni.showToast({ title: '请输入预设名', icon: 'none' })
     return
   }
+  presetSaving.value = true
+  presetWriteBusy.value = true
   try {
     await api.saveCurrentPreset(name)
     presetName.value = ''
@@ -1061,39 +1226,57 @@ async function doSavePreset() {
     uni.showToast({ title: '预设已保存', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetSaving.value = false
+    presetWriteBusy.value = false
   }
 }
 
 async function doDeletePreset(p: api.PresetView) {
+  if (presetWriteBusy.value) return
+  presetWriteBusy.value = true
   try {
     await api.deletePreset(p.id)
     await loadPresets()
     uni.showToast({ title: '已删除', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetWriteBusy.value = false
   }
 }
 
 async function doSetCurrent(p: api.PresetView) {
+  if (presetWriteBusy.value) return
+  presetWriteBusy.value = true
   try {
     await api.setCurrentPreset(p.id)
     await loadPresets()
     uni.showToast({ title: '已设为当前', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetWriteBusy.value = false
   }
 }
 
 /** 应用预设：依次写技能槽 → 装备 → 宝石（先卸全部再按预设佩戴）。 */
 async function doApplyPreset(p: api.PresetView) {
-  if (presetBusyId.value !== 0) return
+  if (presetBusyId.value !== 0 || presetWriteBusy.value) return
+  presetWriteBusy.value = true
   presetBusyId.value = p.id
   try {
     // 1. 出战技能（槽位参与回放哈希，必须走服务端）
     const ok = await store.persistLoadout(p.slots.skills)
     if (!ok) throw new Error('出战技能保存失败')
-    // 2. 装备整组替换
-    await api.saveEquippedEquipment(p.slots.equipment)
+    // 第 94 轮：槽位 UI 用的是页内 selected，不是 store.loadout ——
+    // 不同步的话应用成功后槽位/热量预算还显示挂载时的旧快照
+    // （toggleEquip/clearSlot 成功后同样有这一步）。
+    selected.value = [...store.loadout]
+    // 2. 装备整组替换。响应带整组新 items，写回 myEquipments，
+    // 否则装备行的已装备标记/穿戴贡献/换装建议全停在旧状态（equip/unequip 同款写法）。
+    const eqres = await api.saveEquippedEquipment(p.slots.equipment)
+    myEquipments.value = eqres.items ?? myEquipments.value
     // 3. 宝石：先卸当前全部已佩戴，再按预设逐个佩戴（上限 6 颗由服务端判）
     const gresp = await api.fetchGems()
     for (const g of gresp.gems ?? []) {
@@ -1108,6 +1291,7 @@ async function doApplyPreset(p: api.PresetView) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     presetBusyId.value = 0
+    presetWriteBusy.value = false
   }
 }
 
@@ -1135,6 +1319,54 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G138 已装备贡献 */
+.equip-contrib { margin-bottom: 12rpx; padding: 8rpx 12rpx; background: var(--ok-soft, rgba(126,231,135,0.1)); border-radius: 8rpx; }
+
+/* G136 预设元素指纹 */
+.preset-elements { display: block; font-size: 20rpx; color: var(--muted); margin-top: 4rpx; }
+.pe-tag { display: inline-block; font-size: 18rpx; padding: 0 6rpx; border-radius: 4rpx; margin-left: 4rpx; }
+
+/* G122 出战热量预算 */
+.heat-budget { margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx solid var(--border); }
+.hb-head { display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 8rpx; }
+.hb-warn { color: var(--bad); font-weight: 600; }
+.hb-track { height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.hb-fill { height: 100%; background: var(--fire); border-radius: 999rpx; }
+
+/* G100 已佩戴宝石词条总加成 */
+.gem-affix-total { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
+.gat-chip {
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
+/* G65 换装建议 */
+.gear-suggest-card {
+  background: rgba(126, 231, 135, 0.06);
+  border: 1rpx solid rgba(126, 231, 135, 0.3);
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 20rpx;
+}
+.gear-suggest-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  align-items: baseline;
+  padding: 6rpx 0;
+}
+.gear-better { color: var(--ok); font-weight: 600; }
+.gear-gain {
+  color: var(--warn);
+  font-size: 20rpx;
+  background: var(--panel-3);
+  padding: 2rpx 8rpx;
+  border-radius: 6rpx;
+}
 /*
  * 页签吸顶（2026-11-17 100 轮打磨 R10）。
  *

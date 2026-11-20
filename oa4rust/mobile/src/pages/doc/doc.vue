@@ -7,9 +7,8 @@ import { computed, ref } from 'vue'
 import { fileApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
-import { formatFileSize } from '@/utils/format'
 import { listState } from '@/utils/loadList'
-import { loadDocLists } from './docFeed'
+import { docMetaSize, loadDocLists } from './docFeed'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
@@ -36,7 +35,7 @@ function nameOf(row: Record<string, unknown>): string {
 }
 function metaOf(row: Record<string, unknown>): string {
   const parts: string[] = []
-  const sizeText = formatFileSize(row.size)
+  const sizeText = docMetaSize(row)
   if (sizeText) parts.push(sizeText)
   for (const k of ['createTime', 'creator']) {
     const v = row[k]
@@ -117,6 +116,7 @@ async function downloadAttachment(row: Record<string, unknown>) {
 
 // ── 上传（二进制写入附件存储）────────────────────────────────
 async function doUpload(filePath: string, fileName: string): Promise<void> {
+  if (uploading.value) return
   const folder = myFolder()
   if (!folder || !filePath) {
     uni.showToast({ title: '未登录或无文件', icon: 'none' })
@@ -128,6 +128,8 @@ async function doUpload(filePath: string, fileName: string): Promise<void> {
     await fileApi.upload(folder, filePath, fileName || 'file')
     uni.hideLoading()
     uni.showToast({ title: '上传成功', icon: 'success' })
+    // 上传落点即本页附件清单：刷新列表让新附件即时可见（失败时 loadList 保留旧行，不误报失败）。
+    await load()
   } catch (e) {
     uni.hideLoading()
     uni.showToast({ title: e instanceof Error ? e.message : '上传失败', icon: 'none' })
@@ -229,13 +231,13 @@ function pickFromFilePicker(): void {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .toolbar {
   display: flex;
   gap: 16rpx;
   padding: 24rpx;
-  background: #fff;
+  background: var(--color-surface);
 }
 .tool {
   flex: 1;
@@ -244,12 +246,12 @@ function pickFromFilePicker(): void {
 .tip {
   padding: 120rpx 0;
   text-align: center;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .tip-error {
   padding: 60rpx 32rpx;
-  color: #c0392b;
+  color: var(--color-error);
   font-size: 28rpx;
 }
 .error-text {
@@ -261,17 +263,17 @@ function pickFromFilePicker(): void {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
-  background: #fdf2f0;
-  border-bottom: 1px solid #f0f2f5;
+  background: var(--color-error-tint);
+  border-bottom: 1px solid var(--color-divider);
 }
 .page-body {
-  background: #fff;
+  background: var(--color-surface);
 }
 .section {
   padding-top: 8rpx;
@@ -279,20 +281,20 @@ function pickFromFilePicker(): void {
 .section-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   padding: 20rpx 32rpx 8rpx;
-  border-left: 6rpx solid #2d8cf0;
+  border-left: 6rpx solid var(--color-primary);
   margin-left: 24rpx;
 }
 .list {
-  background: #fff;
+  background: var(--color-surface);
 }
 .item {
   display: flex;
   align-items: center;
   gap: 20rpx;
   padding: 28rpx 32rpx;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .icon {
   font-size: 40rpx;
@@ -302,12 +304,12 @@ function pickFromFilePicker(): void {
 }
 .title {
   font-size: 30rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 .meta {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 </style>

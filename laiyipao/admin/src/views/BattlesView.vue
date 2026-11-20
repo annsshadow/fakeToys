@@ -12,7 +12,7 @@ import {
   type VerifyResult,
 } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
-import { fmtTime } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -75,16 +75,10 @@ const onlyMismatched = ref(false)
 /**
  * 日期范围（2026-10-31 新一轮第 14 轮）。
  * `el-date-picker` value-format="YYYY-MM-DD"，v-model 直接是字符串数组。
- * 服务端 `date_to` 是开区间（`created_at < date_to`），
- * 所以结束日期要传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 会补成当天 24:00
+ * 的半开区间（含结束当天），前端不可再自行 +1 天。
  */
 const dateRange = ref<[string, string] | null>(null)
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 /**
  * 2026-10-21（P5-1）：分页。
@@ -102,9 +96,9 @@ const filterParams = computed(() => ({
   limit: PAGE_SIZE,
   offset: (page.value - 1) * PAGE_SIZE,
   only_mismatched: onlyMismatched.value || undefined,
-  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from 当天 00:00，date_to 次日 00:00（开区间）
+  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from/date_to 原样传，服务端含结束当天
   date_from: dateRange.value?.[0] || undefined,
-  date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+  date_to: dateRange.value?.[1] || undefined,
   // 结果筛选（2026-11-01 新一轮第 44 轮）
   result: result.value || undefined,
 }))
@@ -146,7 +140,10 @@ async function copyBattleId(id: number) {
   }
 }
 
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     // 反应名与战报并发取。反应名失败**不**阻断战报列表 ——
@@ -156,13 +153,16 @@ async function load() {
       fetchBattles(filterParams.value),
       fetchReactionLabels().catch(() => null),
     ])
+    // 筛选/分页切换会让多份 load 并发；旧请求后到不得覆盖新筛选的结果。
+    if (seq !== loadSeq) return
     battles.value = res.items
     total.value = res.total
     reactionLabel.value = labels ?? reactionLabel.value
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`战报加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -180,34 +180,43 @@ async function onExportCsv() {
       only_mismatched: onlyMismatched.value || undefined,
       // 日期范围（2026-10-31 新一轮第 14 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
       // 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径
       result: result.value || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `battles_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `battles_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${battles.value.length} 条战报（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 条战报（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
+// 详情请求序号（第 60 轮）：先点 A 再点 B 时，A 的迟到响应不得覆盖 B 的详情。
+// UsersView.openDetail 早已用同款 detailReqSeq 守卫，这里补上。
+let detailReqSeq = 0
+
 async function openDetail(row: AdminBattleView) {
+  const seq = ++detailReqSeq
   // 换一条战报就把上一次的输入与结果清掉 —— 否则会把 A 的比对结果
   // 看成 B 的结论，而两个都是合法的界面状态。
   verifyHashInput.value = ''
   verifyResult.value = null
   try {
     const res = await fetchBattleDetail(row.id)
+    if (seq !== detailReqSeq) return
     detail.value = res.battle
     detailDrawer.value = true
   } catch (e) {
+    if (seq !== detailReqSeq) return
     ElMessage.error((e as Error).message)
   }
 }
@@ -388,7 +397,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <el-table-column label="星" width="60">
-          <template #default="{ row }">{{ '★'.repeat(row.stars) }}</template>
+          <template #default="{ row }"><span role="img" :aria-label="row.stars + ' 星'">{{ '★'.repeat(row.stars) }}</span></template>
         </el-table-column>
         <el-table-column prop="score" label="分数" width="100" />
         <el-table-column prop="kills" label="击杀" width="70" />

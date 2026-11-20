@@ -290,7 +290,7 @@
           </div>
         </div>
         <div class="fv-export">
-          <button class="btn-sm" @click="() => { navigator.clipboard.writeText(exportFlowVars()) }">📋 复制JSON</button>
+          <button class="btn-sm" @click="copyText(exportFlowVars())">📋 复制JSON</button>
         </div>
       </div>
     </div>
@@ -587,7 +587,14 @@
         <!-- Mini-map -->
         <div v-if="minimapVisible && processDef && processDef.nodes.length > 0" class="minimap-container">
           <div class="minimap-header">🗺 迷你地图</div>
-          <canvas ref="minimapCanvasRef" class="minimap-canvas" :width="minimapWidth" :height="minimapHeight" @click="minimapClick"></canvas>
+          <canvas ref="minimapCanvasRef" class="minimap-canvas" :width="minimapWidth" :height="minimapHeight"
+            tabindex="0" role="button"
+            :aria-label="`迷你地图，共 ${processDef.nodes.length} 个节点；方向键选择节点，回车或空格定位到该节点，当前第 ${minimapSelectedNode + 1} 个：${processDef.nodes[minimapSelectedNode]?.label || processDef.nodes[minimapSelectedNode]?.id || ''}`"
+            @keydown.left.prevent="minimapSelectedNode = Math.max(0, minimapSelectedNode - 1)"
+            @keydown.right.prevent="minimapSelectedNode = Math.min(processDef.nodes.length - 1, minimapSelectedNode + 1)"
+            @keydown.enter.prevent="minimapFocusNode(minimapSelectedNode)"
+            @keydown.space.prevent="minimapFocusNode(minimapSelectedNode)"
+            @click="minimapClick"></canvas>
           <div class="minimap-controls">
             <button class="tb-btn" @click="minimapVisible=false">收起</button>
             <button class="tb-btn" @click="zoomToFit">适配</button>
@@ -1912,7 +1919,7 @@
         <div v-if="perfProfiles.has(String(perfProfileNodeIdx))" class="ppp-stats">
           <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.callCount || 0 }}</span><span class="ppp-lbl">调用次数</span></div>
           <div class="ppp-stat"><span class="ppp-val">{{ (perfProfiles.get(String(perfProfileNodeIdx))?.avgDuration||0).toFixed(0) }}ms</span><span class="ppp-lbl">平均耗时</span></div>
-          <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.successRate?.toFixed(1) || 0 }}%</span><span class="ppp-lbl">成功率</span></div>
+          <div class="ppp-stat"><span class="ppp-val">{{ formatPercent((perfProfiles.get(String(perfProfileNodeIdx))?.successRate ?? 0) / 100) }}</span><span class="ppp-lbl">成功率</span></div>
           <div class="ppp-stat"><span class="ppp-val">{{ perfProfiles.get(String(perfProfileNodeIdx))?.maxDuration?.toFixed(0) || 0 }}ms</span><span class="ppp-lbl">最大耗时</span></div>
         </div>
         <div class="ppp-chart"><div class="ppp-bar"><div class="ppp-fill" :style="{width:'70%', background:getPerfStatusColor(70)}"></div></div></div>
@@ -2781,8 +2788,11 @@ import {
   serializeProcessDefinition,
 } from '../contracts/process-definition'
 import { downloadBlob } from '../utils/download'
+import { computeExecutionProgress } from '../utils/executionProgress'
+import { formatPercent } from '../utils/formatNumber'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
-import { toast } from '../utils/toast'
+import { computeSimulationProgress } from '../utils/simulationProgress'
+import { copyText, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -3560,6 +3570,7 @@ const multiDragOffset = ref({ x: 0, y: 0 })
 const minimapVisible = ref(true)
 const minimapScale = 0.15
 const minimapCanvasRef = ref<HTMLCanvasElement | null>(null)
+const minimapSelectedNode = ref(0)
 // ── Execution Simulation ────────────────────────────────────────────
 interface ExecState {
   currentNodeIdx: number | null
@@ -3627,24 +3638,24 @@ function simulateNext() {
     execState.value.status = 'finished'
     return
   }
-  // Animate progress
+  // Animate progress：以已完成节点为基线映射到整体进度，避免节点推进时进度倒退（R165）
   const totalNodes = processDef.value.nodes.length
-  let progress = 0
+  const completedBefore = new Set(execState.value.completedNodes).size
+  let nodePct = 0
   execAnimTimer = setInterval(() => {
-    progress += 5
-    if (progress >= 100) {
+    nodePct = Math.min(100, nodePct + 5)
+    execState.value.progress = computeExecutionProgress(completedBefore, totalNodes, nodePct)
+    if (nodePct >= 100) {
       clearInterval(execAnimTimer)
       execAnimTimer = null
       execState.value.currentNodeIdx = nextIdx
       execState.value.completedNodes.push(nextId)
-      execState.value.progress = Math.round((execState.value.completedNodes.length / totalNodes) * 100)
       if (processDef.value!.nodes[nextIdx].type === 'end') {
+        execState.value.progress = 100
         execState.value.status = 'finished'
       } else {
         execAnimDelay = setTimeout(() => simulateNext(), 300)
       }
-    } else {
-      execState.value.progress = progress
     }
   }, 50)
 }
@@ -4665,9 +4676,9 @@ function downloadSvg() {
   const blob = new Blob([svg], { type: 'image/svg+xml' })
   downloadBlob(blob, `${currentProcess.value?.flag || 'process'}.svg`)
 }
-function copySvg() {
+async function copySvg() {
   const svg = exportAsSvg()
-  if (svg) navigator.clipboard.writeText(svg)
+  if (svg) await copyText(svg)
 }
 // ── Resize ────────────────────────────────────────────────────────────
 type ResizeDir = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -5164,6 +5175,18 @@ function minimapClick(e: MouseEvent) {
     panX.value = cx - (n.x + (n.w || 120) / 2) * zoom.value
     panY.value = cy - (n.y + (n.h || 50) / 2) * zoom.value
   }
+}
+/** 将画布平移到指定流程节点（迷你地图键盘导航复用此逻辑）。 */
+function minimapFocusNode(idx: number) {
+  const rect = canvasRef.value?.getBoundingClientRect()
+  const n = processDef.value?.nodes?.[idx]
+  if (!rect || !n) return
+  const cx = rect.width / 2,
+    cy = rect.height / 2
+  panX.value = cx - (n.x + (n.w || 120) / 2) * zoom.value
+  panY.value = cy - (n.y + (n.h || 50) / 2) * zoom.value
+  minimapSelectedNode.value = idx
+  renderMinimap()
 }
 // ── Canvas Themes ────────────────────────────────────────────────────
 type CanvasTheme = 'dark' | 'midnight' | 'ocean' | 'forest' | 'cyber' | 'sunset' | 'arctic' | 'ember'
@@ -6125,8 +6148,8 @@ function exportJson(): string {
   if (!processDef.value) return '{}'
   return JSON.stringify({ nodes: processDef.value.nodes, edges: processDef.value.edges }, null, 2)
 }
-function copyExportJson() {
-  navigator.clipboard.writeText(exportJson())
+async function copyExportJson() {
+  await copyText(exportJson())
 }
 function downloadJson() {
   const blob = new Blob([exportJson()], { type: 'application/json' })
@@ -7160,10 +7183,10 @@ function getEdgeDirections(): EdgeDirection[] {
   }
   const total = edges.length
   return [
-    { direction: '→ 右', count: rightCount, percentage: `${((rightCount / total) * 100).toFixed(1)}%` },
-    { direction: '← 左', count: leftCount, percentage: `${((leftCount / total) * 100).toFixed(1)}%` },
-    { direction: '↓ 下', count: downCount, percentage: `${((downCount / total) * 100).toFixed(1)}%` },
-    { direction: '↑ 上', count: upCount, percentage: `${((upCount / total) * 100).toFixed(1)}%` },
+    { direction: '→ 右', count: rightCount, percentage: formatPercent(rightCount / total) },
+    { direction: '← 左', count: leftCount, percentage: formatPercent(leftCount / total) },
+    { direction: '↓ 下', count: downCount, percentage: formatPercent(downCount / total) },
+    { direction: '↑ 上', count: upCount, percentage: formatPercent(upCount / total) },
   ].filter((e) => e.count > 0)
 }
 // ── Path Length Analysis ───────────────────────────────────────────
@@ -8308,6 +8331,8 @@ function detectConflicts(): ConnectionConflict[] {
   return conflicts
 }
 function startSimulation() {
+  // 重复启动前先摘掉旧 timer，避免多个 interval 抢写进度、重复弹「模拟完成」
+  if (simTimer) clearInterval(simTimer)
   simRunning.value = true
   simProgress.value = 0
   simEvents.value = []
@@ -8320,8 +8345,10 @@ function startSimulation() {
     simEvents.value.push({ time: t, nodeId: n.id, event: 'complete', label: n.label || n.type })
   })
   const totalDuration = t + 500
+  // 以启动时刻为基准累计已运行时间，取代 Date.now() 取模（会回绕归零、永不结束）
+  const startedAt = Date.now()
   simTimer = setInterval(() => {
-    simProgress.value = Math.min(100, ((Date.now() % totalDuration) / totalDuration) * 100)
+    simProgress.value = computeSimulationProgress(Date.now() - startedAt, totalDuration)
     if (simProgress.value >= 100) {
       clearInterval(simTimer)
       simTimer = null
@@ -11834,4 +11861,5 @@ async function exportProcess() {
 
 <style scoped>
 /* optimized */
+.minimap-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 </style>

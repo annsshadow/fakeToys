@@ -28,6 +28,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),

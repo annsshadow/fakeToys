@@ -348,7 +348,7 @@ describe('筛选参数', () => {
 describe('重算台账 CSV 导出（新一轮第 45 轮）', () => {
   it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
     const wrapper = await mountView()
-    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid,user_id\n1,9\n']))
 
     // 设置用户/关卡筛选
     const vm = wrapper.vm as unknown as { userId: number; levelId: number }
@@ -432,6 +432,105 @@ describe('RecomputesView 用户跳转用户详情（第 96 轮）', () => {
 
     expect(router.currentRoute.value.path).toBe('/users')
     expect(router.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
+  })
+})
+
+describe('筛选应重置台账分页（第 57 轮）', () => {
+  it('在第 3 页改筛选后点「筛选」：offset 回到 0，避免新筛选的小结果集被误判为空', async () => {
+    // 分页器 v-if=total>50，给足总数让翻页状态真实存在。
+    fetchRecomputes.mockResolvedValue({ items: [row()], total: 500 })
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as { ledgerPage: number; userId: number | undefined }
+
+    // 运营已经翻到第 3 页（offset=100）。
+    vm.ledgerPage = 3
+    await flushPromises()
+
+    // 改筛选条件后点「筛选」。
+    vm.userId = 42
+    const btn = wrapper.findAll('button').find((b) => b.text() === '筛选')
+    expect(btn, '找不到「筛选」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    const last = fetchRecomputes.mock.calls[fetchRecomputes.mock.calls.length - 1][0]
+    expect(last.user_id, '筛选条件未生效，测试没有触发到正确请求').toBe(42)
+    expect(
+      last.offset,
+      '改筛选后仍停在旧页：offset 不为 0，新筛选只有几条时会被误判为「无不符记录」',
+    ).toBe(0)
+    wrapper.unmount()
+  })
+})
+describe('RecomputesView 台账筛选竞态（第 75 轮）', () => {
+  it('旧筛选慢响应后到不得覆盖新筛选的台账（第 75 轮）', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    // 挂载并完成初次加载，再替换 mock 为两个可控 deferred。
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as {
+      userId: number | undefined
+      rows: Array<{ id: number; nickname: string }>
+      load: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchRecomputes.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 先发旧筛选（user_id=1），再发新筛选（user_id=2）。
+    vm.userId = 1
+    const pOld = vm.load()
+    vm.userId = 2
+    const pNew = vm.load()
+    // 新筛选响应先到，旧筛选慢响应后到。
+    dNew.resolve({ items: [row({ id: 99, nickname: '新筛选玩家' })], total: 1 })
+    await flushPromises()
+    dOld.resolve({ items: [row({ id: 1, nickname: '旧筛选玩家' })], total: 1 })
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.rows.length, '台账应显示一条记录').toBe(1)
+    expect(vm.rows[0].nickname, '旧筛选慢响应覆盖了新筛选结果').toBe('新筛选玩家')
+    wrapper.unmount()
+  })
+})
+
+describe('RecomputesView 总账统计窗口竞态（第 91 轮）', () => {
+  it('旧窗口慢响应后到不得覆盖新窗口的 summary', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountView()
+    const vm = wrapper.vm as unknown as {
+      hours: number
+      summary: { totals: { total: number } } | null
+      loadStats: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchRecomputeStats.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    // 先切到旧窗口（1 小时），再切到新窗口（24 小时），两次 loadStats 真实并发
+    vm.hours = 1
+    const pOld = vm.loadStats()
+    vm.hours = 24
+    const pNew = vm.loadStats()
+    // 新窗口响应先到，旧窗口慢响应后到
+    dNew.resolve(summary({ totals: { total: 2424, mismatched: 0, rejected: 0, rate_permille: 0 } }))
+    await flushPromises()
+    dOld.resolve(summary({ totals: { total: 1001, mismatched: 0, rejected: 0, rate_permille: 0 } }))
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.summary?.totals.total, '旧窗口慢响应覆盖了新窗口 summary').toBe(2424)
     wrapper.unmount()
   })
 })

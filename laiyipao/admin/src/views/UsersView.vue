@@ -15,7 +15,7 @@ import {
   type AdminUserView,
 } from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
-import { fmtTime, isCancel } from '@/utils/format'
+import { csvDataRowCount, exportDateLabel, fmtTime, isCancel } from '@/utils/format'
 import { canGoNext, cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -77,21 +77,15 @@ const offset = ref(0)
 /**
  * 注册日期范围（2026-10-31 新一轮第 15 轮）。
  * `el-date-picker` value-format="YYYY-MM-DD"，v-model 是字符串数组。
- * 服务端 `date_to` 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 含结束当天，前端不再 +1。
  */
 const dateRange = ref<[string, string] | null>(null)
 
 /**
  * 最后登录时间范围（2026-11-01 新一轮第 46 轮）。
- * 与注册日期同样的开区间语义：结束日期传**次日** 00:00。
+ * 与注册日期同样：结束日期原样传，服务端含当天。
  */
 const lastLoginRange = ref<[string, string] | null>(null)
-
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
@@ -199,7 +193,7 @@ async function onExportUserFlows(userId: number) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `user_${userId}_flows_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `user_${userId}_flows_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -210,7 +204,15 @@ async function onExportUserFlows(userId: number) {
   }
 }
 
+/**
+ * 列表请求序号（2026-11-18 第56轮）：快速切换筛选时，只接受最新一次请求的响应。
+ * 与 BattlesView 第53轮同族 —— 旧筛选的慢响应后到会覆盖新筛选的 users/total，
+ * 运营看到的列表与刚点的筛选条件矛盾。
+ */
+let listReqSeq = 0
+
 async function load() {
+  const seq = ++listReqSeq
   loading.value = true
   try {
     const res = await fetchUsers({
@@ -219,21 +221,23 @@ async function load() {
       offset: offset.value,
       // 注册日期范围（2026-10-31 新一轮第 15 轮）
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
       // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
       is_guest: isGuestFilter.value,
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）
       last_login_from: lastLoginRange.value?.[0] || undefined,
-      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      last_login_to: lastLoginRange.value?.[1] || undefined,
       // 需核查筛选（2026-11-01 新一轮第 60 轮）
       suspicious: suspiciousFilter.value,
     })
+    if (seq !== listReqSeq) return // 旧筛选的迟到响应不得覆盖新结果
     users.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== listReqSeq) return
     ElMessage.error(`用户加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === listReqSeq) loading.value = false
   }
 }
 
@@ -412,22 +416,26 @@ async function onExportCsv() {
       keyword: keyword.value || undefined,
       // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
-      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      date_to: dateRange.value?.[1] || undefined,
+      // 游客/账号筛选（2026-11-18 第92轮）：与列表同口径，漏传会导出全部账号
+      is_guest: isGuestFilter.value,
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
       last_login_from: lastLoginRange.value?.[0] || undefined,
-      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      last_login_to: lastLoginRange.value?.[1] || undefined,
       // 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径
       suspicious: suspiciousFilter.value,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `users_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${users.value.length} 名用户（当前筛选结果）`)
+    ElMessage.success(`已导出 ${exportedCount} 名用户（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }

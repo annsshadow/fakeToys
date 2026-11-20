@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
+import (
+	"math"
+	"math/bits"
+)
+
 // 伤害结算（I-1 的核心）。
 //
 // 全部使用定点整数（千分比），禁止浮点：既是为了与 TS 侧逐位一致，
@@ -512,13 +517,56 @@ func dominantElement(def *Defender) Element {
 	return best
 }
 
-// mulDiv 是 (a * b) / c 的整数版本，内部用 int64 防溢出。
-// 全部公式都经过它，保证两端除法语义一致（都是向零截断）。
+// mulDiv 是 (a * b) / c 的整数版本，全程不溢出。
+// 全部公式都经过它，保证两端除法语义一致（都是向零截断），
+// 并与 TS 侧 fixed.ts 的 BigInt 实现逐位等价。
+//
+// (a*b) 可能超出 int64 而商仍在范围内 —— 取 a=6e18、b=1450、c=1000 时
+// 乘积 8.7e21 溢出但商 8.7e18 装得下。直接写 (a*b)/c 会静默回绕成错值。
+// 用 128 位乘除改写：先取三个数的绝对值（符号单独记录），
+// bits.Mul64 得到精确的 128 位乘积 (hi,lo)，再由 bits.Div64 完成 128÷64 位除法，
+// 数学上与 (a*b)/c 完全等价（含负数向零截断，与 TS BigInt 一致）。
+// MinInt64 的绝对值在 uint64 环里恰好是 2^63，可被正确表示；
+// 若商超出 int64 则 fail-closed 夹到 Min/MaxInt64。
 func mulDiv(a, b, c int64) int64 {
 	if c == 0 {
 		return 0
 	}
-	return (a * b) / c
+	neg := (a < 0) != (b < 0)
+	if c < 0 {
+		neg = !neg
+	}
+	// 取绝对值：对 MinInt64，-uint64(x) 在 uint64 环里正好得到 2^63。
+	ua, ub, uc := uint64(a), uint64(b), uint64(c)
+	if a < 0 {
+		ua = -ua
+	}
+	if b < 0 {
+		ub = -ub
+	}
+	if c < 0 {
+		uc = -uc
+	}
+	// 128 位乘积：任意两个 int64 的绝对值乘积 ≤ 2^126，hi ≤ 2^62。
+	hi, lo := bits.Mul64(ua, ub)
+	if hi >= uc {
+		// 商的绝对值 ≥ 2^64，int64 装不下 —— fail-closed 夹到边界。
+		if neg {
+			return math.MinInt64
+		}
+		return math.MaxInt64
+	}
+	q, _ := bits.Div64(hi, lo, uc) // 向零截断，与 TS BigInt 语义一致
+	if neg {
+		if q > uint64(1)<<63 {
+			return math.MinInt64
+		}
+		return -int64(q)
+	}
+	if q > uint64(math.MaxInt64) {
+		return math.MaxInt64
+	}
+	return int64(q)
 }
 
 func minInt64(a, b int64) int64 {

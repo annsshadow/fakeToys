@@ -137,26 +137,24 @@ function closeModal() {
 }
 const saveM = useMutation({
   mutationFn: async () => {
-    saving.value = true
-    try {
-      const payload: Record<string, string> = {
-        personId: form.value.personId ?? '',
-        title: form.value.title ?? '',
-        url: form.value.url ?? '',
-      }
-      if (editingId.value) return api.post(`/api/program_center/collect/save/${editingId.value}`, payload)
-      return api.post(createEp, payload)
-    } finally {
-      saving.value = false
+    const payload: Record<string, string> = {
+      personId: form.value.personId ?? '',
+      title: form.value.title ?? '',
+      url: form.value.url ?? '',
     }
+    if (editingId.value) return api.post(`/api/program_center/collect/save/${editingId.value}`, payload)
+    return api.post(createEp, payload)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
   onError: (e) => toast.error(collectMutationErrorMessage(e)),
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
 const deletingId = ref('')

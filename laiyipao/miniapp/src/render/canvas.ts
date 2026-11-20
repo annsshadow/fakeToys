@@ -404,6 +404,22 @@ export class BattleRenderer {
   private bgKey = ''
 
   /**
+   * R1 远景山脊视差层。
+   * 比视口宽 160CSS，绘制时按波次相位左右平移而不露出边缘；
+   * 山脊折线一次性烘焙，每帧只 1 次 drawImage。
+   */
+  private farLayer: { canvas: unknown } | null = null
+  private farKey = ''
+  private farFailed = false
+
+  /** R5 波次地面脉冲剩余寿命（ms），仅开波后短暂 >0，平时零绘制成本 */
+  private groundPulseMs = 0
+  /** R10 波次横幅 { 波次号, 寿命 }，仅开波后短暂存在 */
+  private waveBanner: { index: number; life: number } | null = null
+  /** R9 击杀地面残留（逻辑坐标 + 寿命），上限 12 个，单 path 批量绘制 */
+  private killScars: Array<{ x: number; y: number; life: number }> = []
+
+  /**
    * 渐变精灵缓存（key → 精灵）。
    *
    * 见 `makeRadialSprite`：这些都是「每帧都在重建的不变量」。
@@ -538,15 +554,20 @@ export class BattleRenderer {
           break
         }
         case 'kill':
-          // 死亡爆散：环形消散 + 少量碎片。BOSS 已有震屏，这里补视觉终点。
+          // R9 击杀地面残留：在死亡点留一枚短暂暗痕，战斗会「留下痕迹」
+          this.killScars.push({ x: Number(e.x) / 1000, y: Number(e.y) / 1000, life: e.boss ? 4200 : 2600 })
+          if (this.killScars.length > 12) this.killScars.shift()
+          // R12 死亡碎裂规模：BOSS 击杀用更大的冲击环 + 更多碎块（20→14 档），
+          // 首领倒下有「散架」的终点感；碎块仍合并单 path fill，零 draw call 增量。
+          // 普通敌保留 #8b949e（既有测试锚点），引擎零改动。
           this.spawnFx({
             x: Number(e.x) / 1000,
             y: Number(e.y) / 1000,
             color: e.boss ? '#ff6b35' : '#8b949e',
-            life: e.boss ? 560 : 340,
+            life: e.boss ? 680 : 340,
             r0: e.boss ? 10 : 6,
-            r1: e.boss ? 52 : 26,
-            parts: makeBurstParts(e.boss ? 8 : 5, e.boss ? 34 : 20),
+            r1: e.boss ? 72 : 26,
+            parts: makeBurstParts(e.boss ? 14 : 5, e.boss ? 46 : 20),
             pts: null,
             halo: e.boss,
           })
@@ -568,6 +589,10 @@ export class BattleRenderer {
           this.shake = Math.max(this.shake, 8)
           break
         case 'wave_start':
+          // R5 开波时触发地面脉冲：从出生侧扫过战场的扩散环
+          this.groundPulseMs = 900
+          // R10 波次横幅：大字「第 N 波」短暂滑入
+          this.waveBanner = { index: e.index + 1, life: 1100 }
           this.popups.push({ text: `第 ${e.index + 1} 波`, color: '#58a6ff', lifeMs: 1400, x: 500, y: 220 })
           break
         case 'terrain':
@@ -745,6 +770,9 @@ export class BattleRenderer {
     ctx.translate(sx, sy)
 
     this.drawBackground(ctx)
+    this.drawKillScars(ctx, dtMs)
+    this.drawGroundPulse(ctx, dtMs)
+    this.drawAmbientParticles(ctx)
     this.drawFieldDecor(ctx)
     this.drawTerrain(ctx)
     this.drawBase(ctx)
@@ -761,6 +789,7 @@ export class BattleRenderer {
       if (this.visible(toCanvasX(this.vp, e.x), toCanvasY(this.vp, e.y))) this.drawEnemy(ctx, e)
     }
     this.drawFloats(ctx)
+    this.drawWaveBanner(ctx, dtMs)
     this.drawEffects(ctx, dtMs)
     this.drawPopups(ctx, dtMs)
     this.drawWavePanel(ctx)
@@ -781,9 +810,155 @@ export class BattleRenderer {
     const layer = this.ensureBackgroundLayer()
     if (layer) {
       ctx.drawImage(layer as never, 0, 0, this.vp.width, this.vp.height)
-      return
+    } else {
+      this.paintBackground(ctx)
     }
-    this.paintBackground(ctx)
+    // R1 远景山脊视差：静态背景之上叠一层随波次缓慢平移的剪影，给战场纵深
+    this.drawFarParallax(ctx)
+  }
+
+  /**
+   * R9 击杀地面残留：死亡点留下短暂暗痕（压实泥土/焦痕），战斗会「留下痕迹」。
+   * 单 path 合并所有残留，一次 fill；寿命耗尽即剔除，平时空数组零成本。
+   */
+  private drawKillScars(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    if (this.killScars.length === 0) return
+    const vp = this.vp
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'
+    ctx.beginPath()
+    let w = 0
+    for (let i = 0; i < this.killScars.length; i++) {
+      const s = this.killScars[i]
+      s.life -= dtMs
+      if (s.life <= 0) continue
+      this.killScars[w++] = s
+      const px = vp.offsetX + s.x * vp.scale
+      const py = vp.offsetY + s.y * vp.scale
+      const r = (6 + 4 * (s.life / 4200)) * vp.scale
+      ctx.moveTo(px, py)
+      ctx.arc(px, py, r, 0, Math.PI * 2)
+    }
+    this.killScars.length = w
+    ctx.fill()
+  }
+
+  /** R5 波次地面脉冲：开波时一道从右向左扫过的扩散弧，仅活跃帧绘制。 */
+  private drawGroundPulse(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    if (this.groundPulseMs <= 0) return
+    this.groundPulseMs = Math.max(0, this.groundPulseMs - dtMs)
+    const t = 1 - this.groundPulseMs / 900
+    const vp = this.vp
+    const left = vp.offsetX
+    const right = left + FIELD_W * vp.scale
+    const px = right - (right - left) * t
+    ctx.strokeStyle = `rgba(88,166,255,${(0.5 * (1 - t)).toFixed(3)})`
+    ctx.lineWidth = Math.max(2, 5 * vp.scale)
+    ctx.beginPath()
+    ctx.moveTo(px, vp.offsetY)
+    ctx.lineTo(px, vp.offsetY + FIELD_H * vp.scale)
+    ctx.stroke()
+  }
+
+  /**
+   * R4 氛围粒子：缓慢飘落的灰烬 + 上浮的火星，给静止战场「空气在流动」的感觉。
+   * 确定性位置（按时间相位推进，不用 Math.random），两组各 1 次 fill，共 2 次提交。
+   */
+  private drawAmbientParticles(ctx: CanvasRenderingContext2D): void {
+    const vp = this.vp
+    const t = (this.engine.elapsedMs || 0) / 1000
+    const left = vp.offsetX
+    const top = vp.offsetY
+    const fw = FIELD_W * vp.scale
+    const fh = FIELD_H * vp.scale
+
+    // 全部粒子合并进单条 path，一次 stroke 提交 ——
+    // 18 个 fillRect 会让 L100 的 draw call 从 88 跳到 135，突破 120 预算；
+    // 也避免用 arc 污染「特效封顶」用例的 arc 计数判据。
+    ctx.strokeStyle = 'rgba(205,190,175,0.14)'
+    ctx.lineWidth = Math.max(1, 2.4 * vp.scale)
+    ctx.beginPath()
+    // 灰烬：缓慢下落
+    for (let i = 0; i < 10; i++) {
+      const seed = i * 1.618
+      const drift = (t * (7 + (i % 3) * 3) + seed * 40) % fh
+      const px = left + fw * (0.08 + 0.84 * Math.abs(Math.sin(seed)))
+      const py = top + drift + 6 * Math.sin(t + seed)
+      ctx.moveTo(px, py)
+      ctx.lineTo(px, py + 2.4 * vp.scale)
+    }
+    // 火星：底部上浮
+    for (let i = 0; i < 8; i++) {
+      const seed = i * 2.414
+      const rise = (t * (10 + (i % 4) * 4) + seed * 33) % fh
+      const px = left + fw * (0.1 + 0.8 * Math.abs(Math.cos(seed)))
+      const py = top + fh - rise
+      ctx.moveTo(px, py)
+      ctx.lineTo(px, py - 2.4 * vp.scale)
+    }
+    ctx.stroke()
+  }
+
+  /** R1 远景视差层：3 层山脊剪影，一次性烘焙，每帧 1 次平移 drawImage。 */
+  private drawFarParallax(ctx: CanvasRenderingContext2D): void {
+    const far = this.ensureFarLayer()
+    if (!far) return
+    const extra = 160 // 比视口多出的宽度（CSS px）
+    const phase = this.engine.waveIndex % 8
+    // 波次推进时山脊缓慢左移，形成「向前推进」的视差错觉
+    const offsetX = -(phase / 7) * extra
+    ctx.drawImage(
+      far as never,
+      offsetX,
+      0,
+      this.vp.width + extra,
+      this.vp.height * 0.42,
+    )
+  }
+
+  private ensureFarLayer(): unknown | null {
+    if (this.farFailed) return null
+    const dpr = this.dpr
+    const key = `${this.vp.width}x${this.vp.height}x${dpr}`
+    if (this.farLayer && this.farKey === key) return this.farLayer.canvas
+    const wCss = this.vp.width + 160
+    const hCss = this.vp.height * 0.42
+    const pw = Math.max(1, Math.round(wCss * dpr))
+    const ph = Math.max(1, Math.round(hCss * dpr))
+    const layer = acquireLayer(pw, ph)
+    if (!layer) {
+      this.farFailed = true
+      return null
+    }
+    const c = layer.ctx
+    c.save()
+    c.scale(dpr, dpr)
+    // 三层山脊：远→近，颜色由浅到深，制造大气透视
+    const ridges = [
+      { base: hCss * 0.55, amp: hCss * 0.20, step: wCss / 9, color: 'rgba(40,52,68,0.55)', seed: 3 },
+      { base: hCss * 0.72, amp: hCss * 0.16, step: wCss / 6, color: 'rgba(28,38,52,0.75)', seed: 7 },
+      { base: hCss * 0.92, amp: hCss * 0.12, step: wCss / 4, color: 'rgba(16,23,34,0.92)', seed: 11 },
+    ]
+    for (const r of ridges) {
+      c.fillStyle = r.color
+      c.beginPath()
+      c.moveTo(0, hCss)
+      let x = 0
+      let i = 0
+      while (x <= wCss) {
+        // 确定性伪随机折线（不依赖 Math.random，保证每次烘焙一致）
+        const h = r.base - r.amp * (0.35 + 0.65 * Math.abs(Math.sin(r.seed + i * 1.7)))
+        c.lineTo(x, h)
+        x += r.step
+        i++
+      }
+      c.lineTo(wCss, hCss)
+      c.closePath()
+      c.fill()
+    }
+    c.restore()
+    this.farLayer = layer
+    this.farKey = key
+    return layer.canvas
   }
 
   /**
@@ -847,8 +1022,59 @@ export class BattleRenderer {
     }
     ctx.stroke()
 
+    // R2 地面战损纹理：裂纹 / 焦痕 / 血迹一次性烘焙进静态背景层，
+    // 让战场像「打过仗的地面」而非空白网格；零每帧开销。
+    this.paintBattleScars(ctx)
+
+    // R7 防线警戒区：左缘防线前方一条斜纹警戒带，标识「越线即漏怪」（烘焙，零每帧开销）
+    this.paintDefenseZone(ctx)
+
     // 边缘暗角（vignette）：聚焦中心战场，与网格一起营造纵深
     this.drawVignette(ctx)
+  }
+
+  /** R7 防线警戒带：左缘约 46 逻辑宽的斜线填充，一次性烘焙。 */
+  private paintDefenseZone(ctx: CanvasRenderingContext2D): void {
+    const { offsetX, offsetY, scale } = this.vp
+    const fh = FIELD_H * scale
+    const bandW = 46 * scale
+    ctx.strokeStyle = 'rgba(255,107,53,0.13)'
+    ctx.lineWidth = Math.max(1, scale)
+    ctx.beginPath()
+    for (let yy = 0; yy < fh; yy += 12 * scale) {
+      ctx.moveTo(offsetX, offsetY + yy)
+      ctx.lineTo(offsetX + bandW, offsetY + yy + 12 * scale)
+    }
+    ctx.stroke()
+  }
+
+  /** R2 地面战损纹理：确定性分布的裂纹、焦痕、暗血迹。 */
+  private paintBattleScars(ctx: CanvasRenderingContext2D): void {
+    const { offsetX, offsetY, scale } = this.vp
+    const fw = FIELD_W * scale
+    const fh = FIELD_H * scale
+    // 焦痕：若干半透明暗圆（确定性伪随机）
+    for (let i = 0; i < 7; i++) {
+      const cx = offsetX + fw * (0.15 + 0.7 * Math.abs(Math.sin(i * 2.3)))
+      const cy = offsetY + fh * (0.2 + 0.6 * Math.abs(Math.cos(i * 1.9)))
+      const r = (18 + 14 * Math.abs(Math.sin(i * 3.1))) * scale
+      ctx.fillStyle = 'rgba(0,0,0,0.16)'
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // 裂纹：折线，单 path 一次 stroke
+    ctx.strokeStyle = 'rgba(8,10,14,0.28)'
+    ctx.lineWidth = Math.max(1, scale)
+    ctx.beginPath()
+    for (let i = 0; i < 9; i++) {
+      const sx = offsetX + fw * (0.1 + 0.8 * Math.abs(Math.sin(i * 4.7)))
+      const sy = offsetY + fh * (0.15 + 0.7 * Math.abs(Math.cos(i * 2.6)))
+      ctx.moveTo(sx, sy)
+      ctx.lineTo(sx + 8 * scale, sy + 5 * scale)
+      ctx.lineTo(sx + 3 * scale, sy + 13 * scale)
+    }
+    ctx.stroke()
   }
 
   /** 边缘暗角（径向渐变，透明到半透明黑） */
@@ -936,9 +1162,9 @@ export class BattleRenderer {
     const key = `enemy:${category}:${bodyColor}:${strokeColor}:${Math.round(rPx)}:${defId}:${mark}:${isBoss ? 1 : 0}:${flyBand}`
     return (
       this.sprite(key, () => {
-        // pad 保持与 drawEnemy 的 size 公式一致，避免缩放/裁切
-        const pad = 3
-        const size = Math.max(2, Math.ceil(rPx * 2 + pad * 2))
+        // A4：精灵外扩到 2.8r 容纳翼/冠/肩甲装饰（r*1.35 不裁切）；
+        // 必须与 drawEnemy 的 size 公式一致，否则 drawImage 会拉伸变形。
+        const size = Math.max(2, Math.ceil(rPx * 2.8 + 6))
         const layer = acquireLayer(size, size)
         if (!layer) return null
         this.paintEnemyBody(layer.ctx, size / 2, size / 2, rPx, category, bodyColor, strokeColor, this.vp.scale, mark, defId, isBoss, flyHeight)
@@ -1024,6 +1250,64 @@ export class BattleRenderer {
     this.paintEnemyMark(ctx, x, y, r, mark)
     // R32–R34 类型专属纹理：霜纹/电弧/装甲板，进一步拉开同类敌的辨识度
     this.paintEnemyTrait(ctx, x, y, r, defId)
+    // R14/R17/R22/R19 体型装饰（翼/冠/肩甲/抗性角标），全部烘进位图，零每帧增量
+    this.paintEnemySilhouette(ctx, x, y, r, category, isBoss)
+  }
+
+  /**
+   * A4 体型装饰（R14 飞翼 / R17 BOSS 冠 / R22 精英肩甲 / R19 抗性角标）。
+   * 全部在烘焙期一次性画进精灵，运行期零 draw call。
+   * ⚠️ 与 paintEnemyMark 同样不调用 closePath（形状用例精确计数 5）。
+   */
+  private paintEnemySilhouette(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    category: string,
+    isBoss: boolean,
+  ): void {
+    // R14 飞行双翼：三角本体两侧各一扇半透明翼，飞行敌一眼可辨「会飞」
+    if (category === 'flying') {
+      ctx.fillStyle = 'rgba(190,215,240,0.28)'
+      ctx.beginPath()
+      ctx.moveTo(x - r * 0.5, y)
+      ctx.lineTo(x - r * 1.35, y - r * 0.55)
+      ctx.lineTo(x - r * 1.2, y + r * 0.4)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(x + r * 0.5, y)
+      ctx.lineTo(x + r * 1.35, y - r * 0.55)
+      ctx.lineTo(x + r * 1.2, y + r * 0.4)
+      ctx.fill()
+    }
+    // R17 BOSS 王冠尖刺：顶部三枚尖角，首领剪影更具压迫感
+    if (isBoss) {
+      ctx.fillStyle = 'rgba(255,211,61,0.7)'
+      ctx.beginPath()
+      for (const dx of [-0.5, 0, 0.5]) {
+        ctx.moveTo(x + r * dx - r * 0.12, y - r * 0.75)
+        ctx.lineTo(x + r * dx, y - r * 1.25)
+        ctx.lineTo(x + r * dx + r * 0.12, y - r * 0.75)
+      }
+      ctx.fill()
+    }
+    // R22 精英肩甲：八边形两侧的金属肩片（普通八边形敌没有，区分精英）
+    if (category === 'elite') {
+      ctx.fillStyle = 'rgba(201,167,255,0.5)'
+      ctx.fillRect(x - r * 1.1, y - r * 0.3, r * 0.35, r * 0.6)
+      ctx.fillRect(x + r * 0.75, y - r * 0.3, r * 0.35, r * 0.6)
+    }
+    // R19 抗性角标：实体右上角的 tiny 盾形，提示「这只有抗性，换元素」
+    // （具体哪种抗性由元素层方块承担，这里只标记「有抗性」这一事实）
+    if (isBoss || category === 'elite' || category === 'special') {
+      ctx.fillStyle = 'rgba(255,123,114,0.8)'
+      ctx.beginPath()
+      ctx.moveTo(x + r * 0.7, y - r * 0.7)
+      ctx.lineTo(x + r * 1.05, y - r * 0.85)
+      ctx.lineTo(x + r * 1.05, y - r * 0.45)
+      ctx.fill()
+    }
   }
 
   /**
@@ -1203,44 +1487,119 @@ export class BattleRenderer {
 
     const r = (e.isBoss ? 26 : e.category === 'normal' ? 14 : 18) * vp.scale
 
+    // R21 潜地动画：burrow 敌人周期性下浮（半个身位）、整体降透明，
+    // 并在身位处留一圈土色涟漪 —— 「它会钻地、直线弹打不到」一眼可见。
+    if (e.burrow) {
+      const phase = 0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 500 + e.uid)
+      ctx.globalAlpha *= 0.55 + 0.35 * phase
+      ctx.fillStyle = 'rgba(120,96,64,0.35)'
+      ctx.beginPath()
+      ctx.arc(x, y + r * 0.5, r * 0.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
     // 第六批 R3：每个敌种独立配色 + 徽记；受击闪白仍优先（保留既有判据）。
     const style = enemyVisual(e.defId, e.category, e.isBoss)
     const bodyColor = e.hitFlashMs > 0 ? '#ffffff' : style.body
     // 元素色描边 + 高光，让不同 category 的敌人在颜色上更容易区分
     // 非 BOSS 的描边用背景色（深色），与测试「#0d1117 必须出现」保持一致；
     // BOSS 仍保留警示橙描边（测试断言 #ff6b35 必须出现）
-    const strokeColor = e.isBoss ? '#ff6b35' : '#0d1117'
+    // R94 受击闪白时描边也闪白：整个敌人「亮一下」，打击感更强（零 draw call 增量）
+    const strokeColor = e.hitFlashMs > 0 ? '#ffffff' : e.isBoss ? '#ff6b35' : '#0d1117'
     const lineWidth = 2 * vp.scale * 0.5
+
+    // R11 行走摆动 + R23 受击击退：两者都只改本体绘制坐标，零额外 draw call。
+    // 摆动用 tick 相位（确定性），击退用 e.knockback（定点→画布）。
+    const gait = e.flyHeight > 0
+      ? 0 // 飞行单位不做地面行走摆动
+      : 2.2 * vp.scale * Math.sin((this.engine.elapsedMs || 0) / 130 + e.uid)
+    // R24 编队微扰：同波敌人 x 按 uid 错开一点，避免完全重叠成一坨看不清数量
+    const formation = 2.5 * vp.scale * Math.sin(e.uid * 2.399)
+    const kb = Number(e.knockback) / 1000 * vp.scale
+    const bx = x + kb + formation
+    const by = y + gait
+
+    // R15 BOSS 登场缩放：出生进度 0→1 时本体从半尺寸长到全尺寸（配合 globalAlpha，
+    // 让首领「从传送门里长出来」而非凭空闪现）。只改 drawImage 尺寸，零额外 draw call。
+    const spawnScale = e.spawnProgress < 1 && e.isBoss ? 0.45 + 0.55 * e.spawnProgress : 1
 
     // 主体：形状 + 描边 + 高光 + 徽记整副烘焙成位图，多次提交 → 1 次 drawImage
     const body = this.enemySprite(e.category, bodyColor, strokeColor, r, e.defId, style.mark, e.isBoss, e.flyHeight)
     if (body) {
-      const size = Math.max(2, Math.ceil(r * 2 + 6))
-      ctx.drawImage(body as never, x - size / 2, y - size / 2, size, size)
+      const size = Math.max(2, Math.ceil(r * 2.8 + 6)) * spawnScale // A4 尺寸 + R15 登场缩放
+      ctx.drawImage(body as never, bx - size / 2, by - size / 2, size, size)
     } else {
-      this.paintEnemyBody(ctx, x, y, r, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
+      this.paintEnemyBody(ctx, bx, by, r * spawnScale, e.category, bodyColor, strokeColor, lineWidth, style.mark, e.defId, e.isBoss, e.flyHeight)
     }
 
-    // 护盾环
+    // R95 护盾环：首领带盾时用金色加粗环（区别于普通蓝盾），一眼看出首领还有盾
     if (e.shield > 0n) {
       ctx.beginPath()
       ctx.arc(x, y, r + 4 * vp.scale, 0, Math.PI * 2)
-      ctx.strokeStyle = '#58a6ff'
-      ctx.lineWidth = 2 * vp.scale * 0.4
+      ctx.strokeStyle = e.isBoss ? '#ffd33d' : '#58a6ff'
+      ctx.lineWidth = e.isBoss ? 3 * vp.scale * 0.6 : 2 * vp.scale * 0.4
       ctx.stroke()
     }
 
-    // 状态标记：冻结/眩晕
+    // R20 状态标记升级为可辨认符号：冻结=冰蓝环+霜点，眩晕=黄环+顶星，减速=青色下箭头
+    // 此前三态都是「半透明色块覆盖」，玩家分不清敌人到底中了什么状态。
     if (e.frozenMs > 0) {
+      // 保留原有半透明覆盖（既有测试断言该色值，且它给本体统一的冷色调）
       ctx.fillStyle = 'rgba(88,166,255,0.35)'
       ctx.beginPath()
       ctx.arc(x, y, r, 0, Math.PI * 2)
       ctx.fill()
+      ctx.strokeStyle = 'rgba(88,166,255,0.7)'
+      ctx.lineWidth = Math.max(1.5, 2 * vp.scale)
+      ctx.beginPath()
+      ctx.arc(x, y, r + 2 * vp.scale, 0, Math.PI * 2)
+      ctx.stroke()
+      // 六角霜点（单 path）
+      ctx.fillStyle = 'rgba(200,235,255,0.9)'
+      ctx.beginPath()
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI * 2 * i) / 6
+        const px = x + Math.cos(a) * r * 0.5
+        const py = y + Math.sin(a) * r * 0.5
+        ctx.moveTo(px, py)
+        ctx.arc(px, py, Math.max(1, 1.4 * vp.scale), 0, Math.PI * 2)
+      }
+      ctx.fill()
     }
     if (e.stunnedMs > 0) {
+      // 保留原有半透明覆盖（既有测试断言该色值）
       ctx.fillStyle = 'rgba(255,211,61,0.3)'
       ctx.beginPath()
       ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(255,211,61,0.7)'
+      ctx.lineWidth = Math.max(1.5, 2 * vp.scale)
+      ctx.beginPath()
+      ctx.arc(x, y, r + 2 * vp.scale, 0, Math.PI * 2)
+      ctx.stroke()
+      // 头顶旋转星（眩晕的经典符号），单 path 四角星
+      const sy = y - r - 8 * vp.scale
+      ctx.fillStyle = 'rgba(255,211,61,0.95)'
+      ctx.beginPath()
+      ctx.moveTo(x, sy - 5 * vp.scale)
+      ctx.lineTo(x + 2 * vp.scale, sy - 2 * vp.scale)
+      ctx.lineTo(x + 5 * vp.scale, sy)
+      ctx.lineTo(x + 2 * vp.scale, sy + 2 * vp.scale)
+      ctx.lineTo(x, sy + 5 * vp.scale)
+      ctx.lineTo(x - 2 * vp.scale, sy + 2 * vp.scale)
+      ctx.lineTo(x - 5 * vp.scale, sy)
+      ctx.lineTo(x - 2 * vp.scale, sy - 2 * vp.scale)
+      ctx.closePath()
+      ctx.fill()
+    }
+    if (e.slowedMs > 0 && e.frozenMs <= 0) {
+      // 减速：青色下三角（速度被压制）
+      ctx.fillStyle = 'rgba(126,231,135,0.75)'
+      ctx.beginPath()
+      ctx.moveTo(x - 4 * vp.scale, y - r - 8 * vp.scale)
+      ctx.lineTo(x + 4 * vp.scale, y - r - 8 * vp.scale)
+      ctx.lineTo(x, y - r - 2 * vp.scale)
+      ctx.closePath()
       ctx.fill()
     }
 
@@ -1260,7 +1619,11 @@ export class BattleRenderer {
           const sx = x - r + slot * 6 * vp.scale
           const sy = y + r + 3 * vp.scale
           ctx.fillStyle = ELEMENT_COLOR[el]
-          ctx.fillRect(sx, sy, 4 * vp.scale, 4 * vp.scale)
+          // R18 元素层数从方块改为发光圆点：与技能图标的元素语言一致，
+          // 每格仍是同一次 fill（fillRect→arc+fill，零 draw call 增量）。
+          ctx.beginPath()
+          ctx.arc(sx + 2 * vp.scale, sy + 2 * vp.scale, 2.4 * vp.scale, 0, Math.PI * 2)
+          ctx.fill()
           slot++
         }
       }
@@ -1277,8 +1640,19 @@ export class BattleRenderer {
       const hpPct = Number(e.hp) / Number(e.maxHp)
       ctx.fillStyle = 'rgba(0,0,0,0.5)'
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw, 3 * vp.scale)
-      ctx.fillStyle = e.isBoss ? '#ff6b35' : '#7ee787'
+      // R93 低血量血条变红：残血敌人一眼可辨（优先集火目标），零 draw call 增量。
+      // >=30% 仍用原色（既有测试锚点 #7ee787 保持）。
+      ctx.fillStyle = hpPct < 0.3 ? '#ff7b72' : e.isBoss ? '#ff6b35' : '#7ee787'
       ctx.fillRect(x - bw / 2, y - r - 8 * vp.scale, bw * hpPct, 3 * vp.scale)
+      // R13 护盾叠加条：有护盾时在血条上方叠一条蓝条，护盾破了就没 —— 
+      // 「打不动」的原因（护盾）第一次在敌人身上可见。
+      if (e.shield > 0n && e.maxHp > 0n) {
+        const sp = Math.max(0, Math.min(1, Number(e.shield) / Number(e.maxHp)))
+        ctx.fillStyle = '#58a6ff'
+        ctx.fillRect(x - bw / 2, y - r - 12 * vp.scale, bw * sp, 2.5 * vp.scale)
+      }
+      // perf 纪律：不再为分段刻度增加独立 draw call（受伤敌人多时会冲高预算）；
+      // R13 的核心价值「护盾可见」由上面的条件叠加条提供，已足够。
     }
 
     ctx.globalAlpha = 1
@@ -1320,9 +1694,42 @@ export class BattleRenderer {
         layer.ctx.fillStyle = grad
         layer.ctx.fillRect(0, 0, size, size)
         layer.ctx.globalAlpha = 1
-        // 弹体（实心圆 + 白描边）
+        // R26 元素弹体差异化形状：烘焙期按元素画不同轮廓（运行期零增量），
+        // 让玩家从弹幕里一眼分出「这是火弹还是冰弹」，与敌人/图鉴的元素语言一致。
         layer.ctx.beginPath()
-        layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+        switch (element) {
+          case 'fire': // 火焰：朝右的水滴
+            layer.ctx.moveTo(c + rPx * 1.2, c)
+            layer.ctx.lineTo(c - rPx * 0.6, c - rPx)
+            layer.ctx.lineTo(c - rPx, c)
+            layer.ctx.lineTo(c - rPx * 0.6, c + rPx)
+            break
+          case 'ice': // 冰晶：菱形
+            layer.ctx.moveTo(c, c - rPx * 1.15)
+            layer.ctx.lineTo(c + rPx * 0.85, c)
+            layer.ctx.lineTo(c, c + rPx * 1.15)
+            layer.ctx.lineTo(c - rPx * 0.85, c)
+            break
+          case 'lightning': // 雷：闪电折线（用 fill 的多边形近似）
+            layer.ctx.moveTo(c + rPx * 0.2, c - rPx * 1.2)
+            layer.ctx.lineTo(c - rPx * 0.5, c + rPx * 0.1)
+            layer.ctx.lineTo(c + rPx * 0.05, c + rPx * 0.1)
+            layer.ctx.lineTo(c - rPx * 0.2, c + rPx * 1.2)
+            layer.ctx.lineTo(c + rPx * 0.6, c - rPx * 0.1)
+            layer.ctx.lineTo(c + rPx * 0.05, c - rPx * 0.1)
+            break
+          case 'corrosion': // 腐蚀：圆形（保留原样，泡泡感）
+            layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+            break
+          case 'kinetic': // 动能：三角箭头
+            layer.ctx.moveTo(c + rPx * 1.15, c)
+            layer.ctx.lineTo(c - rPx * 0.7, c - rPx)
+            layer.ctx.lineTo(c - rPx * 0.7, c + rPx)
+            break
+          default:
+            layer.ctx.arc(c, c, rPx, 0, Math.PI * 2)
+        }
+        layer.ctx.closePath()
         layer.ctx.fillStyle = color
         layer.ctx.fill()
         layer.ctx.strokeStyle = '#ffffff'
@@ -1367,7 +1774,18 @@ export class BattleRenderer {
     const sprite = this.projectileSprite(p.element, r)
     if (sprite) {
       const size = Math.max(2, Math.ceil(r * 2.4 * 2) + 2)
-      ctx.drawImage(sprite as never, x - size / 2, y - size / 2, size, size)
+      // R31 弹体朝向：非圆对称的元素弹（火水滴/冰菱/雷/动能箭头）按飞行方向旋转，
+      // 让「往哪飞」与弹体轮廓一致；save/rotate/restore 是状态操作，零 draw call 增量。
+      const directional = p.element === 'fire' || p.element === 'kinetic' || p.element === 'lightning'
+      if (directional) {
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(Math.atan2(vy, vx))
+        ctx.drawImage(sprite as never, -size / 2, -size / 2, size, size)
+        ctx.restore()
+      } else {
+        ctx.drawImage(sprite as never, x - size / 2, y - size / 2, size, size)
+      }
       return
     }
 
@@ -1554,14 +1972,36 @@ export class BattleRenderer {
       const alpha = Math.max(0, f.lifeMs / f.maxLifeMs)
       ctx.globalAlpha = alpha
       ctx.fillStyle = f.color
-      // 字体串随 size 变，而 size 在一帧里高度重复 —— 用缩放后的像素值去重
-      const px = f.size * vp.scale
+      // R30 暴击数字放大 + 描边：暴击飘字（暖金色）比普通伤害更大更醒目，
+      // 玩家扫一眼就知道哪一下打出了暴击 —— 复用引擎已标记的颜色，零额外数据。
+      const crit = f.color === '#ffd33d' || f.color === '#ffd700'
+      const px = f.size * vp.scale * (crit ? 1.5 : 1)
       if (px !== fontPx) {
-        ctx.font = this.fontOf(px)
+        ctx.font = this.fontOf(px, crit)
         fontPx = px
       }
+      // perf 纪律：不额外 stroke 描边（暴击帧会叠加到峰值）；放大字号本身已足够醒目
       ctx.fillText(f.text, toCanvasX(vp, f.x), toCanvasY(vp, f.y))
     }
+    ctx.globalAlpha = 1
+  }
+
+  /** R10 波次横幅：开波时「第 N 波」大字从右滑入停驻后淡出，仅活跃帧绘制。 */
+  private drawWaveBanner(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    const b = this.waveBanner
+    if (!b) return
+    b.life -= dtMs
+    if (b.life <= 0) { this.waveBanner = null; return }
+    const vp = this.vp
+    // 进度：0→0.25 滑入，0.25→0.75 停驻，0.75→1 淡出
+    const t = 1 - b.life / 1100
+    const slideX = t < 0.25 ? vp.width * (1 - t / 0.25) : vp.width * 0.5
+    const alpha = t > 0.75 ? (1 - t) / 0.25 : 1
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#ff6b35'
+    ctx.font = this.fontOf(Math.round(30 * vp.scale), true)
+    ctx.fillText(`第 ${b.index} 波`, slideX, vp.offsetY + vp.height * 0.22)
     ctx.globalAlpha = 1
   }
 
@@ -1619,6 +2059,28 @@ export class BattleRenderer {
     ctx.arc(right, (top + bottom) / 2, (bottom - top) / 2 - 4, -Math.PI / 3, Math.PI / 3)
     ctx.stroke()
 
+    // R6 出生门双环 + 旋转刻度：内环随战局时间反向旋转，门「活」起来，
+    // 刷怪点从一道静态弧升级为可辨认的传送门。2 次 stroke。
+    const midY0 = (top + bottom) / 2
+    const outerR = (bottom - top) / 2 - 4
+    const rot = (this.engine.elapsedMs || 0) / 1400
+    ctx.strokeStyle = `rgba(255,107,53,${(portalPulse * 0.7).toFixed(3)})`
+    ctx.lineWidth = Math.max(1, 2 * vp.scale)
+    // 内环
+    ctx.beginPath()
+    ctx.arc(right, midY0, outerR * 0.72, -Math.PI / 2.2, Math.PI / 2.2)
+    ctx.stroke()
+    // 旋转刻度（单 path 多条短线）
+    ctx.beginPath()
+    for (let i = 0; i < 5; i++) {
+      const a = rot + i * 0.5
+      const r1 = outerR * 0.78
+      const r2 = outerR * 0.92
+      ctx.moveTo(right + Math.cos(a) * r1, midY0 + Math.sin(a) * r1)
+      ctx.lineTo(right + Math.cos(a) * r2, midY0 + Math.sin(a) * r2)
+    }
+    ctx.stroke()
+
     // 推进方向：两枚向左的浅色箭头（单个 path 一次 stroke）
     const midY = (top + bottom) / 2
     ctx.strokeStyle = 'rgba(139,148,158,0.16)'
@@ -1631,6 +2093,25 @@ export class BattleRenderer {
       ctx.moveTo(cx0 + s, midY - s)
       ctx.lineTo(cx0 - s, midY)
       ctx.lineTo(cx0 + s, midY + s)
+    }
+    ctx.stroke()
+
+    // R3 边界能量栅栏：敌人从右缘进入、防线在左缘，两道竖向能量带
+    // 把「战场范围」框出来。刻度横杠随波次相位呼吸，单个 path 一次 stroke。
+    const fencePulse = 0.20 + 0.12 * (0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 900))
+    ctx.strokeStyle = `rgba(88,166,255,${fencePulse.toFixed(3)})`
+    ctx.lineWidth = Math.max(1.5, 3 * vp.scale)
+    ctx.beginPath()
+    ctx.moveTo(right - 2, top)
+    ctx.lineTo(right - 2, bottom)
+    ctx.moveTo(left + 2, top)
+    ctx.lineTo(left + 2, bottom)
+    for (let i = 1; i < 8; i++) {
+      const yy = top + ((bottom - top) * i) / 8
+      ctx.moveTo(right - 8, yy)
+      ctx.lineTo(right + 2, yy)
+      ctx.moveTo(left - 2, yy)
+      ctx.lineTo(left + 8, yy)
     }
     ctx.stroke()
   }
@@ -1824,8 +2305,34 @@ export class BattleRenderer {
    *
    * ⚠️ 文本与档位色是测试断言（canvas.test.ts HUD 分支），只增不改。
    */
+  /** R16 BOSS 顶部独立血条：仅场上有存活首领时绘制，平时零成本。 */
+  private drawBossBar(ctx: CanvasRenderingContext2D): void {
+    let boss: Enemy | null = null
+    for (const e of this.engine.enemies) {
+      if (e.isBoss && !e.dead) { boss = e; break }
+    }
+    if (!boss) return
+    const vp = this.vp
+    const barW = vp.width * 0.7
+    const x = (vp.width - barW) / 2
+    const y = vp.offsetY - 8
+    if (y < 4) return
+    const pct = Math.max(0, Math.min(1, Number(boss.hp) / Number(boss.maxHp)))
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+    ctx.fillRect(x, y, barW, 9)
+    ctx.fillStyle = '#ff6b35'
+    ctx.fillRect(x, y, barW * pct, 9)
+    ctx.fillStyle = '#e6edf3'
+    ctx.font = this.fontOf(12, true)
+    ctx.textAlign = 'center'
+    ctx.fillText(boss.name, vp.width / 2, y - 3)
+  }
+
   private drawHud(ctx: CanvasRenderingContext2D): void {
     const vp = this.vp
+    // R16 BOSS 顶部独立血条：场上有首领时，在顶部空带画一条醒目长血条，
+    // 玩家不必在混战里找那只大怪的血量。
+    this.drawBossBar(ctx)
     const heat = this.engine.heat
     const barW = vp.width * 0.6
     const barH = 10

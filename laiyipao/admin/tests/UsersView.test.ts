@@ -21,6 +21,7 @@ const unbanUser = vi.hoisted(() => vi.fn())
 const grantUser = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
 const exportUserFlowsCsv = vi.hoisted(() => vi.fn())
+const exportUsersCsv = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchUsers,
@@ -29,6 +30,7 @@ vi.mock('@/api', () => ({
   unbanUser,
   grantUser,
   exportUserFlowsCsv,
+  exportUsersCsv,
 }))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
@@ -921,7 +923,7 @@ describe('UsersView 分页/搜索边界补充', () => {
 })
 
 describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
-  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期次日）', async () => {
+  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期按原值传，服务端含当天）', async () => {
     const wrapper = await mountUsers([userFixture()], 5)
     const vm = wrapper.vm as unknown as { lastLoginRange: [string, string] | null }
 
@@ -932,8 +934,8 @@ describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
     expect(fetchUsers).toHaveBeenLastCalledWith(
       expect.objectContaining({
         last_login_from: '2026-10-01',
-        // 服务端 date_to 是开区间：结束日期传次日才能包含 10-31 当天
-        last_login_to: '2026-11-01',
+        // 服务端 last_login_to=YYYY-MM-DD 已含当天整天，前端不再重复 +1
+        last_login_to: '2026-10-31',
       }),
     )
     wrapper.unmount()
@@ -972,10 +974,57 @@ describe('UsersView 需核查筛选（第 60 轮）', () => {
   })
 })
 
+/**
+ * 第92轮：用户列表 CSV 导出必须与列表同口径。
+ * 「账号类型=游客」筛选此前只传给了 fetchUsers，onExportCsv 漏传 is_guest ——
+ * 运营筛完游客再导出，拿到全部账号，而 toast 写的是「当前筛选结果」。
+ * 服务端 adminExportUsers 自 2026-11-03 R29 起就支持 is_guest，纯前端缺口。
+ */
+describe('UsersView 用户列表导出与筛选同口径（第92轮）', () => {
+  async function mountForExport() {
+    // jsdom 没有 URL.createObjectURL：下载路径需要垫片
+    const createObjectURL = vi.fn(() => 'blob:mock-users-csv')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjectURL, configurable: true })
+    exportUsersCsv.mockResolvedValue(new Blob(['\uFEFFid,nickname\n1,玩家甲\n']))
+    return mountUsers([userFixture()])
+  }
+
+  it('筛「游客」后导出：exportUsersCsv 携带 is_guest=true', async () => {
+    const wrapper = await mountForExport()
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '账号类型')
+    expect(select, '找不到账号类型下拉').toBeTruthy()
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === '导出 CSV')!.trigger('click')
+    await flushPromises()
+
+    expect(exportUsersCsv).toHaveBeenCalledWith(expect.objectContaining({ is_guest: true }))
+    wrapper.unmount()
+  })
+
+  it('筛「账号」（false）后导出：false 是三态里的显式值，不得被丢弃', async () => {
+    const wrapper = await mountForExport()
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '账号类型')
+    await select!.vm.$emit('update:modelValue', false)
+    await select!.vm.$emit('change', false)
+    await flushPromises()
+
+    await wrapper.findAll('button').find((b) => b.text() === '导出 CSV')!.trigger('click')
+    await flushPromises()
+
+    expect(exportUsersCsv).toHaveBeenCalledWith(expect.objectContaining({ is_guest: false }))
+    wrapper.unmount()
+  })
+})
+
 describe('UsersView 导出玩家流水 CSV（第 82 轮）', () => {
   it('详情抽屉点击「导出全部流水 CSV」：按当前玩家 id 调用接口并触发下载', async () => {
     fetchUserDetail.mockResolvedValueOnce(detailFixture())
-    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid,amount\n1,10\n']))
     const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
 
     await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
@@ -1021,6 +1070,66 @@ describe('UsersView 复制用户 ID（第 86 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('42')
     expect(document.body.textContent).toContain('已复制用户 ID 42')
+    wrapper.unmount()
+  })
+})
+
+/**
+ * 第56轮：用户列表快速切换筛选时，旧的在飞响应不得覆盖新筛选结果。
+ * UsersView 的 load() 不同于已修的 BattlesView（第53轮）仍无请求序号守卫：
+ * 运营点「查询」（旧筛选）请求在飞 → 改关键词再点「查询」（新筛选）→
+ * 新请求先回、旧请求后回时，老响应把 users/total 写回，页面显示的仍是旧筛选用户。
+ */
+describe('UsersView 筛选竞态（第 56 轮）', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('新筛选先回、旧筛选后回：列表只显示新筛选的用户', async () => {
+    const d1 = deferred() // 首次挂载
+    const d2 = deferred() // 旧筛选的「查询」
+    const d3 = deferred() // 新筛选的「查询」
+    let call = 0
+    fetchUsers.mockImplementation(() => {
+      call += 1
+      if (call === 1) return d1.promise
+      if (call === 2) return d2.promise
+      return d3.promise
+    })
+
+    const router = await makeRouter()
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+    d1.resolve({ items: [userFixture({ id: 1, nickname: '旧玩家火' })], total: 1 })
+    await flushPromises()
+
+    // 第一次「查询」（旧筛选）→ 请求在飞
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 改关键词 → 第二次「查询」触发新请求
+    const vm = wrapper.vm as unknown as { keyword: string }
+    vm.keyword = '龙'
+    await flushPromises()
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(3)
+
+    // 新筛选先回：只含 id=99 新玩家龙
+    d3.resolve({ items: [userFixture({ id: 99, nickname: '新玩家龙' })], total: 1 })
+    await flushPromises()
+    // 旧筛选后回：含 id=1 旧玩家火，不应覆盖新列表
+    d2.resolve({ items: [userFixture({ id: 1, nickname: '旧玩家火' })], total: 1 })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.el-table__row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].text()).toContain('新玩家龙')
+    expect(rows[0].text()).not.toContain('旧玩家火')
     wrapper.unmount()
   })
 })

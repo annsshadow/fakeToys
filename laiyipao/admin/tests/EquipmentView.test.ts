@@ -173,3 +173,33 @@ describe('EquipmentView 列表渲染', () => {
     wrapper.unmount()
   })
 })
+describe('EquipmentView 内容加载竞态（第 91 轮）', () => {
+  it('旧快照慢响应后到不得覆盖新 equipment/gems/skins', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountEquipment()
+    const vm = wrapper.vm as unknown as {
+      equipment: Array<{ name: string }>
+      load: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchEquipment.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    const pOld = vm.load()
+    const pNew = vm.load()
+    dNew.resolve({ equipment: [equipmentFixture({ name: '新快照装备' })], gems: [], skins: [] })
+    await flushPromises()
+    dOld.resolve({ equipment: [equipmentFixture({ name: '旧快照装备' })], gems: [], skins: [] })
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.equipment.length, '应显示一条装备').toBe(1)
+    expect(vm.equipment[0].name, '旧快照慢响应覆盖了新 equipment').toBe('新快照装备')
+    wrapper.unmount()
+  })
+})

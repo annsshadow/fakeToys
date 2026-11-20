@@ -4,16 +4,16 @@
 <template>
   <div class="app-shell" :class="{ 'collapsed': sidebarCollapsed, 'mobile': isMobile }">
     <!-- 侧边栏 -->
-    <aside class="sidebar" :style="{ width: sidebarCollapsed ? '64px' : '240px' }">
+    <aside class="sidebar" :style="{ width: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
       <div class="sidebar-header">
-        <div class="logo" @click="sidebarCollapsed = !sidebarCollapsed">
+        <div class="logo" role="button" tabindex="0" aria-label="切换侧边栏" @click="toggleSidebar" @keydown.enter="toggleSidebar" @keydown.space.prevent="toggleSidebar">
           <span class="logo-icon">◆</span>
           <span v-show="!sidebarCollapsed" class="logo-text">OA4RUST</span>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" :class="{ active: isActive(item.path) }" @click="navigate(item)">
+      <nav class="sidebar-nav" aria-label="主导航">
+        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :aria-current="isActive(item.path) ? 'page' : undefined" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
         </div>
@@ -33,9 +33,9 @@
     <!-- 主区域 -->
     <div class="main-area">
       <!-- 顶栏 -->
-      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
+      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
         <div class="topbar-left">
-          <button class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed">
+          <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
           </button>
           <div class="breadcrumb">{{ currentTitle }}</div>
@@ -47,6 +47,7 @@
             <input
               v-model="searchQuery"
               placeholder="搜索 (⌘K)"
+              data-oa-global-search
               class="search-input"
               @keydown.ctrl.k.prevent="focusSearch"
               @keydown.meta.k.prevent="focusSearch"
@@ -59,7 +60,7 @@
             <span class="icon">🔔</span>
             <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
           </button>
-          <div class="user-menu" @click="showUserMenu = !showUserMenu">
+          <div class="user-menu" role="button" tabindex="0" aria-haspopup="menu" :aria-expanded="showUserMenu" aria-label="用户菜单" @click="toggleUserMenu" @keydown.enter="toggleUserMenuOnKeydown" @keydown.space.prevent="toggleUserMenuOnKeydown">
             <img
               v-if="user?.icon"
               :src="user.icon"
@@ -90,7 +91,7 @@
       </header>
 
       <!-- 内容区 -->
-      <main class="content" :style="{ marginLeft: sidebarCollapsed ? '64px' : '240px' }">
+      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />
@@ -100,13 +101,18 @@
     </div>
 
     <!-- 移动端底部导航 -->
-    <nav v-if="isMobile" class="tab-bar">
+    <nav v-if="isMobile" class="tab-bar" aria-label="底部导航">
       <div
         v-for="item in mobileNavItems"
         :key="item.path"
         class="tab-item"
+        role="button"
+        tabindex="0"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
         :class="{ active: isActive(item.path) }"
         @click="navigate(item)"
+        @keydown.enter="navigate(item)"
+        @keydown.space.prevent="navigate(item)"
       >
         <span class="tab-icon">{{ item.icon }}</span>
         <span class="tab-label">{{ item.label }}</span>
@@ -119,6 +125,7 @@
 import { useSession, useTheme } from '@oa4rust/sdk'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { isNavActive } from './navActive'
 
 const router = useRouter()
 const route = useRoute()
@@ -174,7 +181,7 @@ const mobileNavItems: NavItem[] = [
 ]
 
 function isActive(path: string): boolean {
-  return route.path.startsWith(path)
+  return isNavActive(route.path, path)
 }
 
 function navigate(item: NavItem): void {
@@ -182,8 +189,22 @@ function navigate(item: NavItem): void {
   showUserMenu.value = false
 }
 
+function toggleSidebar(): void {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+function toggleUserMenu(): void {
+  showUserMenu.value = !showUserMenu.value
+}
+
+// 仅在焦点位于 user-menu 本身时切换；下拉项（链接/按钮）的 Enter 交给其原生行为，
+// 避免键盘打开子菜单时被父级 keydown 冒泡再次关闭。
+function toggleUserMenuOnKeydown(e: KeyboardEvent): void {
+  if (e.target === e.currentTarget) toggleUserMenu()
+}
+
 function focusSearch(): void {
-  const input = document.querySelector('.search-input') as HTMLInputElement
+  const input = document.querySelector('input[data-oa-global-search]') as HTMLInputElement
   input?.focus()
 }
 
@@ -232,12 +253,12 @@ function onDocClick(e: Event): void {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 240px;
+  width: var(--sidebar-width);
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   transition: width var(--transition-normal);
 }
 
@@ -336,7 +357,7 @@ function onDocClick(e: Event): void {
 }
 
 .sidebar-footer {
-  padding: 12px;
+  padding: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -363,7 +384,7 @@ function onDocClick(e: Event): void {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-left: 240px;
+  margin-left: var(--sidebar-width);
   transition: margin-left var(--transition-normal);
 }
 
@@ -372,15 +393,15 @@ function onDocClick(e: Event): void {
   height: var(--topbar-height);
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 20px;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
   background: var(--bg-glass);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: var(--z-sticky);
   transition: margin-left var(--transition-normal);
 }
 
@@ -546,7 +567,7 @@ function onDocClick(e: Event): void {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 200;
+  z-index: var(--z-dropdown);
 }
 
 .dropdown-item {
@@ -581,7 +602,7 @@ function onDocClick(e: Event): void {
 .content {
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: var(--space-5);
   margin-left: 0;
   transition: margin-left var(--transition-normal);
   background: var(--bg-base);
@@ -614,8 +635,8 @@ function onDocClick(e: Event): void {
   background: var(--bg-glass);
   backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--border-subtle);
-  z-index: 100;
-  padding: 0 8px;
+  z-index: var(--z-dropdown);
+  padding: 0 var(--space-2);
 }
 
 .tab-item {
@@ -662,8 +683,8 @@ function onDocClick(e: Event): void {
   }
 
   .content {
-    padding: 12px;
-    padding-bottom: calc(var(--tabbar-height) + 12px);
+    padding: var(--space-3);
+    padding-bottom: calc(var(--tabbar-height) + var(--space-3));
   }
 
   .topbar-center {

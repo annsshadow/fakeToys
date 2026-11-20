@@ -60,7 +60,7 @@ const configFixture = () => ({
   composite_skills: [{ id: 9, name: '超导融合', element: 'lightning', descr: '冰+电' }],
   reactions: [
     { key: 'steam_burst', name: '蒸汽爆发', base_coef: 1500, attack_weight_pct: 300, status_duration_ms: 5000, aoe_radius: 120, dispel_shield: false, amplify_pct: 0 },
-    { key: 'superconduct', name: '超导', base_coef: 2000, attack_weight_pct: 200, status_duration_ms: 8000, aoe_radius: 2, dispel_shield: true, amplify_pct: 20 },
+    { key: 'superconduct', name: '超导', base_coef: 2000, attack_weight_pct: 200, status_duration_ms: 8000, aoe_radius: 2, dispel_shield: true, amplify_pct: 600 },
   ],
   chapters: [
     { id: 1, name: '第一章', start_level: 1, end_level: 10, terrain_kind: 'plain', boss_enemy_id: 2 },
@@ -144,7 +144,7 @@ describe('WikiView 核心规则页签', () => {
     const scRow = rows.find((r) => r.text().includes('超导'))!
     // ⚠️ 只看「攻击力权重」那一列的 tag（文本带 ‰），不能用整行的
     // .el-tag--warning —— 新加的「受击增伤」列在 amplify_pct>0 时也发
-    // warning tag，整行匹配会把两列混为一谈（超导 amplify 20 就是这样）。
+    // warning tag，整行匹配会把两列混为一谈（超导 amplify 600 就是这样）。
     const weightTag = (r: (typeof rows)[number]) =>
       r.findAll('.el-tag').find((t) => t.text().includes('‰'))!
     expect(weightTag(steamRow).classes()).toContain('el-tag--warning') // 300 → 预警
@@ -171,7 +171,7 @@ describe('WikiView 核心规则页签', () => {
       ...configFixture(),
       reactions: [
         { key: 'flash_freeze', name: '闪冻', base_coef: 1000, attack_weight_pct: 100, status_duration_ms: 3000, aoe_radius: 0, dispel_shield: false, amplify_pct: 0 },
-        { key: 'superconduct', name: '超导', base_coef: 2000, attack_weight_pct: 200, status_duration_ms: 8000, aoe_radius: 2, dispel_shield: true, amplify_pct: 20 },
+        { key: 'superconduct', name: '超导', base_coef: 2000, attack_weight_pct: 200, status_duration_ms: 8000, aoe_radius: 2, dispel_shield: true, amplify_pct: 600 },
         { key: 'overheat', name: '过热', base_coef: 1200, attack_weight_pct: 300, status_duration_ms: 2000, aoe_radius: 1, dispel_shield: false, amplify_pct: 0 },
         { key: 'burn_cloud', name: '燃云', base_coef: 900, attack_weight_pct: 150, status_duration_ms: 0, aoe_radius: 3, dispel_shield: false, amplify_pct: 0 },
       ],
@@ -185,7 +185,7 @@ describe('WikiView 核心规则页签', () => {
     expect(row('过热').text()).toContain('眩晕 2.0s') // overheat 分支
     expect(row('燃云').text()).not.toContain('s') // status 0 → muted「—」，无秒数
     // 受击增伤：只有超导 amplify>0
-    expect(row('超导').text()).toContain('+20%')
+    expect(row('超导').text()).toContain('+60%')
     expect(row('闪冻').findAll('.el-tag--warning').length).toBe(0)
     // 驱散护盾：只有超导可驱散
     expect(row('超导').text()).toContain('可驱散')

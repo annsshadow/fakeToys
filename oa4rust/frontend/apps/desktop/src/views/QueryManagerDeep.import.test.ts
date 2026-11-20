@@ -12,7 +12,7 @@ describe('QueryManagerDeep CSV 导入', () => {
 
   it('占位 toast 已被真导入流程替换（解析走 utils/csv）', () => {
     expect(source).not.toContain('导入功能开发中')
-    expect(source).toContain("import { parseCsv } from '../utils/csv'")
+    expect(source).toContain("import { buildCsv, parseCsv } from '../utils/csv'")
     expect(source).toContain('parseCsv(text, importConfig.value.delimiter)')
   })
 

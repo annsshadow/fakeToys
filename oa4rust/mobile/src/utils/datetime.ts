@@ -23,7 +23,13 @@ export function parseServerDate(value: unknown): Date | null {
   const local = LOCAL_PATTERN.exec(text)
   if (local) {
     const [, y, mo, d, h = '0', mi = '0', s = '0'] = local
-    const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s))
+    const hh = Number(h)
+    const mm = Number(mi)
+    const ss = Number(s)
+    // 时/分/秒越界时 Date 构造会静默进位（10:61 -> 11:01、10:30:60 -> 10:31:00），
+    // 必须显式拒绝（对齐桌面 R175），否则脏时间被当合法时刻展示或参与排序。
+    if (hh > 23 || mm > 59 || ss > 59) return null
+    const date = new Date(Number(y), Number(mo) - 1, Number(d), hh, mm, ss)
     // 2 月 30 日这类「格式对但日子不存在」的输入会被 rollover，回读校验后拒绝。
     if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(mo) - 1 || date.getDate() !== Number(d)) {
       return null

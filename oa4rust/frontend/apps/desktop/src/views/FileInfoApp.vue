@@ -30,7 +30,7 @@
               {{ f.fileName || f.name || '未知文件' }}
             </span>
             <span class="col-doc font-mono">{{ f.documentId || f.docId || '-' }}</span>
-            <span class="col-size">{{ formatSize(f.size || f.fileSize) }}</span>
+            <span class="col-size">{{ formatFileSize(f.size ?? f.fileSize) }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="downloadFile(f)">下载</button>
               <button class="btn-sm" @click="docMeta(f)">元数据</button>
@@ -45,6 +45,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { formatFileSize } from '../utils/formatSize'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -72,13 +74,6 @@ function fileIcon(f: FileInfo) {
   if (mime.includes('word') || mime.includes('doc')) return '📘'
   if (mime.includes('excel') || mime.includes('sheet')) return '📗'
   return '📄'
-}
-
-function formatSize(bytes?: number) {
-  if (!bytes) return '-'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 async function downloadFile(f: FileInfo) {

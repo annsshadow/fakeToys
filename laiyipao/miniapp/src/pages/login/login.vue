@@ -51,6 +51,12 @@
         <text v-if="usernamePrefilled" class="dim" style="display: block; margin-bottom: 8rpx">
           已填入上次登录的用户名，可自行修改。
         </text>
+        <!-- G116 输入状态清单 -->
+        <view class="input-checks">
+          <text v-for="c in inputChecks" :key="c.label" class="ic-item" :class="{ ok: c.ok }">
+            {{ c.ok ? '✓' : '○' }} {{ c.label }}
+          </text>
+        </view>
         <!-- R81 空字段实时提示：按钮变暗的同时说明为什么 -->
         <text v-if="!username || !password" class="form-hint">请填写用户名与口令后可登录</text>
         <view
@@ -97,7 +103,7 @@
  *
  * 所以这里只预填**用户名**（不是秘密，且省一次输入），口令由使用者输入。
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 
 import { useGameStore } from '@/store/game'
@@ -118,6 +124,13 @@ const submitting = ref(false)
 const showPassword = ref(false)
 
 /** 第六批 R72：用户名是否由本机回填（避免玩家误以为是默认值）。 */
+/** G116 输入状态清单：客观展示填写进度（不强判口令规则，避免误导已有账号登录）。 */
+const inputChecks = computed(() => [
+  { label: '用户名已填', ok: username.value.trim().length > 0 },
+  { label: '口令已填', ok: password.value.length > 0 },
+  { label: '口令与用户名不同', ok: password.value.length > 0 && password.value !== username.value },
+])
+
 const usernamePrefilled = ref(false)
 
 onLoad(() => {
@@ -153,6 +166,10 @@ async function submit(): Promise<void> {
 
 <style scoped>
 /* R81 表单必填提示 */
+.input-checks { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 12rpx; }
+.ic-item { font-size: 22rpx; color: var(--dim); }
+.ic-item.ok { color: var(--ok); }
+
 .form-hint {
   display: block;
   font-size: 22rpx;

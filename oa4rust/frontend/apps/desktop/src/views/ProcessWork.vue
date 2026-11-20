@@ -128,7 +128,7 @@
             <ul v-if="attachments.length" class="detail-list">
               <li v-for="att in attachments" :key="att.id" class="clickable" @click="viewAttachment(att.id)">
                 <span class="name">{{ att.name || att.id }}</span>
-                <span class="muted">{{ att.extension }} · {{ fmtSize(att.length) }}</span>
+                <span class="muted">{{ att.extension }} · {{ formatFileSize(att.length) }}</span>
               </li>
             </ul>
             <p v-else class="muted">无附件</p>
@@ -552,6 +552,8 @@ import {
   type XformDefinition,
 } from '../contracts/xform'
 import { parseServerDate } from '../utils/date'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { formatFileSize } from '../utils/formatSize'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface TaskItem {
@@ -1594,15 +1596,14 @@ async function loadTaskInfo(taskId: string): Promise<void> {
   taskExpireText.value = ''
   if (!taskId) return
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  const [info, expire] = await Promise.all([
-    // GET service/processing/task/{id} —— 任务详情（x_task）
-    settle(api.get(`/api/processplatform/service/processing/task/${taskId}`)),
-    // GET service/processing/task/expire/{id} —— 超时信息
-    settle(api.get(`/api/processplatform/service/processing/task/expire/${taskId}`)),
-  ])
+  // GET service/processing/task/{id} —— 任务详情（x_task，只读）
+  const info = await settle(api.get(`/api/processplatform/service/processing/task/${taskId}`))
   taskInfo.value = (info as { data?: Record<string, unknown> } | null)?.data ?? null
-  const ed = (expire as { data?: unknown } | null)?.data
-  taskExpireText.value = ed && typeof ed === 'object' ? JSON.stringify(ed).slice(0, 80) : ed != null ? String(ed) : ''
+  // 超时信息直接从已获取的只读详情 end_time 本地推导。
+  // 不再请求 task/expire/{id}：该 GET 绑定写端点 task_id_expire，会把 active 任务置 expired，
+  // 导致后续 complete 被拒（BUG-E，RED→GREEN）。
+  const endTime = taskInfo.value?.end_time
+  taskExpireText.value = endTime != null && String(endTime).trim() ? String(endTime) : ''
 }
 async function pressTask(): Promise<void> {
   const taskId = effectiveTaskId.value
@@ -3476,14 +3477,6 @@ function fmtTime(value: unknown): string {
   if (!value) return ''
   const date = parseServerDate(value)
   return date ? date.toLocaleString('zh-CN') : String(value)
-}
-
-function fmtSize(bytes: unknown): string {
-  const n = typeof bytes === 'number' ? bytes : Number(bytes)
-  if (!Number.isFinite(n) || n <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)))
-  return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`
 }
 </script>
 

@@ -70,7 +70,7 @@ onShow(onShowGuard)
 .brand {
   font-size: 44rpx;
   font-weight: 700;
-  color: #2d8cf0;
+  color: var(--color-primary);
   margin-bottom: 64rpx;
 }
 .form {
@@ -85,23 +85,23 @@ onShow(onShowGuard)
 }
 .label {
   font-size: 26rpx;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 .field input {
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 12rpx;
   padding: 20rpx 24rpx;
   font-size: 30rpx;
-  background: #fff;
+  background: var(--color-surface);
 }
 .error {
-  color: #f56c6c;
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .submit {
   margin-top: 16rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 12rpx;
   font-size: 32rpx;
 }

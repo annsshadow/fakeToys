@@ -21,14 +21,14 @@
       <div class="stat-item"><span class="stat-label">已实现</span><span class="stat-val success">{{ coveredRoutes }}</span></div>
       <div class="stat-item"><span class="stat-label">覆盖率</span><span class="stat-val primary">{{ coveragePct }}%</span></div>
       <div class="stat-item"><span class="stat-label">活跃视图</span><span class="stat-val">{{ activeViews }}</span></div>
-      <button class="btn-sm" @click="showStats=false">✕</button>
+      <button class="btn-sm" aria-label="关闭统计" @click="showStats=false">✕</button>
     </div>
 
     <!-- Main content -->
     <div class="content-panel glass-card">
       <!-- Search -->
       <div class="search-bar">
-        <input v-model="searchQuery" class="search-input" placeholder="搜索设计器..." />
+        <input v-model="searchQuery" class="search-input" aria-label="搜索设计器" placeholder="搜索设计器..." />
       </div>
 
       <!-- Designer grid -->
@@ -58,7 +58,7 @@
     <!-- All Designers List Modal -->
     <div v-if="showAllList" class="modal-overlay" @click.self="showAllList=false">
       <div class="modal glass-card" style="width:700px;max-height:80vh;overflow-y:auto">
-        <div class="modal-header"><span>📋 全部设计器清单</span><button class="btn-close" @click="showAllList=false">✕</button></div>
+        <div class="modal-header"><span>📋 全部设计器清单</span><button class="btn-close" aria-label="关闭设计器清单" @click="showAllList=false">✕</button></div>
         <div class="designer-list">
           <div v-for="(d,di) in allDesigners" :key="di" class="dl-item">
             <span class="dl-icon">{{ d.icon }}</span>

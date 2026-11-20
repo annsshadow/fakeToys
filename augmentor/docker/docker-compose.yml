@@ -32,6 +32,8 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      # 写操作鉴权口令：真值从环境变量/本地 .env 注入，不入库（见 AGENTS.md）
+      AUGMENTOR_API_KEY: ${AUGMENTOR_API_KEY:-}
 
     volumes:
       # 持久化数据、断点、实验记录、图表与向量库

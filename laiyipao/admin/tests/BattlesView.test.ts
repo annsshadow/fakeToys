@@ -714,3 +714,158 @@ describe('BattlesView 复制战报 ID（第 92 轮）', () => {
   })
 })
 
+/**
+ * 第53轮：快速切换筛选时，旧筛选的在飞响应不得覆盖新筛选结果。
+ *
+ * 服务端 fetchBattles 的 result 是全量过滤参数；运营先点一次「筛选」（默认/旧筛选），
+ * 请求在飞时把结果下拉改成「胜利」再点「筛选」，新请求先返回、旧请求后返回时，
+ * 老响应把 battles/total 写回，页面显示的仍是旧筛选的战报 —— 与刚选的「胜利」矛盾。
+ * 与 miniapp 战报切筛选竞态（34f6d3289）同族，但这里的 load() 没有请求序号守卫。
+ */
+describe('BattlesView 筛选竞态', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('新筛选先回、旧筛选后回：列表只显示新筛选的结果', async () => {
+    const d1 = deferred() // 首次挂载（旧筛选）
+    const d2 = deferred() // 旧筛选的「筛选」点击
+    const d3 = deferred() // 新筛选的「筛选」点击
+    let call = 0
+    fetchBattles.mockImplementation(() => {
+      call += 1
+      if (call === 1) return d1.promise
+      if (call === 2) return d2.promise
+      return d3.promise
+    })
+
+    const router = await makeRouter()
+    const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus, router] } })
+    await flushPromises()
+    d1.resolve({ items: [battleFixture({ id: 1, result: 'win' })], total: 1 })
+    await flushPromises()
+
+    // 第一次「筛选」（旧筛选）→ 请求在飞
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 把结果下拉改成「胜利」→ 第二次「筛选」触发新请求
+    const vm = wrapper.vm as unknown as { result: string }
+    vm.result = 'win'
+    await flushPromises()
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(call).toBe(3)
+
+    // 新筛选先回：只含 id=99
+    d3.resolve({ items: [battleFixture({ id: 99, result: 'win' })], total: 1 })
+    await flushPromises()
+    // 旧筛选后回：含 id=1，不应覆盖新列表
+    d2.resolve({ items: [battleFixture({ id: 1, result: 'lose' })], total: 1 })
+    await flushPromises()
+
+    const rows = wrapper.findAll('.el-table__row')
+    // 行为断言：页面只显示新筛选的 id=99（胜）；旧响应 id=1（负）不得回灌
+    expect(rows).toHaveLength(1)
+    expect(rows[0].text()).toContain('99')
+    expect(rows[0].text()).toContain('胜')
+    expect(rows[0].text()).not.toContain('负')
+    expect(vm.result).toBe('win')
+    wrapper.unmount()
+  })
+})
+
+/**
+ * 第 60 轮：详情抽屉的请求序号守卫。
+ * UsersView.openDetail 早有 detailReqSeq 守卫，BattlesView.openDetail 却没有：
+ * 先点战报 A 的详情（慢请求），关闭抽屉再点战报 B（快请求），B 先渲染后
+ * A 的迟到响应把 detail 改回 A —— 抽屉标题/上下文是 B，内容却是 A。
+ */
+describe('BattlesView 详情抽屉竞态（第 60 轮）', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+
+  it('旧详情响应后到不得覆盖新打开的战报详情', async () => {
+    const d1 = deferred() // 第一次点详情（战报 1），慢响应
+    const d2 = deferred() // 关闭后打开战报 2，快响应
+    let call = 0
+    fetchBattleDetail.mockImplementation(() => {
+      call += 1
+      return call === 1 ? d1.promise : d2.promise
+    })
+
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, nickname: '旧战报玩家' }),
+      battleFixture({ id: 2, nickname: '新战报玩家' }),
+    ])
+    const detailBtns = () => wrapper.findAll('button').filter((b) => b.text() === '详情')
+    expect(detailBtns().length).toBeGreaterThanOrEqual(2)
+
+    // 打开战报 1：请求在飞
+    await detailBtns()[0].trigger('click')
+    await flushPromises()
+    expect(call).toBe(1)
+
+    // 关闭抽屉，紧接着打开战报 2
+    await wrapper.findComponent(ElDrawer).vm.$emit('update:modelValue', false)
+    await flushPromises()
+    await detailBtns()[1].trigger('click')
+    await flushPromises()
+    expect(call).toBe(2)
+
+    // 新详情（战报 2）先回
+    d2.resolve({ battle: { ...detailBase, id: 2, nickname: '新战报玩家' } })
+    await flushPromises()
+    // 旧详情（战报 1）后回：不得覆盖新详情
+    d1.resolve({ battle: { ...detailBase, id: 1, nickname: '旧战报玩家' } })
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { detail: { id: number; nickname: string } | null }
+    expect(vm.detail?.id).toBe(2)
+    expect(vm.detail?.nickname).toBe('新战报玩家')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 星级非文本替代（第 81 轮）', () => {
+  it('星级列给读屏提供可读文本，而非仅靠数星形（WCAG 1.1.1）', async () => {
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, stars: 3 }),
+      battleFixture({ id: 2, result: 'lose', stars: 0 }),
+    ])
+    const rows = wrapper.findAll('.el-table__row')
+    const starCell = rows[0].findAll('.el-table__cell').find((c) => c.text().includes('★'))
+    expect(starCell).toBeDefined()
+    const img = starCell!.find('[role="img"]')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('aria-label')).toBe('3 星')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 日期范围筛选（第 100 轮）', () => {
+  it('日期范围查询把结束日原样传给 date_to（服务端含当天，不重复 +1）', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const vm = wrapper.vm as unknown as { dateRange: [string, string] | null }
+    vm.dateRange = ['2026-10-01', '2026-10-31']
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        date_from: '2026-10-01',
+        // 服务端 queryTimeEnd 对 YYYY-MM-DD 已 +1 天含整天；前端再 +1 会多算 11-01
+        date_to: '2026-10-31',
+      }),
+    )
+    wrapper.unmount()
+  })
+})
+

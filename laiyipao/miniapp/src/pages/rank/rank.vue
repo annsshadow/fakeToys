@@ -19,6 +19,27 @@
         <text v-if="items.length" class="rank-count">显示前 {{ items.length }} 名</text>
       </view>
 
+      <!-- G76 分数分布：前 N 名柱状图，我的那根高亮 -->
+      <view v-if="!loading && scoreDistribution.length" class="card dist-card">
+        <view class="card-title">分数分布<text class="dim">前 {{ scoreDistribution.length }} 名</text></view>
+        <view class="dist-bars">
+          <view v-for="b in scoreDistribution" :key="b.rank" class="dist-col" :class="{ mine: b.mine }">
+            <view class="dist-bar" :style="{ height: b.h + '%' }" />
+          </view>
+        </view>
+      </view>
+
+      <!-- G106 分数区间直方图：我在哪个分数段 -->
+      <view v-if="!loading && scoreBuckets.length" class="card bucket-card">
+        <view class="card-title">分数区间</view>
+        <view class="bucket-bars">
+          <view v-for="b in scoreBuckets" :key="b.lo" class="bucket-col" :class="{ mine: b.mine }">
+            <view class="bucket-bar" :style="{ height: b.h + '%' }" />
+            <text class="dim">{{ b.label }}</text>
+          </view>
+        </view>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -64,6 +85,11 @@
           <text v-else class="my-rank-none">暂无成绩</text>
         </view>
         <text v-if="myRank.rank > 0" class="dim">我的{{ curLabel }}：{{ formatScore(myRank.score) }}</text>
+        <!-- G137 追赶分差 -->
+        <view v-if="chaseGap" class="chase-gap">
+          <text v-if="chaseGap.toAbove !== null">距上一名还差 {{ chaseGap.toAbove }} 分</text>
+          <text v-if="chaseGap.toBelow !== null">领先下一名 {{ chaseGap.toBelow }} 分</text>
+        </view>
         <text v-else class="dim">{{ noScoreHint }}</text>
       </view>
       <!-- 第六批 R39：拉取失败与「没成绩」此前都让整块消失，用户分不清。
@@ -103,6 +129,69 @@ const tabs = [
 ]
 
 const curLabel = computed(() => tabs.find((t) => t.key === curType.value)?.label ?? '排名')
+
+/* -------------------------------------------------------------------------- */
+/* G76 榜单分数分布柱状图（第七批）                                             */
+/* 已加载的每名玩家一根柱，最高分归一到满高；我的那根高亮。数据来自 items/myRank。 */
+/* -------------------------------------------------------------------------- */
+/** G137 追赶分差：距上一名还差多少、超越下一名需要多少（把名次换成可执行目标）。 */
+const chaseGap = computed(() => {
+  const my = myRank.value
+  if (!my || my.rank <= 0) return null
+  const idx = my.rank - 1
+  const above = items.value[idx - 1]
+  const below = items.value[idx + 1]
+  const myScore = Number(my.score ?? 0)
+  // 服务端 economy.go leaderboardOrderSQL：只有效率榜是 ASC（分数越低越好），
+  // 其余榜 DESC。分差必须按**当前榜**的排序方向取绝对值，否则效率榜上
+  // Math.max(0, ...) 会把两侧都夹成 0，显示「还差 0 分 / 领先 0 分」。
+  const ascending = curType.value === 'efficiency'
+  return {
+    toAbove: above
+      ? Math.max(0, ascending ? myScore - Number(above.score) : Number(above.score) - myScore)
+      : null,
+    toBelow: below
+      ? Math.max(0, ascending ? Number(below.score) - myScore : myScore - Number(below.score))
+      : null,
+  }
+})
+
+/** G106 分数区间直方图：把前 N 名分数分桶，我的分数所在桶高亮。 */
+const scoreBuckets = computed(() => {
+  const scores = items.value.map((it: any) => Number(it.score) || 0)
+  if (!scores.length) return []
+  const max = Math.max(...scores)
+  const bucketSize = Math.max(1, Math.ceil(max / 5))
+  const buckets = Array.from({ length: 5 }, (_, i) => ({
+    label: `${i * bucketSize}`,
+    lo: i * bucketSize,
+    hi: (i + 1) * bucketSize,
+    count: 0,
+    mine: false,
+  }))
+  const myScore = Number(myRank.value?.score ?? -1)
+  for (const s of scores) {
+    const idx = Math.min(4, Math.floor(s / bucketSize))
+    buckets[idx]!.count++
+  }
+  if (myScore >= 0) {
+    const idx = Math.min(4, Math.floor(myScore / bucketSize))
+    buckets[idx]!.mine = true
+  }
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count))
+  return buckets.map((b) => ({ ...b, h: Math.max(4, Math.round(b.count / maxCount * 100)) }))
+})
+
+const scoreDistribution = computed(() => {
+  const list = items.value.slice(0, 20)
+  const max = Math.max(1, ...list.map((it: any) => Number(it.score) || 0))
+  return list.map((it: any, i: number) => ({
+    rank: i + 1,
+    score: Number(it.score) || 0,
+    h: Math.max(4, Math.round((Number(it.score) || 0) / max * 100)),
+    mine: it.user_id === store.userId || (myRank.value?.rank === i + 1),
+  }))
+})
 
 /** 无成绩时的提示：三种榜的原因不同，不能一句话打发。 */
 const noScoreHint = computed(() => {
@@ -217,6 +306,35 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G137 追赶分差 */
+.chase-gap { display: flex; flex-direction: row; gap: 16rpx; margin-top: 8rpx; font-size: 22rpx; color: var(--accent); }
+
+/* G106 分数区间直方图 */
+.bucket-bars { display: flex; flex-direction: row; align-items: flex-end; height: 200rpx; gap: 6rpx; padding-top: 12rpx; }
+.bucket-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4rpx; }
+.bucket-bar { width: 100%; background: var(--ice); opacity: 0.7; border-radius: 4rpx 4rpx 0 0; }
+.bucket-col.mine .bucket-bar { background: var(--fire); opacity: 1; }
+.bucket-col .dim { font-size: 18rpx; }
+
+/* G76 分数分布柱状图 */
+.dist-card .card-title .dim { font-size: 22rpx; font-weight: 400; }
+.dist-bars {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  height: 200rpx;
+  gap: 4rpx;
+  padding-top: 12rpx;
+}
+.dist-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.dist-bar {
+  width: 100%;
+  background: var(--ice);
+  border-radius: 4rpx 4rpx 0 0;
+  opacity: 0.7;
+}
+.dist-col.mine .dist-bar { background: var(--fire); opacity: 1; }
+
 /* R79 榜单条数 */
 .rank-desc-row {
   display: flex;

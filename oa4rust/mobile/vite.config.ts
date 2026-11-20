@@ -19,6 +19,9 @@ const uni = (
 // H5 目标经本地 dev server 代理 /api、/ws 到 oa4rust 后端（默认 :3000）。
 // 原生 App / 小程序目标通过 setApiBase 指向后端绝对地址（见 src/main.ts）。
 export default defineConfig({
+  // 测试服与其它项目统一挂在 testmall 域名的子路径下（/oa4rust-h5/）。
+  // H5 产物内所有静态资源引用自动加此前缀；其它平台目标不受影响。
+  base: '/oa4rust-h5/',
   resolve: {
     // pinia 2.3 的 devtools 运行时链（devtools-api→devtools-kit）在 rolldown
 

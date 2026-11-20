@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="list-toolbar">
-        <input v-model="keyword" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
+        <input v-model="keyword" aria-label="搜索应用" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="createApp">+ 新建应用</button>
         <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>

@@ -123,7 +123,7 @@
         </div>
         <div class="mf">
           <button class="bc" @click="showModal=false">取消</button>
-          <button class="bs" :disabled="!mform.name" @click="saveQuery">{{ editingQuery ? '更新' : '创建' }}</button>
+          <button class="bs" :disabled="!mform.name || querySaving" @click="saveQuery">{{ editingQuery ? '更新' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -275,6 +275,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { businessTodayYMD } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -305,6 +306,7 @@ const rLoading = ref(false)
 const showModal = ref(false)
 const editingQuery = ref<QueryDef | null>(null)
 const mform = ref({ name: '', category: '', sql: '' })
+const querySaving = ref(false)
 
 const resultHeaders = computed(() => (resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []))
 
@@ -584,10 +586,12 @@ async function openEdit() {
 }
 
 async function saveQuery() {
+  if (querySaving.value) return
   if (!mform.value.name.trim()) {
     toast.info('请输入查询名称')
     return
   }
+  querySaving.value = true
   try {
     const data = {
       name: mform.value.name,
@@ -603,6 +607,8 @@ async function saveQuery() {
     loadQueries()
   } catch (e: any) {
     toast.error(`保存失败: : ${e?.message ?? ''}`)
+  } finally {
+    querySaving.value = false
   }
 }
 
@@ -751,16 +757,16 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `queries_${new Date().toISOString().slice(0, 10)}.json`,
+      `queries_${businessTodayYMD()}.json`,
     )
   } else if (exportFmt.value === 'csv') {
     const csv =
       'name,category,sql\n' +
       data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${businessTodayYMD()}.csv`)
   } else {
     const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${businessTodayYMD()}.sql`)
   }
   showImportExport.value = false
 }

@@ -33,6 +33,8 @@ const keyword = ref('')
 const waveDrawer = ref(false)
 const waveTarget = ref<AdminLevelView | null>(null)
 const waveRows = ref<Array<{ wave_index: number; spawns: unknown }>>([])
+// 快速连开不同关卡的波次抽屉时，旧关的慢响应不得覆盖新关的波次列表
+let waveReqSeq = 0
 
 /** 关卡难度是否在合理区间。低于 1000‰ 表示比基准还简单，高于 4200‰ 已超设计上限。 */
 function difficultyTone(d: number): 'success' | 'info' | 'warning' | 'danger' {
@@ -63,10 +65,14 @@ function terrainText(cfg: unknown): string {
   return (cfg as Array<{ kind: string }>).map((t) => TERRAIN_LABEL[t.kind] ?? t.kind).join('、')
 }
 
+// 第 66 轮：快速连续搜索时，旧请求的慢响应不得覆盖新结果。
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     const res = await fetchLevels({ chapter: chapter.value, keyword: keyword.value || undefined })
+    if (seq !== loadSeq) return
     // 只在**无章节筛选**时从全量推导下拉选项：筛选后 items 只剩该章，
     // 拿它推导会把其它章从下拉里删掉，选项本身就漏了。
     // ⚠️ 2026-10-21（二轮审计 P2-5）：关键词搜索**也会**把下拉选项挤掉 ——
@@ -92,9 +98,10 @@ async function load() {
     levels.value = res.items
     total.value = res.total
   } catch (e) {
+    if (seq !== loadSeq) return
     ElMessage.error(`关卡加载失败：${(e as Error).message}`)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -254,12 +261,15 @@ async function onRegen() {
 }
 
 async function openWaves(row: AdminLevelView) {
+  const seq = ++waveReqSeq
   waveTarget.value = row
   waveDrawer.value = true
   try {
     const res = await fetchLevelWaves(row.id)
+    if (seq !== waveReqSeq) return
     waveRows.value = res.waves
   } catch (e) {
+    if (seq !== waveReqSeq) return
     ElMessage.error((e as Error).message)
   }
 }

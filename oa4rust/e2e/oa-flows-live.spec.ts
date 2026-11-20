@@ -70,19 +70,23 @@ test('BBS post shows in my topics; my replies tab lists my reply', async ({ page
   const replyRes = await apiPost(page.request, '/api/bbs/assemble/control/reply/create', {
     topicId,
     content: replyText,
-    creator: 'e2e-live',
+    // 我的回复列表按会话登录人过滤（u2_my_reply_list 空 body 回落 session），
+    // creator 必须与登录人一致，否则回复归属错配、子栏查不到。
+    creator: process.env.E2E_USERNAME ?? 'admin',
   })
   expect(replyRes.status(), 'reply/create must succeed').toBeLessThan(300)
 
   await page.goto('/app/bbs')
   await expect(page.locator('.section-list')).toBeVisible()
-  await page.getByRole('button', { name: '我的' }).click()
+  // 页面另有「我的回复」「我的主题」两个按钮，必须 exact 才能选中「我的」页签本身。
+  await page.getByRole('button', { name: '我的', exact: true }).click()
 
   // 我的主题（默认子栏，listsubjectinfo 读 x_bbs_topic 按 creator/author_id=e2e-live 过滤）
   await expect(page.getByText(topicTitle)).toBeVisible()
 
   // 我的回复子栏：PUT user/reply/my/list（按登录人过滤 x_bbs_reply）
-  await page.getByRole('button', { name: '我的回复' }).click()
+  // 顶部操作区也有同名「我的回复」按钮；用 .my-subtabs 容器把点击限定到「我的」子栏。
+  await page.locator('.my-subtabs').getByRole('button', { name: '我的回复' }).click()
   await expect(page.getByText(replyText)).toBeVisible()
 
   await assertNo404OrServerErrors(audit)

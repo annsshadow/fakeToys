@@ -709,7 +709,12 @@ func cors(allow []string) fiber.Handler {
 		}
 		if origin != "" {
 			c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-			c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+			c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization,Idempotency-Key")
+			// miniapp H5 在 /config 返回 304（无响应体）时只能靠 `Date` 头校准本地时钟
+			// （estimateServerNowMs，用于判断护盾 shielded_until 是否仍生效）。
+			// Date 不在 CORS safelisted response headers 之列，不显式暴露的话
+			// 浏览器跨域读不到它，304 路径的时钟校准会静默失效。
+			c.Set("Access-Control-Expose-Headers", "Date")
 			c.Set("Access-Control-Max-Age", "600")
 		}
 		if c.Method() == fiber.MethodOptions {

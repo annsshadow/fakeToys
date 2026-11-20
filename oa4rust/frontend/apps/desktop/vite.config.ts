@@ -7,6 +7,9 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  // 测试服与其它项目统一挂在 testmall 域名的子路径下（/oa4rust/）。
+  // 产物内所有静态资源、favicon、manifest 均自动加此前缀。
+  base: '/oa4rust/',
   plugins: [vue(), UnoCSS()],
   resolve: {
     alias: {

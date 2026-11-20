@@ -60,6 +60,16 @@ describe('服务端时间解析（R154，iOS 兼容）', () => {
     expect(parseServerDate(Number.POSITIVE_INFINITY)).toBeNull()
   })
 
+  it('越界的时/分/秒视为非法时间，返回 null（不静默进位到次日或下一分钟）', () => {
+    // 小时 0-23、分钟/秒 0-59；Date 构造会把 10:61 静默变成 11:01、把 10:30:60 变成 10:31:00。
+    // 这类脏数据若被当成合法时间展示/参与排序，用户会看到错误时刻或错误业务日。
+    expect(parseServerDate('2026-11-07 25:00:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 24:00:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 10:61:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 10:30:60')).toBeNull()
+    expect(parseServerDate('2026-11-07T99:99:99')).toBeNull()
+  })
+
   it('数字时间戳与 Date 实例直接可用', () => {
     const ms = Date.UTC(2026, 10, 7, 2, 30, 0)
     expect(parseServerDate(ms)?.getTime()).toBe(ms)

@@ -213,6 +213,41 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * 鉴权失败（令牌彻底失效）的订阅回调。
+ *
+ * # 为什么需要这条通道
+ *
+ * 服务端令牌失效（重启轮换密钥 / refresh token 过期 / 账号被停用）时，
+ * `/me`、`/wallet` 这些取数请求会拿到 401。`request` 内部已经 `clearTokens()`
+ * 并拒绝为 `ApiError(401,'unauthorized')`，但调用方（如 store 的 refreshProfile）
+ * 过去只是 `console.warn` 静默吞掉 —— 于是页面停在「已登录但零数据」的
+ * 最困惑形态，既不跳登录页也不提示重登。
+ *
+ * 让 api 层在「确认无法恢复」时主动发一次信号，store 层集中订阅跳登录页。
+ * 一处识别、一处响应，不必给 28 个页面的每个取数调用都套 try/catch。
+ *
+ * 这里刻意用模块级订阅而不是让 api 反向 import store：
+ * 令牌存取是 api 层的事（见 setTokenInternal 注释），api 不该知道 store 的存在。
+ */
+type AuthFailureHandler = () => void
+const authFailureHandlers = new Set<AuthFailureHandler>()
+
+/** 订阅鉴权失败信号，返回取消订阅函数。 */
+export function onAuthFailure(handler: AuthFailureHandler): () => void {
+  authFailureHandlers.add(handler)
+  return () => authFailureHandlers.delete(handler)
+}
+
+/**
+ * 通知所有订阅者「令牌已彻底失效，需要重新登录」。
+ *
+ * 只在刷新也救不回来时调用一次。用快照遍历，允许回调里取消订阅。
+ */
+function notifyAuthFailure(): void {
+  for (const handler of [...authFailureHandlers]) handler()
+}
+
 function get(key: string, def = ''): string {
   try {
     const v = uni.getStorageSync(key)
@@ -427,11 +462,16 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T> 
                       )
                     }
                   },
-                  fail: (e) => reject(new ApiError(0, 'network_error', e.errMsg)),
+                  fail: (e) => reject(new ApiError(0, 'network_error', `无法连接服务器：${e.errMsg}`)),
                 })
                 return
               } catch {
+                // 刷新也失败 = 令牌彻底失效，本机已无可用凭证。
+                // 清令牌 + 发信号，让 store 层统一跳登录页。
+                // （并发 N 个 401 会各发一次，但 store 的 handler 是幂等的，
+                //   gotoLoginPage 自带「已在登录页」防重，不会连跳。）
                 clearTokens()
+                notifyAuthFailure()
                 reject(new ApiError(401, 'unauthorized', '登录已过期，请重新进入'))
                 return
               }
@@ -520,9 +560,12 @@ function doRefresh(): Promise<void> {
       timeout: 20000,
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          const d = res.data as { access_token: string; refresh_token: string }
-          set(TOKEN_KEY, d.access_token)
-          set(REFRESH_KEY, d.refresh_token)
+          // /auth/refresh 与登录共用 service.TokenPair，响应里带回的是
+          // **本次新签发 access token** 的 expires_at。必须一起落盘，
+          // 否则旧的（快到期的）expiry 留着 → tokenExpiringSoon() 每次都判
+          // 「快过期」→ 每请求刷一次，撞上 /auth/refresh 的限流。
+          const d = res.data as { access_token: string; refresh_token: string; expires_at?: string }
+          setTokenInternal(d.access_token, d.refresh_token, d.expires_at)
           resolve()
         } else {
           reject(new Error('刷新失败'))
@@ -1251,9 +1294,9 @@ export interface BattleHistoryItem {
   created_at: string
 }
 
-export function myBattleHistory(limit = 20, offset = 0, result = ''): Promise<{ items: BattleHistoryItem[] }> {
-  const q = `limit=${limit}&offset=${offset}${result ? `&result=${result}` : ''}`
-  return request<{ items: BattleHistoryItem[] }>(`/me/battles?${q}`)
+export function myBattleHistory(limit = 20, offset = 0, result = '', cursor = 0): Promise<{ items: BattleHistoryItem[]; next_cursor: number }> {
+  const q = `limit=${limit}&offset=${offset}${result ? `&result=${result}` : ''}${cursor ? `&cursor=${cursor}` : ''}`
+  return request<{ items: BattleHistoryItem[]; next_cursor: number }>(`/me/battles?${q}`)
 }
 
 /**

@@ -764,3 +764,80 @@ async fn r7_mass_create_writes_session_creator() {
         .get(0);
     assert_eq!(remaining, 0, "删除后行必须不可达");
 }
+/// 会话创建者必须自动成为自己的成员：原 im_conversation 只 INSERT conversation 不写
+/// x_message_conversation_member，send_message 的 is_conversation_member 门禁使创建者给自己
+/// 会话发消息恒被拒（not a conversation member）。属 e2e 实跑发现的核心 IM 断裂。
+#[tokio::test]
+async fn test_im_conversation_creator_becomes_member() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping test_im_conversation_creator_becomes_member: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    for ddl in [
+        "CREATE TABLE IF NOT EXISTS x_message_conversation (id TEXT, name TEXT, type TEXT, create_time TEXT, last_message_time TEXT)",
+        "ALTER TABLE x_message_conversation ADD COLUMN IF NOT EXISTS last_message_time TEXT",
+        "CREATE TABLE IF NOT EXISTS x_message_conversation_member (id TEXT, conversation_id TEXT, person_id TEXT, role TEXT, join_time TEXT, create_time TEXT)",
+        "CREATE TABLE IF NOT EXISTS x_message (id TEXT, conversation_id TEXT, content TEXT, sender TEXT, type TEXT, create_time TEXT)",
+    ] {
+        c.execute(ddl, &[]).await.unwrap();
+    }
+    const PERSON: &str = "im-creator-member-u2";
+    let app = crate::router(pool.clone()).layer(Extension(shared::testing::test_session(PERSON)));
+    let resp = app.clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/message/assemble/communicate/im/conversation")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&json!({
+                    "name": "creator-member",
+                    "type": "single"
+                })).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK, "会话创建必须成功");
+    let bytes = axum::body::to_bytes(resp.into_body(), 65536).await.unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(v["type"], "success");
+    let conv_id = v["data"]["id"].as_str().expect("conversation id").to_string();
+
+    let members: i64 = c
+        .query_one(
+            "SELECT COUNT(*) FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2",
+            &[&conv_id, &PERSON.to_string()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(members, 1, "创建者必须自动写入会话成员表（修复前为 0）");
+
+    let send = app.clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/message/assemble/communicate/im/msg")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&json!({
+                    "conversationId": conv_id,
+                    "content": "self-hello",
+                    "sender": PERSON,
+                    "type": "text"
+                })).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(send.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(send.into_body(), 65536).await.unwrap();
+    let sent: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(sent["type"], "success", "创建者必须能在自己会话里发消息（修复前恒 error）",);
+    assert_eq!(sent["data"]["sent"], true);
+
+    c.execute("DELETE FROM x_message WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+    c.execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+    c.execute("DELETE FROM x_message_conversation WHERE id = $1", &[&conv_id]).await.unwrap();
+}

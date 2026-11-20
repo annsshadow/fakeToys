@@ -6,6 +6,9 @@
 
 /* ===== 暗色主题（默认）===== */
 [data-theme="dark"] {
+  /* 浏览器原生控件（select/date/autofill/滚动条）按深色渲染，与自定义主题一致（R190）。 */
+  color-scheme: dark;
+
   /* 主色：霓虹青 */
   --color-primary: #00d4ff;
   --color-primary-deep: #0099cc;
@@ -13,16 +16,16 @@
   --color-primary-soft: rgba(0, 212, 255, 0.08);
 
   /* 辅色：紫电 */
-  --color-accent: #a855f7;
+  --color-accent: #c084fc;
   --color-accent-glow: rgba(168, 85, 247, 0.3);
   --color-accent-soft: rgba(168, 85, 247, 0.08);
 
   /* 语义色 */
   --color-success: #10b981;
-  --color-success-glow: rgba(16, 185, 129, 0.3);
+  --color-success-glow: rgba(16, 185, 129, 0.2);
   --color-warning: #f59e0b;
-  --color-warning-glow: rgba(245, 158, 11, 0.3);
-  --color-error: #ef4444;
+  --color-warning-glow: rgba(245, 158, 11, 0.24);
+  --color-error: #ff8080;
   --color-error-glow: rgba(239, 68, 68, 0.35);
   --color-info: #3b82f6;
 
@@ -33,9 +36,9 @@
   --bg-overlay: rgba(6, 9, 19, 0.85);
   --bg-glass: rgba(13, 21, 37, 0.65);
 
-  /* 边框 */
-  --border-subtle: rgba(0, 212, 255, 0.12);
-  --border-active: rgba(0, 212, 255, 0.35);
+  /* 边框：WCAG 2.1 AA 1.4.11 非文本对比度，合成到 bg-base/surface/elevated 均 ≥3:1（见 nonTextContrast.contract.test.ts）。 */
+  --border-subtle: rgba(0, 212, 255, 0.5);
+  --border-active: rgba(0, 212, 255, 0.7);
   --border-glow: 0 0 12px rgba(0, 212, 255, 0.15);
   --border-card: 0 1px 0 rgba(255, 255, 255, 0.04);
 
@@ -47,7 +50,8 @@
   /* 文字 */
   --text-primary: #f0f6fc;
   --text-secondary: #8b9dc3;
-  --text-muted: #4a5568;
+  /* WCAG 2.1 AA 1.4.3：正文 token 需在 base/surface/elevated 上均 ≥4.5:1（见 textContrast.contract.test.ts）。 */
+  --text-muted: #7b8aa8;
   --text-inverse: #060913;
 
   /* 阴影 */
@@ -75,17 +79,21 @@
 
 /* ===== 亮色主题 ===== */
 [data-theme="light"] {
+  /* 浏览器原生控件按浅色渲染，与自定义主题一致（R190）。 */
+  color-scheme: light;
+
   --color-primary: #2563eb;
   --color-primary-deep: #1d4ed8;
   --color-primary-glow: rgba(37, 99, 235, 0.2);
   --color-primary-soft: rgba(37, 99, 235, 0.05);
 
   --color-accent: #7c3aed;
-  --color-accent-glow: rgba(124, 58, 237, 0.2);
+  --color-accent-glow: rgba(124, 58, 237, 0.08);
 
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
+  /* R192：语义文字叠在同色 glow 底上仍需 ≥4.5:1（见 semanticTintContrast.contract.test.ts）。 */
+  --color-success: #166534;
+  --color-warning: #92400e;
+  --color-error: #991b1b;
   --color-info: #2563eb;
 
   --bg-base: #f0f4f8;
@@ -94,13 +102,15 @@
   --bg-overlay: rgba(240, 244, 248, 0.9);
   --bg-glass: rgba(255, 255, 255, 0.8);
 
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-active: rgba(37, 99, 235, 0.4);
+  /* WCAG 2.1 AA 1.4.11：边框合成到三种背景均 ≥3:1（见 nonTextContrast.contract.test.ts）。 */
+  --border-subtle: rgba(0, 0, 0, 0.44);
+  --border-active: rgba(37, 99, 235, 0.85);
   --border-glow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  /* WCAG 2.1 AA 1.4.3：正文 token 需在 base/surface/elevated 上均 ≥4.5:1（见 textContrast.contract.test.ts）。 */
+  --text-muted: #5c6a7d;
   --text-inverse: #ffffff;
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -224,4 +234,66 @@ body {
 
 .neon-button:hover::before {
   transform: translateX(100%);
+}
+
+/* ===== 无障碍：尊重系统「减少动态效果」偏好（WCAG 2.3.3）=====
+ * 桌面存在 130+ 处 transition / animation / shimmer / glass 动效。对前庭功能
+ * 敏感、或在系统里开启「减少动态效果」的用户，这些动画会造成眩晕与不适。
+ * 全局收敛到极短时长而非直接 none —— 保留 transitionend 事件（部分交互逻辑
+ * 依赖它触发收尾），只把视觉感知降到接近瞬时。与 QueryStatementDesigner.vue
+ * 已有的局部守卫同口径，此处提升到全局主题层统一生效，覆盖所有视图。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion 守卫必须覆盖各视图 scoped 样式里的动效 */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上，全局守卫需要最高优先级 */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上，全局守卫需要最高优先级 */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 平滑滚动需被强制关闭 */
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== 无障碍：键盘焦点可见（WCAG 2.4.7 Focus Visible）=====
+ * 桌面存在 149 处 outline:none 移除浏览器原生焦点轮廓，但全仓 CSS 无 :focus-visible
+ * 兜底：纯键盘用户用 Tab 导航时看不到焦点落在哪个控件上，基本无法操作。
+ * 这里用统一的霓虹青焦点环覆盖——只在键盘交互(:focus-visible)时出现，鼠标点击
+ * 不触发，因此不干扰输入框 :focus 时用 border-color 表达聚焦的既有视觉设计。
+ * 与 R181 的 reduced-motion 守卫同属全局主题层的统一无障碍标准。
+ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  /* biome-ignore lint/complexity/noImportantStyles: 必须覆盖各视图 scoped 样式里的 outline:none */
+  outline: 2px solid var(--color-primary) !important;
+  /* biome-ignore lint/complexity/noImportantStyles: 焦点环与控件之间留出可见间隙 */
+  outline-offset: 2px !important;
+}
+
+/* ===== 无障碍：跳转到主要内容（WCAG 2.4.1 Bypass Blocks）=====
+ * 桌面布局有侧栏、顶栏与 20+ 个导航/搜索/用户菜单项，键盘用户若每次路由切换
+ * 都从头 Tab 会非常痛苦。跳转链接始终是 body 第一个可聚焦元素，平时离屏隐藏，
+ * 键盘聚焦时出现在左上角；进入主内容区后 tabindex=-1 只接收程序化焦点，
+ * 并通过 :focus:not(:focus-visible) 去掉永久轮廓（仅键盘聚焦时由全局焦点环接管）。
+ */
+.skip-link {
+  position: fixed;
+  top: -1000px;
+  left: 12px;
+  z-index: 1000;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-active);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+main.content:focus:not(:focus-visible) {
+  outline: none;
 }

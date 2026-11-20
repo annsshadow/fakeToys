@@ -35,6 +35,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -48,6 +49,7 @@ vi.mock('@/api/client', () => ({
   // 正是 P4-7 要消灭的缺陷。所以这两条现在被页面真正依赖。
   fetchMyEquipment: vi.fn(),
   fetchMastery: vi.fn(),
+  updateNickname: vi.fn(),
 }))
 
 vi.mock('@/game/defense', async (importOriginal) => {
@@ -286,6 +288,11 @@ describe('me.vue 我的页', () => {
       attempt_limit: 3,
       mine_attempts_today: 0,
     } as any)
+    // 真实服务端按 shield_hours=24 写入并返回 shielded_until（progression.go:744-748，R133 回读）；
+    // 只有返回权威时间，按钮才应翻转为「关闭」。
+    mockApi.saveDefense.mockResolvedValue({
+      defense: defenseView({ shielded_until: '2999-01-02T00:00:00Z' }),
+    } as any)
     const { wrapper } = mountPage(Me)
     await flushPromises()
     const shieldBtn = wrapper.findAll('.btn').find((b) => b.text().includes('开启 24h 护盾'))!
@@ -491,6 +498,11 @@ describe('me.vue 我的页', () => {
 
   it('toggleShield 在无防线时：名称回退 + 未开盾 24h / 已开盾 0h 两侧', async () => {
     mockApi.fetchDefenses.mockResolvedValue({ mine: null, candidates: [], attempt_limit: 3 } as any)
+    // 两次 saveDefense 分别返回「已开启」和「已关闭」的权威 shielded_until，
+    // 与真实服务端按 shield_hours 回读的语义一致（否则第二次请求不会是 0h）。
+    mockApi.saveDefense
+      .mockResolvedValueOnce({ defense: defenseView({ shielded_until: '2999-01-02T00:00:00Z' }) } as any)
+      .mockResolvedValueOnce({ defense: defenseView({ shielded_until: undefined }) } as any)
     const { wrapper } = mountPage(Me)
     await flushPromises()
     // 第一次：myDefense null → 名称回退；shielded=false → shield_hours 24
@@ -575,5 +587,44 @@ describe('me.vue 我的页', () => {
     await flushPromises()
     expect(mockApi.fetchDefenses).toHaveBeenCalledTimes(calls + 1)
     expect(mockApi.fetchWallet).toHaveBeenCalled()
+  })
+
+  // ── 昵称长度必须按 Unicode 码点计数（与服务端 utf8.RuneCountInString 对齐）────
+  // 权威契约：service/player_account.go UpdateNickname 用 utf8.RuneCountInString > 64 拒绝；
+  // service/service.go GuestLogin 用 len([]rune(nickname)) > 64 拒绝。两者都是「字/码点」，
+  // 不是 JS 的 UTF-16 code unit。一个 emoji 是 1 个码点、却是 2 个 JS code unit。
+  it('昵称 64 个 emoji（64 码点 / 128 UTF-16 单元）应可提交（服务端按 rune 放行）', async () => {
+    mockApi.updateNickname.mockResolvedValue({ ok: true })
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    // 进入改名编辑态
+    await wrapper.findAll('.link').find((n) => n.text() === '改名')!.trigger('click')
+    await flushPromises()
+    const emoji64 = '😀'.repeat(64) // 64 个码点，128 个 UTF-16 code unit
+    // 自检夹具：确认输入确实是「64 码点但 128 code unit」的边界
+    expect([...emoji64].length).toBe(64)
+    expect(emoji64.length).toBe(128)
+    await wrapper.find('input.nick-inp').setValue(emoji64)
+    await flushPromises()
+    await wrapper.findAll('.btn').find((b) => b.text().includes('保存'))!.trigger('click')
+    await flushPromises()
+    // 服务端会接受这 64 个字，客户端不应抢先拒绝
+    expect(mockApi.updateNickname).toHaveBeenCalledWith(emoji64)
+    expect(wrapper.text()).not.toContain('昵称最长 64 个字符')
+  })
+
+  it('昵称超过 64 个码点仍应被本地拒绝（长度校验没被误删）', async () => {
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.link').find((n) => n.text() === '改名')!.trigger('click')
+    await flushPromises()
+    const emoji65 = '😀'.repeat(65) // 65 个码点 > 64，服务端也会拒绝
+    expect([...emoji65].length).toBe(65)
+    await wrapper.find('input.nick-inp').setValue(emoji65)
+    await flushPromises()
+    await wrapper.findAll('.btn').find((b) => b.text().includes('保存'))!.trigger('click')
+    await flushPromises()
+    expect(mockApi.updateNickname).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('昵称最长 64 个字符')
   })
 })

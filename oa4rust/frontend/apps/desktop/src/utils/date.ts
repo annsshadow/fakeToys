@@ -50,7 +50,13 @@ export function parseServerDate(value: unknown): Date | null {
   const local = LOCAL_DATETIME_PATTERN.exec(text)
   if (local) {
     const [, y, mo, d, h = '0', mi = '0', s = '0'] = local
-    const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s))
+    const hh = Number(h)
+    const mm = Number(mi)
+    const ss = Number(s)
+    // 时/分/秒越界时 Date 构造会静默进位（10:61 -> 11:01、10:30:60 -> 10:31:00），
+    // 必须显式拒绝，否则脏数据会被当成合法时刻展示或参与排序。
+    if (hh > 23 || mm > 59 || ss > 59) return null
+    const date = new Date(Number(y), Number(mo) - 1, Number(d), hh, mm, ss)
     // 2 月 30 日这类「格式对但日子不存在」的输入会被 rollover，回读校验后拒绝。
     if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(mo) - 1 || date.getDate() !== Number(d)) {
       return null
@@ -61,15 +67,58 @@ export function parseServerDate(value: unknown): Date | null {
   return Number.isNaN(parsed.valueOf()) ? null : parsed
 }
 
+const DATETIME_LOCALE = 'zh-CN'
+const DEFAULT_DATETIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+}
+let defaultDateTimeFormatter: Intl.DateTimeFormat | undefined
+
 /**
  * 格式化服务端时间（R154）：列表页 `fmtTime` 的统一实现。
  * 解析失败时回落原始值，避免 iOS 上把 `Invalid Date` 直接渲染到界面。
+ *
+ * 未提供 options 是绝对热路径 —— 27 个列表视图每行的 fmtTime 都走这里。
+ * `Date.prototype.toLocaleString` 每次调用都会新建 `Intl.DateTimeFormat`，
+ * 这里把默认 formatter 缓存为单例，构造成本从「每行一次」摊薄为「全局一次」。
+ * 显式带 options 的调用极少（仓库仅 1 处），保留 toLocaleString 原语义不缓存，
+ * 避免改变边界选项（如 `{}` 会带时间）的输出契约。
  */
 export function formatServerDateTime(value: unknown, options?: Intl.DateTimeFormatOptions): string {
   const date = parseServerDate(value)
   if (!date) return String(value)
-  return date.toLocaleString(
-    'zh-CN',
-    options ?? { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
-  )
+  if (options === undefined) {
+    defaultDateTimeFormatter ??= new Intl.DateTimeFormat(DATETIME_LOCALE, DEFAULT_DATETIME_OPTIONS)
+    return defaultDateTimeFormatter.format(date)
+  }
+  return date.toLocaleString(DATETIME_LOCALE, options)
+}
+
+/**
+ * 业务日界常量：业务时区固定 UTC+8（与 views/timerStart.ts 的 beijingNow、O26-1 一致）。
+ */
+const BUSINESS_UTC_OFFSET_HOURS = 8
+const BUSINESS_OFFSET_MS = BUSINESS_UTC_OFFSET_HOURS * 60 * 60 * 1000
+
+/**
+ * 业务今日 / 本月（固定 UTC+8 口径）。
+ *
+ * 不能用 `new Date().toISOString().slice(0,10|7)`：那是 UTC 日期，UTC+8 凌晨
+ * 00:00–08:00 会回落到昨天 / 上月，导致考勤默认日期、今日筛选、导出文件名等
+ * 在每天的头 8 小时出错。这里与 beijingNow 同一口径：把时刻平移 +8h 后按 UTC
+ * 字段读取，结果与浏览器所在时区无关。
+ */
+export function businessTodayYMD(now: Date = new Date()): string {
+  const shifted = new Date(now.getTime() + BUSINESS_OFFSET_MS)
+  const y = String(shifted.getUTCFullYear()).padStart(4, '0')
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(shifted.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** 业务本月（"YYYY-MM"），与 businessTodayYMD 同口径。 */
+export function businessTodayYM(now: Date = new Date()): string {
+  return businessTodayYMD(now).slice(0, 7)
 }

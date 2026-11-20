@@ -31,6 +31,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -188,6 +189,44 @@ describe('index.vue 首页', () => {
     expect(fills[3]!.attributes('style')).toContain('width: 100%')
   })
 
+  it('构筑评级（G141）用加权满分做分母，未加权上界之和 46 会让评级恒为 S', async () => {
+    // 服务端 total = Σ(维度×权重)（power.go ComputeBuildRating:350-354），
+    // 默认权重 12/15/10/12/8 → 加权满分 5*12+7*15+8*10+18*12+8*8 = 525。
+    // index.vue 此前用未加权上界之和 5+7+8+18+8=46 做分母：
+    // 250/525≈48% 应为 B，250/46≈543%→夹到 100% 变成 S —— 评级完全失真。
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: makeConfig({
+        rating_weights: {
+          element_coverage: 12,
+          reaction_coverage: 15,
+          mastery_done: 10,
+          equipment_synergy: 12,
+          mechanic_depth: 8,
+        },
+      }),
+      serverTimeMs: 0,
+    })
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: null,
+      build_rating: {
+        total: 250,
+        element_coverage: 5,
+        reaction_coverage: 7,
+        mastery_done: 8,
+        equipment_synergy: 6,
+        mechanic_depth: 4,
+        weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    // 用户可见行为：徽章须是 B，而不是被爆表分母夹成 S。
+    expect(wrapper.find('.rating-grade').text()).toBe('B')
+  })
+
   it('点击功能入口 → uni.navigateTo 携带对应路径', async () => {
     mountPage()
     await flushPromises()
@@ -263,6 +302,28 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).not.toContain('全部 0 条')
     // 首页主体仍正常
     expect(wrapper.text()).toContain('构筑评分')
+  })
+
+  it('首页公告“全部 N 条”显示真实总数，且首页只展示最新 3 条', async () => {
+    // 运营发了 6 条公告；server 按 limit 截断（公告页用 limit=20 视为全量）。
+    // 首页此前用 fetchAnnouncements(3) 拉 3 条，却把 announcements.length
+    // 当“全部”条数 —— 6 条公告在首页显示成“全部 3 条”，一句用户可见的假话。
+    const all = Array.from({ length: 6 }, (_, i) => ({
+      id: i + 1,
+      title: `公告${i + 1}`,
+      body: '正文',
+      published_at: '2026-11-17T00:00:00Z',
+    }))
+    mockApi.fetchAnnouncements.mockImplementation((limit?: number) =>
+      Promise.resolve({ items: all.slice(0, limit ?? 20) }),
+    )
+    mountPage()
+    await flushPromises()
+
+    // 首页仍只铺最新 3 条（首屏不被挤爆）
+    expect(wrapper.findAll('.ann-item').length).toBe(3)
+    // “全部 N 条”必须是真实总数 6，而不是首页展示的 3 条
+    expect(wrapper.text()).toContain('全部 6 条 →')
   })
 
   // ── 分享（2026-10-23）────────────────────────────────────────────
@@ -417,5 +478,50 @@ describe('index.vue 构筑评分空维补导（R14）', () => {
     await flushPromises()
     expect(wrapper.findAll('.dim-hint').length).toBe(0)
     expect(wrapper.findAll('.dim-empty-hint').length).toBe(0)
+  })
+})
+
+// ==================== 第七批 G61 构筑五维雷达图 ====================
+describe('index.vue 构筑五维雷达图（第七批 G61）', () => {
+  it('G61 渲染五边形雷达：三圈网格 + 五轴 + 实际多边形 + 五标签', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null,
+      build_rating: {
+        total: 50, element_coverage: 3, reaction_coverage: 4,
+        mastery_done: 2, equipment_synergy: 9, mechanic_depth: 5, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    // 3 圈参考网格
+    expect(wrapper.findAll('.radar-ring').length).toBe(3)
+    // 5 条轴线
+    expect(wrapper.findAll('.radar-axis').length).toBe(5)
+    // 5 个顶点标签
+    expect(wrapper.findAll('.radar-label').length).toBe(5)
+    // 实际多边形存在且 points 含 5 组坐标
+    const shape = wrapper.find('.radar-shape')
+    expect(shape.exists()).toBe(true)
+    const pts = shape.attributes('points') ?? ''
+    expect(pts.split(' ').length).toBe(5)
+  })
+
+  it('G61 雷达多边形随五维数值变化（偏科形状可辨）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null,
+      build_rating: {
+        total: 5, element_coverage: 5, reaction_coverage: 0,
+        mastery_done: 0, equipment_synergy: 0, mechanic_depth: 0, weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    const pts = (wrapper.find('.radar-shape').attributes('points') ?? '').split(' ')
+    // 第 1 维（元素覆盖满 5/5）顶点应落在半径最大处 ≈ (100, 20)
+    expect(pts[0]).toBe('100,20')
+    // 第 2 维（反应链 0）顶点应落在中心 (100, 90)
+    expect(pts[1]).toBe('100,90')
   })
 })

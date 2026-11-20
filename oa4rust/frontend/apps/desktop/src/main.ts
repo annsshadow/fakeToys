@@ -1,21 +1,36 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { createThemeProvider, useSession } from '@oa4rust/sdk'
+import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { installFormErrorA11y } from './utils/formErrorA11y'
+import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'
+import { installLabelA11y } from './utils/labelA11y'
+import { installLoadingA11y } from './utils/loadingA11y'
+import { installViewModalManager } from './utils/modalFocus'
+import { installProgressA11y } from './utils/progressA11y'
+import { createRouteAnnouncer } from './utils/routeAnnouncer'
+import { installSearchFieldA11y } from './utils/searchFieldA11y'
 import { watchSessionCacheReset } from './utils/sessionCache'
+import { installSkipLink } from './utils/skipLink'
+import { installTableA11y } from './utils/tableA11y'
 import { shouldRetryQuery } from './views/listQuery'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue'
 import OAuthCallback from '@oa4rust/ui/views/OAuthCallback.vue'
 
+// 测试服子路径部署：API / WS 走独立前缀，由 nginx 反代到后端服务。
+// 前端代码里的 API 与 WS 路径字面量保持不变，只在入口统一注入前缀。
+api.setBase('/oa4rust-api')
+setWebSocketBase('/oa4rust-ws')
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/oa4rust/'),
   routes: [
     { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
     {
@@ -509,9 +524,12 @@ router.beforeEach(async (to) => {
 })
 
 // 86 条路由均声明 meta.title，导航后同步到 document.title（多标签页/历史记录可辨识）。
+// R231：导航后同时播报新页面标题并把键盘焦点移到主内容（WCAG 2.4.3 / 4.1.3）。
+const routeAnnouncer = createRouteAnnouncer()
 router.afterEach((to) => {
   const title = to.meta.title as string | undefined
   document.title = title ? `${title} · OA4Rust` : 'OA4Rust'
+  routeAnnouncer.announce(to)
 })
 
 const queryClient = new QueryClient({
@@ -549,4 +567,21 @@ app.use(VueQueryPlugin, { queryClient })
 // 登录人变化（登出/切换/换账号重登）即清查询缓存——视图 queryKey 不含登录人，
 // 保留缓存会把上一账号 staleTime 内的数据渲染给当前账号（跨账号数据泄漏）。
 watchSessionCacheReset(queryClient, () => useSession().state.user?.unique ?? null)
+// R162：视图层手写模态统一支持 Escape 关闭、Tab 焦点陷阱与关闭后焦点归还。
+installViewModalManager()
+// R187：全局跳转到主要内容链接（WCAG 2.4.1），卸载时无需清理（应用生命周期内常驻）。
+installSkipLink()
+// R188：全局表单错误无障碍关联（WCAG 3.3.1 / 4.1.2），观察 v-if 异步插入的错误文本。
+installFormErrorA11y()
+// R202：全局表格表头作用域增强（WCAG 1.3.1），观察 v-if 异步插入的数据表格。
+installTableA11y()
+// R213：全局孤儿表单标签关联（WCAG 1.3.1 / 4.1.2），观察 v-if 异步插入的表单。
+installLabelA11y()
+// R215：加载指示器补 role=status 与读屏可见文案（WCAG 4.1.3），观察 v-if 异步插入。
+installLoadingA11y()
+installProgressA11y()
+// R217：placeholder-only 搜索框补读屏可访问名称（WCAG 4.1.2 / 3.3.2）。
+installSearchFieldA11y()
+// R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须在应用任意位置可用。
+installGlobalSearchShortcut()
 app.mount('#o2-app-root')

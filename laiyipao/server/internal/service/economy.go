@@ -676,6 +676,11 @@ type OfflineRewardStatus struct {
 // `OfflineCoinPerHour <= 0` 则恒为 0 收益。
 func (s *Service) offlineRewardFor(lastClaimAt time.Time, now time.Time) (coin int64, elapsed time.Duration) {
 	elapsed = now.Sub(lastClaimAt)
+	// 时钟回拨 / DB now() 领先 Go 时钟时 last_claim_at 可能落在未来，
+	// 负时长会让前端展示负金币；按 0 处理（暂无可领收益，也不吞掉已有挂机时间）。
+	if elapsed < 0 {
+		elapsed = 0
+	}
 	if cap := s.Cfg().OfflineCapHours; cap > 0 {
 		capDur := time.Duration(cap) * time.Hour
 		if elapsed > capDur {

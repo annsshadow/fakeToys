@@ -124,6 +124,19 @@ describe('downstream message dispatch', () => {
     expect(seen[0]).toEqual({ event: 'notification', data: { x: 1 } })
   })
 
+  it('a single downstream frame notifies a $all listener exactly once with the merged envelope', async () => {
+    // dispatch() 内部已按约定广播 $all({event,data})；onmessage 又显式 dispatch('$all', msg.data)，
+    // 于是每一帧会让 $all 监听触发 3 次：正确信封、裸 data、误导性的 $all 事件名。
+    // $all 监听（全局审计/未读计数等）会把一帧当三帧处理，重复计入。
+    await openClient()
+    const seen: unknown[] = []
+    client.on('$all', (d) => seen.push(d))
+    FakeWebSocket.instances[0].simulateMessage(
+      JSON.stringify({ type: 'im_create', data: { body: 'hi' }, sender: 'u-1', room: 'conv-9' }),
+    )
+    expect(seen).toEqual([{ event: 'im_create', data: { body: 'hi', sender: 'u-1', room: 'conv-9' } }])
+  })
+
   it('non-JSON payloads fall back to the raw channel', async () => {
     await openClient()
     const seen: unknown[] = []
@@ -257,6 +270,41 @@ describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
     vi.useRealTimers()
   })
 
+  it('close() 后重新连接，再次意外断开仍能重连（残留 reconnectTimer 导致永久不重连）', async () => {
+    // 缺陷机制：意外断开排上重连定时器 T1 → 用户 close() 只 clearTimeout(T1) 但引用仍在 →
+    // 重连成功后再次意外断开，scheduleReconnect 的 `if (reconnectTimer) return` 因旧引用 truthy 早退 →
+    // 永不重连，IM 消息永久收不到。用户可感知（重新登录后收不到消息）。
+    vi.useFakeTimers()
+    try {
+      const p1 = client.connect()
+      const ws1 = FakeWebSocket.instances[0]
+      ws1.simulateOpen()
+      await p1
+
+      // 第一次意外断开 → 排上重连定时器（尚未触发）
+      ws1.readyState = 3
+      ws1.onclose?.()
+
+      // 用户主动断开：取消那个待重连定时器
+      client.close()
+
+      // 重新连接成功（例如用户重新登录 / 重新进入聊天页）
+      const p2 = client.connect()
+      const ws2 = FakeWebSocket.instances[1]
+      ws2.simulateOpen()
+      await p2
+
+      // 第二次意外断开 → 应当再次排上重连
+      ws2.readyState = 3
+      ws2.onclose?.()
+
+      await vi.advanceTimersByTimeAsync(3_000)
+      // 期望开启第 3 个 socket；缺陷下 reconnectTimer 仍指向已清除的旧定时器而早退
+      expect(FakeWebSocket.instances).toHaveLength(3)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
   it('sends a ping heartbeat every 30s while the socket stays open', async () => {
     vi.useFakeTimers()
     const p = client.connect()

@@ -50,7 +50,7 @@ describe('main.ts executable verification', () => {
   describe('Core initialization functions', () => {
     test('Source contains router creation', () => {
       expect(mainSource).toContain('createRouter({')
-      expect(mainSource).toContain('history: createWebHistory()')
+      expect(mainSource).toContain("history: createWebHistory('/oa4rust/')")
     })
 
     test('Source contains route definitions', () => {
@@ -117,7 +117,7 @@ describe('main.ts executable verification', () => {
 
   describe('Theme provider setup', () => {
     test('Imports theme provider', () => {
-      expect(mainSource).toContain('createThemeProvider, useSession')
+      expect(mainSource).toContain('createThemeProvider, setWebSocketBase, useSession')
     })
 
     test('Creates and initializes theme provider', () => {
@@ -146,6 +146,17 @@ describe('main.ts executable verification', () => {
 
     test('Mounts to #o2-app-root', () => {
       expect(mainSource).toContain("app.mount('#o2-app-root')")
+    })
+  })
+
+  describe('Global search shortcut setup', () => {
+    // R207：顶栏搜索框宣称的 ⌘K/Ctrl+K 须全局可用，入口须装配快捷键安装器。
+    test('Installs the global search shortcut before mounting', () => {
+      expect(mainSource).toContain("import { installGlobalSearchShortcut } from './utils/globalSearchShortcut'")
+      expect(mainSource).toContain('installGlobalSearchShortcut()')
+      expect(mainSource.indexOf('installGlobalSearchShortcut()')).toBeLessThan(
+        mainSource.indexOf("app.mount('#o2-app-root')"),
+      )
     })
   })
 
@@ -205,7 +216,9 @@ describe('main.ts executable verification', () => {
     })
 
     test('Imports OA4Rust SDK', () => {
-      expect(mainSource).toContain("import { createThemeProvider, useSession } from '@oa4rust/sdk'")
+      expect(mainSource).toContain(
+        "import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'",
+      )
     })
 
     test('Imports UI components', () => {

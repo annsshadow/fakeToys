@@ -53,12 +53,50 @@
         </view>
       </scroll-view>
 
+      <!-- G71 专精投入总览：跨系柱状图，看清点数倾斜与各系进度 -->
+      <view v-if="familyOverview.length" class="card overview-card">
+        <view class="card-title">
+          <text>专精投入总览</text>
+          <text class="mono">共 {{ totalInvested }} 点</text>
+        </view>
+        <view v-for="f in familyOverview" :key="f.family" class="fo-row" :class="{ active: f.active }">
+          <text class="dim fo-name">{{ f.name }}</text>
+          <view class="fo-track">
+            <view class="fo-fill" :style="{ width: f.pct + '%' }" />
+          </view>
+          <text class="mono fo-val">{{ f.got }}/{{ f.cap }}</text>
+        </view>
+        <!-- G103 收益汇总：专精点换来了什么 -->
+        <view v-if="investedValue.length" class="invested-value">
+          <text v-for="v in investedValue" :key="v.kind" class="iv-chip">{{ v.label }} +{{ v.value }}</text>
+        </view>
+      </view>
+
+      <!-- G128 全系 4选2 结构矩阵 -->
+      <view v-if="familyMatrix.length" class="card">
+        <view class="card-title">全系结构</view>
+        <view class="fm-row fm-head">
+          <text class="dim fm-name">系</text>
+          <text v-for="l in [1,2,3]" :key="l" class="dim fm-cell">第{{ l }}层</text>
+        </view>
+        <view v-for="f in familyMatrix" :key="f.family" class="fm-row">
+          <text class="fm-name">{{ f.name }}</text>
+          <text v-for="l in f.layers" :key="l.layer" class="fm-cell" :class="{ on: l.got > 0 }">{{ l.got }}/{{ l.cap }}</text>
+        </view>
+      </view>
+
       <view v-if="curNodes.length" class="card">
         <text class="card-title">{{ curName }}专精树</text>
         <!-- 第六批 R62：说明锁定原因，玩家不必靠点一下才收到 toast 才知道 -->
         <text class="dim" style="display: block; margin-bottom: 12rpx">
           锁定节点需先在上一层点亮 2 项；每层最多选 2 项。
         </text>
+        <!-- G135 点数规划器 -->
+        <view class="point-planner">
+          <text class="pp-item">剩余 {{ pointPlanner.points }} 点</text>
+          <text class="pp-item">可立即点亮 {{ pointPlanner.available }} 个</text>
+          <text v-if="pointPlanner.needFirst > 0" class="pp-hint">先点亮第 1 层 {{ pointPlanner.needFirst }} 项解锁后续</text>
+        </view>
         <view v-for="layer in 3" :key="layer" class="layer">
           <view class="layer-head">
             <text class="layer-title">第 {{ layer }} 层</text>
@@ -107,6 +145,8 @@ const curFamily = ref('flame')
 /** mastery_reset 道具余额（服务端 /wallet 的 tokens 下发） */
 const resetTokens = computed(() => store.wallet.tokens?.['mastery_reset'] ?? 0)
 const resetting = ref(false)
+/** 点亮在途守卫：同一节点连点两次时第二次请求必被服务端拒绝（该节点已点亮），提示很吵 */
+const allocBusy = ref(false)
 
 const families = computed(() => store.config?.mastery_families ?? [])
 
@@ -170,7 +210,71 @@ function invested(family: string): number {
   return n
 }
 
+/* -------------------------------------------------------------------------- */
+/* G71 专精投入总览（第七批）                                                   */
+/* 跨所有系的点数分布柱状图 + 剩余可点节点数，帮玩家看「专精往哪倾斜、还能点哪」。  */
+/* 数据来自 families + selectedSet，纯客户端派生。                               */
+/* -------------------------------------------------------------------------- */
+const familyOverview = computed(() => {
+  const max = Math.max(1, ...families.value.map((f) => f.nodes.length))
+  return families.value.map((f) => {
+    const got = f.nodes.filter((n) => selectedSet.value.has(n.id)).length
+    return {
+      family: f.family,
+      name: f.name,
+      got,
+      cap: f.nodes.length,
+      pct: Math.round(got / max * 100),
+      active: f.family === curFamily.value,
+    }
+  })
+})
+const totalInvested = computed(() => familyOverview.value.reduce((s, f) => s + f.got, 0))
+
+/** G135 点数规划器：当前系可立即点亮的节点数 + 剩余点数够不够走完。 */
+const pointPlanner = computed(() => {
+  const available = curNodes.value.filter((n) => !selectedSet.value.has(n.id) && !isLocked(n)).length
+  const needFirst = curNodes.value.filter((n) => n.layer === 2 && pickedInLayer(1) === 0).length
+  return { points: points.value, available, needFirst }
+})
+
+/** G128 全系 4选2 结构矩阵：每系一行、三层，格内显示该层已选数/总数。 */
+const familyMatrix = computed(() =>
+  families.value.map((f) => ({
+    family: f.family,
+    name: f.name,
+    layers: [1, 2, 3].map((layer) => {
+      const nodes = f.nodes.filter((n) => n.layer === layer)
+      const got = nodes.filter((n) => selectedSet.value.has(n.id)).length
+      return { layer, got, cap: nodes.length }
+    }),
+  })),
+)
+
+/** G103 已点亮节点属性收益汇总：按 kind 分组累加 value，看清专精点换来了什么。 */
+const investedValue = computed(() => {
+  const m = new Map<string, number>()
+  for (const f of families.value) {
+    for (const n of f.nodes) {
+      if (selectedSet.value.has(n.id)) {
+        m.set(n.kind, (m.get(n.kind) ?? 0) + n.value)
+      }
+    }
+  }
+  // key 必须与服务端 masteryLayerKinds（internal/domain/power.go）一致 ——
+  // 配置下发的节点 kind 就是这些 key，写错就会把英文原文漏给玩家。
+  const KIND_CN: Record<string, string> = {
+    element_cap: '元素上限', reaction_mult: '反应倍率', heat_cap: '热量上限',
+    skill_damage: '技能伤害', crit: '暴击率', extra_slot: '额外插槽',
+    mechanic: '机制改造', armor: '防线护甲',
+  }
+  return [...m.entries()]
+    .map(([kind, value]) => ({ kind, label: KIND_CN[kind] ?? kind, value }))
+    .sort((a, b) => b.value - a.value)
+})
+
 async function toggle(n: MasteryNode) {
+  if (allocBusy.value || resetting.value) return // 与 resetMastery 共享在途守卫：两处写同一份 selected/points，防交叉提交
   if (selected.value.includes(n.id)) {
     uni.showToast({ title: '已点亮的节点需通过重置取消', icon: 'none' })
     return
@@ -183,6 +287,7 @@ async function toggle(n: MasteryNode) {
     uni.showToast({ title: '专精点不足（升级可获得更多）', icon: 'none' })
     return
   }
+  allocBusy.value = true
   try {
     const res = await api.allocateMastery(n.id)
     points.value = res.points
@@ -191,6 +296,8 @@ async function toggle(n: MasteryNode) {
   } catch (e) {
     const msg = (e as any)?.error?.message ?? (e as Error).message
     uni.showToast({ title: msg, icon: 'none', duration: 2500 })
+  } finally {
+    allocBusy.value = false
   }
 }
 
@@ -218,7 +325,7 @@ async function load() {
  * 再拉一次 `GET /mastery` 是白跑一趟，而且会有一个中间闪烁。
  */
 async function resetMastery() {
-  if (resetting.value) return // 防连点：道具扣完第二次必失败，但失败提示很吵
+  if (resetting.value || allocBusy.value) return // 防连点 + 与 toggle 共享在途守卫：两处写同一份 selected/points，防交叉提交
   if (resetTokens.value <= 0) {
     uni.showToast({ title: '没有重铸道具（商城可购）', icon: 'none' })
     return
@@ -251,6 +358,37 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G135 点数规划器 */
+.point-planner { display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 12rpx; }
+.pp-item { background: var(--kinetic-soft); color: var(--kinetic); border-radius: 8rpx; padding: 4rpx 12rpx; font-size: 22rpx; }
+.pp-hint { font-size: 22rpx; color: var(--warn); }
+
+/* G128 全系结构矩阵 */
+.fm-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
+.fm-head { border-bottom: 1rpx solid var(--border); }
+.fm-name { flex: 1.4; font-size: 22rpx; }
+.fm-cell { flex: 1; text-align: center; font-size: 22rpx; color: var(--dim); }
+.fm-cell.on { color: var(--kinetic); font-weight: 600; }
+
+/* G103 专精收益汇总 */
+.invested-value { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
+.iv-chip {
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
+/* G71 专精投入总览 */
+.overview-card .card-title .mono { color: var(--kinetic); }
+.fo-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.fo-row.active .fo-name { color: var(--kinetic); font-weight: 600; }
+.fo-name { width: 140rpx; flex-shrink: 0; }
+.fo-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.fo-fill { height: 100%; background: var(--kinetic); border-radius: 999rpx; }
+.fo-val { width: 80rpx; text-align: right; font-size: 22rpx; }
+
 .points {
   font-size: 44rpx;
   font-weight: 700;

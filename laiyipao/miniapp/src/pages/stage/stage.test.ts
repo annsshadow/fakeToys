@@ -30,6 +30,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -273,6 +274,19 @@ describe('stage.vue 选关页', () => {
     await flushPromises()
     store.wallet.energy = 0
     await wrapper.find('.btn-primary').trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/battle/battle?level=2' })
+  })
+
+  it('startBattle：双击只导航一次', async () => {
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    store.setMaxStage(1)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '2' })
+    await flushPromises()
+    const btn = wrapper.find('.btn-primary')
+    await btn.trigger('click')
+    await btn.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledTimes(1)
     expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/battle/battle?level=2' })
   })
 

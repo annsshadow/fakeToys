@@ -16,8 +16,8 @@ test('starts, renders, and returns a workflow through visible web controls', asy
   // Xform 填报（申请原因）→ 提交 → 我发起的可见 → 发起人办理 begin 任务审批通过。
   const processName = process.env.E2E_PROCESS_NAME ?? 'seed-approval-flow'
   await page.getByRole('button', { name: /发起流程/ }).click()
-  await page.getByLabel(/流程/).selectOption({ label: processName })
-  await page.getByLabel(/标题/).fill(title)
+  await page.locator('#start-process').selectOption({ label: processName })
+  await page.locator('#start-title').fill(title)
   await page.getByLabel(/申请原因/).fill('S3 GUI E2E round-trip')
   const startResponse = audit.waitForWrite((response) =>
     /\/service\/processing\/work$/.test(new URL(response.url()).pathname),

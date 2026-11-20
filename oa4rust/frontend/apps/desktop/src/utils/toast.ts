@@ -20,6 +20,8 @@ function getContainer(): HTMLDivElement {
   if (!container) {
     container = document.createElement('div')
     container.className = 'oa4-toast-container'
+    container.setAttribute('role', 'status')
+    container.setAttribute('aria-live', 'polite')
     container.style.cssText = `
       position: fixed; top: 20px; right: 20px; z-index: 9999;
       display: flex; flex-direction: column; gap: 8px;
@@ -31,6 +33,8 @@ function getContainer(): HTMLDivElement {
 }
 
 function showToast(opts: ToastOptions): void {
+  // 无 DOM 环境（原生 App 壳 / SSR）下 toast 无处渲染，静默降级而非抛错。
+  if (typeof document === 'undefined') return
   const { type = 'info', duration = 3000, message } = opts
   const container = getContainer()
 
@@ -53,6 +57,8 @@ function showToast(opts: ToastOptions): void {
 
   const el = document.createElement('div')
   el.className = 'oa4-toast'
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status')
+  el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite')
   el.style.cssText = `
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 8px;
@@ -82,10 +88,11 @@ function showToast(opts: ToastOptions): void {
   el.addEventListener('click', () => removeToast(el))
   container.appendChild(el)
 
-  const timer = setTimeout(() => removeToast(el), duration)
+  let timer = setTimeout(() => removeToast(el), duration)
   el.addEventListener('mouseenter', () => clearTimeout(timer))
   el.addEventListener('mouseleave', () => {
-    setTimeout(() => removeToast(el), duration / 2)
+    clearTimeout(timer)
+    timer = setTimeout(() => removeToast(el), duration / 2)
   })
 }
 
@@ -94,8 +101,8 @@ function removeToast(el: HTMLElement): void {
   setTimeout(() => el.remove(), 200)
 }
 
-// Inject keyframes once
-if (!document.getElementById('oa4-toast-styles')) {
+// Inject keyframes once（无 DOM 环境下跳过，模块须可被安全 import）
+if (typeof document !== 'undefined' && !document.getElementById('oa4-toast-styles')) {
   const style = document.createElement('style')
   style.id = 'oa4-toast-styles'
   style.textContent = `
@@ -123,16 +130,50 @@ export function useToast() {
   return toast
 }
 
-export async function copyText(text: string): Promise<boolean> {
+/** 非安全上下文（HTTP 局域网 / 内嵌 WebView）下 Clipboard API 不存在，用临时 textarea 兜底复制。 */
+function legacyCopy(text: string): boolean {
+  if (typeof document === 'undefined' || typeof document.execCommand !== 'function') return false
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
   try {
-    await navigator.clipboard.writeText(text)
-    toast.success('已复制到剪贴板')
-    return true
+    textarea.select()
+    textarea.setSelectionRange?.(0, text.length)
+    return document.execCommand('copy')
   } catch {
-    toast.error('复制失败，请检查剪贴板权限')
     return false
+  } finally {
+    textarea.remove()
   }
 }
+
+export async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('已复制到剪贴板')
+      return true
+    } catch {
+      // 权限/CSP 拒绝时继续走 execCommand 兜底，而不是直接判失败。
+    }
+  }
+  if (legacyCopy(text)) {
+    toast.success('已复制到剪贴板')
+    return true
+  }
+  toast.error('复制失败，请检查剪贴板权限')
+  return false
+}
+
+/**
+ * 当前打开的确认框的关闭钩子。confirmMsg 是单例遮罩：重入时旧调用会被新调用抢占，
+ * 必须让它的 Promise 以 false 落地并注销 keydown 监听，否则 await 的调用方会永久悬挂，
+ * 且幽灵处理器会叠加在新弹窗上重复响应 Esc。
+ */
+let dismissOpenConfirm: (() => void) | null = null
 
 /**
  * Sci-fi themed confirm dialog — replaces native window.confirm.
@@ -140,6 +181,12 @@ export async function copyText(text: string): Promise<boolean> {
  */
 export function confirmMsg(message: string, title = '确认操作'): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
+
+  // 抢占式重入：先关闭仍打开的旧弹窗（false + 清理），再创建新的。
+  dismissOpenConfirm?.()
+
+  // Remember the element that triggered the dialog so focus can be restored on close.
+  const opener = document.activeElement as HTMLElement | null
 
   return new Promise((resolve) => {
     // Remove existing overlay if any
@@ -155,6 +202,10 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     `
 
     const box = document.createElement('div')
+    box.setAttribute('role', 'dialog')
+    box.setAttribute('aria-modal', 'true')
+    box.setAttribute('aria-labelledby', 'oa4-confirm-title')
+    box.setAttribute('aria-describedby', 'oa4-confirm-desc')
     box.style.cssText = `
       background: rgba(15, 23, 42, 0.98);
       border: 1px solid rgba(59,130,246,0.4);
@@ -170,6 +221,7 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       color: #3b82f6; margin-bottom: 12px; font-weight: 700;
       text-shadow: 0 0 10px rgba(59,130,246,0.5);
     `
+    titleEl.id = 'oa4-confirm-title'
     titleEl.textContent = `⚠ ${title}`
 
     const msgEl = document.createElement('div')
@@ -177,6 +229,7 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       font-size: 13px; color: #cbd5e1; line-height: 1.6;
       margin-bottom: 20px; white-space: pre-wrap;
     `
+    msgEl.id = 'oa4-confirm-desc'
     msgEl.textContent = message
 
     const btnRow = document.createElement('div')
@@ -199,11 +252,18 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       cancelBtn.style.color = '#94a3b8'
     }
     let onKeyDown: (e: KeyboardEvent) => void
+    let finished = false
     const finish = (result: boolean) => {
+      if (finished) return
+      finished = true
       document.removeEventListener('keydown', onKeyDown)
+      if (dismissOpenConfirm === dismiss) dismissOpenConfirm = null
       overlay.remove()
+      // Give focus back to the control that opened the dialog.
+      if (opener && typeof opener.focus === 'function' && document.body.contains(opener)) opener.focus()
       resolve(result)
     }
+    const dismiss = () => finish(false)
 
     cancelBtn.onclick = () => finish(false)
 
@@ -234,15 +294,29 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     overlay.appendChild(box)
     document.body.appendChild(overlay)
 
+    // Move focus into the dialog so keyboard/screen-reader users land on it.
+    cancelBtn.focus()
+
     // Close on overlay click
     overlay.onclick = (e: MouseEvent) => {
       if (e.target === overlay) finish(false)
     }
 
-    // Close on Escape
+    // Close on Escape; trap Tab inside the two action buttons.
     onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') finish(false)
+      if (e.key === 'Escape') {
+        finish(false)
+      } else if (e.key === 'Tab') {
+        e.preventDefault()
+        const active = document.activeElement
+        if (e.shiftKey) {
+          ;(active === cancelBtn ? okBtn : cancelBtn).focus()
+        } else {
+          ;(active === okBtn ? cancelBtn : okBtn).focus()
+        }
+      }
     }
     document.addEventListener('keydown', onKeyDown)
+    dismissOpenConfirm = dismiss
   })
 }

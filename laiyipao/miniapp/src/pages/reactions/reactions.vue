@@ -24,6 +24,59 @@
         </text>
       </view>
 
+      <!-- G74 元素反应覆盖矩阵：5×5，行=元素A、列=元素B，格子=反应名；可达高亮 -->
+      <view class="card">
+        <text class="card-title">元素反应覆盖矩阵</text>
+        <text class="dim" style="display: block; margin-bottom: 12rpx">
+          行 × 列 = 两元素组合；亮色格 = 当前构筑能触发的反应，灰格 = 暂不可达。
+        </text>
+        <view class="matrix">
+          <!-- 表头：列元素名 -->
+          <view class="matrix-row">
+            <view class="matrix-corner" />
+            <view v-for="b in ELEMENT_ORDER" :key="'h' + b" class="matrix-head" :style="{ color: ELEMENT_COLOR[b] }">
+              {{ ELEMENT_NAME[b] }}
+            </view>
+          </view>
+          <!-- 每行：行元素名 + 5 个格子 -->
+          <view v-for="row in reactionMatrix" :key="'r' + row[0]!.a" class="matrix-row">
+            <view class="matrix-head" :style="{ color: ELEMENT_COLOR[row[0]!.a] }">
+              {{ ELEMENT_NAME[row[0]!.a] }}
+            </view>
+            <view
+              v-for="cell in row"
+              :key="cell.a + '-' + cell.b"
+              class="matrix-cell"
+              :class="{ hit: cell.reachable, self: cell.self }"
+              :style="{ background: cellColor(cell) }"
+            >{{ cell.self ? '·' : cell.name }}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- G105 反应机制对照表：谁驱散/削甲/击退/增幅/持续，一眼扫完 -->
+      <view class="card">
+        <text class="card-title">反应机制对照</text>
+        <view class="mech-row mech-head">
+          <text class="dim mech-name">反应</text>
+          <text v-for="h in ['驱散','削甲','击退','增幅','持续']" :key="h" class="dim mech-cell">{{ h }}</text>
+        </view>
+        <view v-for="m in mechanismTable" :key="m.key" class="mech-row">
+          <text class="mech-name">{{ m.name }}</text>
+          <text v-for="(c, i) in m.cells" :key="i" class="mech-cell" :class="{ on: c.on }">{{ c.on ? '●' : '·' }}</text>
+        </view>
+      </view>
+
+      <!-- G123 反应基础强度排行 -->
+      <view class="card">
+        <view class="card-title">反应强度<text class="dim">基础强度，非实战伤害</text></view>
+        <view v-for="r in strengthRank" :key="r.key" class="sr-row">
+          <text class="sr-name">{{ r.name }}</text>
+          <view class="sr-track"><view class="sr-fill" :style="{ width: r.pct + '%' }" /></view>
+          <text class="mono sr-val">{{ r.label }}</text>
+        </view>
+      </view>
+
       <!-- 反应图鉴（服务端下发的权威表） -->
       <view class="card stagger-in">
         <text class="card-title">反应图鉴</text>
@@ -60,14 +113,14 @@
           <text class="rxn-descr">{{ r.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
             <text class="stat">系数 {{ r.base_coef }}</text>
-            <text class="stat">攻击力权重 {{ r.attack_weight_pct }}%</text>
+            <text class="stat">攻击力权重 {{ r.attack_weight_pct / 10 }}%</text>
             <text v-if="r.status_duration_ms > 0" class="stat">
               持续 {{ (r.status_duration_ms / 1000).toFixed(1) }}s
             </text>
             <text v-if="r.aoe_radius > 0" class="stat">溅射半径 {{ r.aoe_radius }}</text>
             <text v-if="r.spread_stacks > 0" class="stat">层数传播 {{ r.spread_stacks }}</text>
             <text v-if="r.dispel_shield" class="stat">驱散护盾</text>
-            <text v-if="r.amplify_pct > 0" class="stat">增幅 {{ r.amplify_pct }}%</text>
+            <text v-if="r.amplify_pct > 0" class="stat">增幅 {{ r.amplify_pct / 10 }}%</text>
             <text v-if="r.armor_shred_permille > 0" class="stat">
               削甲 {{ r.armor_shred_permille }}‰
             </text>
@@ -89,7 +142,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, lookupReaction, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 
@@ -129,6 +182,65 @@ const filteredReactions = computed(() => {
  * 「我这个构筑能打出哪些反应链」，只能打完一局才知道。
  */
 const reachable = computed(() => reachableReactions(new Set(store.equippedElements)))
+
+/* -------------------------------------------------------------------------- */
+/* G74 元素反应覆盖矩阵（第七批）                                               */
+/* 5×5 穷举元素对 → 反应；可达的（当前构筑能触发）高亮，不可达的灰显。            */
+/* 数据来自引擎同款 lookupReaction + 服务端反应表，纯客户端派生，零契约改动。     */
+/* -------------------------------------------------------------------------- */
+interface MatrixCell {
+  a: Element
+  b: Element
+  key: ReactionKey | null
+  name: string
+  reachable: boolean
+  self: boolean
+}
+/** G123 反应基础强度排行：按 base_coef × 增幅 排（口径是基础强度，非实战伤害）。 */
+const strengthRank = computed(() => {
+  const arr = allReactions.value.map((r) => ({
+    key: r.key,
+    name: r.name,
+    score: Number(r.base_coef ?? 0) * (1 + Number(r.amplify_pct ?? 0) / 1000),
+  })).sort((a, b) => b.score - a.score)
+  const max = Math.max(1, ...arr.map((a) => a.score))
+  return arr.map((a) => ({ ...a, pct: Math.round(a.score / max * 100), label: Math.round(a.score * 100) / 100 }))
+})
+
+/** G105 反应机制对照表：7 种反应 × 5 种效果，有则点亮 —— 搭配前的速查表。 */
+const mechanismTable = computed(() =>
+  allReactions.value.map((r) => ({
+    key: r.key,
+    name: r.name,
+    cells: [
+      { on: !!r.dispel_shield, label: '驱散' },
+      { on: Number(r.armor_shred_permille ?? 0) > 0, label: '削甲' },
+      { on: Number(r.knockback ?? 0) > 0, label: '击退' },
+      { on: Number(r.amplify_pct ?? 0) > 0, label: '增幅' },
+      { on: Number(r.status_duration_ms ?? 0) > 0, label: '持续' },
+    ],
+  })),
+)
+
+const reactionMatrix = computed<MatrixCell[][]>(() =>
+  ELEMENT_ORDER.map((a) =>
+    ELEMENT_ORDER.map((b) => {
+      const key = a === b ? null : lookupReaction(a, b)
+      const def = key ? allReactions.value.find((r) => r.key === key) : null
+      return {
+        a, b, key,
+        name: def?.name ?? (a === b ? '—' : '无反应'),
+        reachable: !!key && reachable.value.has(key),
+        self: a === b,
+      }
+    }),
+  ),
+)
+function cellColor(cell: MatrixCell): string {
+  if (cell.self) return 'var(--panel-3)'
+  if (!cell.key) return 'var(--panel-2)'
+  return cell.reachable ? ELEMENT_COLOR[cell.a] : 'var(--panel-2)'
+}
 
 const myReactions = computed<ReactionKey[]>(() => {
   const out: ReactionKey[] = []
@@ -172,6 +284,51 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* G123 反应强度排行 */
+.sr-row { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin: 8rpx 0; }
+.sr-name { width: 160rpx; flex-shrink: 0; font-size: 22rpx; }
+.sr-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.sr-fill { height: 100%; background: var(--corrosion); border-radius: 999rpx; }
+.sr-val { width: 80rpx; text-align: right; font-size: 22rpx; color: var(--corrosion); }
+
+/* G105 反应机制对照表 */
+.mech-row { display: flex; flex-direction: row; align-items: center; padding: 6rpx 0; }
+.mech-name { flex: 1.4; font-size: 22rpx; }
+.mech-cell { flex: 1; text-align: center; font-size: 24rpx; }
+.mech-cell.on { color: var(--ok); }
+.mech-head { border-bottom: 1rpx solid var(--border); }
+
+/* G74 元素反应覆盖矩阵 */
+.matrix { display: flex; flex-direction: column; gap: 4rpx; }
+.matrix-row { display: flex; flex-direction: row; gap: 4rpx; }
+.matrix-corner { width: 96rpx; flex-shrink: 0; }
+.matrix-head {
+  width: 96rpx;
+  flex: 1;
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 600;
+  padding: 8rpx 0;
+}
+.matrix-cell {
+  flex: 1;
+  min-height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18rpx;
+  text-align: center;
+  border-radius: 8rpx;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.matrix-cell.hit {
+  color: #fff;
+  opacity: 1;
+  font-weight: 600;
+}
+.matrix-cell.self { opacity: 0.35; }
+
 /* 图鉴样式已下沉到 styles/common.css（跨 6 个图鉴页复用） */
 /* R66 可达反应脉冲 */
 .reachable-pulse { animation: reachable-pulse 2s ease-in-out infinite; }

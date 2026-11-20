@@ -37,7 +37,7 @@
             <td class="val-cell mono">{{ contentPreview(item.content) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -160,6 +160,7 @@ const items = liveQueryItems<Item>(() => data.value),
   form = ref<PageForm>({}),
   editingId = ref<string | null>(null)
 const pageMeta = ref('')
+let detailSeq = 0
 const qc = useQueryClient()
 
 const { data, isError, error } = useQuery({
@@ -224,12 +225,14 @@ function editItem(item: Item) {
 }
 // 消费 page/{id} 详情 + pageversion 版本族 3 条真实 distinct 路由（x_portal_page / x_portal_page_version）
 async function loadPageMeta(id: string) {
+  const seq = ++detailSeq
   pageMeta.value = ''
   const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   const [detail, versions] = await Promise.all([
     settle(api.get(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)),
     settle(api.get(`/api/portal/assemble/designer/pageversion/list/page/${encodeURIComponent(id)}`)),
   ])
+  if (seq !== detailSeq) return
   const vrows = (Array.isArray((versions as any)?.data) ? (versions as any).data : []) as Array<Record<string, unknown>>
   let latest = ''
   const vid = vrows[0] ? String(vrows[0].id ?? '') : ''
@@ -237,6 +240,7 @@ async function loadPageMeta(id: string) {
     const vd: any = await api
       .get(`/api/portal/assemble/designer/pageversion/${encodeURIComponent(vid)}`)
       .catch(() => null)
+    if (seq !== detailSeq) return
     latest = vd?.data?.version ? ` · 最新版本 v${vd.data.version}` : ''
   }
   const cat = (detail as any)?.data?.category ?? '—'
@@ -250,30 +254,29 @@ function closeModal() {
 const saveM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
-    saving.value = true
-    try {
-      // U2 类型化 handler：create 收 {name, category, content:JSON}；save 收 {content:JSON}。
-      // 内容为空时用 {} 兜底，避免 save 的 UPDATE content=$1 将列置 NULL 造成降级。
-      const raw = (form.value.content ?? '').trim()
-      const content = raw ? JSON.parse(raw) : {}
-      if (editingId.value) return api.post(`/api/portal/assemble/designer/page/save/${editingId.value}`, { content })
-      return api.post(createEp, {
-        name: form.value.name ?? '',
-        category: form.value.category ?? '',
-        content,
-      })
-    } finally {
-      saving.value = false
-    }
+    // U2 类型化 handler：create 收 {name, category, content:JSON}；save 收 {content:JSON}。
+    // 内容为空时用 {} 兜底，避免 save 的 UPDATE content=$1 将列置 NULL 造成降级。
+    const raw = (form.value.content ?? '').trim()
+    const content = raw ? JSON.parse(raw) : {}
+    if (editingId.value) return api.post(`/api/portal/assemble/designer/page/save/${editingId.value}`, { content })
+    return api.post(createEp, {
+      name: form.value.name ?? '',
+      category: form.value.category ?? '',
+      content,
+    })
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onSettled: () => (saving.value = false),
 })
 function saveItem() {
+  if (saving.value) return
+  saving.value = true
   saveM.mutate()
 }
+const deletingId = ref('')
 const delM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/portal/assemble/designer/page/delete/${id}`),
@@ -282,7 +285,10 @@ const delM = useMutation({
   },
 })
 async function deleteItem(item: Item) {
-  if (await confirmMsg('确定删除该页面？')) delM.mutate(item.id)
+  if (deletingId.value) return
+  if (!(await confirmMsg('确定删除该页面？'))) return
+  deletingId.value = item.id
+  delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 function loadData() {
   reload()
@@ -306,7 +312,7 @@ function loadData() {
 .val-cell{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mono{font-family:'Fira Code',monospace;font-size:12px;color:var(--color-secondary)}
 .btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
-.btn-del{border-color:var(--color-danger);color:var(--color-danger)}
+.btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}

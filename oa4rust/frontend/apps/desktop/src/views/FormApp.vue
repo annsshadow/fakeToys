@@ -122,7 +122,7 @@
         <div class="fg"><label>JSON Schema</label><textarea v-model="mform.schema" class="fta code-area" rows="8" placeholder='{"fields":[...]}'></textarea></div>
         <div class="mf">
           <button class="bc" @click="showCreate=false">取消</button>
-          <button class="bs" :disabled="!mform.name" @click="saveForm">{{ editingForm ? '更新' : '创建' }}</button>
+          <button class="bs" :disabled="!mform.name || saving" @click="saveForm">{{ editingForm ? '更新' : '创建' }}</button>
         </div>
       </div>
     </div>
@@ -168,7 +168,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -202,6 +202,7 @@ const detailItem = ref<FormItem | null>(null)
 const showCreate = ref(false),
   editingForm = ref<FormItem | null>(null)
 const mform = ref({ name: '', flag: '', category: '', schema: '{}' })
+const saving = ref(false)
 const showSearch = ref(false),
   searchQuery = ref('')
 const showImportExport = ref(false),
@@ -321,10 +322,14 @@ function previewFormV2(f: FormItem) {
 }
 
 async function saveForm() {
+  // 在途守卫：弹窗按钮的 disabled 依赖 Vue nextTick 异步生效，快速双击或回调重入可在
+  // saving=true 之前穿透到第二次 saveForm；非幂等的 POST/PUT 会创建两份表单。函数入口必须幂等拦截。
+  if (saving.value) return
   if (!mform.value.name.trim()) {
     toast.info('请输入表单名称')
     return
   }
+  saving.value = true
   try {
     // 后端 form_u2 契约：name + definition（definition 兼容 JSON 字符串）
     const payload = { name: mform.value.name, definition: mform.value.schema }
@@ -337,6 +342,8 @@ async function saveForm() {
     loadList()
   } catch (e: any) {
     toast.error(`保存失败: : ${e?.message ?? ''}`)
+  } finally {
+    saving.value = false
   }
 }
 
@@ -373,11 +380,11 @@ function doExport() {
   if (exportFmt.value === 'json') {
     downloadBlob(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-      `forms_${new Date().toISOString().slice(0, 10)}.json`,
+      `forms_${businessTodayYMD()}.json`,
     )
   } else {
     const csv = `name,flag,version\n${data.map((d) => `"${d.name}","${d.flag}","${d.version}"`).join('\n')}`
-    downloadBlob(new Blob([csv], { type: 'text/csv' }), `forms_${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `forms_${businessTodayYMD()}.csv`)
   }
   showImportExport.value = false
 }

@@ -59,10 +59,17 @@
                  继续写「微信账号」会把口令账号说成微信账号 —— 事实不对，
                  而「我明明是用账号密码登的」这种困惑很难自查。 -->
             <text class="dim">{{ store.isGuest ? '游客账号（未绑定微信）' : '账号登录' }}</text>
-            <!-- 累计星级（2026-11-01 新一轮第 64 轮）：全局进度一眼可见 -->
-            <text class="dim" style="display: block; margin-top: 4rpx">
-              累计星级 {{ totalStars }} / {{ totalStarCap }}
-            </text>
+            <!-- 累计星级：文本 + G79 进度环（比例一眼可见） -->
+            <view class="star-progress-line">
+              <svg class="star-ring" viewBox="0 0 100 100" aria-label="累计星级进度">
+                <circle class="sr-bg" cx="50" cy="50" r="40" />
+                <circle
+                  class="sr-fill" cx="50" cy="50" r="40" transform="rotate(-90 50 50)"
+                  :stroke-dasharray="`${starRing.dash} ${starRing.rest}`"
+                />
+              </svg>
+              <text class="dim">累计星级 {{ totalStars }} / {{ totalStarCap }}（{{ starRing.pct }}%）</text>
+            </view>
           </view>
         </view>
       </view>
@@ -205,7 +212,11 @@
           <view class="flex-1">
             <text class="cand-name">{{ c.owner_name || '玩家' }} 的防线</text>
             <text class="dim" style="display: block">
-              战力 {{ c.power }} · 元素 {{ c.element_coverage }}/5 · {{ c.wins }}胜{{ c.losses }}负
+              战力 {{ c.power }}
+              <text class="power-diff" :class="powerDiff(c) <= 0 ? 'easier' : 'harder'">
+                {{ powerDiff(c) <= 0 ? '弱于我 ' + Math.abs(powerDiff(c)) : '强于我 +' + powerDiff(c) }}
+              </text>
+              · 元素 {{ c.element_coverage }}/5 · {{ c.wins }}胜{{ c.losses }}负
             </text>
             <text class="dim" style="display: block">
               快照 {{ c.snapshot?.skills?.length ?? 0 }} 技能 ·
@@ -278,10 +289,32 @@
         </text>
       </view>
 
+      <!-- G110 全账号统一时间轴 -->
+      <view v-if="unifiedTimeline.length && meTab === 'records'" class="card timeline-card">
+        <view class="card-title">最近动态</view>
+        <view v-for="(e, i) in unifiedTimeline" :key="i" class="tl-row">
+          <text class="tl-kind">{{ e.kind }}</text>
+          <text class="flex-1 tl-text">{{ e.text }}</text>
+          <text class="dim">{{ fmtChallengeTime(e.at) }}</text>
+        </view>
+      </view>
+
       <!-- 挑战历史（2026-10-30 实质优化第 18 轮）。
            此前玩家只能看到最近一次挑战结果，历史记录没有入口。 -->
       <view v-if="challengeHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">挑战历史<text class="cand-count">{{ challengeHistory.length }} 条</text></text>
+        <!-- G89 挑战胜负统计 + 近期序列 -->
+        <view class="challenge-stats">
+          <text class="dim">{{ challengeStats.win }} 胜 {{ challengeStats.lose }} 负 · 胜率 {{ challengeStats.total ? Math.round(challengeStats.win / challengeStats.total * 100) : 0 }}%</text>
+          <view class="challenge-seq">
+            <view
+              v-for="(w, i) in challengeStats.recent"
+              :key="i"
+              class="cs-dot"
+              :class="w ? 'win' : 'lose'"
+            />
+          </view>
+        </view>
         <view
           v-for="h in challengeHistory"
           :key="h.id"
@@ -326,6 +359,16 @@
         </view>
       </view>
 
+      <!-- G114 被挑战损失排行 -->
+      <view v-if="topLooters.length" v-show="meTab === 'records'" class="card">
+        <text class="card-title">损失排行<text class="dim">（防线被破 Top5）</text></text>
+        <view v-for="(l, i) in topLooters" :key="i" class="tl-row">
+          <text class="dim">{{ i + 1 }}. {{ l.name }}</text>
+          <view class="flex-1 loot-track"><view class="loot-fill" :style="{ width: Math.min(100, l.total / 5) + '%' }" /></view>
+          <text class="mono">{{ l.total }}</text>
+        </view>
+      </view>
+
       <!-- 最近战报（2026-10-30 实质优化第 19 轮）。
            玩家打完关卡后没有任何历史战报入口。 -->
       <view v-if="battleHistory.length" v-show="meTab === 'records'" class="card">
@@ -350,7 +393,7 @@
               <view class="kv"><text class="muted">地形</text><text class="mono">{{ (battleDetail.terrain_used || []).join('、') || '无' }}</text></view>
               <view class="kv"><text class="muted">命中</text><text class="mono">{{ battleDetail.hits }}/{{ battleDetail.shots }}</text></view>
               <view class="kv"><text class="muted">峰值热量</text><text class="mono">{{ battleDetail.heat_max }}</text></view>
-              <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ battleDetail.hp_left }}%</text></view>
+              <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ battleDetail.hp_left }}</text></view>
               <view class="kv"><text class="muted">到达波次</text><text class="mono">{{ battleDetail.wave_reached }}</text></view>
               <view class="kv"><text class="muted">时长</text><text class="mono">{{ Math.round(battleDetail.duration_ms / 1000) }}s</text></view>
             </view>
@@ -363,6 +406,11 @@
            玩家每次商城购买都落库，但没有任何入口查看历史。 -->
       <view v-if="purchaseHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">购买记录</text>
+        <!-- G84 消费统计摘要 -->
+        <view class="spend-summary">
+          <text v-for="s in spendSummary" :key="s.key" class="spend-chip">{{ s.label }}累计 {{ s.total }}</text>
+          <text class="dim">共 {{ purchaseHistory.length }} 笔</text>
+        </view>
         <view v-for="p in purchaseHistory" :key="p.id" class="ch-row">
           <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
             <text class="mono">{{ p.item_name }}</text>
@@ -399,6 +447,15 @@
             </text>
           </view>
           <text class="dim">{{ fmtChallengeTime(o.created_at) }}</text>
+        </view>
+      </view>
+
+      <!-- G142 订单与兑换总账 -->
+      <view v-if="orderSummary.orders || orderSummary.redemptions" v-show="meTab === 'records'" class="card">
+        <text class="card-title">消费总账</text>
+        <view class="spend-summary">
+          <text class="spend-chip">订单 {{ orderSummary.orders }} 笔 · 共 {{ orderSummary.amount }} 元</text>
+          <text class="spend-chip">兑换 {{ orderSummary.redemptions }} 次</text>
         </view>
       </view>
 
@@ -644,6 +701,40 @@ const meTabDefs: Array<{ key: MeTab; label: string }> = [
 ]
 
 /** 第六批 R40：六类历史全空 → 给「记录」页一个可执行空态，而不是纯空白。 */
+/** G142 订单与兑换汇总：累计订单金额（分→元）+ 兑换次数，补记录页的总账视角。 */
+const orderSummary = computed(() => ({
+  orders: orderHistory.value.length,
+  amount: (orderHistory.value.reduce((s, o) => s + (o.amount ?? 0), 0) / 100).toFixed(2),
+  redemptions: redemptionHistory.value.length,
+}))
+
+/** G114 被挑战损失排行：按每次被破防的 loot 总和取 Top5，看防线最常被谁攻破。 */
+const topLooters = computed(() =>
+  defenseChallengeHistory.value
+    // won=true = 挑战者获胜 = 防线被破，loot 才有偷取明细；只统计被破记录
+    .filter((d) => d.won)
+    .map((d) => ({
+      name: d.challenger_nickname || '匿名',
+      total: Object.values(d.loot ?? {}).reduce((s, v) => s + v, 0),
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5),
+)
+
+/** G110 全账号统一时间轴：合并六类记录按时间倒序，跨类看「最近干了什么」。 */
+const unifiedTimeline = computed(() => {
+  type Ev = { at: string; kind: string; text: string }
+  const evs: Ev[] = []
+  for (const b of battleHistory.value) evs.push({ at: b.created_at, kind: '战斗', text: `第 ${b.level_id} 关 · ${b.result === 'win' ? '胜' : '负'} ${b.score}分` })
+  for (const c of challengeHistory.value) evs.push({ at: c.created_at, kind: '挑战', text: c.won ? '攻破成功' : '挑战失败' })
+  // won=true = 挑战者获胜 = 防线被破（与模板 :350 h.won?'被攻破':'守住' 同口径）
+  for (const d of defenseChallengeHistory.value) evs.push({ at: d.created_at, kind: '被挑战', text: d.won ? '防线被破' : '防线守住' })
+  for (const p of purchaseHistory.value) evs.push({ at: p.created_at, kind: '购买', text: p.item_name })
+  for (const r of redemptionHistory.value) evs.push({ at: r.created_at, kind: '兑换', text: r.code })
+  for (const o of orderHistory.value) evs.push({ at: o.created_at, kind: '订单', text: o.sku })
+  return evs.filter((e) => e.at).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 20)
+})
+
 const noRecordsYet = computed(() =>
   !challengeHistory.value.length &&
   !defenseChallengeHistory.value.length &&
@@ -658,6 +749,9 @@ const candidates = ref<DefenseView[]>([])
 const attackLeft = ref(3)
 const shielded = ref(false)
 const simulating = ref(0)
+// 第 125 轮（R275）：saveDefense / toggleShield 写同一条防线记录且都无在途守卫；
+// 双点或交叉点击会重复 POST /defenses/save，且 shield_hours 参数后到覆盖先到。
+const savingDefense = ref(false)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
 
 /**
@@ -677,6 +771,18 @@ const shieldRemainText = computed(() => {
 
 // 挑战历史（2026-10-30 实质优化第 18 轮）。
 const challengeHistory = ref<api.ChallengeHistoryItem[]>([])
+
+/** G89 挑战战绩统计：胜负次数 + 近 N 次胜负序列（数据来自 challengeHistory[].won）。 */
+const challengeStats = computed(() => {
+  const list = [...challengeHistory.value].reverse() // 时间正序
+  const win = list.filter((h) => h.won).length
+  return {
+    win,
+    lose: list.length - win,
+    total: list.length,
+    recent: list.slice(-12).map((h) => h.won),
+  }
+})
 
 // 被挑战记录（2026-10-31 新一轮第 3 轮）。
 const defenseChallengeHistory = ref<api.DefenseChallengeItem[]>([])
@@ -729,6 +835,13 @@ const totalStars = ref(0)
 /** 星级上限 = 关卡总数 × 3。 */
 const totalStarCap = computed(() => (store.config?.levels?.length ?? 0) * 3)
 
+/** G79 累计星级进度环：已获星/总星占比切成 SVG 弧（文本仍保留，环是可视化升级）。 */
+const starRing = computed(() => {
+  const pct = totalStarCap.value > 0 ? Math.min(1, totalStars.value / totalStarCap.value) : 0
+  const C = 2 * Math.PI * 40
+  return { dash: pct * C, rest: C - pct * C, pct: Math.round(pct * 100) }
+})
+
 async function loadStars() {
   try {
     const r = await api.fetchMyStars()
@@ -772,20 +885,39 @@ function mapText(m: Record<string, number> | undefined): string {
     .join('、')
 }
 
+// 第 88 轮：切战报详情的请求序号守卫。与 stage/rank/signin 同构 ——
+// 快速点不同战报时，先发的慢响应若晚到，会覆盖后发战报的详情（掉落/命中串味）。
+let battleDetailReqSeq = 0
+
 async function toggleBattleDetail(b: api.BattleHistoryItem) {
   if (battleDetail.value?.id === b.id) {
     battleDetail.value = null
     return
   }
+  const seq = ++battleDetailReqSeq
   try {
-    battleDetail.value = await api.myBattleDetail(b.id)
+    const fresh = await api.myBattleDetail(b.id)
+    if (seq !== battleDetailReqSeq) return // 已有更新的详情请求，丢弃陈旧响应
+    battleDetail.value = fresh
   } catch {
+    if (seq !== battleDetailReqSeq) return
     battleDetail.value = null
   }
 }
 
 // 购买记录（2026-10-30 实质优化第 20 轮）。
 const purchaseHistory = ref<api.PurchaseItem[]>([])
+
+/** G84 消费统计：按货币聚合累计花费与次数（数据来自 purchaseHistory[].price）。 */
+const spendSummary = computed(() => {
+  const m = new Map<string, number>()
+  for (const p of purchaseHistory.value) {
+    for (const [k, v] of Object.entries(p.price ?? {})) {
+      m.set(k, (m.get(k) ?? 0) + v)
+    }
+  }
+  return [...m.entries()].map(([k, total]) => ({ key: k, label: currencyName(k), total }))
+})
 
 function priceText(price: Record<string, number>): string {
   const entries = Object.entries(price)
@@ -985,7 +1117,11 @@ async function submitNickname() {
     nicknameErr.value = true
     return
   }
-  if (name.length > 64) {
+  // 与服务端同口径：UpdateNickname 用 utf8.RuneCountInString（码点），
+  // GuestLogin 用 len([]rune(nickname))。JS 的 .length 数的是 UTF-16 code unit，
+  // 一个 emoji 占 2 个单元却只算 1 个字 —— 用它校验会误拒 64 个 emoji（服务端其实放行）。
+  // 用展开运算符按码点计数，两端才一致。
+  if ([...name].length > 64) {
     nicknameMsg.value = '昵称最长 64 个字符'
     nicknameErr.value = true
     return
@@ -1013,7 +1149,10 @@ async function submitNickname() {
  * 谎称「已完全登出」会让用户以为风险已消除 ——
  * 而安全相关的提示一旦撒谎就再也不会被相信。
  */
+const loggingOut = ref(false)
 async function confirmLogout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
   const confirmed = await new Promise<boolean>((resolve) => {
     uni.showModal({
       title: '退出登录',
@@ -1024,7 +1163,10 @@ async function confirmLogout() {
       fail: () => resolve(false),
     })
   })
-  if (!confirmed) return
+  if (!confirmed) {
+    loggingOut.value = false
+    return
+  }
 
   const { serverNotified } = await api.logout()
   if (serverNotified) {
@@ -1046,6 +1188,7 @@ async function confirmLogout() {
   } else {
     uni.reLaunch({ url: '/pages/index/index' })
   }
+  loggingOut.value = false
 }
 
 
@@ -1058,14 +1201,26 @@ const stolenText = computed(() => {
 })
 
 /** 快照不完整时不给出挑战入口 —— 盲报会污染对方的战绩数据 */
+/** G124 战力差：对手战力 - 我的战力（负=比我弱，更易攻破）。 */
+function powerDiff(c: DefenseView): number {
+  return Number(c.power ?? 0) - Number(store.power ?? 0)
+}
+
 function snapshotOk(c: DefenseView): boolean {
   // 第 140 轮：护盾过期判断用服务端时钟基准，本地时钟偏几小时不再误判
   return validateSnapshot(c, store.estimateServerNowMs()).ok
 }
 
+// R278：防线加载是同实例多入口（onMounted + onShow + 写后重拉），必须按序号丢弃陈旧响应。
+// 弱网下先发的旧请求失败走 catch 会无条件清空 myDefense/candidates；若它晚于后发的新请求返回，
+// 就会把已经加载好的防线清空（用户明明有防线却看到空列表）。与 battleDetailReqSeq 同构。
+let defensesReqSeq = 0
+
 async function loadDefenses() {
+  const seq = ++defensesReqSeq
   try {
     const res = await api.fetchDefenses()
+    if (seq !== defensesReqSeq) return // 已有更新的加载请求，丢弃陈旧响应
     myDefense.value = res.mine ?? null
     candidates.value = res.candidates ?? []
     attackLeft.value = Math.max(0, (res.attempt_limit ?? 3) - (res.mine?.my_attempts_today ?? 0))
@@ -1074,6 +1229,7 @@ async function loadDefenses() {
     // 第 140 轮：「现在」用服务端时钟估算而不是裸 Date.now()。
     shielded.value = isShieldActive(myDefense.value?.shielded_until, store.estimateServerNowMs())
   } catch {
+    if (seq !== defensesReqSeq) return // 陈旧请求的失败也不得清空新数据
     myDefense.value = null
     candidates.value = []
   }
@@ -1107,7 +1263,8 @@ const defenseBuild = computed(() => ({
  */
 async function ensureBuildLoaded(): Promise<boolean> {
   try {
-    await Promise.all([store.loadEquipment(), store.loadMasteryNodes()])
+    // R291：必须让加载失败上抛，否则 try/catch 抓不到，半残构筑会被原样保存。
+    await Promise.all([store.loadEquipment(true), store.loadMasteryNodes(true)])
   } catch (e) {
     uni.showToast({ title: `构筑加载失败，未保存防线：${(e as Error).message}`, icon: 'none' })
     return false
@@ -1122,8 +1279,11 @@ async function ensureBuildLoaded(): Promise<boolean> {
 }
 
 async function saveDefense() {
-  if (!(await ensureBuildLoaded())) return
+  // R275：与 toggleShield 共享在途守卫，避免同条防线被并发 upsert / 护盾互相覆盖。
+  if (savingDefense.value) return
+  savingDefense.value = true
   try {
+    if (!(await ensureBuildLoaded())) return
     const res = await api.saveDefense({
       name: '我的防线',
       ...defenseBuild.value,
@@ -1138,22 +1298,33 @@ async function saveDefense() {
     await loadDefenses()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    savingDefense.value = false
   }
 }
 
 async function toggleShield() {
-  if (!(await ensureBuildLoaded())) return
+  // R275：与 saveDefense 共享在途守卫，避免保存/开盾交叉提交后到覆盖先到。
+  if (savingDefense.value) return
+  savingDefense.value = true
   try {
+    if (!(await ensureBuildLoaded())) return
     const res = await api.saveDefense({
       name: myDefense.value?.name ?? '我的防线',
       ...defenseBuild.value,
       works: DEFENSE_WORK_CODES,
       shield_hours: shielded.value ? 0 : 24,
     })
+    // R290：护盾开关是服务端权威写，成功后必须递增防线加载序号，
+    // 让此前在途的 loadDefenses 失效。否则弱网下旧响应后到，
+    // 会用开盾前的旧 shielded_until 覆盖刚生效的护盾态（与 R282 persistLoadout 同构）。
+    defensesReqSeq++
     myDefense.value = res.defense
-    shielded.value = !shielded.value
+    shielded.value = isShieldActive(res.defense?.shielded_until, store.estimateServerNowMs())
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    savingDefense.value = false
   }
 }
 
@@ -1163,28 +1334,43 @@ async function toggleShield() {
  * 删除后其他玩家无法再挑战你，相关挑战记录也会一并删除。
  * 必须二次确认（不可恢复）。
  */
-async function onDeleteMyDefense() {
-  const confirmed = await new Promise<boolean>((resolve) => {
-    uni.showModal({
-      title: '删除防线',
-      content: '删除后其他玩家将无法挑战你，该防线的挑战记录也会一并删除。确定继续？',
-      confirmText: '删除',
-      cancelText: '取消',
-      success: (r) => resolve(!!r.confirm),
-      fail: () => resolve(false),
+  // 第 116 轮（R266）：守卫必须在 showModal 之前置位。此前弹窗挂起期间
+  // 没有 in-flight 标记，双击会弹两个确认框，两次都确认就发两次删除请求；
+  // 第二次服务端返回 ErrNotFound「你还没有设置防线」，弹莫名错误。
+  // 同 battle.vue 放弃局 / shop.vue 购买确认的做法：取消与 finally 都复位。
+  const deletingDefense = ref(false)
+  async function onDeleteMyDefense() {
+    if (deletingDefense.value) return
+    deletingDefense.value = true
+    const confirmed = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '删除防线',
+        content: '删除后其他玩家将无法挑战你，该防线的挑战记录也会一并删除。确定继续？',
+        confirmText: '删除',
+        cancelText: '取消',
+        success: (r) => resolve(!!r.confirm),
+        fail: () => resolve(false),
+      })
     })
-  })
-  if (!confirmed) return
-  try {
-    await api.deleteMyDefense()
-    myDefense.value = null
-    shielded.value = false
-    uni.showToast({ title: '防线已删除', icon: 'none' })
-    await loadDefenses()
-  } catch (e) {
-    uni.showToast({ title: (e as Error).message, icon: 'none' })
+    if (!confirmed) {
+      deletingDefense.value = false
+      return
+    }
+    try {
+      await api.deleteMyDefense()
+      myDefense.value = null
+      shielded.value = false
+      uni.showToast({ title: '防线已删除', icon: 'none' })
+      await loadDefenses()
+      // 第 103 轮（R246）：服务端删除防线时 defense_challenges 随外键 CASCADE
+      // 消失；这是页内动作（不触发 onShow），必须就地重拉被挑战记录，否则卡片停在旧快照。
+      await loadDefenseChallengeHistory()
+    } catch (e) {
+      uni.showToast({ title: (e as Error).message, icon: 'none' })
+    } finally {
+      deletingDefense.value = false
+    }
   }
-}
 
 /**
  * 挑战用的标准战场：第 1 关（I-5 规定双方在同一张图上比构筑）。
@@ -1250,6 +1436,11 @@ function myEquipped(): EquippedSkill[] {
 }
 
 async function challenge(target: DefenseView) {
+  // 第 123 轮（R273）：simulating 之前只驱动按钮文案，没有挡住重复上报。
+  // 模拟完成、challengeDefense 仍在途时（simulating 仍置位）再点另一个目标，
+  // 会并发再发一次 challengeDefense —— 服务端每次上报都记 attempts+1 并发窃取，
+  // 双点即双倍消耗每日挑战次数。与 onDeleteMyDefense 等守卫同族：在途直接返回。
+  if (simulating.value) return
   if (!target.can_challenge) {
     uni.showToast({ title: target.challenge_blocked || '暂时无法挑战', icon: 'none' })
     return
@@ -1305,6 +1496,10 @@ async function challenge(target: DefenseView) {
       lastChallenge.value = { ...outcome, stolen: res.stolen ?? {} }
       await store.refreshWallet()
       await loadDefenses()
+      // 第 95 轮（R245）：挑战成功会在服务端写入 defense_challenges，
+      // 这是页内动作（不触发 onShow），必须就地重拉两份历史，否则卡片停在旧快照。
+      await loadChallengeHistory()
+      await loadDefenseChallengeHistory()
     } catch (e) {
       lastChallenge.value = {
         won: false,
@@ -1376,6 +1571,44 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G124 战力差标签 */
+.power-diff { margin-left: 8rpx; font-weight: 600; }
+.power-diff.easier { color: var(--ok); }
+.power-diff.harder { color: var(--bad); }
+
+/* G114 损失排行 */
+.loot-track { height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; margin: 0 12rpx; }
+.loot-fill { height: 100%; background: var(--bad); border-radius: 999rpx; }
+
+/* G110 统一时间轴 */
+.tl-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.tl-kind { width: 100rpx; flex-shrink: 0; font-size: 22rpx; color: var(--accent); }
+.tl-text { font-size: 24rpx; }
+.tl-row .dim { font-size: 20rpx; }
+
+/* G89 挑战胜负统计 */
+.challenge-stats { margin-bottom: 12rpx; }
+.challenge-seq { display: flex; flex-direction: row; gap: 6rpx; margin-top: 8rpx; }
+.cs-dot { width: 24rpx; height: 24rpx; border-radius: 6rpx; }
+.cs-dot.win { background: var(--ok); }
+.cs-dot.lose { background: var(--bad); }
+
+/* G84 消费统计摘要 */
+.spend-summary { display: flex; flex-wrap: wrap; gap: 8rpx; align-items: center; margin-bottom: 12rpx; }
+.spend-chip {
+  background: var(--fire-soft);
+  color: var(--fire);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
+/* G79 累计星级进度环 */
+.star-progress-line { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin-top: 4rpx; }
+.star-ring { width: 40rpx; height: 40rpx; }
+.sr-bg { fill: none; stroke: var(--panel-3); stroke-width: 10; }
+.sr-fill { fill: none; stroke: var(--warn); stroke-width: 10; stroke-linecap: round; }
+
 .me-tabs {
   margin-bottom: 4rpx;
 }

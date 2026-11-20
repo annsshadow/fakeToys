@@ -14,8 +14,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   request,
+  onAuthFailure,
   ApiError,
   getToken,
+  hasUsableToken,
   getGuestToken,
   setGuestToken,
   setTokenInternal,
@@ -115,6 +117,60 @@ describe('本地存储封装（uni storage 容错）', () => {
       throw new Error('remove failed')
     })
     expect(() => clearTokens()).not.toThrow()
+  })
+})
+
+describe('鉴权失败信号（onAuthFailure）', () => {
+  it('刷新也失败的 401 → 通知订阅者一次；刷新成功的 401 → 不通知', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    try {
+      // 刷新失败路径：无 refresh token → 直接 unauthorized + 信号
+      setTokenInternal('expired', '')
+      queueResponses([{ statusCode: 401, data: {} }])
+      const err = (await request('/me').catch((e) => e)) as ApiError
+      expect(err.code).toBe('unauthorized')
+      expect(onFailure).toHaveBeenCalledTimes(1)
+
+      // 刷新成功路径：换到新令牌重试 200 —— 会话恢复，不该报失败
+      setTokenInternal('expired', 'refresh-1')
+      queueResponses([
+        { statusCode: 401, data: {} },
+        { statusCode: 200, data: { access_token: 'new-acc', refresh_token: 'r' } },
+        { statusCode: 200, data: { ok: true } },
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(onFailure).toHaveBeenCalledTimes(1) // 没有新增
+    } finally {
+      unsub()
+    }
+  })
+
+  it('取消订阅后不再收到通知', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    setTokenInternal('expired', '')
+    queueResponses([{ statusCode: 401, data: {} }])
+    await request('/me').catch(() => {})
+    expect(onFailure).toHaveBeenCalledTimes(1)
+
+    unsub()
+    setTokenInternal('expired', '')
+    queueResponses([{ statusCode: 401, data: {} }])
+    await request('/me').catch(() => {})
+    expect(onFailure).toHaveBeenCalledTimes(1) // 仍是 1
+  })
+
+  it('auth:false 的 401 不触发信号（登录接口的失败是调用方的事）', async () => {
+    const onFailure = vi.fn()
+    const unsub = onAuthFailure(onFailure)
+    try {
+      queueResponses([{ statusCode: 401, data: { error: { code: 'bad_token' } } }])
+      await request('/public', { auth: false }).catch(() => {})
+      expect(onFailure).not.toHaveBeenCalled()
+    } finally {
+      unsub()
+    }
   })
 })
 
@@ -316,6 +372,9 @@ describe('request：401 刷新与重试', () => {
     const err = (await request('/me').catch((e) => e)) as ApiError
     expect(err.status).toBe(0)
     expect(err.code).toBe('network_error')
+    // 与首请求(487)、配置请求(784)同口径：弱网文案必须归一化，
+    // 不能把 'request:fail abort' 这类技术串直接透给玩家。
+    expect(err.message).toBe('无法连接服务器：request:fail abort')
   })
 
   it('重试时新 access token 缺失 → 重试头不带 Authorization（if (t) 假分支）', async () => {
@@ -398,6 +457,70 @@ describe('request：401 刷新与重试', () => {
     // 两次重试都用新令牌
     expect(callOf(3).header.Authorization).toBe('Bearer new-acc')
     expect(callOf(4).header.Authorization).toBe('Bearer new-acc')
+  })
+})
+
+/**
+ * 刷新回写 expires_at：TokenPair 契约一致性。
+ *
+ * 服务端 /auth/refresh 与登录共用 service.TokenPair（json:"expires_at"），
+ * routes.go refresh 直接 c.JSON(tp)，所以刷新响应里的 expires_at 是
+ * **本次新签发 access token 的过期时刻**。登录路径把它交给 setTokenInternal
+ * 落盘；刷新却只写 token/refresh —— 旧的（已快到期的）expiry 留着，
+ * 于是下一次请求 tokenExpiringSoon() 又判「快过期」→ 再刷一次，
+ * 形成每次请求都刷新的风暴（还可能撞上 /auth/refresh 的 500ms 限流）。
+ */
+describe('刷新回写 expires_at（TokenPair 契约一致性）', () => {
+  function inMs(n: number): string {
+    return new Date(Date.now() + n).toISOString()
+  }
+
+  it('主动刷新后下次请求直连业务接口，不再重复刷新', async () => {
+    const freshExpiry = inMs(3_600_000)
+    setTokenInternal('old', 'refresh-1', inMs(5_000))
+    queueResponses([
+      {
+        statusCode: 200,
+        data: {
+          access_token: 'fresh-acc',
+          refresh_token: 'fresh-ref',
+          expires_at: freshExpiry,
+        },
+      },
+      { statusCode: 200, data: { ok: true } },
+    ])
+    await expect(request('/me')).resolves.toEqual({ ok: true })
+    expect(callOf(0).url).toBe(`${BASE_URL}/auth/refresh`)
+
+    // 新令牌还有 1 小时有效：下一次请求直连业务接口，不该再发刷新。
+    // 队列里只放一个响应 —— 若代码又去刷新，多出来的 uni.request 会拿到
+    // undefined 响应而断言失败（queueResponses 对越界调用直接报错）。
+    expect(um.storage.get('lyp_token_exp')).toBe(freshExpiry)
+    queueResponses([{ statusCode: 200, data: { ok: true } }])
+    await expect(request('/wallet')).resolves.toEqual({ ok: true })
+    expect(callOf(2).url).toBe(`${BASE_URL}/wallet`)
+    expect(um.mock.request).toHaveBeenCalledTimes(3)
+  })
+
+  it('401 刷新后落盘服务端下发的 expires_at（hasUsableToken 不再误判）', async () => {
+    const freshExpiry = inMs(3_600_000)
+    setTokenInternal('expired', 'refresh-1') // 无过期信息 → 走 401 兜底刷新
+    queueResponses([
+      { statusCode: 401, data: {} },
+      {
+        statusCode: 200,
+        data: {
+          access_token: 'new-acc',
+          refresh_token: 'new-ref',
+          expires_at: freshExpiry,
+        },
+      },
+      { statusCode: 200, data: { ok: true } },
+    ])
+    await expect(request('/me')).resolves.toEqual({ ok: true })
+
+    expect(um.storage.get('lyp_token_exp')).toBe(freshExpiry)
+    expect(hasUsableToken()).toBe(true)
   })
 })
 

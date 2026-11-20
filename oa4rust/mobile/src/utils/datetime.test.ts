@@ -46,4 +46,14 @@ describe('服务端时间解析（R152，iOS 兼容）', () => {
     expect(parseServerDate(new Date(ms))?.getTime()).toBe(ms)
     expect(parseServerDate(new Date(Number.NaN))).toBeNull()
   })
+
+  it('越界时/分/秒返回 null（对齐桌面 R175，不静默进位）', () => {
+    // JS Date 构造会把越界字段静默进位：10:61->11:01、10:30:60->10:31、25:00->次日01:00。
+    // 桌面 date.ts 已显式拒绝，移动端此前只校验年月日，脏时间被当合法时刻展示/排序。
+    expect(parseServerDate('2026-11-07 25:00:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 24:00:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 10:61:00')).toBeNull()
+    expect(parseServerDate('2026-11-07 10:30:60')).toBeNull()
+    expect(parseServerDate('2026-11-07T99:99:99')).toBeNull()
+  })
 })

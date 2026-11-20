@@ -272,13 +272,26 @@ export function initialValues(fields: MobileFormField[]): Record<string, string>
   )
 }
 
-export function validateSimpleForm(fields: MobileFormField[], values: Record<string, string>): Record<string, string> {
+export function validateSimpleForm(
+  fields: MobileFormField[],
+  values: Record<string, string>,
+  attachments?: Record<string, readonly unknown[]>,
+): Record<string, string> {
   const errors: Record<string, string> = {}
   for (const field of fields) {
-    if (!field.required) continue
     const v = values[field.key]
-    const empty = v === undefined || v === '' || (Array.isArray(v) && v.length === 0)
-    if (empty) errors[field.key] = `${field.label || field.key} 为必填项`
+    let empty = v === undefined || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0)
+    if (field.required) {
+      // start.vue 把上传结果放进 attachments[field.key]，不写回 values；必填附件已上传时不算未填，
+      // 否则用户传完附件仍被"为必填项"拦住，永远无法发起带必填附件的流程。
+      if (empty && field.type === 'attachment' && attachments?.[field.key]?.length) empty = false
+      if (empty) errors[field.key] = `${field.label || field.key} 为必填项`
+    }
+    // number/currency 字段（uiTypeOf 归一为 'number'）非空但非有效数字时拦截，
+    // 否则 'abc'/'1.2.3' 会静默进入 saveWorkData payload。口径对齐桌面端 formFieldValidation.isNumeric。
+    if (field.type === 'number' && !empty && !Number.isFinite(Number(v))) {
+      errors[field.key] = `${field.label || field.key} 不是有效数字`
+    }
   }
   return errors
 }

@@ -42,19 +42,26 @@ overrides:
   # source-map-js 1.2.1：event-loop DoS（indexed source-map section offsets）。
   # 目标版本 1.2.2 已在依赖树中（desktop vue 3.5.42 链），补丁级兼容。
   'source-map-js@1.2.1': '1.2.2'
-  # mobile uni-app 工具链 pin 的 vue 3.4.21 家族：
-  # @vue/server-renderer <3.5.42 存在 XSS（SSR 属性名黑名单缺 CR 转义）。
-  # 3.5.42 家族已在依赖树中（desktop），Vue 3.4→3.5 同主版本向下兼容。
-  'vue@3.4.21': '3.5.42'
-  '@vue/compiler-core@3.4.21': '3.5.42'
-  '@vue/compiler-dom@3.4.21': '3.5.42'
-  '@vue/compiler-sfc@3.4.21': '3.5.42'
-  '@vue/compiler-ssr@3.4.21': '3.5.42'
-  '@vue/reactivity@3.4.21': '3.5.42'
-  '@vue/runtime-core@3.4.21': '3.5.42'
-  '@vue/runtime-dom@3.4.21': '3.5.42'
-  '@vue/server-renderer@3.4.21': '3.5.42'
-  '@vue/shared@3.4.21': '3.5.42'
+  # 注意：不要把 vue 3.4.21 家族覆盖到 3.5.42。
+  # @dcloudio/uni-h5-vue@3.0.0-alpha 及其 H5 运行时是按 Vue 3.4 编译的；
+  # Vue 3.5 将 slots 的 `_` 稳定标记改为只读属性，uni-app 运行时在 updateSlots
+  # 阶段 Object.assign 覆盖该属性会抛
+  #   TypeError: Cannot assign to read only property '_' of object
+  # 导致 tabBar 首屏（pages/index）渲染中断——H5 打开即白屏、登录后无法进入工作台。
+  # 2026-11-20 实测：恢复 vue 3.4.21 家族后重新构建，TypeError 消失、端到端登录通过。
+  # XSS 权衡：@vue/server-renderer@3.4.21 的属性名 CR 转义问题仅影响 SSR 服务端
+  # 属性序列化；本 workspace 的 mobile 为 nginx 静态托管的纯客户端渲染（不执行
+  # renderToString），desktop 仍使用 vue 3.5.42，故该覆盖对实际运行面无暴露。
+  # 'vue@3.4.21': '3.5.42'
+  # '@vue/compiler-core@3.4.21': '3.5.42'
+  # '@vue/compiler-dom@3.4.21': '3.5.42'
+  # '@vue/compiler-sfc@3.4.21': '3.5.42'
+  # '@vue/compiler-ssr@3.4.21': '3.5.42'
+  # '@vue/reactivity@3.4.21': '3.5.42'
+  # '@vue/runtime-core@3.4.21': '3.5.42'
+  # '@vue/runtime-dom@3.4.21': '3.5.42'
+  # '@vue/server-renderer@3.4.21': '3.5.42'
+  # '@vue/shared@3.4.21': '3.5.42'
   'postcss@8.5.6': '8.5.26'
   'send@0.18.0': '0.19.0'
   'ws@8.18.0': '8.21.0'

@@ -301,8 +301,9 @@ describe('401 handling: auto refresh + single retry', () => {
     const err = await mapi.get('/api/secret').catch((e) => e)
     expect(err).toBeInstanceOf(AuthenticationError)
     expect(err.message).toBe('Session expired, please login again')
-    // 会话不可恢复时故障回调必须触发（会话存储据此清本地用户）；次数是实现细节，钉"至少一次"。
-    expect(handler.mock.calls.length).toBeGreaterThan(0)
+    // 会话不可恢复时故障回调必须触发，且同一次失败只通知一次：
+    // refresh 自身 401 已经走过一次 authenticationFailed，外层 catch 必须透传同一错误，不能再调一遍。
+    expect(handler).toHaveBeenCalledTimes(1)
   })
 
   it('the refresh endpoint itself failing 401 never triggers a second refresh', async () => {
@@ -423,6 +424,19 @@ describe('file upload (uni.uploadFile)', () => {
     expect(err).toBeInstanceOf(AuthenticationError)
     expect(uni.uploads).toHaveLength(1) // 上传只发生一次，refresh 失败后不再重试
     expect(uni.requests.filter((r) => r.url === '/api/authentication/refresh')).toHaveLength(1)
+  })
+
+  it('refresh 自身 401 时认证失败回调只触发一次（与请求路径同口径）', async () => {
+    // upload 401 → refreshSession；refresh 端点自身 401 已经走过一次 authenticationFailed，
+    // 外层 catch 若再通知一遍，会话存储会重复清用户、toast 弹两条。
+    const handler = vi.fn()
+    setAuthenticationFailureHandler(handler)
+    uni.respondUpload((o) => uni.ok(o, undefined, 401))
+    uni.respondRequest((o) => uni.ok(o, undefined, 401)) // refresh 自身也 401
+    const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
+    expect(err).toBeInstanceOf(AuthenticationError)
+    expect(uni.uploads).toHaveLength(1)
+    expect(handler).toHaveBeenCalledTimes(1)
   })
 
   it('requireAuth:false suppresses the refresh-and-retry path', async () => {

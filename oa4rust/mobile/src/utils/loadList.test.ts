@@ -77,6 +77,13 @@ describe('列表加载统一口径（R113）', () => {
     expect(listState({ loading: true, loaded: false, count: 0, error: 'err' })).toBe('loading')
   })
 
+  it('硬编码 loaded:true 的页面首次加载期间显示 loading 而非虚假空态（R247）', () => {
+    // meeting/recycle/contacts 三页把 loaded 写死为 true；首屏 rows 尚空、error 为空时
+    // 旧判据 loading && !loaded 不成立，直接落到「暂无数据」，给用户闪现错误空态。
+    // 加载中且一行都没有时，无论 loaded 取值，都应判定为 loading。
+    expect(listState({ loading: true, loaded: true, count: 0, error: '' })).toBe('loading')
+  })
+
   it('describeLoadError 对空 message 也给稳定文案', () => {
     expect(describeLoadError('加载失败', new Error('  '))).toBe('加载失败：未知错误')
   })

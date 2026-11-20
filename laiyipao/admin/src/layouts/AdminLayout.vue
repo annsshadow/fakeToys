@@ -221,7 +221,7 @@ onMounted(loadIdentity)
           </el-button>
         </div>
       </el-header>
-      <el-main class="content">
+      <el-main id="main-content" class="content">
         <router-view v-slot="{ Component }">
           <keep-alive :max="4">
             <component :is="Component" />

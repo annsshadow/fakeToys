@@ -23,6 +23,7 @@ vi.mock('@/api/client', () => ({
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -91,5 +92,334 @@ describe('battles.vue 战报行视觉分层（R19）', () => {
     expect(wrapper.find('.empty-state').exists()).toBe(true)
     expect(wrapper.find('.empty-glyph').exists()).toBe(true)
     expect(wrapper.text()).toContain('去关卡页挑一关开打')
+  })
+})
+
+describe('battles.vue 趋势胜负色必须与战报 result 一致', () => {
+  /**
+   * 服务端 result 只有 'win'/'lose' 两种值（game.go resultStr），
+   * 而 stars 由 computeStars(score, targets) 独立按分数门槛算、与胜负无关
+   * （battle.go）。所以 result='lose' 但 stars>0 是合法真实数据：
+   * 分数够门槛、但防线失守被判负。
+   *
+   * 列表徽章/连胜/胜率都用 result==='win' 把它判成「负」，
+   * 趋势图若用 stars>0 代替 result，就会把同一条「负」战报画成绿色胜利点 ——
+   * 同一份数据在页面上给出互相矛盾的结论。
+   */
+  it('败局带星（result=lose, stars>0）的趋势点必须画成负色 trend-lose，与列表徽章一致', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [
+        {
+          id: 1, result: 'win', stars: 3, level_id: 4, score: 1200,
+          kills: 20, leaked: 0, created_at: '2026-11-17T10:00:00Z',
+        },
+        {
+          id: 2, result: 'lose', stars: 2, level_id: 5, score: 900,
+          kills: 10, leaked: 8, created_at: '2026-11-16T10:00:00Z',
+        },
+      ],
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    // 列表徽章权威：items[1] 是「负」
+    const badges = wrapper.findAll('.result-badge')
+    expect(badges.length).toBe(2)
+    expect(badges[1]!.text()).toBe('负')
+
+    // 趋势圆点是时间正序（旧→新）：pts[0] 对应 items[1]（那条 lose+2星）
+    const dots = wrapper.findAll('.trend-svg circle')
+    expect(dots.length).toBe(2)
+    // 同一条「负」战报在趋势图也必须是负色，不能是绿色胜利点
+    expect(dots[0]!.classes()).toContain('trend-lose')
+    expect(dots[0]!.classes()).not.toContain('trend-win')
+    // 真正的胜场仍是胜利色
+    expect(dots[1]!.classes()).toContain('trend-win')
+  })
+})
+
+/**
+ * 服务端契约：/me/battles 的 result 是**全量分页过滤**参数
+ * （routes.go myBattleHistory → Svc.MyBattleHistoryPage(..., result, ...)，
+ * economy.go `if result != "" { where += " AND result = $4" }`）。
+ * 因此筛选「胜利」后点「加载更多」，后续页必须仍带 result=win；
+ * 否则服务端回的是未过滤混合页，失败战报会混进胜利列表。
+ */
+describe('battles.vue 筛选下的加载更多必须沿用服务端 result 过滤', () => {
+  const win = (id: number) => ({
+    id,
+    result: 'win',
+    stars: 3,
+    level_id: 4,
+    score: 1000 + id,
+    kills: 12,
+    leaked: 0,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+  const lose = (id: number) => ({
+    id,
+    result: 'lose',
+    stars: 0,
+    level_id: 5,
+    score: 10,
+    kills: 1,
+    leaked: 9,
+    created_at: '2026-11-15T10:00:00Z',
+  })
+
+  it('胜利筛选下加载更多：请求带 result=win，列表不出现失败战报', async () => {
+    // 模拟服务端：只有带 result='win' 才过滤；缺失则回混合页（当前 bug 现状）。
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, offset = 0, result?: string, cursor?: number) => {
+      const allWins = Array.from({ length: 40 }, (_, i) => win(100 + i))
+      const start = cursor ? allWins.findIndex((w) => w.id === cursor) + 1 : offset
+      const page = allWins.slice(start, start + (offset || 20))
+      const next = start + (offset || 20) < allWins.length ? page[page.length - 1].id : 0
+      if (result === 'win') return Promise.resolve({ items: page, next_cursor: next } as any)
+      // 未过滤的第二页混入一场失败，模拟服务端不过滤的结果
+      const mixed = offset === 0 ? page : [...page.slice(0, 19), lose(999)]
+      return Promise.resolve({ items: mixed, next_cursor: next } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    // 切到「胜利」：reload 带 result=win 重新拉第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // 筛选后应全是胜场，且满一页 → 出现「加载更多」
+    const before = wrapper.findAll('.result-badge')
+    expect(before.length).toBe(20)
+    expect(before.every((b) => b.text() === '胜')).toBe(true)
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+
+    // 行为断言：胜利筛选下翻页后仍不能出现「负」
+    const badges = wrapper.findAll('.result-badge')
+    expect(badges.length).toBe(40)
+    expect(badges.filter((b) => b.text() === '负').length).toBe(0)
+
+    // 请求契约断言：第二次分页请求必须把筛选条件带给服务端
+    const last = mockApi.myBattleHistory.mock.calls.at(-1)!
+    expect(last[2]).toBe('win')
+  })
+})
+/**
+ * R17 行为复现：offset 翻页在「翻页途中插入新战报」时会重复/漏行；
+ * 服务端已提供 keyset 游标（next_cursor / ?cursor=），客户端必须用它翻页。
+ * 初始 newest→oldest = [50..1]；第一页加载后插入 id=100；offset 第二页返回 [30..11]，
+ * 与已加载页产生重复并漏掉本来紧接的旧行。
+ */
+describe('battles.vue 翻页途中插入新战报：offset 重复漏行，cursor 不重复不漏', () => {
+  const row = (id: number) => ({
+    id, result: 'win' as const, stars: 3, level_id: 4, score: 100 + id,
+    kills: 10, leaked: 0, created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('加载更多后列表每场唯一、从新到旧连续，不重复也不漏', async () => {
+    let inserted = false
+    mockApi.myBattleHistory.mockImplementation(function (_limit = 20, offset = 0, result = '', cursor?: number) {
+      if (result) return Promise.resolve({ items: [] } as any)
+      const all = Array.from({ length: 50 }, (_, i) => row(50 - i))
+      if (inserted) all.unshift(row(100))
+      const nextCursorOf = (page: any[]) => (page.length >= _limit ? page[page.length - 1].id : 0)
+      if (cursor && cursor > 0) {
+        const idx = all.findIndex((it) => it.id === cursor)
+        const page = all.slice(idx + 1, idx + 1 + _limit)
+        return Promise.resolve({ items: page, next_cursor: nextCursorOf(page) } as any)
+      }
+      const page = all.slice(offset, offset + _limit)
+      return Promise.resolve({ items: page, next_cursor: nextCursorOf(page) } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    inserted = true
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+
+    const ids = wrapper.findAll('.battle-row').map((r) =>
+      Number((r.find('.battle-score').text() || '0').replace(/\D/g, '')) - 100,
+    )
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toEqual(Array.from({ length: 40 }, (_, i) => 50 - i))
+  })
+})
+
+/**
+ * 服务端契约（routes.go myBattleHistory / economy.go MyBattleHistoryPage）：
+ * - `hasMore = len(rows) > limit`（先多取 1 行判断），因此**恰好满一页**（总数正好 20）
+ *   时 hasMore=false，响应 next_cursor=0；
+ * - next_cursor 只有在 hasMore 为真时才是上一页末行 id，否则恒为 0。
+ * 所以「本页是否满载」不等于「是否还有下一页」：满 20 条但 next_cursor=0 时没有更多页。
+ *
+ * 旧实现把 hasMore 写成 items.length >= 20，于是总数恰好 20/40/60… 时，
+ * 明明服务端说没有下一页，页面却一直挂着「加载更多」，点下去只会重复拉同一页。
+ */
+describe('battles.vue 末页恰好满一页时不得再显示加载更多（以 next_cursor 为准）', () => {
+  it('满 20 条但服务端 next_cursor=0：隐藏加载更多，不重复请求', async () => {
+    const rows = Array.from({ length: 20 }, (_, i) => ({
+      id: 40 - i,
+      result: 'win' as const,
+      stars: 3,
+      level_id: 4,
+      score: 1000 + (40 - i),
+      kills: 10,
+      leaked: 0,
+      created_at: '2026-11-17T10:00:00Z',
+    }))
+    // 模拟服务端真实响应：总数正好 20 = 满页但无下一页
+    mockApi.myBattleHistory.mockImplementation(() =>
+      Promise.resolve({ items: rows, next_cursor: 0 } as any),
+    )
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    const callsAfterLoad = mockApi.myBattleHistory.mock.calls.length
+    expect(callsAfterLoad).toBe(1)
+    expect(wrapper.findAll('.battle-row').length).toBe(20)
+
+    // 行为断言：服务端已明确没有下一页，加载更多按钮不应出现
+    expect(wrapper.find('.load-more').exists()).toBe(false)
+  })
+})
+
+/**
+ * 服务端契约（routes.go myBattleHistory / economy.go MyBattleHistoryPage）：
+ * result 是**服务端分页过滤**参数，筛选「胜利」后整份列表都只能是 win。
+ *
+ * 竞态：用户在「加载更多」（旧筛选/旧游标）请求在飞时切换筛选。
+ * filter 的 watch 触发 reload 重新拉第一页并替换 items；但那次在飞的 loadMore
+ * 回来后仍把旧游标的页 append 进 items —— 于是「胜利」列表里混进旧筛选的
+ * 失败战报，next_cursor/hasMore 也被旧响应覆盖。响应后到者不该覆盖新筛选态。
+ */
+describe('battles.vue 切换筛选时丢弃在飞的旧 loadMore 响应', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+  const row = (id: number, result: 'win' | 'lose') => ({
+    id, result, stars: result === 'win' ? 3 : 0, level_id: 4,
+    score: 100 + id, kills: 10, leaked: result === 'win' ? 0 : 9,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('筛选切换后的 reload 先回、旧 loadMore 后回：列表只保留新筛选的数据', async () => {
+    const d1 = deferred() // 首屏 reload（全部）
+    const d2 = deferred() // 加载更多（旧游标）
+    const d3 = deferred() // 切筛选后的 reload（胜利）
+    const seen: Array<{ result?: string; cursor?: number }> = []
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, _offset = 0, result?: string, cursor?: number) => {
+      seen.push({ result, cursor })
+      if (seen.length === 1) return d1.promise
+      if (seen.length === 2) return d2.promise
+      return d3.promise
+    })
+
+    const { wrapper } = mountPage(Battles)
+    d1.resolve({ items: [row(1, 'win')], next_cursor: 50 })
+    await flushPromises()
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    // 点「加载更多」→ 发起旧筛选、旧游标的请求（故意先不 resolve）
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+    expect(seen[1]).toEqual({ result: '', cursor: 50 })
+
+    // 切到「胜利」→ watch(filter) 触发 reload 拉新第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // reload（新筛选）先回
+    d3.resolve({ items: [row(3, 'win')], next_cursor: 0 })
+    await flushPromises()
+    // 在飞的旧 loadMore 后回，混进一条旧筛选的失败战报
+    d2.resolve({ items: [row(2, 'lose')], next_cursor: 0 })
+    await flushPromises()
+
+    expect(seen[2]?.result).toBe('win')
+
+    // 行为断言：筛选已切到「胜利」，列表只能有胜场；旧响应不得污染新列表
+    const badges = wrapper.findAll('.result-badge').map((b) => b.text())
+    expect(badges).toEqual(['胜'])
+  })
+})
+
+/**
+ * 第106轮：切换筛选作废在飞的旧 loadMore 后，必须复位加载更多忙标志。
+ * 场景：旧 loadMore 在飞 → 切筛选触发 reload → reload 先回且新筛选仍有下一页
+ * （按钮保留）→ 旧 loadMore 后回被丢弃。
+ * 修复前：旧 loadMore 的 finally 因 seq 已过期不复位 loadingMore，按钮永久停在
+ * 「加载中…」，后续点击又被 `if (loadingMore.value) return` 拦掉，再也不能翻页。
+ * 修复后：reload 重新拉第一页时复位 loadingMore，按钮恢复「加载更多」且可点。
+ */
+describe('battles.vue 切换筛选作废在飞 loadMore 后必须复位加载更多忙标志', () => {
+  type D = { promise: Promise<any>; resolve: (v: any) => void }
+  function deferred(): D {
+    let resolve!: (v: any) => void
+    const promise = new Promise<any>((res) => { resolve = res })
+    return { promise, resolve }
+  }
+  const row = (id: number) => ({
+    id, result: 'win' as const, stars: 3, level_id: 4,
+    score: 100 + id, kills: 10, leaked: 0,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+
+  it('新筛选仍有下一页时，加载更多按钮恢复可点、能继续翻页', async () => {
+    const d1 = deferred() // 首屏 reload
+    const d2 = deferred() // 旧筛选的加载更多
+    const d3 = deferred() // 切筛选后的 reload
+    const seen: Array<{ result?: string; cursor?: number }> = []
+    mockApi.myBattleHistory.mockImplementation((_limit?: number, _offset = 0, result?: string, cursor?: number) => {
+      seen.push({ result, cursor })
+      if (seen.length === 1) return d1.promise
+      if (seen.length === 2) return d2.promise
+      if (seen.length === 3) return d3.promise
+      return Promise.resolve({ items: [row(9)], next_cursor: 0 } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    d1.resolve({ items: [row(1)], next_cursor: 50 })
+    await flushPromises()
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    // 点「加载更多」→ 旧请求在飞，按钮进入「加载中…」
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.load-more').text()).toContain('加载中')
+
+    // 切筛选 → watch(filter) 触发 reload 重新拉第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // reload（新筛选）先回，且新筛选仍有下一页 → 按钮应保留
+    d3.resolve({ items: [row(3)], next_cursor: 99 })
+    await flushPromises()
+    // 在飞的旧 loadMore 后回，被 seq 守卫丢弃
+    d2.resolve({ items: [row(2)], next_cursor: 0 })
+    await flushPromises()
+
+    expect(seen[2]?.result).toBe('win')
+
+    // 行为断言 1：按钮不能永久卡在「加载中…」
+    const btn = wrapper.find('.load-more')
+    expect(btn.exists()).toBe(true)
+    expect(btn.text()).not.toContain('加载中')
+    expect(btn.text()).toContain('加载更多')
+
+    // 行为断言 2：再点一次能真正发起新请求（忙标志已复位）
+    const before = mockApi.myBattleHistory.mock.calls.length
+    await btn.trigger('click')
+    await flushPromises()
+    expect(mockApi.myBattleHistory.mock.calls.length).toBe(before + 1)
   })
 })

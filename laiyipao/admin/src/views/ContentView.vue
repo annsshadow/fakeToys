@@ -24,7 +24,7 @@ import {
   type AdminRedeemCodeView,
   type AdminRedeemUsageView,
 } from '@/api'
-import { auditDetailFull, auditDetailPreview, fmtTime } from '@/utils/format'
+import { auditDetailFull, auditDetailPreview, csvDataRowCount, exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const activeTab = ref('announcements')
@@ -125,22 +125,21 @@ function applyCodeFilter() {
   loadCodes()
 }
 
-function nextDay(day: string): string {
-  const d = new Date(day + 'T00:00:00Z')
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
-}
-
+// 使用记录请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let redeemUsageReqSeq = 0
 async function loadRedeemUsages() {
+  const seq = ++redeemUsageReqSeq
   try {
     const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE, {
       // 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）
       code_keyword: redeemCodeKeyword.value || undefined,
       user_id: redeemUserId.value,
     })
+    if (seq !== redeemUsageReqSeq) return
     redeemUsages.value = res.items
     redeemUsageTotal.value = res.total ?? res.items.length
   } catch (e) {
+    if (seq !== redeemUsageReqSeq) return
     ElMessage.error(`使用记录加载失败：${(e as Error).message}`)
   }
 }
@@ -161,7 +160,7 @@ async function onExportRedeemUsagesCsv() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `redeem_usages_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `redeem_usages_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -189,47 +188,62 @@ function openRedeemUsages() {
 }
 
 /** 只加载公告（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 公告请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let annReqSeq = 0
 async function loadAnnouncements() {
+  const seq = ++annReqSeq
   try {
     const a = await fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
       published: annPublished.value,
       date_from: annDateRange.value?.[0] || undefined,
-      date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+      date_to: annDateRange.value?.[1] || undefined,
     })
+    if (seq !== annReqSeq) return
     announcements.value = a.items
     annTotal.value = a.total ?? a.items.length
   } catch (e) {
+    if (seq !== annReqSeq) return
     ElMessage.error(`公告加载失败：${(e as Error).message}`)
   }
 }
 
 /** 只加载兑换码（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 兑换码请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let codeReqSeq = 0
 async function loadCodes() {
+  const seq = ++codeReqSeq
   try {
     const c = await fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
       keyword: codeKeyword.value || undefined,
       enabled: codeEnabled.value,
       expired: codeExpired.value,
     })
+    if (seq !== codeReqSeq) return
     codes.value = c.items
     codeTotal.value = c.total ?? c.items.length
   } catch (e) {
+    if (seq !== codeReqSeq) return
     ElMessage.error(`兑换码加载失败：${(e as Error).message}`)
   }
 }
 
 /** 只加载审计日志（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+// 审计日志请求序号（2026-11-18 第 59 轮）：旧筛选的慢响应不得覆盖新结果。
+let logReqSeq = 0
 async function loadLogs() {
+  const seq = ++logReqSeq
   try {
     const l = await fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
       action: logAction.value || undefined,
       target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
-      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+      date_to: logDateRange.value?.[1] || undefined,
     })
+    if (seq !== logReqSeq) return
     logs.value = l.items
     logTotal.value = l.total ?? l.items.length
   } catch (e) {
+    if (seq !== logReqSeq) return
     ElMessage.error(`审计日志加载失败：${(e as Error).message}`)
   }
 }
@@ -264,17 +278,19 @@ async function onExportAuditLogs() {
       action: logAction.value || undefined,
       target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
-      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+      date_to: logDateRange.value?.[1] || undefined,
     })
+    // 导出是全量筛选结果，条数必须来自实际 CSV，不能用当前页列表长度（第 58 轮）。
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `audit_logs_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `audit_logs_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${logs.value.length} 条审计日志（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条审计日志（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -286,26 +302,34 @@ async function onExportAuditLogs() {
  */
 async function onExportRedeemCodes() {
   try {
-    const blob = await exportRedeemCodesCsv()
+    const blob = await exportRedeemCodesCsv({
+      keyword: codeKeyword.value || undefined,
+      enabled: codeEnabled.value,
+      expired: codeExpired.value,
+    })
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `redeem_codes_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `redeem_codes_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${codes.value.length} 条兑换码（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条兑换码（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
+const annSaving = ref(false)
 async function submitAnnouncement() {
+  if (annSaving.value) return
   if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
     ElMessage.error('标题与正文都不能为空')
     return
   }
+  annSaving.value = true
   try {
     if (editingAnnId.value !== null) {
       await updateAnnouncement(editingAnnId.value, annForm.value)
@@ -316,9 +340,12 @@ async function submitAnnouncement() {
     }
     editingAnnId.value = null
     annForm.value = { title: '', body: '', published: false }
+    previewPubAt.value = null
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
+  } finally {
+    annSaving.value = false
   }
 }
 
@@ -329,6 +356,7 @@ async function submitAnnouncement() {
 function startEditAnn(a: AdminAnnouncementView) {
   editingAnnId.value = a.id
   annForm.value = { title: a.title, body: a.body, published: a.published }
+  previewPubAt.value = a.published_at ?? null
 }
 
 /**
@@ -336,8 +364,9 @@ function startEditAnn(a: AdminAnnouncementView) {
  * 在列表里直接看某条公告的玩家端效果（不必先点编辑再预览）。
  */
 function previewAnnouncement(a: AdminAnnouncementView) {
-  annForm.value = { title: a.title, body: a.body, published: a.published }
-  openPreview()
+  previewForm.value = { title: a.title, body: a.body, published: a.published }
+  previewPubAt.value = a.published_at ?? null
+  showPreviewDialog()
 }
 
 /**
@@ -357,6 +386,7 @@ async function copyAnnBody(a: AdminAnnouncementView) {
 function cancelEditAnn() {
   editingAnnId.value = null
   annForm.value = { title: '', body: '', published: false }
+  previewPubAt.value = null
 }
 
 /**
@@ -365,13 +395,29 @@ function cancelEditAnn() {
  * 此前只能先发布再在玩家端看。这里用当前表单内容打开预览对话框。
  */
 const previewVisible = ref(false)
+/**
+ * 第 55 轮：玩家端预览的发布时间必须显示服务端真实 published_at，
+ * 而不是打开预览的此刻。行级预览/编辑时回填，新建时保持 null。
+ */
+const previewPubAt = ref<string | null>(null)
+/**
+ * 第 70 轮：预览对话框使用独立表单快照，绝不改写正在编辑的 annForm。
+ * 此前列表行级「预览」直接把被预览公告写进 annForm，但 editingAnnId 不变，
+ * 编辑 A 时预览 B 后点「更新」会把 B 的内容写回 A（用户可见数据损坏）。
+ */
+const previewForm = ref({ title: '', body: '', published: false })
 
-function openPreview() {
-  if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
+function showPreviewDialog() {
+  if (!previewForm.value.title.trim() || !previewForm.value.body.trim()) {
     ElMessage.error('标题与正文都不能为空')
     return
   }
   previewVisible.value = true
+}
+
+function openPreview() {
+  previewForm.value = { ...annForm.value }
+  showPreviewDialog()
 }
 
 function closePreview() {
@@ -423,16 +469,21 @@ async function onDeleteAnn(a: AdminAnnouncementView) {
  */
 async function onExportAnnouncements() {
   try {
-    const blob = await exportAnnouncementsCsv()
+    const blob = await exportAnnouncementsCsv({
+      published: annPublished.value,
+      date_from: annDateRange.value?.[0] || undefined,
+      date_to: annDateRange.value?.[1] || undefined,
+    })
+    const exportedCount = csvDataRowCount(await blob.text())
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `announcements_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `announcements_${exportDateLabel()}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${announcements.value.length} 条公告（当前页）`)
+    ElMessage.success(`已导出 ${exportedCount} 条公告（当前筛选结果）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -476,7 +527,9 @@ function parseReward(s: string): Record<string, number> | null {
   return Object.keys(out).length ? out : null
 }
 
+const codeSaving = ref(false)
 async function submitCode() {
+  if (codeSaving.value) return
   const reward = parseReward(codeForm.value.reward)
   if (!reward) {
     ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')
@@ -486,6 +539,7 @@ async function submitCode() {
     ElMessage.error('兑换码不能为空')
     return
   }
+  codeSaving.value = true
   try {
     if (editingCodeId.value !== null) {
       await updateRedeemCode(editingCodeId.value, {
@@ -508,6 +562,8 @@ async function submitCode() {
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
+  } finally {
+    codeSaving.value = false
   }
 }
 
@@ -522,6 +578,7 @@ const batchGeneratedCodes = ref<AdminRedeemCodeView[]>([])
 const batchCodesVisible = ref(false)
 
 async function submitCodeBatch() {
+  if (batchLoading.value) return
   const reward = parseReward(codeForm.value.reward)
   if (!reward) {
     ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')
@@ -766,7 +823,7 @@ loadAll()
                 <el-form-item>
                   <el-checkbox v-model="annForm.published">立即发布</el-checkbox>
                 </el-form-item>
-                <el-button type="primary" @click="submitAnnouncement">
+                <el-button type="primary" :loading="annSaving" @click="submitAnnouncement">
                   {{ editingAnnId !== null ? '更新' : '创建' }}
                 </el-button>
                 <!-- 玩家端预览（2026-11-01 新一轮第 54 轮） -->
@@ -868,13 +925,13 @@ loadAll()
         <el-dialog v-model="previewVisible" title="玩家端预览" width="520px">
           <div style="border: 1px solid var(--el-border-color); border-radius: 8px; padding: 16px 20px">
             <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
-              <strong>{{ annForm.title }}</strong>
+              <strong>{{ previewForm.title }}</strong>
               <span class="muted" style="font-size: 12px">
-                {{ annForm.published ? new Date().toLocaleString() : '未发布（仅草稿）' }}
+                {{ previewForm.published ? (previewPubAt ? fmtTime(previewPubAt) : '发布后生成') : '未发布（仅草稿）' }}
               </span>
             </div>
             <div style="margin-top: 10px; white-space: pre-wrap; color: var(--el-text-color-regular); line-height: 1.7">
-              {{ annForm.body }}
+              {{ previewForm.body }}
             </div>
           </div>
           <template #footer>
@@ -901,7 +958,7 @@ loadAll()
               <el-input v-model="codeForm.expires_at" placeholder="2026-12-31T23:59:59Z" style="width: 200px" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitCode">
+              <el-button type="primary" :loading="codeSaving" @click="submitCode">
                 {{ editingCodeId !== null ? '更新' : '生成' }}
               </el-button>
               <!-- 批量生成（2026-11-01 新一轮第 57 轮）：复用当前奖励/次数/过期时间 -->

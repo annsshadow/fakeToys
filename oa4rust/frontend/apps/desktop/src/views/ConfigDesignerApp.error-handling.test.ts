@@ -35,4 +35,14 @@ describe('ConfigDesignerApp 错误处理不再吞错', () => {
   it('全文件不再残留真空 catch 块', () => {
     expect(source).not.toMatch(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/)
   })
+
+  it('copyConfig 真实 await copyText 并按成败提示，不再裸调 writeText 误报成功', () => {
+    // 修复前：navigator.clipboard.writeText 未 await 也无 catch，且无条件 toast.info('已复制')，
+    // 复制失败（权限/CSP/非安全上下文）时用户被误报成功且产生 unhandledrejection。
+    expect(source).toContain('async function copyConfig()')
+    expect(source).toContain('await copyText(config.value)')
+    expect(source).toContain("import { confirmMsg, copyText, toast } from '../utils/toast'")
+    expect(source).not.toContain('navigator.clipboard.writeText(config.value)')
+    expect(source).not.toContain("toast.info('已复制')")
+  })
 })

@@ -256,11 +256,11 @@ const api_data_doc_386_data = ref<any[]>([])
 </script>
 
 <style scoped>
-.dashboard { display: flex; flex-direction: column; gap: 16px; }
+.dashboard { display: flex; flex-direction: column; gap: var(--space-section-gap); }
 
 .welcome-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
 }
 .greeting { font-size: 14px; color: var(--text-muted); }
 .user-name { font-size: 20px; font-weight: 700; color: var(--color-primary); margin: 0 8px; font-family: 'Orbitron', sans-serif; }
@@ -282,9 +282,9 @@ const api_data_doc_386_data = ref<any[]>([])
   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
 }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
 .stat-card {
-  padding: 20px; text-align: center; position: relative; overflow: hidden;
+  padding: var(--space-5); text-align: center; position: relative; overflow: hidden;
   border: 1px solid var(--border-subtle);
 }
 .stat-card::before {
@@ -301,7 +301,7 @@ const api_data_doc_386_data = ref<any[]>([])
 .stat-trend { font-size: 11px; margin-top: 6px; }
 .stat-trend.up { color: var(--color-success); }
 
-.main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+.main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); flex: 1; min-height: 0; }
 .panel { display: flex; flex-direction: column; padding: 16px; overflow: hidden; }
 .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .panel-header h2 { font-size: 15px; color: var(--color-primary); margin: 0; font-family: 'Orbitron', sans-serif; }
@@ -335,9 +335,9 @@ const api_data_doc_386_data = ref<any[]>([])
 .recent-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 
 .empty-state { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
-.error-text { color: var(--color-error, #c0392b); margin: 0 0 8px; line-height: 1.5; }
-.retry-btn { padding: 4px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-error, #c0392b); background: transparent; color: var(--color-error, #c0392b); cursor: pointer; }
-.error-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; margin-bottom: 8px; background: var(--bg-elevated); border: 1px solid var(--color-error, #c0392b); border-radius: var(--radius-md); }
+.error-text { color: var(--color-error); margin: 0 0 var(--space-2); line-height: 1.5; }
+.retry-btn { padding: var(--space-1) 14px; border-radius: var(--radius-md); border: 1px solid var(--color-error); background: transparent; color: var(--color-error); cursor: pointer; }
+.error-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); background: var(--bg-elevated); border: 1px solid var(--color-error); border-radius: var(--radius-md); }
 .error-banner .error-text { margin: 0; }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .skeleton-row { height: 40px; border-radius: var(--radius-md); background: var(--bg-elevated); }

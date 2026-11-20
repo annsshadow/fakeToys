@@ -24,10 +24,45 @@
           改变战斗方式而非只加数值。
         </text>
         <!-- 第六批 R49：稀有度构成一眼可见，搜索前就知道有哪些档次 -->
-        <text class="muted" style="display: block; margin-bottom: 8rpx">
-          稀有度分布：传说 {{ countByRarity('legendary') }} · 史诗 {{ countByRarity('epic') }} · 稀有 {{ countByRarity('rare') }} · 普通 {{ countByRarity('common') }}
-        </text>
+        <!-- G75 稀有度分布环图：四段弧按数量占比，构成一眼可见 -->
+        <view class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 100 100" aria-label="稀有度分布环图">
+            <circle class="donut-bg" cx="50" cy="50" r="40" />
+            <circle
+              v-for="seg in rarityDonut"
+              :key="seg.key"
+              class="donut-seg"
+              cx="50" cy="50" r="40"
+              :stroke="seg.color"
+              :stroke-dasharray="`${seg.dash} ${251.3 - seg.dash}`"
+              :stroke-dashoffset="seg.offset"
+            />
+          </svg>
+          <view class="donut-legend">
+            <text v-for="seg in rarityDonut" :key="'lg' + seg.key" class="donut-lg">
+              <text class="donut-dot" :style="{ background: seg.color }" />{{ seg.label }} {{ seg.pct }}%
+            </text>
+          </view>
+        </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
+        <!-- G133 被动→元素流派映射 -->
+        <view v-if="passiveElementMap.length" class="pe-map">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">被动对应元素流派</text>
+          <text v-for="p in passiveElementMap" :key="p.el" class="pe-chip">{{ p.name }} · {{ p.count }} 款</text>
+        </view>
+        <!-- G121 稀有度×被动矩阵 -->
+        <view v-if="passiveKinds.length" class="rp-matrix">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">稀有度 × 被动机制（款数）</text>
+          <view v-for="r in rarityPassiveMatrix" :key="r.rarity" class="rpm-row">
+            <text class="dim rpm-label">{{ r.label }}</text>
+            <text v-for="(c, i) in r.cells" :key="i" class="rpm-cell" :class="{ on: c.n > 0 }">{{ c.n }}</text>
+          </view>
+        </view>
+        <!-- G90 被动机制分类：有哪几类皮肤机制、各几款 -->
+        <view v-if="passiveGroups.length" class="passive-groups">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">被动机制分类</text>
+          <text v-for="g in passiveGroups" :key="g.key" class="passive-chip">{{ g.name }} ×{{ g.n }}</text>
+        </view>
         <text class="dim" style="display: block; margin-bottom: 8rpx">
           当前版本皮肤暂无获得途径，图鉴用于了解被动机制。
         </text>
@@ -63,6 +98,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import DefIcon from '@/components/DefIcon.vue'
+import { ELEMENT_NAME, type Element } from '@/game/elements'
 
 const store = useGameStore()
 
@@ -88,6 +124,28 @@ const skins = computed(() => (store.config?.skins ?? []) as unknown as SkinDef[]
 function countByRarity(rarity: string): number {
   return skins.value.filter((s) => (s.rarity in RARITY_CLASS ? s.rarity : 'common') === rarity).length
 }
+
+/* -------------------------------------------------------------------------- */
+/* G75 稀有度分布环图（第七批）                                                 */
+/* 四档稀有度按数量占比切成环形段（SVG stroke-dasharray），比纯文本更直观地看构成。 */
+/* -------------------------------------------------------------------------- */
+const rarityDonut = computed(() => {
+  const defs = [
+    { key: 'legendary', label: '传说', color: '#ffd700', count: countByRarity('legendary') },
+    { key: 'epic', label: '史诗', color: '#c9a7ff', count: countByRarity('epic') },
+    { key: 'rare', label: '稀有', color: '#58a6ff', count: countByRarity('rare') },
+    { key: 'common', label: '普通', color: '#8b949e', count: countByRarity('common') },
+  ]
+  const total = defs.reduce((s, d) => s + d.count, 0)
+  const C = 2 * Math.PI * 40 // 半径 40 的周长
+  let acc = 0
+  return defs.map((d) => {
+    const frac = total > 0 ? d.count / total : 0
+    const seg = { ...d, pct: Math.round(frac * 100), dash: frac * C, offset: -acc * C }
+    acc += frac
+    return seg
+  })
+})
 
 /** 图鉴搜索（2026-11-01 新一轮第 78 轮）：名称/稀有度中文过滤。 */
 const keyword = ref('')
@@ -118,6 +176,51 @@ function rarityBadgeClass(r: string): string {
 /** 模板里 rarity-chip 类名的白名单校验（未知稀有度走 common 中性样式）。 */
 const RARITY_CLASS: Record<string, true> = { rare: true, epic: true, legendary: true, common: true }
 
+/* -------------------------------------------------------------------------- */
+/* G90 被动机制分类统计（第七批）                                               */
+/* 按 passive 类型聚合皮肤数量，看「这游戏有哪几类皮肤机制」。数据来自 skins。     */
+/* -------------------------------------------------------------------------- */
+/** G133 被动→元素流派映射：把皮肤被动 key 对上五元素，理解该往哪方向配装。 */
+const passiveElementMap = computed(() => {
+  const KEY_EL: Record<string, string> = {
+    fire_burn: 'fire', ice_freeze: 'ice', volt_chain: 'lightning',
+    blight_spread: 'corrosion', kinetic_bonus: 'kinetic', boss_breaker: 'kinetic',
+  }
+  const m = new Map<string, string[]>()
+  for (const s of skins.value) {
+    const el = KEY_EL[s.passive]
+    if (!el) continue
+    const arr = m.get(el) ?? []
+    arr.push(s.name)
+    m.set(el, arr)
+  }
+  return [...m.entries()].map(([el, names]) => ({
+    el, name: ELEMENT_NAME[el as Element] ?? el, count: names.length,
+  }))
+})
+
+/** G121 稀有度×被动机制矩阵：行=稀有度，列=被动类型，格内款数。 */
+const RARITIES = ['legendary', 'epic', 'rare', 'common']
+const passiveKinds = computed(() => [...new Set(skins.value.map((s) => s.passive))])
+const rarityPassiveMatrix = computed(() =>
+  RARITIES.map((r) => ({
+    rarity: r,
+    label: rarityLabel(r),
+    cells: passiveKinds.value.map((p) => ({
+      n: skins.value.filter((s) =>
+        (s.rarity in RARITY_CLASS ? s.rarity : 'common') === r && s.passive === p).length,
+    })),
+  })),
+)
+
+const passiveGroups = computed(() => {
+  const m = new Map<string, number>()
+  for (const s of skins.value) {
+    m.set(s.passive, (m.get(s.passive) ?? 0) + 1)
+  }
+  return [...m.entries()].map(([key, n]) => ({ key, name: passiveLabel(key), n }))
+})
+
 function passiveLabel(p: string): string {
   const map: Record<string, string> = {
     kinetic_bonus: '动能加成（额外破甲击退）',
@@ -132,6 +235,41 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
+/* G133 被动→元素映射 */
+.pe-map { margin: 8rpx 0; }
+.pe-chip { display: inline-block; background: var(--ice-soft); color: var(--ice); border-radius: 8rpx; padding: 4rpx 12rpx; font-size: 22rpx; margin: 0 8rpx 8rpx 0; }
+
+/* G121 稀有度×被动矩阵 */
+.rpm-row { display: flex; flex-direction: row; gap: 6rpx; margin: 6rpx 0; align-items: center; }
+.rpm-label { width: 100rpx; flex-shrink: 0; font-size: 22rpx; }
+.rpm-cell { flex: 1; text-align: center; font-size: 22rpx; padding: 6rpx 0; background: var(--panel-2); border-radius: 6rpx; color: var(--dim); }
+.rpm-cell.on { background: var(--legendary-soft); color: var(--legendary); }
+
+/* G90 被动机制分类 */
+.passive-groups { margin: 8rpx 0; }
+.passive-chip {
+  display: inline-block;
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  margin: 0 8rpx 8rpx 0;
+}
+
+/* G75 稀有度分布环图 */
+.donut-wrap { display: flex; align-items: center; gap: 24rpx; margin: 8rpx 0 16rpx; }
+.donut-svg { width: 160rpx; height: 160rpx; transform: rotate(-90deg); }
+.donut-bg { fill: none; stroke: var(--panel-3); stroke-width: 12; }
+.donut-seg { fill: none; stroke-width: 12; }
+.donut-legend { display: flex; flex-direction: column; gap: 8rpx; flex: 1; }
+.donut-lg { font-size: 22rpx; color: var(--muted); }
+.donut-dot {
+  display: inline-block;
+  width: 16rpx; height: 16rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+}
 /* 条目分隔线走共享的 .rxn（styles/common.css） */
 /* R68 传说稀有度 chip 微光，强化「稀有」价值感 */
 .rarity-chip.rarity-legendary {

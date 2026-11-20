@@ -7,9 +7,9 @@
     <div class="bbs-header glass-card">
       <div class="header-left">
         <h1>论坛</h1>
-        <nav class="forum-tabs">
+        <nav class="forum-tabs" aria-label="论坛板块">
           <button v-for="tab in tabs" :key="tab.key" class="tab-btn"
-            :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
+            :aria-pressed="activeTab === tab.key" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
             {{ tab.label }}
           </button>
         </nav>
@@ -133,7 +133,7 @@
           <span class="sec-actions">
             <button class="sec-act" title="版块详情" aria-label="版块详情" @click.stop="openSectionInfo(sec)">ℹ</button>
             <button class="sec-act" title="重命名版块" aria-label="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
-            <button class="sec-act" title="删除版块" aria-label="删除版块" @click.stop="deleteSection(sec)">✕</button>
+            <button class="sec-act" title="删除版块" aria-label="删除版块" :disabled="sectionBusy" @click.stop="deleteSection(sec)">✕</button>
           </span>
         </li>
         <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
@@ -146,9 +146,9 @@
     <!-- 右侧：帖子列表 -->
     <main class="bbs-main glass-card">
       <!-- 帖子列表 -->
-      <div v-if="activeTab==='my'" class="my-subtabs">
-        <button :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
-        <button :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
+      <div v-if="activeTab==='my'" class="my-subtabs" role="group" aria-label="我的帖子子标签">
+        <button :aria-pressed="mySub==='topics'" :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
+        <button :aria-pressed="mySub==='replies'" :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
       </div>
       <div v-if="topicsLoading" class="loading-state">
         <div v-for="i in 6" :key="i" class="skeleton-row"></div>
@@ -184,9 +184,9 @@
 
       <!-- 分页：后端无 total 信封，用「本页满则可能有下一页」驱动 -->
       <div v-if="hasMore || page > 1" class="pagination">
-        <button class="page-btn" :disabled="page <= 1" @click="page--">‹</button>
+        <button class="page-btn" aria-label="上一页" :disabled="page <= 1" @click="page--">‹</button>
         <span class="page-info">第 {{ page }} 页</span>
-        <button class="page-btn" :disabled="!hasMore" @click="page++">›</button>
+        <button class="page-btn" aria-label="下一页" :disabled="!hasMore" @click="page++">›</button>
       </div>
     </main>
 
@@ -195,7 +195,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>新发帖</h3>
-          <button class="close-btn" @click="showNewTopic = false">✕</button>
+          <button class="close-btn" aria-label="关闭发帖弹窗" @click="showNewTopic = false">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -216,17 +216,17 @@
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="showNewTopic = false">取消</button>
-          <button class="btn-submit" :disabled="!newTopic.title.trim()" @click="createTopic">发布</button>
+          <button class="btn-submit" :disabled="!newTopic.title.trim() || topicSaving" @click="createTopic">{{ topicSaving ? '发布中...' : '发布' }}</button>
         </div>
       </div>
     </div>
 
     <!-- 帖子详情弹窗 -->
-    <div v-if="viewingTopic" class="modal-overlay" @click.self="viewingTopic = null">
+    <div v-if="viewingTopic" class="modal-overlay" @click.self="closeTopic()">
       <div class="modal glass-card topic-detail">
         <div class="modal-header">
           <h3>{{ viewingTopic.title }}</h3>
-          <button class="close-btn" @click="viewingTopic = null">✕</button>
+          <button class="close-btn" aria-label="关闭帖子详情" @click="closeTopic()">✕</button>
         </div>
         <div class="modal-body">
           <div class="detail-meta">
@@ -276,7 +276,7 @@
           </div>
           <div class="reply-input">
             <input v-model="replyText" class="reply-textarea" placeholder="写下你的回复..." @keydown.enter.ctrl="submitReply" />
-            <button class="reply-btn" @click="submitReply">回复</button>
+            <button class="reply-btn" :disabled="replySaving" @click="submitReply">{{ replySaving ? '发送中...' : '回复' }}</button>
           </div>
         </div>
       </div>
@@ -287,7 +287,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h3>
-          <button class="close-btn" @click="closeSectionModal">✕</button>
+          <button class="close-btn" aria-label="关闭版块编辑弹窗" @click="closeSectionModal">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -310,7 +310,7 @@
       <div class="modal glass-card">
         <div class="modal-header">
           <h3>版块详情</h3>
-          <button class="close-btn" @click="sectionInfo.open=false">✕</button>
+          <button class="close-btn" aria-label="关闭版块详情" @click="sectionInfo.open=false">✕</button>
         </div>
         <div v-if="sectionInfo.loading" class="loading-state"><p>加载中…</p></div>
         <div v-else class="modal-body">
@@ -398,6 +398,8 @@ const activeTab = ref<TabKey>('all')
 const searchQuery = ref('')
 const showNewTopic = ref(false)
 const viewingTopic = ref<Topic | null>(null)
+// R273：详情异步回填/延迟 extras 的竞态令牌——关闭或切换帖子时递增，使在途请求作废。
+let detailSeq = 0
 const replyText = ref('')
 const createError = ref('')
 const page = ref(1)
@@ -478,7 +480,7 @@ async function saveSection(): Promise<void> {
   }
 }
 async function deleteSection(sec: Section): Promise<void> {
-  if (!sec.id) return
+  if (!sec.id || sectionBusy.value) return
   const ok = await confirmMsg(`确定删除版块「${sec.name}」？该版块下的帖子不受影响。`)
   if (!ok) return
   sectionBusy.value = true
@@ -508,6 +510,7 @@ const sectionInfo = ref({
   canPublish: '—',
 })
 async function openSectionInfo(sec: Section): Promise<void> {
+  const seq = ++detailSeq
   sectionInfo.value = {
     open: true,
     loading: true,
@@ -523,6 +526,7 @@ async function openSectionInfo(sec: Section): Promise<void> {
     settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
     settle(api.get(`/api/bbs/assemble/control/permission/section/${sec.id}`)),
   ])
+  if (seq !== detailSeq) return
   const m = (main as { data?: Record<string, unknown> } | null)?.data
   if (m && typeof m === 'object') {
     sectionInfo.value.name = String(m.name ?? sec.name)
@@ -540,6 +544,7 @@ async function openSectionInfo(sec: Section): Promise<void> {
       ? '允许'
       : '不允许'
     : '查询失败'
+  if (seq !== detailSeq) return
   sectionInfo.value.loading = false
 }
 
@@ -637,6 +642,7 @@ const {
   data: repliesData,
   isError: repliesIsError,
   error: repliesError,
+  refetch: refetchReplies,
 } = useQuery({
   queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
   queryFn: async () => {
@@ -664,7 +670,9 @@ const { loadError: repliesLoadError, reload: reloadReplies } = useListError({
 
 // 创建帖子（后端已注册路由为 /api/bbs/subject/create，非 assemble/control 旧面）
 // authorId 取登录人 unique：后端 subject/create 不回落会话，缺省则「我的主题」过滤不到本人帖。
+const topicSaving = ref(false)
 const createMutation = useMutation({
+  onSettled: () => (topicSaving.value = false),
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
     api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
   onSuccess: () => {
@@ -687,7 +695,9 @@ function openNewTopic(): void {
 }
 
 function createTopic(): void {
+  if (topicSaving.value) return
   if (!newTopic.value.title.trim() || !newTopic.value.sectionId) return
+  topicSaving.value = true
   createMutation.mutate(
     { ...newTopic.value },
     {
@@ -704,7 +714,9 @@ function createTopic(): void {
 }
 
 // 发布回复
+const replySaving = ref(false)
 const replyMutation = useMutation({
+  onSettled: () => (replySaving.value = false),
   mutationFn: (content: string) =>
     api.post('/api/bbs/assemble/control/reply/create', {
       subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
@@ -712,14 +724,16 @@ const replyMutation = useMutation({
     }),
   onSuccess: () => {
     replyText.value = ''
-    refetch() // refetch replies
+    refetchReplies() // refetch replies
     // refresh topic list to update reply count
     refetch()
   },
 })
 
 function submitReply(): void {
+  if (replySaving.value) return
   if (!replyText.value.trim() || !viewingTopic.value) return
+  replySaving.value = true
   replyMutation.mutate(replyText.value, {
     onSuccess: () => {
       replyText.value = ''
@@ -740,14 +754,22 @@ function handleSearch(): void {
   page.value = 1
 }
 
+/** 关闭详情：递增令牌使在途详情/extras 作废，避免关闭后旧请求重新渲染浮层。 */
+function closeTopic(): void {
+  detailSeq++
+  viewingTopic.value = null
+}
+
 /** 打开详情：列表行只有摘要字段，补拉 /api/bbs/subject/view/{id} 全量（含正文）；
  *  我的回复卡片按 topicRef 点开源主题。 */
 async function openTopic(topic: Topic): Promise<void> {
+  const seq = ++detailSeq
   viewingTopic.value = topic
   replies.value = []
   const targetId = topic.topicRef || topic.id
   try {
     const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
+    if (seq !== detailSeq) return
     const full = resp.data as Topic | null
     if (full?.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
@@ -755,7 +777,7 @@ async function openTopic(topic: Topic): Promise<void> {
   } catch {
     /* 详情拉取失败保留列表行数据，不阻塞阅读 */
   }
-  void loadTopicExtras(targetId)
+  void loadTopicExtras(targetId, seq)
 }
 
 function formatContent(content?: string): string {
@@ -798,7 +820,7 @@ const topicMeta = ref('')
 const replyGate = ref<'' | '允许' | '不允许' | '查询失败'>('')
 const modBusy = ref(false)
 
-async function loadTopicExtras(subjectId: string): Promise<void> {
+async function loadTopicExtras(subjectId: string, seq: number): Promise<void> {
   topicPics.value = []
   replyGate.value = ''
   topicMeta.value = ''
@@ -825,6 +847,8 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   if (rid) {
     await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
   }
+  // 只认最后一次打开/尚未关闭的详情：过期请求不写 pics/gate/meta。
+  if (seq !== detailSeq) return
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (
     Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []

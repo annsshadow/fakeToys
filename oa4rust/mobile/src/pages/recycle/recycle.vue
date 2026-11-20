@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { recycleApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { listState, loadList } from '@/utils/loadList'
 
 type Row = Record<string, unknown>
@@ -63,7 +64,8 @@ async function remove(r: Row): Promise<void> {
     if (!res) return
     await recycleApi.remove(id)
     uni.showToast({ title: '已删除', icon: 'success' })
-    await load()
+    // 刷新失败时 loadList 回退 previousRows；排除已删行，避免"已删除"提示后条目重现。
+    await load(rows.value.filter((r) => String(r.id ?? '') !== id))
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '删除失败', icon: 'none' })
   } finally {
@@ -73,15 +75,20 @@ async function remove(r: Row): Promise<void> {
 
 // 单条详情（recycle/{id}）
 const detail = ref<Row | null>(null)
+const detailGate = createLatestGate()
 async function showDetail(r: Row): Promise<void> {
   const id = String(r.id ?? '')
   if (!id) {
     detail.value = r
     return
   }
+  const token = detailGate.begin()
   try {
-    detail.value = ((await recycleApi.detail(id)) as { data?: Row }).data ?? r
+    const fetched = ((await recycleApi.detail(id)) as { data?: Row }).data ?? r
+    if (!detailGate.isLatest(token)) return
+    detail.value = fetched
   } catch {
+    if (!detailGate.isLatest(token)) return
     detail.value = r
   }
 }
@@ -109,7 +116,8 @@ async function emptyAll(): Promise<void> {
     if (!res) return
     await recycleApi.empty()
     uni.showToast({ title: '已清空', icon: 'success' })
-    await load()
+    // 清空成功后刷新失败也不能让旧行重现，previousRows 传空。
+    await load([])
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '清空失败', icon: 'none' })
   } finally {
@@ -152,12 +160,12 @@ async function emptyAll(): Promise<void> {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -165,28 +173,28 @@ async function emptyAll(): Promise<void> {
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .card-meta {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .btn {
   margin-top: 16rpx;
   font-size: 26rpx;
   border-radius: 12rpx;
-  background: #fff;
-  color: #5b6572;
-  border: 1px solid #dcdfe6;
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  border: 1px solid var(--color-border-strong);
 }
 .btn.danger {
-  color: #f56c6c;
-  border-color: #fbc4c4;
+  color: var(--color-error);
+  border-color: var(--color-error-tint);
 }
 .btn.empty {
-  background: #f56c6c;
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-surface);
   border: none;
   margin-top: 8rpx;
 }
@@ -194,13 +202,13 @@ async function emptyAll(): Promise<void> {
   opacity: 0.6;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -211,15 +219,15 @@ async function emptyAll(): Promise<void> {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  background: #fdf2f0;
-  border-bottom: 1px solid #f0f2f5;
+  background: var(--color-error-tint);
+  border-bottom: 1px solid var(--color-divider);
   margin-bottom: 20rpx;
 }
 .card-head {
@@ -230,13 +238,13 @@ async function emptyAll(): Promise<void> {
 }
 .detail-close {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .detail-body {
   display: block;
   margin-top: 12rpx;
   font-size: 22rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;

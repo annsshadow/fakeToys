@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { bbsApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { loadBbsTopics } from './bbsFeed'
 
 const session = useSession()
@@ -14,6 +15,7 @@ const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 const bbsError = ref('')
+const listGate = createLatestGate()
 
 function titleOf(row: Record<string, unknown>): string {
   const v = row.title
@@ -42,16 +44,16 @@ async function load() {
     loaded.value = true
     return
   }
+  const token = listGate.begin()
   loading.value = true
   bbsError.value = ''
-  try {
-    const result = await loadBbsTopics(() => bbsApi.mobileViewAll(), rows.value)
-    rows.value = result.rows
-    if (!result.ok) bbsError.value = result.error
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  const result = await loadBbsTopics(() => bbsApi.mobileViewAll(), rows.value)
+  // 下拉刷新 / 重试可并发触发：过期响应不得覆盖新请求的数据，也不得提前复位 loading。
+  if (!listGate.isLatest(token)) return
+  rows.value = result.rows
+  if (!result.ok) bbsError.value = result.error
+  loading.value = false
+  loaded.value = true
 }
 
 onShow(async () => {
@@ -93,7 +95,7 @@ function newTopic() {
         <text class="error-text">{{ bbsError }}</text>
         <view class="retry-btn" @tap="load">重试</view>
       </view>
-      <view v-for="(row, i) in rows" :key="i" class="topic" @tap="openTopic(row)">
+      <view v-for="(row, i) in rows" :key="i" class="topic o2-list-item" @tap="openTopic(row)">
         <view class="topic-title">{{ titleOf(row) }}</view>
         <view v-if="excerptOf(row)" class="topic-excerpt">{{ excerptOf(row) }}</view>
         <view class="topic-meta">{{ creatorOf(row) }} · {{ timeOf(row) }}</view>
@@ -116,23 +118,23 @@ function newTopic() {
 .toolbar-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .new-btn {
   padding: 5px 14px;
   border-radius: 15px;
-  background: #2f6bff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 13px;
 }
 .tip {
   text-align: center;
-  color: #8a94a6;
+  color: var(--color-text-muted);
   padding: 40px 0;
   font-size: 14px;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   margin-bottom: 10px;
@@ -145,8 +147,8 @@ function newTopic() {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 13px;
 }
 .error-banner .error-text {
@@ -156,8 +158,8 @@ function newTopic() {
   flex: none;
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
 }
 .topic-list {
@@ -168,21 +170,21 @@ function newTopic() {
 .topic {
   padding: 12px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .topic-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .topic-excerpt {
   margin-top: 4px;
   font-size: 13px;
-  color: #5a6478;
+  color: var(--color-text-secondary);
 }
 .topic-meta {
   margin-top: 6px;
   font-size: 12px;
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 </style>

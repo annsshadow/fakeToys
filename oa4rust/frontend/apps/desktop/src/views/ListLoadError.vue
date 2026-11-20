@@ -2,12 +2,12 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div v-if="mode === 'empty'" class="list-error-empty">
+  <div v-if="mode === 'empty'" class="list-error-empty" role="alert" aria-live="assertive">
     <div class="list-error-icon">⚠️</div>
     <p class="list-error-text">{{ message }}</p>
     <button class="list-error-retry" @click="emit('retry')">重试</button>
   </div>
-  <div v-else class="list-error-banner">
+  <div v-else class="list-error-banner" role="alert" aria-live="assertive">
     <span class="list-error-text">{{ message }}</span>
     <button class="list-error-retry" @click="emit('retry')">重试</button>
   </div>

@@ -72,6 +72,14 @@
           <text class="muted">攻方攻击力</text>
           <text class="mono">{{ attackerText }}</text>
         </view>
+        <!-- G99 冻结构筑分区快照：验真的前提是看清当时用的是哪套构筑 -->
+        <view class="build-snapshot">
+          <text v-for="s in buildSnapshotCard" :key="s.label" class="bs-item">{{ s.label }} {{ s.value }}</text>
+        </view>
+        <!-- G139 攻方全属性快照 -->
+        <view v-if="attackerFullRows.length" class="attacker-full">
+          <text v-for="r in attackerFullRows" :key="r.label" class="af-item">{{ r.label }} {{ r.value }}</text>
+        </view>
         <view class="kv"><text class="muted">记录时间</text><text class="mono">{{ replayInfo.created_at }}</text></view>
         <view class="kv">
           <text class="muted">服务端记录的哈希</text>
@@ -100,6 +108,10 @@
           <view class="kv">
             <text class="muted">本地重放哈希</text>
             <text class="mono hash">{{ pretty(outcome.computedHash) }}</text>
+          </view>
+          <!-- G117 哈希逐段对照 -->
+          <view v-if="hashSegments.length" class="hash-segments">
+            <text v-for="s in hashSegments" :key="s.i" class="hs-seg" :class="s.match ? 'ok' : 'bad'">{{ s.part }}</text>
           </view>
           <view class="verdict">{{ outcome.matched ? '一致 — 分数可复现' : '不一致 — 该分数无法被复现' }}</view>
           <view class="stats">
@@ -145,6 +157,21 @@
         <text class="muted" style="display: block; margin-top: 12rpx">
           验真记录已落库，可在运营后台「战斗记录与验真」页查看一致率统计。
         </text>
+      </view>
+
+      <!-- G125 本次会话验真记录 -->
+      <view v-if="verifyHistory.length" class="card">
+        <text class="card-title">本次验真记录</text>
+        <view
+          v-for="h in verifyHistory"
+          :key="h.id + h.at"
+          class="kv vh-row tap"
+          @click="refillBattleId(h.id)"
+        >
+          <text class="mono">#{{ h.id }}</text>
+          <text :class="h.matched ? 'vh-ok' : 'vh-bad'">{{ h.matched ? '一致' : '不一致' }}</text>
+          <text class="dim">{{ h.at }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -206,6 +233,12 @@ onLoad((query) => {
 const replayInfo = ref<ReplayInfo | null>(null)
 const outcome = ref<ReplayOutcome | null>(null)
 const result = ref<any>(null)
+
+/** G125 本次会话验真记录：保留每次验真的结论，可点击回填 battle_id。 */
+const verifyHistory = ref<Array<{ id: number; matched: boolean; at: string }>>([])
+function refillBattleId(id: number) {
+  battleId.value = String(id)
+}
 const errMsg = ref('')
 const replaying = ref(false)
 
@@ -224,6 +257,52 @@ const attackerText = computed(() => {
   const a = replayInfo.value?.build?.attacker
   if (!a || typeof a.attack !== 'number') return '缺失 — 无法重放'
   return `攻击 ${a.attack}‰ · 暴击 ${a.crit_permille}‰ · 元素系数 ${a.element_coef_permille}‰`
+})
+
+/** G139 冻结快照攻方全属性：验真前提是看清当时构筑，展示完整 9 项（缺字段标注老战报）。 */
+const attackerFullRows = computed(() => {
+  const a = replayInfo.value?.build?.attacker
+  if (!a) return []
+  const pm = (v: number | undefined) => v === undefined ? '—' : `${Number(v) / 10}%`
+  return [
+    { label: '攻击力', value: `${a.attack ?? 0}‰` },
+    { label: '暴击率', value: pm(a.crit_permille) },
+    { label: '暴击倍率', value: pm(a.crit_multiplier_permille) },
+    { label: '反应倍率', value: pm(a.reaction_mult_permille) },
+    { label: '元素系数', value: pm(a.element_coef_permille) },
+    { label: '层数上限', value: `${a.element_cap ?? 0}` },
+    { label: '热量上限', value: pm(a.heat_cap_permille) },
+    { label: '护甲', value: pm(a.armor_permille) },
+    { label: '机制强度', value: pm(a.mechanic_permille) },
+  ]
+})
+
+/** G99 冻结构筑分区快照：把验真战报里冻结的各维度数量化展示（验真前提是看清当时的构筑）。 */
+const buildSnapshotCard = computed(() => {
+  const b = replayInfo.value?.build
+  if (!b) return []
+  const skills = Object.values((b.skills ?? {}) as Record<string, any>)
+  const elements = b.elements ?? b.skill_ids ?? []
+  const equip = Array.isArray(b.equipment) ? b.equipment : Object.keys((b.equipment ?? {}) as object)
+  const mastery = Array.isArray(b.mastery_nodes) ? b.mastery_nodes : Object.keys((b.mastery_nodes ?? {}) as object)
+  return [
+    { label: '出战技能', value: `${skills.filter((s) => s && s.slot >= 0).length} 个` },
+    { label: '元素覆盖', value: `${elements.length} 种` },
+    { label: '主动槽位', value: `${b.active_slots ?? 4} 个` },
+    { label: '装备', value: `${equip.length} 件` },
+    { label: '专精节点', value: `${mastery.length} 个` },
+  ]
+})
+
+/** G117 哈希逐段对照：本地重放哈希 vs 服务端哈希，切 4 段标出哪段不同。 */
+const hashSegments = computed(() => {
+  const a = outcome.value?.computedHash
+  const b = replayInfo.value?.expected_hash ?? result.value?.expected_hash
+  if (!a || !b) return []
+  const seg = (s: string) => (s.match(/.{1,4}/g) ?? []).slice(0, 4)
+  const sa = seg(String(a))
+  const sb = seg(String(b))
+  return sa.map((part, i) => ({ i, part, match: part === sb[i] }))
 })
 
 function pretty(h: string): string {
@@ -266,12 +345,21 @@ async function submit(hash: string) {
   const id = Number(battleId.value)
   try {
     result.value = await api.verifyReplay(id, hash)
+    // G125 记录本次结论（与本地裁定一致即可，不入哈希）
+    const matched = result.value?.matched ?? outcome.value?.matched ?? false
+    verifyHistory.value = [
+      { id, matched, at: new Date().toLocaleTimeString() },
+      ...verifyHistory.value.filter((h) => h.id !== id),
+    ].slice(0, 8)
   } catch (e) {
     errMsg.value = (e as Error).message
   }
 }
 
 function doReplay() {
+  // R285：replaying 同时覆盖 30ms 延迟窗口与 submit() 的 await verifyReplay 在途期；
+  // 原仅做按钮文案标记无 return 守卫，在途期再点会启动新 timer 并发第二次验真提交。
+  if (replaying.value) return
   const ri = replayInfo.value
   if (!ri) {
     errMsg.value = '请先取复现信息'
@@ -340,6 +428,32 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G139 攻方全属性快照 */
+.attacker-full { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.af-item { font-size: 20rpx; color: var(--text-2); background: var(--panel-2); border-radius: 6rpx; padding: 4rpx 10rpx; }
+
+/* G125 会话验真记录 */
+.vh-row { cursor: pointer; }
+.vh-ok { color: var(--ok); }
+.vh-bad { color: var(--bad); }
+
+/* G117 哈希逐段对照 */
+.hash-segments { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.hs-seg { font-family: monospace; font-size: 22rpx; padding: 4rpx 8rpx; border-radius: 6rpx; }
+.hs-seg.ok { background: rgba(126,231,135,0.14); color: var(--ok); }
+.hs-seg.bad { background: rgba(255,123,114,0.14); color: var(--bad); }
+
+/* G99 冻结构筑分区快照 */
+.build-snapshot { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.bs-item {
+  background: var(--panel-2);
+  border: 1rpx solid var(--border-soft);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+
 /* R83 校验失败输入框红框 */
 .input-error {
   border-color: var(--bad);

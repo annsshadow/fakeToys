@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest'
-import { loadDocLists } from './docFeed'
+import { docMetaSize, loadDocLists } from './docFeed'
 
 describe('loadDocLists', () => {
   it('并发发起：第一份清单未返回前，第二份必须已经开始', async () => {
@@ -68,5 +68,23 @@ describe('loadDocLists', () => {
     expect(snapshot.attachments.ok).toBe(false)
     if (!snapshot.files.ok) expect(snapshot.files.error).toBe('文件加载失败：network down')
     if (!snapshot.attachments.ok) expect(snapshot.attachments.error).toBe('附件加载失败：403')
+  })
+})
+
+describe('docMetaSize', () => {
+  it('FILE_FILE 附件行只有 length 字段也能显示大小（原逻辑只读 size 会漏）', () => {
+    expect(docMetaSize({ length: 2048 })).toBe('2.0 KB')
+  })
+
+  it('x_file 文件行 size 字段仍正常显示', () => {
+    expect(docMetaSize({ size: 1024 })).toBe('1.0 KB')
+  })
+
+  it('size 与 length 同时存在时以 size 为准', () => {
+    expect(docMetaSize({ size: 1024, length: 2048 })).toBe('1.0 KB')
+  })
+
+  it('两个字段都缺失时返回空串', () => {
+    expect(docMetaSize({})).toBe('')
   })
 })

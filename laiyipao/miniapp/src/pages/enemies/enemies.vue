@@ -33,6 +33,41 @@
             @click="categoryFilter = c.key"
           >{{ c.label }}</text>
         </view>
+        <!-- G104 元素克制排行：堆某元素时先打谁 -->
+        <view class="counter-box">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">克制排行（越易伤越靠前）</text>
+          <view class="chip-row" style="margin-bottom: 8rpx">
+            <text
+              v-for="el in ELEMENT_ORDER"
+              :key="'ce' + el"
+              class="chip tap"
+              :class="{ hit: counterElement === el }"
+              :style="counterElement === el ? { background: ELEMENT_COLOR[el], color: '#fff' } : {}"
+              @click="counterElement = el"
+            >{{ ELEMENT_NAME[el] }}</text>
+          </view>
+          <view v-for="(c, i) in counterRanking" :key="c.id" class="counter-row">
+            <text class="dim">{{ i + 1 }}. {{ c.name }}</text>
+            <view class="counter-track">
+              <view
+                class="counter-fill"
+                :style="{ width: Math.min(100, Math.abs(c.resist) / 5) + '%', background: c.resist < 0 ? 'var(--ok)' : 'var(--bad)' }"
+              />
+            </view>
+            <text class="mono">{{ c.resist > 0 ? '+' : '' }}{{ c.resist / 10 }}%</text>
+          </view>
+        </view>
+
+        <!-- G119 敌人数值分布 -->
+        <view class="hp-dist">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">血量分布（含 BOSS 计数）</text>
+          <view v-for="(b, i) in hpDistribution" :key="i" class="hd-row">
+            <text class="dim hd-label">{{ b.label }}+</text>
+            <view class="hd-track"><view class="hd-fill" :style="{ width: b.pct + '%' }" /></view>
+            <text class="mono hd-val">{{ b.count }}<text v-if="b.boss" class="hd-boss">★{{ b.boss }}</text></text>
+          </view>
+        </view>
+
         <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
@@ -40,9 +75,12 @@
             <view class="icon-badge" :class="en.is_boss ? 'badge-fire' : ''" style="width: 64rpx; height: 64rpx">
               <DefIcon :name="'enemy:' + en.category" :size="40" />
             </view>
-            <text class="rxn-name">{{ en.name }}</text>
+            <text class="rxn-name tap" @click="toggleEnemy(en.id)">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
             <text v-if="en.is_boss" class="chip hit">Boss</text>
+            <text class="resist-toggle" @click="toggleEnemy(en.id)">
+              {{ expandedEnemy === en.id ? '收起抗性图 ▲' : '抗性图 ▼' }}
+            </text>
           </view>
           <text class="rxn-descr">{{ en.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
@@ -70,6 +108,30 @@
             </text>
           </view>
           <text v-else class="muted">无元素抗性</text>
+
+          <!-- G73 抗性雷达图：点名字/「抗性图」展开。五维形状把「怕什么、抗什么」一眼画出 -->
+          <view v-if="expandedEnemy === en.id" class="resist-radar-wrap">
+            <svg class="resist-radar" viewBox="0 0 200 180" aria-label="敌人抗性雷达图">
+              <polygon class="rr-ring" points="100,88 100,20 153,50 153,126 47,126 47,50" />
+              <polygon class="rr-ring" points="100,88 100,44 138,63 138,113 62,113 62,63" />
+              <line
+                v-for="(pt, i) in resistDirs"
+                :key="'ax' + i"
+                class="rr-axis"
+                x1="100" y1="88"
+                :x2="100 + pt.dx * 62" :y2="88 + pt.dy * 62"
+              />
+              <polygon class="rr-shape" :points="enemyResistPoints(en)" />
+              <text
+                v-for="(lb, i) in resistLabels"
+                :key="'lb' + i"
+                class="rr-label"
+                :x="lb.x" :y="lb.y"
+                text-anchor="middle"
+              >{{ lb.text }}</text>
+            </svg>
+            <text class="dim">外圈=减伤（抗性高）· 内缩=易伤（抗性负）</text>
+          </view>
         </view>
         <text v-if="!enemies.length" class="muted">敌人表为空（配置未加载？）</text>
         <!-- R23 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
@@ -85,7 +147,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
@@ -148,9 +210,124 @@ function elementName(e: Element): string {
 function resistEntries(en: { resist?: Record<string, number> }): [string, number][] {
   return Object.entries(en.resist ?? {}).filter(([, v]) => v !== 0)
 }
+
+/* -------------------------------------------------------------------------- */
+/* G73 敌人抗性雷达图（第七批）                                                 */
+/* 五元素抗性 -500..500 → 半径：0 落在中圈，正抗性（减伤）外扩、负抗性（易伤）内缩。 */
+/* 数据全部来自 en.resist，不改 api/store 契约。                                */
+/* -------------------------------------------------------------------------- */
+/** G119 敌人数值分布：血量分 5 档统计敌人数，Boss 单独计数 —— 理解后期敌人厚在哪。 */
+const hpDistribution = computed(() => {
+  const hps = enemies.value.map((e) => e.hp)
+  const max = Math.max(1, ...hps)
+  const step = Math.ceil(max / 5)
+  const buckets = Array.from({ length: 5 }, (_, i) => ({ label: `${i * step}`, count: 0, boss: 0 }))
+  for (const e of enemies.value) {
+    const idx = Math.min(4, Math.floor(e.hp / step))
+    buckets[idx]!.count++
+    if (e.is_boss) buckets[idx]!.boss++
+  }
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count))
+  return buckets.map((b) => ({ ...b, pct: Math.round(b.count / maxCount * 100) }))
+})
+
+/** G104 元素克制排行：选一个元素，按该元素抗性升序排（越负越易伤），配装时快速找靶子。 */
+const counterElement = ref<Element>(ELEMENT_ORDER[0]!)
+const counterRanking = computed(() =>
+  enemies.value
+    .map((en) => ({ id: en.id, name: en.name, resist: Number(en.resist?.[counterElement.value] ?? 0) }))
+    .sort((a, b) => a.resist - b.resist)
+    .slice(0, 8),
+)
+
+const expandedEnemy = ref<number | null>(null)
+function toggleEnemy(id: number) {
+  expandedEnemy.value = expandedEnemy.value === id ? null : id
+}
+const RADAR_CX = 100
+const RADAR_CY = 88
+const RADAR_R = 62
+/** 抗性千分比 → 半径比例（0→0.5，-500→0.16，+500→0.84）。 */
+function resistScale(v: number): number {
+  return 0.5 + Math.max(-500, Math.min(500, v)) / 1000 * 0.68
+}
+/** 五元素方向的单位向量（正上方起顺时针）。 */
+const resistDirs = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
+  return { dx: Math.cos(a), dy: Math.sin(a) }
+})
+function enemyResistPoints(en: { resist?: Record<string, number> }): string {
+  return resistDirs
+    .map((d, i) => {
+      const el = ELEMENT_ORDER[i]
+      const v = Number(en.resist?.[el] ?? 0)
+      const s = resistScale(v)
+      return `${(RADAR_CX + d.dx * RADAR_R * s).toFixed(1)},${(RADAR_CY + d.dy * RADAR_R * s).toFixed(1)}`
+    })
+    .join(' ')
+}
+/** 五元素标签（正上方起顺时针，与 resistDirs 同序）。 */
+const resistLabels = resistDirs.map((d, i) => ({
+  x: RADAR_CX + d.dx * (RADAR_R + 14),
+  y: RADAR_CY + d.dy * (RADAR_R + 14) + 4,
+  text: ELEMENT_NAME[ELEMENT_ORDER[i]!] ?? '',
+}))
 </script>
 
 <style scoped>
+/* G119 血量分布 */
+.hd-row { display: flex; flex-direction: row; align-items: center; gap: 10rpx; margin: 6rpx 0; }
+.hd-label { width: 120rpx; flex-shrink: 0; font-size: 22rpx; }
+.hd-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.hd-fill { height: 100%; background: var(--bad); border-radius: 999rpx; }
+.hd-val { width: 100rpx; text-align: right; font-size: 22rpx; }
+.hd-boss { color: var(--warn); margin-left: 6rpx; }
+
+/* G104 元素克制排行 */
+.counter-box { margin: 12rpx 0 16rpx; padding: 12rpx; background: var(--panel-2); border-radius: 12rpx; }
+.counter-row { display: flex; flex-direction: row; align-items: center; gap: 8rpx; margin: 6rpx 0; }
+.counter-row .dim { width: 180rpx; flex-shrink: 0; font-size: 22rpx; }
+.counter-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.counter-fill { height: 100%; border-radius: 999rpx; }
+.counter-row .mono { width: 90rpx; text-align: right; font-size: 22rpx; }
+
+/* G73 敌人抗性雷达图 */
+.rxn-name.tap { color: var(--accent); }
+.resist-toggle {
+  margin-left: 12rpx;
+  font-size: 20rpx;
+  color: var(--ice);
+}
+.resist-radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12rpx;
+}
+.resist-radar {
+  width: 400rpx;
+  height: 360rpx;
+  overflow: visible;
+}
+.rr-ring {
+  fill: none;
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.rr-axis {
+  stroke: var(--border-soft, var(--border));
+  stroke-width: 1;
+}
+.rr-shape {
+  fill: rgba(88, 166, 255, 0.22);
+  stroke: #58a6ff;
+  stroke-width: 2;
+}
+.rr-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
 /* 条目分隔线走共享的 .rxn（styles/common.css） */
 /* R65 抗性正负色分 */
 .res-up { color: var(--bad); }

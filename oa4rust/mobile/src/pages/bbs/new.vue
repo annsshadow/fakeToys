@@ -50,16 +50,18 @@ async function submit() {
     const newId = resp.data?.id ?? ''
     uni.showToast({ title: '发布成功', icon: 'success' })
     // 新主题详情可直接打开；拿不到 id 时退回列表刷新即可。
+    // 成功到跳转的 600ms 窗口内保持提交守卫，防止连点重复发帖；跳转发生时才释放。
     setTimeout(() => {
       if (newId) {
         uni.redirectTo({ url: `/pages/bbs/topic?id=${encodeURIComponent(newId)}` })
       } else {
         uni.navigateBack()
       }
+      submitting.value = false
     }, 600)
   } catch {
     uni.showToast({ title: '发布失败，请重试', icon: 'none' })
-  } finally {
+    // 失败立即释放守卫，允许用户重试。
     submitting.value = false
   }
 }
@@ -107,7 +109,7 @@ onLoad(async () => {
 .form-card {
   padding: 14px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .field {
   margin-bottom: 14px;
@@ -116,25 +118,25 @@ onLoad(async () => {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
-  color: #5a6478;
+  color: var(--color-text-secondary);
 }
 .picker-value {
   height: 36px;
   line-height: 36px;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .picker-value.placeholder {
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 .input {
   height: 36px;
   padding: 0 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
 }
 .textarea {
@@ -142,7 +144,7 @@ onLoad(async () => {
   min-height: 120px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #f4f6fa;
+  background: var(--color-bg-page);
   font-size: 14px;
   box-sizing: border-box;
 }
@@ -152,8 +154,8 @@ onLoad(async () => {
   line-height: 44px;
   text-align: center;
   border-radius: 22px;
-  background: #2f6bff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 15px;
 }
 .submit.disabled {

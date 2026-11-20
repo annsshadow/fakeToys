@@ -3,6 +3,7 @@
 
 import type { App } from 'vue'
 import './theme/dark.css'
+import './theme/tokens.css'
 
 import AppShell from './components/AppShell.vue'
 import LoginScreen from './components/LoginScreen.vue'

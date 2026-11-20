@@ -67,3 +67,19 @@ export function parseCsv(text: string, delimiter = ','): { headers: string[]; ro
 export function rowsToObjects(headers: string[], rows: string[][]): Record<string, string>[] {
   return rows.map((r) => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ''])))
 }
+
+/**
+ * RFC 4180 子集 CSV 序列化 —— parseCsv 的逆操作。表头与字段一律双引号包裹，
+ * 内嵌双引号以 doubled（""）转义，防止列名/值中的逗号、引号、换行破坏列对齐。
+ * 行尾统一 LF，与 parseCsv 的方言互逆。
+ */
+export function buildCsv(headers: string[], rows: string[][]): string {
+  const quote = (v: string) => {
+    // CWE-1236：以 = + - @（含前导空白/制表符/回车）开头的单元格在 Excel/WPS 中会被当公式求值，
+    // 前置单引号强制其为纯文本；普通值行为不变。
+    const safe = /^\s*[=+\-@]/.test(v) ? `'${v}` : v
+    return `"${safe.replace(/"/g, '""')}"`
+  }
+  const line = (cells: string[]) => cells.map((c) => quote(String(c ?? ''))).join(',')
+  return [line(headers), ...rows.map(line)].join('\n')
+}

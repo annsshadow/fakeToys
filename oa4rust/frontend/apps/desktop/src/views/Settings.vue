@@ -27,7 +27,7 @@
             <div class="fg"><label>时区</label><select v-model="cfg.timezone" class="fs"><option value="Asia/Shanghai">Asia/Shanghai</option><option value="UTC">UTC</option></select></div>
             <div class="fg"><label>语言</label><select v-model="cfg.locale" class="fs"><option value="zh-cn">中文</option><option value="en">English</option><option value="es">Español</option></select></div>
           </div>
-          <button class="save-btn" @click="saveCfg('basic')">保存设置</button>
+          <button class="save-btn" :disabled="saving" @click="saveCfg('basic')">保存设置</button>
         </div>
 
         <!-- 安全设置 -->
@@ -39,7 +39,7 @@
             <div class="fg"><label>会话超时（分钟）</label><input v-model.number="cfg.sessionTimeout" type="number" class="fi" /></div>
             <div class="fg"><label>允许注册</label><select v-model="cfg.allowRegister" class="fs"><option :value="true">是</option><option :value="false">否</option></select></div>
           </div>
-          <button class="save-btn" @click="saveCfg('security')">保存设置</button>
+          <button class="save-btn" :disabled="saving" @click="saveCfg('security')">保存设置</button>
         </div>
 
         <!-- 通知设置 -->
@@ -49,7 +49,7 @@
             <span class="tr-label">{{t.label}}</span>
             <label class="switch"><input v-model="t.on" type="checkbox" /><span class="slider"></span></label>
           </div>
-          <button class="save-btn" @click="saveToggles">保存</button>
+          <button class="save-btn" :disabled="saving" @click="saveToggles">保存</button>
         </div>
 
         <!-- 关于 -->
@@ -76,6 +76,9 @@ import { onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
 
 const activeSection = ref('basic')
+// R267：系统设置保存为全量 UPSERT，网络慢时并发点击会让旧值覆盖新值；
+// 同步占用 saving，按钮禁用，finally 复位（请求真正 settle 后才放开）。
+const saving = ref(false)
 
 const sections = [
   { id: 'basic', label: '基础配置', icon: '⚙' },
@@ -136,11 +139,15 @@ function buildConfigs() {
 }
 
 async function persistConfigs() {
+  if (saving.value) return
+  saving.value = true
   try {
     await api.post('/api/config', { configs: buildConfigs() })
     toast.success('系统参数已保存')
   } catch (e: any) {
     toast.error(`系统参数保存失败: ${e?.message ?? '未知错误'}`)
+  } finally {
+    saving.value = false
   }
 }
 function saveCfg(_section: string) {
@@ -180,6 +187,7 @@ input:checked+.slider{background:var(--color-primary);border-color:var(--color-p
 input:checked+.slider:before{transform:translateX(20px)}
 .save-btn{padding:10px 24px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-deep));color:white;font-weight:600;cursor:pointer;font-size:14px;transition:all var(--transition-fast)}
 .save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px var(--color-primary-glow)}
+.save-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 .about-info{display:flex;align-items:center;gap:20px;padding:20px}
 .logo-box{font-size:48px;color:var(--color-primary);text-shadow:0 0 20px var(--color-primary-glow)}
 .ai-text{display:flex;flex-direction:column;gap:4px}

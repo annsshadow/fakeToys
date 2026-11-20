@@ -30,7 +30,7 @@ export function describeLoadError(label: string, error: unknown): string {
 
 /** 三分支判定：错误优先于空态，首屏加载优先于两者。 */
 export function listState(input: { loading: boolean; loaded: boolean; count: number; error: string }): ListViewState {
-  if (input.loading && !input.loaded) return 'loading'
+  if (input.loading && (input.count === 0 || !input.loaded)) return 'loading'
   if (input.error && input.count === 0) return 'error'
   if (input.count === 0) return 'empty'
   return 'list'

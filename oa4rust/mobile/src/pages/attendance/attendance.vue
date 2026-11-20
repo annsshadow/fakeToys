@@ -8,6 +8,7 @@ import { type AttendancePreCheck, attendanceApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { parseServerDate } from '@/utils/datetime'
 import { describeLoadError } from '@/utils/loadList'
+import { type MyDetailRow, toMyDetailRows } from './detailRows'
 
 const pre = ref<AttendancePreCheck | null>(null)
 const loading = ref(false)
@@ -115,36 +116,41 @@ function todayRecords(): AttendancePreCheck['records'] {
 }
 
 // ── 我的月度考勤（v2/my/*，rev102）───────────────────────────────
-interface MyDetailRow {
-  id?: string
-  date?: string
-  status?: string
-  [key: string]: unknown
-}
 const myStat = ref<Record<string, unknown> | null>(null)
 const myDetails = ref<MyDetailRow[]>([])
 const apiVersion = ref('')
 const myLoading = ref(false)
 const mineError = ref('')
 
+let loadMineSeq = 0
+
 async function loadMine(): Promise<void> {
+  // onShow 与两个重试按钮共用本函数；用序号只让最新一次回写，避免旧响应后到覆盖新数据。
+  const seq = ++loadMineSeq
   myLoading.value = true
   mineError.value = ''
-  const [statResp, detailResp, verResp] = await Promise.allSettled([
-    attendanceApi.myStatistic(),
-    attendanceApi.myDetailList(),
-    attendanceApi.myVersion(),
-  ])
-  if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
-  if (detailResp.status === 'fulfilled') myDetails.value = (detailResp.value.data ?? []) as MyDetailRow[]
-  if (verResp.status === 'fulfilled')
-    apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
-  const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
-  if (failed && failed.status === 'rejected') {
-    // 部分失败也保留已拿到的统计/明细，同时把错误显示出来。
-    mineError.value = describeLoadError('月度考勤加载失败', failed.reason)
+  try {
+    const [statResp, detailResp, verResp] = await Promise.allSettled([
+      attendanceApi.myStatistic(),
+      attendanceApi.myDetailList(),
+      attendanceApi.myVersion(),
+    ])
+    if (seq !== loadMineSeq) return
+    if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
+    if (detailResp.status === 'fulfilled') myDetails.value = toMyDetailRows(detailResp.value.data)
+    if (verResp.status === 'fulfilled')
+      apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
+    const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
+    if (failed && failed.status === 'rejected') {
+      // 部分失败也保留已拿到的统计/明细，同时把错误显示出来。
+      mineError.value = describeLoadError('月度考勤加载失败', failed.reason)
+    }
+  } catch (e) {
+    if (seq === loadMineSeq) mineError.value = describeLoadError('月度考勤加载失败', e)
+  } finally {
+    // 过期请求的 finally 不得复位最新请求的加载态。
+    if (seq === loadMineSeq) myLoading.value = false
   }
-  myLoading.value = false
 }
 
 function statText(): string {
@@ -249,7 +255,7 @@ function statText(): string {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 32rpx;
   box-sizing: border-box;
 }
@@ -260,12 +266,12 @@ function statText(): string {
 .date {
   font-size: 40rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .group {
   margin-top: 10rpx;
   font-size: 26rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .buttons {
   display: flex;
@@ -274,22 +280,22 @@ function statText(): string {
 }
 .btn {
   flex: 1;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 14rpx;
   font-size: 30rpx;
 }
 .btn[disabled] {
-  background: #c0c4cc;
+  background: var(--color-placeholder);
 }
 .out-buttons {
   margin-top: -24rpx;
 }
 .btn-out {
-  background: #ff9900;
+  background: var(--color-warning);
 }
 .leave-input {
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   border-radius: 10rpx;
   padding: 16rpx 20rpx;
   font-size: 26rpx;
@@ -299,13 +305,13 @@ function statText(): string {
   margin-top: 8rpx;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 40rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -316,26 +322,26 @@ function statText(): string {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  background: #fdf2f0;
+  background: var(--color-error-tint);
   border-radius: 12rpx;
   margin-bottom: 20rpx;
 }
 .section {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 28rpx;
 }
 .section-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 16rpx;
 }
 .rec {
@@ -343,7 +349,7 @@ function statText(): string {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .rec:last-child {
   border-bottom: none;
@@ -355,26 +361,26 @@ function statText(): string {
 }
 .rec-type {
   font-size: 28rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 .rec-result {
   font-size: 24rpx;
-  color: #67c23a;
+  color: var(--color-success-text);
 }
 .rec-meta {
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .ver {
   margin-left: 12rpx;
   font-size: 22rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
   font-weight: 400;
 }
 .stat-line {
   font-size: 26rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   margin-bottom: 16rpx;
 }
 </style>

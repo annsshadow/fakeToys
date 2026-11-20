@@ -27,6 +27,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -291,3 +292,50 @@ function captureShare(wrapper: any): { title: string; path: string } {
   }
   return out as { title: string; path: string }
 }
+
+/**
+ * 服务端契约：economy.go leaderboardOrderSQL(kind) 对 efficiency 返回 ASC
+ * （分数越低越好，items 按 score 从小到大排），对 power/stage 返回 DESC。
+ * chaseGap 之前一律按 DESC 算差，效率榜上两侧都被 Math.max(0, …) 夹成 0，
+ * 于是「距上一名还差 0 分 / 领先下一名 0 分」—— 有名次却没有有意义的差距。
+ */
+describe('rank.vue 追赶分差必须遵循榜单排序方向', () => {
+  it('效率榜（ASC）：上一名 30 / 我 50 / 下一名 80 → 还差 20 分、领先 30 分', async () => {
+    mockApi.fetchLeaderboard.mockResolvedValue({
+      items: [
+        { user_id: 1, nickname: '甲', score: 30 },
+        { user_id: 7, nickname: '乙', score: 50 },
+        { user_id: 2, nickname: '丙', score: 80 },
+      ],
+    })
+    mockApi.fetchMyRank.mockResolvedValue({ kind: 'efficiency', rank: 2, total: 3, score: 50 })
+
+    const { wrapper } = mountPage(Rank)
+    await flushPromises()
+    await wrapper.findAll('.tab')[2]!.trigger('click')
+    await flushPromises()
+
+    expect(mockApi.fetchLeaderboard).toHaveBeenLastCalledWith('efficiency')
+    const gap = wrapper.find('.chase-gap').text().replace(/\s+/g, '')
+    expect(gap).toContain('距上一名还差20分')
+    expect(gap).toContain('领先下一名30分')
+  })
+
+  it('战力榜（DESC）：上一名 80 / 我 50 / 下一名 30 → 还差 30 分、领先 20 分', async () => {
+    mockApi.fetchLeaderboard.mockResolvedValue({
+      items: [
+        { user_id: 1, nickname: '甲', score: 80 },
+        { user_id: 7, nickname: '乙', score: 50 },
+        { user_id: 2, nickname: '丙', score: 30 },
+      ],
+    })
+    mockApi.fetchMyRank.mockResolvedValue({ kind: 'power', rank: 2, total: 3, score: 50 })
+
+    const { wrapper } = mountPage(Rank)
+    await flushPromises()
+
+    const gap = wrapper.find('.chase-gap').text().replace(/\s+/g, '')
+    expect(gap).toContain('距上一名还差30分')
+    expect(gap).toContain('领先下一名20分')
+  })
+})

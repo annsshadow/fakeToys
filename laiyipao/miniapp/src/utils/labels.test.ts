@@ -78,6 +78,19 @@ describe('affixName', () => {
   it('returns unknown affixes verbatim', () => {
     expect(affixName('lifesteal')).toBe('lifesteal')
   })
+
+  it('translates every gem affix key emitted by the server (no raw English on owned gems)', () => {
+    // 服务端 domain/gems.go 的 SeedGemAffixes 会下发这些 affix key；
+    // 背包页用 affixName() 展示已拥有宝石词条，漏一条就出现英文原文。
+    const serverGemAffixes = [
+      'attack', 'skill_damage', 'crit', 'element_coef',
+      'reaction_mult', 'element_cap', 'heat_cap', 'armor',
+    ]
+    for (const key of serverGemAffixes) {
+      expect(affixName(key), `服务端词条 ${key} 必须翻译成中文`).not.toBe(key)
+    }
+    expect(affixName('skill_damage')).toBe('技能伤害')
+  })
 })
 
 describe('跨表一致性', () => {

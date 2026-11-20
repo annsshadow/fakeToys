@@ -8,6 +8,7 @@ import { annApi, attendanceApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { loadList } from '@/utils/loadList'
+import { cachedRequest } from '@/utils/requestCache'
 import { PENDING_PROBE_SIZE, pendingBadge } from './pendingCount'
 
 type Notice = { id?: string; title?: string; content?: string; createTime?: string }
@@ -43,10 +44,11 @@ async function loadPending() {
 }
 
 /** 公告：后端 create_time 倒序，取前 5 条展示；点击看全文。 */
-async function loadNotices() {
+async function loadNotices(force = false) {
   // R137：重试前必须清空上一次的错误，否则成功之后横幅仍挂着旧错误（列表页唯一漏点）。
   noticesError.value = ''
-  const result = await loadList<Notice>(() => annApi.list(), {
+  // 公告为只读高频端点：onShow 复用 TTL 缓存；重试按钮 force 绕过。
+  const result = await loadList<Notice>(() => cachedRequest('announcement:list', () => annApi.list(), { ttlMs: 30_000, force }), {
     previousRows: notices.value,
     label: '公告加载失败',
     map: (data) => (Array.isArray(data) ? (data as Notice[]).slice(0, 5) : []),
@@ -103,14 +105,14 @@ function goPage(url: string) {
       <view class="sec-title">📢 公告</view>
       <view v-if="notices.length === 0 && noticesError" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices()">重试</view>
+        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
       </view>
       <view v-else-if="notices.length === 0" class="sec-empty">暂无公告</view>
       <view v-if="noticesError && notices.length > 0" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices()">重试</view>
+        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
       </view>
-      <view v-for="n in notices" :key="n.id" class="notice" @tap="viewNotice = n">
+      <view v-for="n in notices" :key="n.id" class="notice o2-list-item" @tap="viewNotice = n">
         <view class="notice-title">{{ n.title || '无标题' }}</view>
         <view class="notice-meta">{{ (n.createTime || '').slice(0, 10) }}</view>
       </view>
@@ -190,16 +192,16 @@ function goPage(url: string) {
 .hello {
   font-size: 40rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .sub {
   margin-top: 8rpx;
   font-size: 26rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .stat-card {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 20rpx;
   padding: 40rpx;
   margin-bottom: 40rpx;
@@ -220,7 +222,7 @@ function goPage(url: string) {
   gap: 24rpx;
 }
 .cell {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 32rpx 0;
   display: flex;
@@ -233,10 +235,10 @@ function goPage(url: string) {
 }
 .cell-text {
   font-size: 24rpx;
-  color: #4a4a4a;
+  color: var(--color-text-secondary);
 }
 .section-card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 32rpx;
@@ -244,16 +246,16 @@ function goPage(url: string) {
 .sec-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 12rpx;
 }
 .sec-empty {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   padding: 12rpx 0;
 }
 .sec-error {
-  color: #c0392b;
+  color: var(--color-error);
   font-size: 24rpx;
   padding: 12rpx 0;
 }
@@ -266,8 +268,8 @@ function goPage(url: string) {
   display: inline-block;
   padding: 6rpx 24rpx;
   border-radius: 22rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 24rpx;
 }
 .notice {
@@ -275,7 +277,7 @@ function goPage(url: string) {
   align-items: center;
   justify-content: space-between;
   padding: 18rpx 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .notice:last-of-type {
   border-bottom: none;
@@ -283,7 +285,7 @@ function goPage(url: string) {
 .notice-title {
   flex: 1;
   font-size: 27rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -292,7 +294,7 @@ function goPage(url: string) {
   flex-shrink: 0;
   margin-left: 16rpx;
   font-size: 22rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .notice-mask {
   position: fixed;
@@ -305,7 +307,7 @@ function goPage(url: string) {
   padding: 48rpx;
 }
 .notice-dialog {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 20rpx;
   padding: 32rpx;
   width: 100%;
@@ -316,25 +318,25 @@ function goPage(url: string) {
 .nd-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .nd-meta {
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .nd-body {
   margin-top: 20rpx;
   font-size: 28rpx;
-  color: #4a4a4a;
+  color: var(--color-text-secondary);
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .nd-close {
   margin-top: 28rpx;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 26rpx;
 }
 </style>

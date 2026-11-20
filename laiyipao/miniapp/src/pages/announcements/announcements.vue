@@ -36,14 +36,40 @@
       </view>
 
       <view v-else>
-        <view v-for="(a, i) in items" :key="a.id" class="card ann-card">
-          <view class="ann-head">
-            <!-- R22 最新一条给「最新」徽章，日期做成统一胶囊，与其它列表页一致 -->
-            <text v-if="i === 0" class="ann-new">最新</text>
-            <text class="ann-title">{{ a.title }}</text>
-            <text class="ann-date mono">{{ formatDate(a.published_at) }}</text>
+        <!-- G86 时间筛选 -->
+        <view class="filter-row">
+          <view
+            v-for="f in annFilters"
+            :key="f.key"
+            class="filter-chip"
+            :class="{ active: annFilter === f.key }"
+            @click="annFilter = f.key"
+          >{{ f.label }}</view>
+        </view>
+        <!-- G112 公告关键词搜索 -->
+        <input
+          v-model="annKeyword"
+          class="search-inp"
+          placeholder="搜索公告标题 / 正文"
+          placeholder-class="ph"
+          style="margin-top: 12rpx"
+        />
+        <text v-if="annKeyword && filteredItems.length === 0" class="muted">
+          没有匹配「{{ annKeyword }}」的公告
+          <text class="link" @click="annKeyword = ''">清除搜索</text>
+        </text>
+        <text v-else-if="filteredItems.length === 0" class="muted">该时间段没有公告。</text>
+        <!-- G131 按月份分组归档 -->
+        <view v-for="grp in groupedByMonth" :key="grp[0]" class="month-group">
+          <text class="month-label">{{ grp[0] }}</text>
+          <view v-for="(a, i) in grp[1]" :key="a.id" class="card ann-card">
+            <view class="ann-head">
+              <text v-if="i === 0" class="ann-new" :class="{ hidden: !isFirstGroup(grp[0]) }">最新</text>
+              <text class="ann-title">{{ a.title }}</text>
+              <text class="ann-date mono">{{ formatDate(a.published_at) }}</text>
+            </view>
+            <text class="ann-body">{{ a.body }}</text>
           </view>
-          <text class="ann-body">{{ a.body }}</text>
         </view>
       </view>
     </view>
@@ -51,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import * as api from '@/api/client'
 import type { Announcement } from '@/api/client'
 
@@ -59,6 +85,65 @@ const items = ref<Announcement[]>([])
 const loading = ref(false)
 /** 第六批 R42：区分「拉取失败」与「确实没公告」。 */
 const loadFailed = ref(false)
+
+/* -------------------------------------------------------------------------- */
+/* G86 公告时间筛选（第七批）                                                   */
+/* 按 published_at 过滤最近 7 天 / 30 天 / 全部，帮玩家在长公告里快速定位新内容。   */
+/* -------------------------------------------------------------------------- */
+const annFilters = [
+  { key: 'all', label: '全部' },
+  { key: '7d', label: '近 7 天' },
+  { key: '30d', label: '近 30 天' },
+] as const
+type AnnFilter = (typeof annFilters)[number]['key']
+const annFilter = ref<AnnFilter>('all')
+/** G112 关键词搜索：在时间筛选基础上叠加标题/正文关键词（数据来自 items）。 */
+/** G131 公告按月份分组：把卡片列表变成有脉络的归档（数据来自 filteredItems）。 */
+/** 是否最早分组（用于「最新」徽章只标全局第一条）。 */
+function isFirstGroup(key: string): boolean {
+  return groupedByMonth.value[0]?.[0] === key
+}
+
+const groupedByMonth = computed(() => {
+  const m = new Map<string, typeof items.value>()
+  for (const a of filteredItems.value) {
+    const key = monthKey(a.published_at)
+    const arr = m.get(key) ?? []
+    arr.push(a)
+    m.set(key, arr)
+  }
+  return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+})
+
+const annKeyword = ref('')
+const filteredItems = computed(() => {
+  const kw = annKeyword.value.trim().toLowerCase()
+  let list = items.value
+  if (annFilter.value !== 'all') {
+    const days = annFilter.value === '7d' ? 7 : 30
+    const cutoff = Date.now() - days * 86400000
+    list = list.filter((a) => {
+      const t = a.published_at ? new Date(a.published_at).getTime() : 0
+      return t >= cutoff
+    })
+  }
+  if (!kw) return list
+  return list.filter((a) => a.title.toLowerCase().includes(kw) || a.body.toLowerCase().includes(kw))
+})
+
+/**
+ * 归档分组键必须和 formatDate 用同一套（本地）日历。
+ * 服务端 published_at 是 UTC 的 RFC3339 字符串，直接 slice(0,7) 取到的
+ * 是 UTC 年月；UTC 月末在本地已是下月初时，组标题会和卡片日期自相矛盾。
+ */
+function monthKey(iso: string | null): string {
+  if (!iso) return '未标注日期'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 7) || '未标注日期'
+  const y = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${mm}`
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return ''
@@ -89,6 +174,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G131 月份分组 */
+.month-group { margin-bottom: 16rpx; }
+.month-label { display: block; font-size: 24rpx; color: var(--accent); font-weight: 600; margin: 12rpx 0 8rpx; padding-left: 8rpx; border-left: 4rpx solid var(--accent); }
+.ann-new.hidden { display: none; }
+
 .ann-card {
   margin-bottom: 16rpx;
   /* R22 左侧强调条：与其它列表页的卡片视觉语言对齐 */

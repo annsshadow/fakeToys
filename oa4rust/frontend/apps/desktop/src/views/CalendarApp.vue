@@ -6,9 +6,9 @@
     <div class="view-header glass-card">
       <h1>日历</h1>
       <div class="header-controls">
-        <button class="nav-btn" @click="prevMonth">‹</button>
+        <button class="nav-btn" aria-label="上一月" @click="prevMonth">‹</button>
         <span class="month-label">{{ currentYear }}年{{ currentMonth }}月</span>
-        <button class="nav-btn" @click="nextMonth">›</button>
+        <button class="nav-btn" aria-label="下一月" @click="nextMonth">›</button>
         <button class="today-btn" @click="goToday">今天</button>
       </div>
     </div>
@@ -50,8 +50,10 @@
     <div class="cal-list-bar glass-card">
       <span class="cll-title">日历：</span>
       <span v-if="calListError" class="cll-error">{{ calListError }}<button class="cll-tab" @click="loadCalendars(calScope)">重试</button></span>
-      <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
-      <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
+      <span role="group" aria-label="日历范围">
+        <button class="cll-tab" :aria-pressed="calScope==='my'" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
+        <button class="cll-tab" :aria-pressed="calScope==='public'" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
+      </span>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
       <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
       <button class="cll-tab" @click="loadCalTwin">🔁 孪生端点</button>
@@ -146,6 +148,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { calendarBusinessToday, calendarCellKey, shiftCalendarMonth } from '../utils/calendarGrid'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -160,9 +163,9 @@ interface CalendarEvent {
   calendarId?: string
 }
 
-const today = new Date()
-const currentYear = ref(today.getFullYear())
-const currentMonth = ref(today.getMonth() + 1)
+const initialToday = calendarBusinessToday()
+const currentYear = ref(initialToday.year)
+const currentMonth = ref(initialToday.month)
 const selectedDate = ref<{ year: number; month: number; day: number } | null>(null)
 
 interface CalItem {
@@ -499,18 +502,21 @@ const calendarCells = computed(() => {
     events?: CalendarEvent[]
   }> = []
 
-  // 上个月的尾部
-  const prevMonthLastDay = new Date(year, month - 1, 0).getDate()
+  // 上个月的尾部（跨年用真实年月，键补零）
+  const prev = shiftCalendarMonth(year, month, -1)
+  const prevMonthLastDay = new Date(prev.year, prev.month, 0).getDate()
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const d = prevMonthLastDay - i
     cells.push({
-      key: `${year}-${month - 1}-${d}`,
+      key: calendarCellKey(prev.year, prev.month, d),
       day: d,
-      month: month - 1,
-      year: month === 1 ? year - 1 : year,
+      month: prev.month,
+      year: prev.year,
       isToday: false,
     })
   }
+
+  const businessToday = calendarBusinessToday()
 
   // 本月
   for (let d = 1; d <= daysInMonth; d++) {
@@ -519,23 +525,24 @@ const calendarCells = computed(() => {
       (e: CalendarEvent) => e.startTime?.startsWith(dateStr) || e.startTime?.includes(dateStr),
     )
     cells.push({
-      key: `${year}-${month}-${d}`,
+      key: calendarCellKey(year, month, d),
       day: d,
       month,
       year,
-      isToday: d === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear(),
+      isToday: d === businessToday.day && month === businessToday.month && year === businessToday.year,
       events: dayEvents,
     })
   }
 
-  // 下个月的头部
+  // 下个月的头部（跨年用真实年月，键补零）
+  const next = shiftCalendarMonth(year, month, 1)
   const remaining = (7 - (cells.length % 7)) % 7
   for (let d = 1; d <= remaining; d++) {
     cells.push({
-      key: `${year}-${month + 1}-${d}`,
+      key: calendarCellKey(next.year, next.month, d),
       day: d,
-      month: month + 1,
-      year: month === 12 ? year + 1 : year,
+      month: next.month,
+      year: next.year,
       isToday: false,
     })
   }
@@ -569,8 +576,9 @@ function nextMonth(): void {
 }
 
 function goToday(): void {
-  currentMonth.value = today.getMonth() + 1
-  currentYear.value = today.getFullYear()
+  const businessToday = calendarBusinessToday()
+  currentMonth.value = businessToday.month
+  currentYear.value = businessToday.year
   selectedDate.value = null
 }
 

@@ -57,6 +57,25 @@ function httpStatusError(status: number): ApiError {
   return status === 404 ? new ApiError(NOT_FOUND_MESSAGE, 404) : new ApiError(`HTTP ${status}`, status)
 }
 
+/**
+ * 2xx 响应体信封归一化：与桌面 ApiClient 同口径。
+ * 网关误插 HTML 错误页 / 代理截断时 uni.request 的 res.data 会是非法 JSON 字符串，
+ * 直接当 ApiResponse 返回会让页面把"服务端失败"误判为"成功但无结果"。
+ * H5 上 res.data 是已解析对象、原生端可能是 JSON 文本，两种都接受；
+ * undefined / null（no-content 简写）原样保留，不破坏既有空体语义。
+ */
+function parseEnvelope<T>(data: unknown, status: number): ApiResponse<T> {
+  let value = data
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value)
+    } catch {
+      throw new ApiError('malformed JSON response', status)
+    }
+  }
+  return value as ApiResponse<T>
+}
+
 let apiBase = ''
 let authFailureHandler: (() => void) | null = null
 let refreshPromise: Promise<void> | null = null
@@ -107,7 +126,16 @@ function transportFailureMessage(raw: string | undefined, timeoutMessage: string
   return raw && /timeout/i.test(raw) ? timeoutMessage : fallbackMessage
 }
 
-function authenticationFailed(): AuthenticationError {
+/**
+ * 认证失败的唯一出口。
+ *
+ * refreshSession() 内部走的是 performRequest，refresh 自身 401 时已经调用过
+ * 本方法并抛出了 AuthenticationError。外层 catch 若再调一次，同一次失败
+ * 会通知上层两次（会话存储重复清用户、toast 弹两条）。传入 cause 后，
+ * 已经通知过的错误原样透传，只有「refresh 因非认证原因失败」才补一次通知。
+ */
+function authenticationFailed(cause?: unknown): AuthenticationError {
+  if (cause instanceof AuthenticationError) return cause
   authFailureHandler?.()
   return new AuthenticationError('Session expired, please login again')
 }
@@ -160,14 +188,14 @@ function performRequest<T>(
             resolve({ success: true, data: undefined as T })
             return
           }
-          resolve(data as ApiResponse<T>)
+          resolve(parseEnvelope<T>(data, status))
           return
         }
         if (status === 401) {
           if (options.requireAuth !== false && !options.retried && !isRefreshRequest(path)) {
             refreshSession()
               .then(() => performRequest<T>(method, path, body, { ...options, retried: true }).then(resolve, reject))
-              .catch(() => reject(authenticationFailed()))
+              .catch((err) => reject(authenticationFailed(err)))
             return
           }
           reject(authenticationFailed())
@@ -224,7 +252,7 @@ function performUpload<T>(
           if (options.requireAuth !== false && !retried) {
             refreshSession()
               .then(() => performUpload<T>(path, filePath, options, true).then(resolve, reject))
-              .catch(() => reject(authenticationFailed()))
+              .catch((err) => reject(authenticationFailed(err)))
             return
           }
           reject(authenticationFailed())

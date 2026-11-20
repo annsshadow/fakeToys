@@ -111,6 +111,36 @@ describe('LevelsView 列表渲染', () => {
     wrapper.unmount()
   })
 
+  // 第 66 轮：快速连续搜索时，旧请求的慢响应不得覆盖新结果（与 BattlesView/UsersView 同族守卫）。
+  it('关键词连续搜索：旧响应后到不得覆盖新结果（第 66 轮）', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    fetchLevels.mockReset()
+    fetchLevels.mockResolvedValue({ items: [], total: 0 })
+    const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const d1 = deferred()
+    const d2 = deferred()
+    fetchLevels.mockReset()
+    fetchLevels.mockImplementationOnce(() => d1.promise)
+    fetchLevels.mockImplementationOnce(() => d2.promise)
+    const vm = wrapper.vm as unknown as { keyword: string; load: () => void }
+    vm.keyword = '旧'
+    vm.load()
+    vm.keyword = '新'
+    vm.load()
+    d2.resolve({ items: [levelFixture({ id: 99, name: '新筛选结果' })], total: 1 })
+    await flushPromises()
+    d1.resolve({ items: [levelFixture({ id: 1, name: '旧筛选结果' })], total: 1 })
+    await flushPromises()
+    expect(wrapper.text()).toContain('新筛选结果')
+    expect(wrapper.text()).not.toContain('旧筛选结果')
+    wrapper.unmount()
+  })
   it('加载失败：错误消息弹条 + 不崩溃', async () => {
     fetchLevels.mockRejectedValueOnce(new Error('数据库不可用'))
     const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
@@ -397,4 +427,38 @@ describe('LevelsView 波次抽屉', () => {
     expect(wrapper.text()).toContain('· 波次编排')
     wrapper.unmount()
   })
+
+  // 第 73 轮：快速连开两个关卡的波次抽屉，旧关慢响应不得覆盖新关的波次列表。
+  it('波次抽屉连开：旧关慢响应后到不得覆盖新关波次（第 73 轮）', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    fetchLevelWaves.mockReset()
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchLevelWaves.mockImplementationOnce(() => dOld.promise)
+    fetchLevelWaves.mockImplementationOnce(() => dNew.promise)
+    const wrapper = await mountLevels([levelFixture({ id: 1, name: '旧关' }), levelFixture({ id: 2, name: '新关' })])
+    const vm = wrapper.vm as unknown as {
+      openWaves: (r: AdminLevelView) => Promise<void>
+      waveRows: Array<{ wave_index: number; spawns: unknown }>
+    }
+    // 先开旧关再开新关；新关的响应先到，旧关的慢响应后到。
+    const pOld = vm.openWaves(levelFixture({ id: 1, name: '旧关' }))
+    const pNew = vm.openWaves(levelFixture({ id: 2, name: '新关' }))
+    dNew.resolve({ waves: [{ wave_index: 9, spawns: [{ enemy_id: 99, count: 2, interval: 500, delay: 0 }] }] })
+    await flushPromises()
+    dOld.resolve({ waves: [{ wave_index: 1, spawns: [{ enemy_id: 1, count: 5, interval: 800, delay: 0 }] }] })
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    // 抽屉标题跟随最后一次点击（新关），波次列表也必须是新关的。
+    expect(vm.waveRows).toEqual([{ wave_index: 9, spawns: [{ enemy_id: 99, count: 2, interval: 500, delay: 0 }] }])
+    expect(wrapper.text()).toContain('#99×2（间隔 500ms，延迟 0ms）')
+    expect(wrapper.text()).not.toContain('#1×5（间隔 800ms，延迟 0ms）')
+    wrapper.unmount()
+  })
+
 })

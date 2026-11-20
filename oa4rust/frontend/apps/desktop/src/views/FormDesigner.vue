@@ -468,7 +468,7 @@
       <div v-if="simResult" class="sim-result">
         <div class="sim-metric"><span class="sim-val">{{simResult.avgResponseMs.toFixed(1)}}</span><span class="sim-label">平均响应(ms)</span></div>
         <div class="sim-metric"><span class="sim-val">{{simResult.p99Ms.toFixed(1)}}</span><span class="sim-label">P99响应(ms)</span></div>
-        <div class="sim-metric"><span class="sim-val">{{(simResult.errorRate*100).toFixed(2)}}%</span><span class="sim-label">错误率</span></div>
+        <div class="sim-metric"><span class="sim-val">{{formatPercent(simResult.errorRate, 2)}}</span><span class="sim-label">错误率</span></div>
         <div class="sim-metric"><span class="sim-val">{{simResult.throughput.toFixed(0)}}</span><span class="sim-label">吞吐量(req/s)</span></div>
       </div>
     </div>
@@ -512,7 +512,7 @@
     <div class="modal-header"><span>JSON Schema 导出</span><button class="btn-close" @click="showJsonSchemaPanel=false">×</button></div>
     <div class="modal-body">
       <pre class="js-schema">{{jsonSchemaText}}</pre>
-      <button class="btn-sm" @click="navigator.clipboard.writeText(jsonSchemaText);showToast('已复制','success')">复制</button>
+      <button class="btn-sm" @click="copyText(jsonSchemaText)">复制</button>
     </div>
   </div>
 </div>
@@ -523,7 +523,7 @@
     <div class="modal-header"><span>字段文档</span><button class="btn-close" @click="showFieldDocsPanel=false">×</button></div>
     <div class="modal-body">
       <pre class="fd-docs">{{fieldDocsText}}</pre>
-      <button class="btn-sm" @click="navigator.clipboard.writeText(fieldDocsText);showToast('已复制','success')">复制</button>
+      <button class="btn-sm" @click="copyText(fieldDocsText)">复制</button>
     </div>
   </div>
 </div>
@@ -722,7 +722,11 @@ import {
   type XformLayout,
 } from '../contracts/xform'
 import { downloadBlob } from '../utils/download'
-import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume this import.
+import { formatPercent } from '../utils/formatNumber'
+import { validateFieldValue } from '../utils/formFieldValidation'
+import { copyText, toast } from '../utils/toast'
+import { applyBuilderRules } from '../utils/validationRuleApply'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -1248,17 +1252,9 @@ function validatePreview(): boolean {
   previewErrors.value = {}
   for (const field of currentForm.value.fields) {
     if (['section', 'section_end', 'divider', 'spacer'].includes(field.type)) continue
-    if (field.required && !previewData.value[field.key]) previewErrors.value[field.key] = `${field.label} 不能为空`
-    if (field.pattern && previewData.value[field.key] && !new RegExp(field.pattern).test(previewData.value[field.key]))
-      previewErrors.value[field.key] = `${field.label} 格式错误`
-    if (field.minLength && previewData.value[field.key] && previewData.value[field.key].length < field.minLength)
-      previewErrors.value[field.key] = `${field.label} 至少${field.minLength}字符`
-    if (field.maxLength && previewData.value[field.key] && previewData.value[field.key].length > field.maxLength)
-      previewErrors.value[field.key] = `${field.label} 最多${field.maxLength}字符`
-    if (field.min !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) < field.min)
-      previewErrors.value[field.key] = `${field.label} 不能小于${field.min}`
-    if (field.max !== undefined && previewData.value[field.key] && Number(previewData.value[field.key]) > field.max)
-      previewErrors.value[field.key] = `${field.label} 不能大于${field.max}`
+    // R168: 预览与设计态共用同一边界校验；0/false/'0' 不再误报，0 不再绕过 min。
+    const err = validateFieldValue(field, previewData.value[field.key])
+    if (err) previewErrors.value[field.key] = err
   }
   return Object.keys(previewErrors.value).length === 0
 }
@@ -1411,6 +1407,18 @@ function removeTab(idx: number) {
 // ── Validation Rules ────────────────────────────────────────────────
 function addValidationRule() {
   validationRules.value.push({ fieldKey: '', rule: 'required', message: '必填字段' })
+}
+/** R227：把构建器规则落到「应用到选中」的字段校验对象上，供预览/设计态校验共用。 */
+function applyValidationRules() {
+  if (!currentForm.value || !selectedField.value) {
+    toast.info('请先选中一个字段')
+    return
+  }
+  const key = selectedField.value.key
+  const forField = validationRules.value.filter((r) => !r.fieldKey || r.fieldKey === key)
+  selectedField.value.validation = applyBuilderRules(selectedField.value.validation, forField)
+  pushFormHistory()
+  toast.info(`已应用 ${forField.length} 条规则到「${selectedField.value.label || key}」`)
 }
 function removeValidationRule(idx: number) {
   validationRules.value.splice(idx, 1)
@@ -1811,24 +1819,9 @@ function removeConditionNode(nodeId: string) {
   remove(conditionTreeRoot.value)
 }
 function validateField(field: FormField): string[] {
-  const errors: string[] = []
-  if (field.validation?.required && (!field.defaultValue || field.defaultValue === '')) {
-    errors.push(`${field.label || field.key} 不能为空`)
-  }
-  if (field.validation?.minLength && field.defaultValue && field.defaultValue.length < field.validation.minLength) {
-    errors.push(`${field.label || field.key} 长度不能少于 ${field.validation.minLength}`)
-  }
-  if (field.validation?.maxLength && field.defaultValue && field.defaultValue.length > field.validation.maxLength) {
-    errors.push(`${field.label || field.key} 长度不能超过 ${field.validation.maxLength}`)
-  }
-  if (
-    field.validation?.pattern &&
-    field.defaultValue &&
-    !new RegExp(field.validation.pattern).test(field.defaultValue)
-  ) {
-    errors.push(field.validation.patternMsg || `${field.label || field.key} 格式不正确`)
-  }
-  return errors
+  // R168: 统一走 validateFieldValue，避免与预览口径分叉；返回空数组表示通过。
+  const err = validateFieldValue({ ...field.validation, label: field.label, key: field.key }, field.defaultValue)
+  return err ? [err] : []
 }
 function validateAllFields(): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {}
@@ -1885,9 +1878,8 @@ function generateHTMLForm(): string {
   html += '</form>'
   return html
 }
-function copyExportResult() {
-  navigator.clipboard.writeText(exportResult.value)
-  showToast('已复制到剪贴板', 'success')
+async function copyExportResult() {
+  await copyText(exportResult.value)
 }
 function mapFieldType(type: string): string {
   const map: Record<string, string> = {
@@ -2192,8 +2184,8 @@ function generateFieldDocumentation(): string {
   })
   return doc
 }
-function copyToClipboard(text: string): void {
-  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板', 'success'))
+async function copyToClipboard(text: string) {
+  await copyText(text)
 }
 
 // -- Advanced Interfaces

@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { cmsApi, portalApi, queryviewApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { loadBrowseRows } from './browseFeed'
 
 type TabKey = 'portal' | 'query' | 'cms'
@@ -28,6 +29,9 @@ const loading = ref(false)
 const loadError = ref('')
 const detail = ref<Row | null>(null)
 const detailLoading = ref(false)
+const detailGate = createLatestGate()
+// 页签切换/刷新的在途列表请求只认最新一次，见 utils/latest。
+const listGate = createLatestGate()
 
 function nameOf(r: Row): string {
   return String(r.name ?? r.title ?? r.flag ?? r.id ?? '未命名')
@@ -45,10 +49,13 @@ function fetchList(): Promise<{ data?: unknown }> {
 }
 
 async function load(previousRows: Row[] = rows.value): Promise<void> {
+  // 页签切得快时旧请求会晚到：只认最新一次，过期响应不写 rows/错误、不提前复位 loading。
+  const token = listGate.begin()
   loading.value = true
   loadError.value = ''
   detail.value = null
   const result = await loadBrowseRows(() => fetchList(), previousRows)
+  if (!listGate.isLatest(token)) return
   rows.value = result.rows
   if (!result.ok) loadError.value = result.error
   loading.value = false
@@ -67,6 +74,7 @@ function switchTab(key: TabKey): void {
 }
 
 async function open(r: Row): Promise<void> {
+  const token = detailGate.begin()
   detailLoading.value = true
   detail.value = null
   try {
@@ -75,20 +83,24 @@ async function open(r: Row): Promise<void> {
       detail.value = r
       return
     }
+    let fetched: Row
     if (tab.value === 'portal') {
-      detail.value = ((await portalApi.pageDetail(id)) as { data?: Row }).data ?? r
+      fetched = ((await portalApi.pageDetail(id)) as { data?: Row }).data ?? r
     } else if (tab.value === 'query') {
       const view = String(r.view_flag ?? r.viewFlag ?? 'view')
-      detail.value = ((await queryviewApi.execute(view, id)) as { data?: Row }).data ?? r
+      fetched = ((await queryviewApi.execute(view, id)) as { data?: Row }).data ?? r
     } else {
       const resp = await cmsApi.documentSearch(nameOf(r))
       const list = (resp.data ?? []) as Row[]
-      detail.value = { 文档数: list.length, 栏目: nameOf(r), 首篇: list[0] ? nameOf(list[0]) : '—' }
+      fetched = { 文档数: list.length, 栏目: nameOf(r), 首篇: list[0] ? nameOf(list[0]) : '—' }
     }
+    if (!detailGate.isLatest(token)) return
+    detail.value = fetched
   } catch (e) {
+    if (!detailGate.isLatest(token)) return
     uni.showToast({ title: e instanceof Error ? e.message : '加载失败', icon: 'none' })
   } finally {
-    detailLoading.value = false
+    if (detailGate.isLatest(token)) detailLoading.value = false
   }
 }
 
@@ -142,7 +154,7 @@ function detailText(): string {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -156,17 +168,17 @@ function detailText(): string {
   text-align: center;
   padding: 16rpx 0;
   font-size: 28rpx;
-  color: #5b6572;
-  background: #fff;
+  color: var(--color-text-body);
+  background: var(--color-surface);
   border-radius: 12rpx;
 }
 .tab.on {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -174,15 +186,15 @@ function detailText(): string {
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .card-desc {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .detail {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-top: 8rpx;
@@ -196,27 +208,27 @@ function detailText(): string {
 .detail-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .detail-close {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .detail-body {
   font-size: 22rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -227,13 +239,13 @@ function detailText(): string {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 </style>

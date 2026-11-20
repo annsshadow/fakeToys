@@ -125,9 +125,9 @@
         </div>
       </template>
       <div v-if="totalPages>1" class="pagination">
-        <button class="pgb" :disabled="page<=1" @click="page--">‹</button>
+        <button class="pgb" aria-label="上一页" :disabled="page<=1" @click="page--">‹</button>
         <span class="pgi">第{{page}}/{{totalPages}}页</span>
-        <button class="pgb" :disabled="page>=totalPages" @click="page++">›</button>
+        <button class="pgb" aria-label="下一页" :disabled="page>=totalPages" @click="page++">›</button>
       </div>
     </div>
     <div class="content-panel glass-card">
@@ -185,19 +185,19 @@
     <div class="content-panel glass-card">
       <div class="pt cfg-pt">
         <span>排班与配置</span>
-        <span class="cfg-tabs">
-          <button class="cfg-tab" :class="{on:moreTab==='schedule'}" @click="switchMore('schedule')">排班</button>
-          <button class="cfg-tab" :class="{on:moreTab==='employee'}" @click="switchMore('employee')">员工配置</button>
-          <button class="cfg-tab" :class="{on:moreTab==='holiday'}" @click="switchMore('holiday')">自助假期</button>
-          <button class="cfg-tab" :class="{on:moreTab==='workday'}" @click="switchMore('workday')">工作日</button>
-          <button class="cfg-tab" :class="{on:moreTab==='admin'}" @click="switchMore('admin')">管理员</button>
-          <button class="cfg-tab" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
-          <button class="cfg-tab" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
-          <button class="cfg-tab" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
-          <button class="cfg-tab" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
+        <span class="cfg-tabs" role="group" aria-label="排班与配置切换">
+          <button class="cfg-tab" :aria-pressed="moreTab==='schedule'" :class="{on:moreTab==='schedule'}" @click="switchMore('schedule')">排班</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='employee'" :class="{on:moreTab==='employee'}" @click="switchMore('employee')">员工配置</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='holiday'" :class="{on:moreTab==='holiday'}" @click="switchMore('holiday')">自助假期</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='workday'" :class="{on:moreTab==='workday'}" @click="switchMore('workday')">工作日</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='admin'" :class="{on:moreTab==='admin'}" @click="switchMore('admin')">管理员</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='importlog'" :class="{on:moreTab==='importlog'}" @click="switchMore('importlog')">导入记录</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='statlog'" :class="{on:moreTab==='statlog'}" @click="switchMore('statlog')">统计日志</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='cycle'" :class="{on:moreTab==='cycle'}" @click="switchMore('cycle')">统计周期</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2wp'" :class="{on:moreTab==='v2wp'}" @click="switchMore('v2wp')">v2地点</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2group'" :class="{on:moreTab==='v2group'}" @click="switchMore('v2group')">v2考勤组</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2shift'" :class="{on:moreTab==='v2shift'}" @click="switchMore('v2shift')">v2班次</button>
+          <button class="cfg-tab" :aria-pressed="moreTab==='v2leave'" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
         <button class="mini-add" v-if="moreTab==='holiday'" @click="addSelfHoliday">+ 申请假期</button>
@@ -240,7 +240,8 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { monthEndYMD, parseServerDate } from '../utils/date'
+import { businessTodayYM, businessTodayYMD, monthEndYMD, parseServerDate } from '../utils/date'
+import { clampPage } from '../utils/paging'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -269,7 +270,7 @@ interface A {
   endDate?: string
   status?: string
 }
-const month = ref(new Date().toISOString().slice(0, 7)),
+const month = ref(businessTodayYM()),
   page = ref(1),
   records = ref<R[]>([]),
   appeals = ref<A[]>([]),
@@ -294,6 +295,10 @@ useQuery({
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
+        // 切换月份/删除记录后结果集可能缩小，页码越过末页会显示空列表+「第N/1页」；
+        // 夹取到合法范围。clampPage 幂等，最多触发一次自纠正重取。
+        const safePage = clampPage(page.value, totalPages.value)
+        if (safePage !== page.value) page.value = safePage
         return r
       }),
 })
@@ -337,6 +342,8 @@ async function auditAppealV2(a: A, auditStatus: string) {
   try {
     // POST attendanceappealInfo/audit → UPDATE 审核状态 {id, auditStatus}
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
+    // 服务器权威态已变更：刷新请假申请列表，避免继续显示旧状态（待审批徽标/按钮）误导重复操作。
+    await loadAppeals()
     toast.success('已审核申诉')
   } catch (e: any) {
     toast.error(`审核申诉失败: ${e?.message ?? ''}`)
@@ -346,6 +353,8 @@ async function checkAppeal(a: A) {
   try {
     // POST attendanceappealInfo/check → UPDATE {id, checked}
     await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已标记检查')
   } catch (e: any) {
     toast.error(`检查申诉失败: ${e?.message ?? ''}`)
@@ -357,6 +366,8 @@ async function updateAppealStatus(a: A, status: string) {
     await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
       status,
     })
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已更新申诉状态')
   } catch (e: any) {
     toast.error(`更新申诉状态失败: ${e?.message ?? ''}`)
@@ -367,6 +378,8 @@ async function archiveAppeal(a: A) {
   try {
     // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
     await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {})
+    // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
+    await loadAppeals()
     toast.success('已归档申诉')
   } catch (e: any) {
     toast.error(`归档申诉失败: ${e?.message ?? ''}`)
@@ -391,7 +404,7 @@ async function exportData() {
   try {
     // 按所选月份区间调后端 v2 统计导出端点，返回 {status,count} 聚合行，
     // 前端落成 CSV（带 BOM 保证 Excel 中文不乱码）本地下载。
-    const ym = month.value || new Date().toISOString().slice(0, 7)
+    const ym = month.value || businessTodayYM()
     const endDate = monthEndYMD(ym)
     const r: any = await api.post('/api/attendance/assemble/control/v2/detail/statistic/export/filter', {
       startDate: `${ym}-01`,
@@ -439,7 +452,7 @@ async function loadV2Schedule() {
     const gid = groups[0] ? String(groups[0].id ?? '') : ''
     const person = session.state.user?.unique ?? ''
     const monthStr = month.value
-    const today = new Date().toISOString().slice(0, 10)
+    const today = businessTodayYMD()
     const [cfg, list, byPerson] = await Promise.all([
       gid
         ? api
@@ -923,7 +936,7 @@ async function reciveDetailById() {
 async function createAttDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
-  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   const status = prompt('状态(如 normal/late):', 'normal') || 'normal'
   try {
     await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
@@ -935,7 +948,7 @@ async function createAttDetail() {
 async function reciveMobileDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
-  const date = prompt('日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
     await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
     toast.success('移动端接收已提交')
@@ -970,7 +983,7 @@ async function importLeave() {
 async function importAttV2Records(mode: string) {
   try {
     if (mode === 'daily') {
-      const date = prompt('导入日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const date = prompt('导入日期(YYYY-MM-DD):', businessTodayYMD()) || ''
       if (!date.trim()) return
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
@@ -984,7 +997,7 @@ async function importAttV2Records(mode: string) {
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
       const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
-      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+      const recordDateString = prompt('打卡日期(YYYY-MM-DD):', businessTodayYMD()) || ''
       const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', {
         rows: [{ userId, checkInType, recordDateString }],
       })
@@ -1020,7 +1033,7 @@ async function attAppealWrite(op: string) {
   }
 }
 async function checkMyRestDate() {
-  const date = prompt('校验日期(YYYY-MM-DD):', new Date().toISOString().slice(0, 10)) || ''
+  const date = prompt('校验日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
     await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
     toast.success('休息日校验已提交')
@@ -1033,7 +1046,7 @@ async function loadStatisticShow() {
   const pv = '999999999'
   const c = '20'
   const nm = '0'
-  const dt = new Date().toISOString().slice(0, 10)
+  const dt = businessTodayYMD()
   const yr = String(new Date().getFullYear())
   const mo = String(new Date().getMonth() + 1)
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
@@ -1255,8 +1268,8 @@ async function deleteRule(rule: any) {
 async function submitAppeal() {
   const type = prompt('请假类型 (sick/personal/vacation):', 'sick')
   if (!type) return
-  const start = prompt('开始日期:', new Date().toISOString().slice(0, 10))
-  const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
+  const start = prompt('开始日期:', businessTodayYMD())
+  const end = prompt('结束日期:', businessTodayYMD())
   if (!start || !end) return
   try {
     // 后端 appeal/submit 契约：appealDate + reason；申诉人/创建者以会话登录人为事实源（防冒充），

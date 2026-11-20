@@ -38,11 +38,20 @@ export function createSearchRunner(options: { debounceMs?: number } = {}): Searc
   const guard = createRequestGuard()
   let seq = 0
   let timer: ReturnType<typeof setTimeout> | null = null
+  let debounceResolve: (() => void) | null = null
 
   function clearTimer(): void {
-    if (!timer) return
-    clearTimeout(timer)
-    timer = null
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    // 防抖等待中的 run() 若被取代或取消，必须被唤醒后走 token 校验返回 undefined；
+    // 否则被 clearTimeout 取消的定时器永远不会 resolve，旧 run() 的 Promise 永久悬挂。
+    if (debounceResolve) {
+      const resolve = debounceResolve
+      debounceResolve = null
+      resolve()
+    }
   }
 
   return {
@@ -53,8 +62,10 @@ export function createSearchRunner(options: { debounceMs?: number } = {}): Searc
       clearTimer()
       if (delay > 0) {
         await new Promise<void>((resolve) => {
+          debounceResolve = resolve
           timer = setTimeout(() => {
             timer = null
+            debounceResolve = null
             resolve()
           }, delay)
         })

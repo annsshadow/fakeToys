@@ -38,12 +38,14 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
   saveLastUsername: vi.fn(),
   startBattle: vi.fn(),
   settleBattle: vi.fn(),
+  abandonBattle: vi.fn(),
 }))
 
 const TICK = 50
@@ -231,6 +233,7 @@ beforeEach(() => {
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.startBattle.mockResolvedValue(startBattleResp as any)
+  mockApi.abandonBattle.mockResolvedValue({ refunded_energy: 6, abandoned: true } as any)
   mockApi.settleBattle.mockResolvedValue({
     win: true,
     stars: 3,
@@ -430,6 +433,28 @@ describe('battle.vue 战斗页', () => {
     expect(wrapper.text()).toContain('防线失守') // win = eng.phase === 'won' → false
     expect(wrapper.text()).toContain('结算失败')
     expect(wrapper.text()).toContain('fallbackhash')
+  })
+
+  it('结算失败后仍可放弃退体力：兜底卡提供放弃入口，点击走 abandon 退体力链路', async () => {
+    mockApi.settleBattle.mockRejectedValue(new Error('服务器忙'))
+    um.mock.showModal.mockImplementation((opts: any) => opts.success?.({ confirm: true }))
+    const Battle = await loadPage()
+    const { wrapper, store } = mountPage(Battle)
+    const refreshWalletSpy = vi.spyOn(store, 'refreshWallet').mockResolvedValue(undefined)
+    await setupDone(wrapper)
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('服务器忙')
+    // 结算失败 ⇒ 服务端未标记 used_at ⇒ 仍可放弃退体力；兜底卡必须保留入口
+    const abandonBtn = wrapper.findAll('.btn').find((b: any) => b.text().includes('放弃'))
+    expect(abandonBtn, '结算失败兜底卡必须保留退体力入口').toBeTruthy()
+    await abandonBtn!.trigger('click')
+    await flushPromises()
+    expect(mockApi.abandonBattle).toHaveBeenCalledWith(77)
+    expect(refreshWalletSpy).toHaveBeenCalled()
+    await new Promise((resolve) => setTimeout(resolve, 850))
   })
 
   it('R151 令牌行丢失：结算 404 → 重取一次凭证并重报，奖励只发一次', async () => {

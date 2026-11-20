@@ -98,6 +98,9 @@ export const useGameStore = defineStore('game', () => {
     tokens: Record<string, number>
   }>({ coin: 0, gem: 0, energy: 0, keys: 0, tokens: {} })
   const maxStage = ref(0)
+  // 当前 maxStage 归属的账号 id（以 /me.user_id 为准）。换号时据此清掉旧进度，
+  // 避免只增不减的 setMaxStage 让新账号继承旧账号的解锁关卡。
+  const progressOwnerId = ref(0)
   const power = ref(0)
   const buildRating = ref<any>(null)
   /** 服务端下发的构筑快照，含权威 attacker 属性 */
@@ -197,21 +200,26 @@ export const useGameStore = defineStore('game', () => {
   /** 已点亮的专精节点 id。 */
   const equippedMasteryNodes = computed<number[]>(() => masteryNodes.value.slice())
 
-  async function loadEquipment(): Promise<void> {
+  async function loadEquipment(rethrow = false): Promise<void> {
     try {
       const res = await api.fetchMyEquipment()
       equipment.value = res.items ?? []
     } catch (e) {
       console.warn('[来一炮] 加载装备失败', (e as Error).message)
+      // R291：防线保存等"失败必须中止"的调用方需要看到异常；
+      // 默认仍静默降级，保持其它页面（如背包写后同步）的原有语义。
+      if (rethrow) throw e
     }
   }
 
-  async function loadMasteryNodes(): Promise<void> {
+  async function loadMasteryNodes(rethrow = false): Promise<void> {
     try {
       const res = await api.fetchMastery()
       masteryNodes.value = res.nodes ?? []
     } catch (e) {
       console.warn('[来一炮] 加载专精失败', (e as Error).message)
+      // R291：同 loadEquipment，失败可上抛给必须中止的调用方。
+      if (rethrow) throw e
     }
   }
 
@@ -254,6 +262,21 @@ export const useGameStore = defineStore('game', () => {
   let loginInflight: Promise<boolean> | null = null
 
   /**
+   * 档案刷新序号：页面多处并发调用 refreshProfile（me/bag/mastery 的 onShow 与
+   * 各异步回调），慢的旧响应若后到会覆盖新响应的 wallet/userId/power。
+   * 只接受最后一次发起的请求结果。
+   */
+  let profileReqSeq = 0
+  /** 钱包刷新序号：refreshProfile 与 refreshWallet 共用 wallet 字段，二者按序写钱包。 */
+  let walletReqSeq = 0
+  /**
+   * 出战槽位加载序号：me（onMounted+onShow）/bag/reactions 会并发调用 loadLoadout，
+   * 从背包改过槽位再回来时槽位已变，慢的旧响应后到会用旧槽位覆盖新槽位 ——
+   * 而 loadout 参与回放哈希、且是防线快照的权威来源，必须丢弃陈旧响应。
+   */
+  let loadoutReqSeq = 0
+
+  /**
    * 本环境是否要求账号登录。
    *
    * 来自服务端 `/config` 的 `require_login`（`PLAYER_LOGIN_REQUIRED`）。
@@ -288,6 +311,25 @@ export const useGameStore = defineStore('game', () => {
     }
     uni.reLaunch({ url: '/pages/login/login' })
   }
+
+  /**
+   * 鉴权失败兜底（统一在 api 层识别，见 client.ts 的 onAuthFailure）。
+   *
+   * 令牌在「取数途中」才被确认失效（密钥轮换 / refresh 过期 / 账号停用）时，
+   * 请求层清了令牌并发信号。过去这里没有订阅，refreshProfile 只 console.warn，
+   * 页面停在「已登录但零数据」且不跳登录页 —— 正是最难自查的形态。
+   *
+   * ⚠️ 只在「本会话以为自己已登录」时才跳：
+   *   - 杂散的公开请求 401（auth:false）不会走到信号通道，但保险起见再挡一层；
+   *   - 并发 N 个 401 会各发一次信号，第一次就把 loggedIn 置 false，
+   *     后续直接 return —— 天然幂等，不会连跳（gotoLoginPage 另有防重）。
+   */
+  api.onAuthFailure(() => {
+    if (!loggedIn.value) return
+    needLogin.value = true
+    loggedIn.value = false
+    gotoLoginPage()
+  })
 
   async function login(): Promise<boolean> {
     if (loginInflight) return loginInflight
@@ -455,16 +497,33 @@ export const useGameStore = defineStore('game', () => {
 
   async function refreshProfile(): Promise<void> {
     readStatusBarHeight()
+    const seq = ++profileReqSeq
+    const walletSeq = ++walletReqSeq
     try {
       const [w, me] = await Promise.all([api.fetchWallet(), api.fetchMe()])
-      wallet.value = { ...w, tokens: w.tokens ?? {} }
+      // 序号守卫：丢弃陈旧响应，避免并发刷新时旧账号/旧钱包覆盖最新态。
+      if (seq !== profileReqSeq) return
+      if (walletSeq === walletReqSeq) {
+        wallet.value = { ...w, tokens: w.tokens ?? {} }
+      }
       // 第 150 轮：以 /me 的 user_id 为身份权威。
       // 此前 userId 只在 login() 里从 TokenPair.user.id 赋值，于是
       // **只要没走过 login() 就是 0** —— 排行榜页「高亮我自己那一行」
       // （rank.vue 比的是 it.user_id === store.userId）会静默失效。
       // /me 是当前登录态的权威快照，每次 refreshProfile 都会打，
       // 拿它回填比依赖「登录过一次」这个隐含前提可靠。
-      if (typeof me.user_id === 'number' && me.user_id > 0) userId.value = me.user_id
+      if (typeof me.user_id === 'number' && me.user_id > 0) {
+        // 换号（含登出后换账号登录）：清掉上一账号的本地进度，
+        // 再让下面的 setMaxStage 用新账号的 max_stage 重建。
+        // 同一账号重复刷新不受影响，仍保留本会话结算出的更高值。
+        // progressOwnerId=0 表示本会话还没建立归属：此时 maxStage 可能是
+        // 本会话刚结算出的值，不能当换号清掉（首次刷新只认领、不重置）。
+        if (progressOwnerId.value !== 0 && me.user_id !== progressOwnerId.value) {
+          maxStage.value = 0
+        }
+        progressOwnerId.value = me.user_id
+        userId.value = me.user_id
+      }
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build
@@ -476,6 +535,28 @@ export const useGameStore = defineStore('game', () => {
       if (me.account) {
         accountCreatedAt.value = me.account.created_at ?? ''
         accountLastLoginAt.value = me.account.last_login_at ?? ''
+        // task-81（第 44 轮）：/me.account 是登录态的权威身份快照。
+        // 服务端 UpgradeGuestAccount 会把 is_guest 翻成 false、PUT /me/nickname
+        // 会改昵称，但此前这里只取注册/登录时间 —— 游客转正后本会话仍显示
+        // 「游客账号」、改密码入口不出现，改名后顶部昵称也不更新，直到
+        // 用户重新登录才恢复。同步落盘身份摘要，冷启动才能立刻是正确态。
+        // 缺字段（老服务端）时保留本地值，与 max_stage 的兜底口径一致。
+        let identityChanged = false
+        if (typeof me.account.is_guest === 'boolean' && me.account.is_guest !== isGuest.value) {
+          isGuest.value = me.account.is_guest
+          identityChanged = true
+        }
+        if (
+          typeof me.account.nickname === 'string' &&
+          me.account.nickname &&
+          me.account.nickname !== nickname.value
+        ) {
+          nickname.value = me.account.nickname
+          identityChanged = true
+        }
+        if (identityChanged) {
+          api.saveProfile({ nickname: nickname.value, isGuest: isGuest.value })
+        }
       }
     } catch (e) {
       // 静默：页面会展示已有数据，不因刷新失败而白屏
@@ -484,10 +565,12 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function refreshWallet(): Promise<void> {
+    const seq = ++walletReqSeq
     try {
       // tokens ?? {} 是对**旧版服务端**的兜底（没这个字段时不该让页面崩），
       // 不是对当前契约的容忍 —— 契约由 /wallet 的类型定义表达。
       const fresh = await api.fetchWallet()
+      if (seq !== walletReqSeq) return
       wallet.value = { ...fresh, tokens: fresh.tokens ?? {} }
     } catch {
       /* 忽略 */
@@ -506,8 +589,11 @@ export const useGameStore = defineStore('game', () => {
    * 真正决定战斗用的是这里的 loadout。
    */
   async function loadLoadout(): Promise<void> {
+    const seq = ++loadoutReqSeq
     try {
       const res = await api.fetchLoadout()
+      // 序号守卫：丢弃陈旧响应，避免并发刷新时旧槽位覆盖新槽位。
+      if (seq !== loadoutReqSeq) return
       const ids = (res.skill_ids ?? []).slice(0, 4)
       while (ids.length < 4) ids.push(0)
       loadout.value = ids
@@ -523,6 +609,12 @@ export const useGameStore = defineStore('game', () => {
     while (normalized.length < 4) normalized.push(0)
     try {
       const res = await api.saveLoadout(normalized)
+      // R282：persist 是对服务端权威槽位的写。成功后必须递增加载序号，
+      // 让此前发起、此刻仍在途的 loadLoadout 响应失效 —— 否则弱网下
+      // 旧 load 后到会用它携带的旧槽位覆盖刚保存的权威槽位。
+      // 与 loadLoadout 的 `seq !== loadoutReqSeq` 守卫同构；只在成功时
+      // 递增（失败没有写权威态，在途 load 仍应照常落地）。
+      loadoutReqSeq++
       loadout.value = (res.skill_ids ?? normalized).slice(0, 4)
       equippedSkillIds.value = loadout.value.filter((x) => x > 0)
       return true

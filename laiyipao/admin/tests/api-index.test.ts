@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiMock = vi.hoisted(() => ({
   get: vi.fn(),
+  getBlob: vi.fn(),
   post: vi.fn(),
   put: vi.fn(),
   del: vi.fn(),
@@ -47,6 +48,7 @@ import {
   adminLogout,
   fetchDashboardSoft,
   fetchUserDetail,
+  exportUsersCsv,
   verifyBattle,
   fetchRecomputes,
   fetchRecomputeStats,
@@ -66,6 +68,7 @@ function echoArgs() {
 
 beforeEach(() => {
   apiMock.get.mockReset()
+  apiMock.getBlob.mockReset()
   apiMock.post.mockReset()
   apiMock.put.mockReset()
   apiMock.del.mockReset()
@@ -367,6 +370,31 @@ describe('api/index 结算重算（补测）', () => {
       __args: ['/admin/recomputes/mode', { mode: 'enforce', confirm: 'confirm' }],
     })
     expect(apiMock.put).toHaveBeenCalled()
+  })
+})
+
+/**
+ * 第92轮：导出与列表的过滤口径必须一致。
+ * 服务端 adminExportUsers 自 2026-11-03 R29 起就解析 is_guest，
+ * 前端 exportUsersCsv 却漏了这个参数 —— 运营筛「游客」再导出，
+ * 拿到的是全部账号，且 toast 声称「当前筛选结果」。
+ */
+describe('api/index 用户导出（第92轮）', () => {
+  it('exportUsersCsv：is_guest=true/false 都拼进 query（三态，false 不能被丢弃）', async () => {
+    echoArgs()
+    apiMock.getBlob.mockImplementation(((...args: unknown[]) => Promise.resolve({ __args: args })) as never)
+    await exportUsersCsv({ is_guest: true })
+    expect(apiMock.getBlob).toHaveBeenCalledWith('/admin/users/export?is_guest=1')
+    await exportUsersCsv({ is_guest: false })
+    expect(apiMock.getBlob).toHaveBeenLastCalledWith('/admin/users/export?is_guest=0')
+  })
+
+  it('exportUsersCsv：is_guest 缺省时不出现在 query；与 suspicious 组合互不影响', async () => {
+    apiMock.getBlob.mockResolvedValue(new Blob(['']) as never)
+    await exportUsersCsv({ keyword: '龙' })
+    expect(apiMock.getBlob).toHaveBeenCalledWith('/admin/users/export?keyword=%E9%BE%99')
+    await exportUsersCsv({ is_guest: true, suspicious: false })
+    expect(apiMock.getBlob).toHaveBeenLastCalledWith('/admin/users/export?is_guest=1&suspicious=0')
   })
 })
 

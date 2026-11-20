@@ -258,3 +258,39 @@ describe('DashboardView 反应名映射', () => {
     expect(wrapper.find('.page-title').text()).toBe('数据看板')
   })
 })
+describe('DashboardView 看板加载竞态（第 91 轮）', () => {
+  it('旧快照慢响应后到不得覆盖新 data，也不得触发过期 renderCharts', async () => {
+    type Deferred = { promise: Promise<unknown>; resolve: (v: unknown) => void }
+    const deferred = (): Deferred => {
+      let resolve!: (v: unknown) => void
+      const promise = new Promise<unknown>((r) => { resolve = r })
+      return { promise, resolve }
+    }
+    const wrapper = await mountDashboard()
+    const vm = wrapper.vm as unknown as {
+      data: { users: { total: number } } | null
+      load: () => Promise<void>
+    }
+    const dOld = deferred()
+    const dNew = deferred()
+    fetchDashboard.mockReset()
+      .mockReturnValueOnce(dOld.promise)
+      .mockReturnValueOnce(dNew.promise)
+    const initCalls = chartStub.setOption.mock.calls.length
+    // 模拟 keep-alive 切回：两次 load 真实并发（旧请求未回时又发新请求）
+    const pOld = vm.load()
+    const pNew = vm.load()
+    // 新快照先到，旧快照慢响应后到
+    dNew.resolve(dashboardFixture({ users: { total: 2424, guests: 0, wechat: 2424, banned: 0, new_today: 0 } }))
+    await flushPromises()
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    dOld.resolve(dashboardFixture({ users: { total: 1001, guests: 0, wechat: 1001, banned: 0, new_today: 0 } }))
+    await Promise.all([pOld, pNew])
+    await flushPromises()
+    expect(vm.data?.users.total, '旧快照慢响应覆盖了新 data').toBe(2424)
+    // 过期 load 不得再 renderCharts：只有新 load 的那一次（3 张图各 setOption 一次）
+    expect(chartStub.setOption.mock.calls.length - initCalls, '过期 load 触发了多余 renderCharts').toBe(3)
+    wrapper.unmount()
+  })
+})

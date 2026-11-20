@@ -10,14 +10,14 @@
       </view>
       <view class="card">
         <text class="card-title">每日签到</text>
-        <text class="muted">连续 7 天，第 7 天额外获得体力。</text>
+        <text class="muted">{{ cycleHint }}</text>
         <!-- R40 连续进度条：已签天数一眼可见，不必数格子 -->
         <view class="streak-track">
           <view class="streak-fill" :style="{ width: streakPct + '%' }" />
         </view>
         <view class="days">
           <view
-            v-for="d in 7"
+            v-for="d in cycleDays"
             :key="d"
             class="day"
             :class="{
@@ -41,7 +41,7 @@
           style="margin-top: 20rpx"
           @click="doSignIn"
         >
-          {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : '✓ 七日签到已完成' }}
+          {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : `✓ ${cycleCompleteText}` }}
         </view>
         <text
           v-if="lastResult"
@@ -197,6 +197,8 @@ const signedToday = ref(false)
 const lastResult = ref('')
 const code = ref('')
 const redeemMsg = ref('')
+/** R268 兑换在途守卫：防止网络慢时双击重复提交，二次请求的错误覆盖首次成功提示。 */
+const redeeming = ref(false)
 /** R34 成功反馈：刚签到/刚领奖的目标短暂高亮，随后自动熄灭。 */
 const justSigned = ref(false)
 const justClaimedTask = ref(0)
@@ -214,6 +216,16 @@ function flashFeedback(kind: 'sign' | 'task', id = 0) {
 // 第 135 轮：七日签到奖励表改由服务端下发（权威），不再本地硬编码。
 // key = day_index。未加载成功时为空对象 → rewardFor 回落本地缺省公式。
 const calendar = ref<Record<number, Record<string, number>>>({})
+/** 服务端日历天数：周期长度的唯一权威（缺省 7 与历史行为一致）。 */
+const calendarDayCount = ref(7)
+/** 天数格子序号（1..cycleDays），由服务端日历长度驱动。 */
+const cycleDays = computed(() => Array.from({ length: calendarDayCount.value }, (_, i) => i + 1))
+/** 顶部说明跟随真实周期，避免日历拉长后仍写「连续 7 天」。 */
+const cycleHint = computed(() => `连续 ${calendarDayCount.value} 天，第 ${calendarDayCount.value} 天额外获得体力。`)
+/** 周期签满文案：默认 7 天沿用历史「七日签到已完成」，其余长度用数字。 */
+const cycleCompleteText = computed(() =>
+  calendarDayCount.value === 7 ? '七日签到已完成' : `${calendarDayCount.value} 天签到已完成`,
+)
 
 async function loadCalendar() {
   try {
@@ -221,6 +233,8 @@ async function loadCalendar() {
     const m: Record<number, Record<string, number>> = {}
     for (const d of res.days ?? []) m[d.day_index] = d.reward
     calendar.value = m
+    // 日历加载成功才采用服务端周期长度；失败/空表保留缺省 7，不阻断页面。
+    if (res.days?.length) calendarDayCount.value = res.days.length
   } catch {
     /* 离线/失败：回落本地缺省公式（preview 可能与服务端不一致，但不阻断页面） */
   }
@@ -257,8 +271,8 @@ function rewardText(reward: Record<string, number>): string {
     .join(' · ')
 }
 
-/** R40 七日签到的连续进度（0–100%）。 */
-const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / 7) * 100)))
+/** R40 签到连续进度（0–100%）：分母跟随服务端日历天数，不再写死 7。 */
+const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / calendarDayCount.value) * 100)))
 
 /* -------------------------------------------------------------------------- */
 /* 离线收益（第六批 R1）                                                        */
@@ -327,16 +341,24 @@ type ScopeKey = (typeof SCOPES)[number]['key']
 
 const scope = ref<ScopeKey>('daily')
 
+// 任务列表按周期切换存在「陈旧响应覆盖」竞态：快速 daily→weekly 时两个
+// fetchTasks 并发，先发慢到的旧响应会用旧周期数据覆盖当前选中 tab 的列表。
+// 用序号只认最后一次请求的结果（与 rank.vue 的 loadSeq 守卫同类）。
+let loadSeq = 0
+
 async function load() {
+  const seq = ++loadSeq
   loading.value = true
   try {
     // ⚠️ 传当前 scope，而不是写死 'daily'。
     const res = await api.fetchTasks(scope.value)
+    if (seq !== loadSeq) return // 已被更新的请求取代，丢弃陈旧响应
     tasks.value = res.items ?? []
   } catch (e) {
+    if (seq !== loadSeq) return
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -347,8 +369,13 @@ function switchScope(k: ScopeKey) {
   load()
 }
 
+/** R270 签到在途守卫：防止网络慢时双击发出两次签到请求，
+ * 二次请求报「今日已签到」覆盖首次成功提示（与 R268 兑换守卫同构）。 */
+const signingIn = ref(false)
+
 async function doSignIn() {
-  if (!canSign.value) return
+  if (signingIn.value || !canSign.value) return
+  signingIn.value = true
   try {
     const res = await api.signIn()
     if (res.already) {
@@ -361,6 +388,8 @@ async function doSignIn() {
       signedToday.value = true
       lastResult.value = `签到成功，获得 ${rewardText(res.reward)}`
       flashFeedback('sign') // R34
+      // 签到会 bumpTasks({signin:1}) 推进「今日完成签到」任务；不重拉则本会话一直停在 0/1
+      await load()
       await store.refreshWallet()
     }
   } catch (e) {
@@ -373,10 +402,18 @@ async function doSignIn() {
     //
     // 正确做法：保持可点（网络抖一下重试就好），把错误如实显示出来。
     lastResult.value = `签到失败：${(e as Error).message}`
+  } finally {
+    signingIn.value = false
   }
 }
 
+/** R269 任务领取在途守卫：防止网络慢时双击同一任务发出两次请求，
+ * 二次请求报「奖励已领取」覆盖首次成功提示（与 R268 兑换守卫同构）。 */
+const claimingIds = new Set<number>()
+
 async function claim(id: number) {
+  if (claimingIds.has(id)) return
+  claimingIds.add(id)
   try {
     const res = await api.claimTask(id)
     flashFeedback('task', id) // R34
@@ -385,11 +422,14 @@ async function claim(id: number) {
     await store.refreshWallet()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    claimingIds.delete(id)
   }
 }
 
 async function doRedeem() {
-  if (!code.value.trim()) return
+  if (redeeming.value || !code.value.trim()) return
+  redeeming.value = true
   try {
     const res = await api.redeem(code.value.trim())
     redeemMsg.value = `兑换成功：${rewardText(res.reward)}`
@@ -397,6 +437,8 @@ async function doRedeem() {
     await store.refreshWallet()
   } catch (e) {
     redeemMsg.value = (e as Error).message
+  } finally {
+    redeeming.value = false
   }
 }
 

@@ -22,6 +22,62 @@ export function fmtTime(s: string): string {
 }
 
 /**
+ * 导出文件名里的业务日（YYYY-MM-DD），固定按 UTC+8 计算。
+ *
+ * 运营后台部署在 UTC+8，业务日口径已全项目统一为 UTC+8（R167）。
+ * 导出文件名此前用 new Date().toISOString().slice(0, 10) 取 UTC 墙钟日期，
+ * 于是本地凌晨 0–8 点（UTC 前一天 16:00–24:00）导出的文件名会带"昨天"
+ * 的日期，与运营当天看到的日期不一致。这里把 UTC 墙钟 +8h 后取 UTC
+ * 分量，结果只依赖 now、与运行机器的本地时区无关（测试可在任意时区跑）。
+ */
+export function exportDateLabel(now: Date = new Date()): string {
+  const shifted = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${shifted.getUTCFullYear()}-${p(shifted.getUTCMonth() + 1)}-${p(shifted.getUTCDate())}`
+}
+
+/**
+ * 统计一份 CSV 文本里的数据行数（不含表头）。
+ *
+ * 导出接口返回的是**全量筛选结果**（服务端无分页），而 UI 此前用当前页
+ * 列表长度冒充导出条数，运营会误以为只导出了一页。这里直接按 CSV 文本
+ * 解析行数：跳过 BOM 与表头，逐字符扫描并正确处理引号内的换行、
+ * 转义双引号与 CRLF；末尾换行不额外计行。
+ */
+export function csvDataRowCount(csv: string): number {
+  let i = 0
+  if (csv.charCodeAt(0) === 0xfeff) i = 1 // BOM
+  let rows = 0
+  let inQuotes = false
+  let lineHasContent = false
+  let firstPhysicalLine = true
+  const countLine = () => {
+    // 第一条物理行是表头，不计；其余有内容的行计为数据行
+    if (!firstPhysicalLine && lineHasContent) rows += 1
+    firstPhysicalLine = false
+    lineHasContent = false
+  }
+  for (; i < csv.length; i += 1) {
+    const ch = csv[i]
+    if (ch === '"') {
+      // 引号内的 "" 是一个转义双引号，不改变 inQuotes
+      if (inQuotes && csv[i + 1] === '"') { i += 1 } else { inQuotes = !inQuotes }
+      lineHasContent = true
+    } else if (ch === '\n') {
+      if (!inQuotes) { countLine() }
+    } else if (ch === '\r') {
+      // CRLF 交给 \n 统一处理；单独 \r 也视为换行
+      if (csv[i + 1] !== '\n' && !inQuotes) { countLine() }
+    } else {
+      lineHasContent = true
+    }
+  }
+  // 末行无换行结尾时也要计入
+  if (lineHasContent && !firstPhysicalLine) rows += 1
+  return rows
+}
+
+/**
  * 审计 detail 的表格预览长度。
  *
  * ⚠️ R98：80 字符是**表格列宽**的取舍，不是 detail 的完整内容。

@@ -175,7 +175,6 @@ test.describe('main.ts source coverage', () => {
     expect(source).toContain("from 'vue'")
     expect(source).toContain("from 'vue-router'")
     expect(source).toContain("from 'pinia'")
-    expect(source).toContain("from 'vue-i18n'")
   })
 
   test('Configures router with routes', () => {
@@ -190,10 +189,12 @@ test.describe('main.ts source coverage', () => {
     expect(source).toContain('requiresAuth')
   })
 
-  test('Initializes i18n with locales', () => {
-    expect(source).toContain('createI18n')
-    expect(source).toContain("locale: 'zh-cn'")
-    expect(source).toContain('fallbackLocale')
+  // 优化轮37 起 main.ts 有意移除 vue-i18n（见 main.test.ts「i18n removed」），
+  // 本地化文案随组件静态打包，不再有运行时 i18n 实例；断言与源码保持一致。
+  test('i18n intentionally removed (优化轮37)', () => {
+    expect(source).not.toContain('createI18n')
+    expect(source).not.toContain("from 'vue-i18n'")
+    expect(source).not.toContain('app.use(i18n)')
   })
 
   test('Sets up query client', () => {

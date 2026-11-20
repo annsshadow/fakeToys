@@ -1,7 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, Suspense, lazy } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { Layout, Menu, theme, Spin } from 'antd'
 import {
   DashboardOutlined,
@@ -92,6 +92,7 @@ const menuItems = [
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken()
@@ -114,7 +115,13 @@ function AppLayout() {
         >
           {collapsed ? 'AI' : 'AI 数据平台'}
         </div>
-        <Menu theme="dark" mode="inline" selectedKeys={[location.pathname]} items={menuItems} />
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={({ key }) => navigate(key)}
+        />
       </Sider>
       <Layout>
         <Header
@@ -159,8 +166,9 @@ function AppLayout() {
 }
 
 function App() {
+  // 子路径部署时让 React Router 认 Vite base（默认 '/' 时 basename='/' 与原来一致）。
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <AppLayout />
     </Router>
   )

@@ -110,7 +110,7 @@
         <div class="fg"><label>结束</label><input v-model="form.endTime" type="datetime-local" class="fi" /></div>
         <div class="fg"><label>说明</label><input v-model="form.content" class="fi" placeholder="会议说明（可选）" /></div>
         <div v-if="err" class="em">{{err}}</div>
-        <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title" @click="createMeeting">创建</button></div>
+        <div class="mf"><button class="bc" @click="showCreate=false">取消</button><button class="bs" :disabled="!form.title || createSaving" @click="createMeeting">{{ createSaving ? '创建中...' : '创建' }}</button></div>
       </div>
     </div>
     <div v-if="detail.open" class="mo" @click.self="detail.open=false">
@@ -138,7 +138,9 @@ import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
+import { createGeneration } from './latestOnly'
 import { describeListError } from './listQuery'
+import { meetingCompletedFromResponse, meetingStatusClass, meetingStatusText } from './meetingStatus'
 
 interface M {
   id: string
@@ -178,12 +180,16 @@ const { data: bData } = useQuery({
   staleTime: 120000,
 })
 buildings.value = bData.value ?? []
+// 代际令牌：快速切换楼栋时，旧楼栋晚到的响应不得覆盖新楼栋的会议室选项。
+const formRoomGeneration = createGeneration()
 async function loadRooms() {
   if (!form.value.buildingId) {
     rooms.value = []
     return
   }
+  const token = formRoomGeneration.next()
   const r = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`)
+  if (!formRoomGeneration.isCurrent(token)) return
   rooms.value = (r.data ?? []) as Room[]
 }
 async function loadMeetings() {
@@ -204,15 +210,17 @@ async function loadMeetings() {
   }
 }
 function statusTxt(m: M) {
-  return m.status === '1' ? '进行中' : m.status === '2' ? '已结束' : '未开始'
+  return meetingStatusText(m.status)
 }
 function statusCls(m: M) {
-  return m.status === '1' ? 'active' : m.status === '2' ? 'ended' : 'pending'
+  return meetingStatusClass(m.status)
 }
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
 }
+const createSaving = ref(false)
 const cm = useMutation({
+  onSettled: () => (createSaving.value = false),
   // 后端 create_meeting 契约：title/content/startTime/endTime/creator/roomId（buildingId 仅用于筛选会议室，不下发）
   mutationFn: () =>
     api.post('/api/meeting/assemble/control/meeting/create', {
@@ -233,7 +241,9 @@ const cm = useMutation({
   },
 })
 function createMeeting() {
+  if (createSaving.value) return
   if (!form.value.title) return
+  createSaving.value = true
   cm.mutate()
 }
 // 会议详情：GET meeting/{id}（x_meeting 主体）+ list/{meetingId}（控制项 x_meeting_assemble_control）
@@ -248,7 +258,10 @@ const detail = ref({
   controlCount: 0,
   extra: '',
 })
+// 代际令牌：快速点选会议 A→B（详情浮层可关闭再开），A 的晚到响应不得覆盖 B 的详情。
+const detailGeneration = createGeneration()
 async function viewMeeting(m: M) {
+  const token = detailGeneration.next()
   detail.value = {
     open: true,
     loading: true,
@@ -269,6 +282,7 @@ async function viewMeeting(m: M) {
     settle(api.get(`/api/meeting/assemble/control/meeting/list/${encodeURIComponent(m.id)}/prev/5`)),
   ])
   const d: any = (main as any)?.data ?? {}
+  if (!detailGeneration.isCurrent(token)) return
   detail.value.title = String(d.title ?? m.title ?? m.name ?? '')
   detail.value.startTime = String(d.start_time ?? d.startTime ?? '')
   detail.value.endTime = String(d.end_time ?? d.endTime ?? '')
@@ -538,7 +552,10 @@ async function removeBuilding(b: Bldg) {
 const roomBuildingId = ref('')
 const roomList = ref<Room[]>([])
 const roomError = ref('')
+// 代际令牌：快速切换楼栋时，旧楼栋晚到的响应/错误不得覆盖新楼栋的会议室列表。
+const roomListGeneration = createGeneration()
 async function loadRoomList() {
+  const token = roomListGeneration.next()
   roomError.value = ''
   if (!roomBuildingId.value) {
     roomList.value = []
@@ -546,8 +563,10 @@ async function loadRoomList() {
   }
   try {
     const r: any = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${roomBuildingId.value}`)
+    if (!roomListGeneration.isCurrent(token)) return
     roomList.value = (r.data ?? []) as Room[]
   } catch (e) {
+    if (!roomListGeneration.isCurrent(token)) return
     // 失败保留旧会议室并显式报错，不能和「这个楼栋真的没有会议室」混成同一种空态。
     roomError.value = describeListError('会议室列表加载失败', e)
   }
@@ -656,9 +675,11 @@ async function markMeetingCompleted(m: M) {
   if (!(await confirmMsg('确定将该会议标记为已完成？'))) return
   try {
     // POST meeting/{id}/manual/completed → UPDATE x_meeting status='completed'（无 body）
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    const r = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    // 列表端点 meeting/list/apply 的 SELECT 不含 status 列，重载会把刚完成的会议显示成「未开始」。
+    // 消费 manual/completed 响应里的权威布尔并就地落态。
+    if (meetingCompletedFromResponse(r)) m.status = 'completed'
     toast.success('已标记完成')
-    loadMeetings()
   } catch (e: any) {
     toast.error(`标记完成失败: ${e?.message ?? ''}`)
   }

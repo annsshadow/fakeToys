@@ -124,7 +124,7 @@ onLoad(async (options) => {
 }
 .tip {
   text-align: center;
-  color: #8a94a6;
+  color: var(--color-text-muted);
   padding: 40px 0;
   font-size: 14px;
 }
@@ -135,14 +135,14 @@ onLoad(async (options) => {
   gap: 10px;
 }
 .error-text {
-  color: #c0392b;
+  color: var(--color-error);
   font-size: 14px;
 }
 .retry-btn {
   padding: 4px 16px;
   border-radius: 14px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
   line-height: 24px;
 }
@@ -153,28 +153,28 @@ onLoad(async (options) => {
   padding: 8px 12px;
   margin-bottom: 8px;
   border-radius: 8px;
-  background: #fdecea;
+  background: var(--color-error-bg);
 }
 .subject {
   padding: 14px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 .subject-title {
   font-size: 17px;
   font-weight: 600;
-  color: #1f2733;
+  color: var(--color-text-primary);
 }
 .subject-meta {
   margin-top: 6px;
   font-size: 12px;
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 .subject-content {
   margin-top: 10px;
   font-size: 14px;
   line-height: 1.6;
-  color: #3a4356;
+  color: var(--color-text-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -182,22 +182,22 @@ onLoad(async (options) => {
   margin: 14px 2px 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #5a6478;
+  color: var(--color-text-secondary);
 }
 .reply {
   padding: 10px 12px;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--color-surface);
   margin-bottom: 8px;
 }
 .reply-meta {
   font-size: 12px;
-  color: #8a94a6;
+  color: var(--color-text-muted);
 }
 .reply-content {
   margin-top: 4px;
   font-size: 14px;
-  color: #3a4356;
+  color: var(--color-text-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -210,22 +210,22 @@ onLoad(async (options) => {
   gap: 8px;
   padding: 10px 12px calc(10px + constant(safe-area-inset-bottom)) 12px;
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  background: #f4f6fa;
-  border-top: 1px solid #e3e8f0;
+  background: var(--color-bg-page);
+  border-top: 1px solid var(--color-border);
 }
 .composer-input {
   flex: 1;
   height: 36px;
   padding: 0 12px;
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--color-surface);
   font-size: 14px;
 }
 .composer-send {
   padding: 0 16px;
   border-radius: 18px;
-  background: #2f6bff;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 14px;
   line-height: 36px;
 }

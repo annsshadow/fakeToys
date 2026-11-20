@@ -85,6 +85,52 @@ func TestReviveTokenGrantsExtraBaseHPAndIsSpent(t *testing.T) {
 	}
 }
 
+// TestRevivedTokenPersistedForSettle 钉住 battle_tokens.revived 的真实往返。
+//
+// 复活局的 hp_left 上界要靠结算时读到的 token.Revived 抬高。
+// 只测 domain.ValidateSettle 不够 —— 如果 StartBattle 忘了写库、
+// 或 SettleBattle 的 SELECT 忘了读列，domain 层的断言照样全绿，
+// 而线上复活局依然被拒绝。这里走真实开局 → 读库往返。
+func TestRevivedTokenPersistedForSettle(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	uid := ts.newUser(t, ctx)
+	ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
+
+	// 无复活币：库里的 revived 必须是 false（新 token 的默认值）。
+	plain, err := ts.StartBattle(ctx, uid, 1)
+	if err != nil {
+		t.Fatalf("普通开战失败：%v", err)
+	}
+	var plainRevived bool
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT revived FROM battle_tokens WHERE id = $1`, plain.TokenID).Scan(&plainRevived); err != nil {
+		t.Fatalf("读取普通 token 的 revived 失败：%v", err)
+	}
+	if plainRevived {
+		t.Error("无复活币时 battle_tokens.revived 应为 false")
+	}
+
+	// 有复活币：同一事务里扣币并标记 token。
+	ts.grant(t, ctx, uid, map[string]int64{"revive_token": 1})
+	revived, err := ts.StartBattle(ctx, uid, 1)
+	if err != nil {
+		t.Fatalf("复活开战失败：%v", err)
+	}
+	if !revived.Revived || revived.ExtraBaseHP <= 0 {
+		t.Fatalf("复活响应异常：revived=%t extra=%d", revived.Revived, revived.ExtraBaseHP)
+	}
+	var got bool
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT revived FROM battle_tokens WHERE id = $1`, revived.TokenID).Scan(&got); err != nil {
+		t.Fatalf("读取复活 token 的 revived 失败：%v", err)
+	}
+	if !got {
+		t.Error("有复活币时 battle_tokens.revived 必须为 true，" +
+			"否则结算时读不到标记，hp_left 仍被卡在 base_hp")
+	}
+}
+
 // TestReviveTokenSpentOncePerBattle 连续开战每次扣 1 枚，不多扣。
 //
 // 这条专防「在循环里扣」的错：那会让第二场战斗白扣两枚。

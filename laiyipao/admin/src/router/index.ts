@@ -3,6 +3,7 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
 import { confirmTokenValid, getToken, setToken } from '@/api/client'
+import { createRouteAnnouncer } from '@/utils/routeAnnouncer'
 
 /**
  * 路由表与 AdminLayout 的侧边栏一一对应。
@@ -93,7 +94,23 @@ function toLogin(to: { fullPath: string }) {
  * 那里清掉令牌并改 hash 后，本守卫会在下一次导航时生效。
  * 这里只负责「已经是无令牌状态，别留垃圾」这一半。
  */
-router.afterEach(() => {
+const BASE_TITLE = '来一炮 · 运营后台'
+
+/** WCAG 2.4.2：路由切换同步标签标题，多标签间可分辨当前页面。 */
+function syncDocumentTitle(to: { meta?: Record<string, unknown> }) {
+  const page = typeof to.meta?.title === 'string' ? to.meta.title : ''
+  document.title = page ? `${page} · ${BASE_TITLE}` : BASE_TITLE
+}
+
+let routeAnnouncer: ReturnType<typeof createRouteAnnouncer> | null = null
+function getRouteAnnouncer() {
+  if (!routeAnnouncer && typeof document !== 'undefined') routeAnnouncer = createRouteAnnouncer()
+  return routeAnnouncer
+}
+
+router.afterEach((to) => {
+  syncDocumentTitle(to)
+  getRouteAnnouncer()?.announce(to)
   if (router.currentRoute.value.path !== '/admin/login' && !getToken()) {
     setToken('')
   }

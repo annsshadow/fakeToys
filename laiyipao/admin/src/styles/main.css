@@ -22,9 +22,11 @@
 
   /* 文本四阶：主 / 常规 / 弱化 / 更弱 */
   --lyp-text: #e6edf3;
+  /* WCAG 2.1 AA 1.4.3：弱化/更弱文本承载 kpi-sub / hint / nav-group-title 等正文，
+     对最亮表面 panel-3 也必须 ≥4.5:1；原值 #8b949e/#6b7480 仅 4.66/3.03:1。 */
   --lyp-text-2: #c2ccd6;
-  --lyp-muted: #8b949e;
-  --lyp-dim: #6b7480;
+  --lyp-muted: #9aa5b2;
+  --lyp-dim: #96a0ad;
 
   /* 品牌与语义色 */
   --lyp-accent: #ff6b35;
@@ -478,4 +480,36 @@ body {
   font-size: var(--lyp-fs-sm);
   color: var(--lyp-dim);
   line-height: 1.5;
+}
+
+/* ── WCAG 2.4.1 跳转到主要内容 ──────────────────────────────────────── */
+
+.skip-link {
+  position: fixed;
+  top: -1000px;
+  left: 12px;
+  z-index: 2000;
+  padding: 10px 16px;
+  border-radius: var(--lyp-radius);
+  background: var(--lyp-panel-3);
+  color: var(--lyp-text);
+  border: 1px solid var(--lyp-accent);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+#main-content:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── WCAG 2.4.7 键盘焦点可见 ─────────────────────────────────────────
+ * admin 用 Element Plus，且部分视图（如 WikiView 搜索框）有 outline:none
+ * 移除浏览器原生轮廓；这里在全局层提供统一焦点环，只在键盘交互时出现，
+ * !important 覆盖各视图 scoped 样式的 outline:none，保证键盘用户看得清焦点。
+ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--lyp-accent) !important;
+  outline-offset: 2px;
 }

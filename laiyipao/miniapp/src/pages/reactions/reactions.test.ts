@@ -29,6 +29,7 @@ vi.mock('@/api/client', () => ({
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -74,11 +75,34 @@ function reactionFixtures() {
   ]
 }
 
-async function mountReactions(elements: 'fire_ice' | 'fire_only' = 'fire_ice') {
+function reactionFixturesWithAmplify() {
+  return [
+    ...reactionFixtures(),
+    {
+      key: 'superconduct',
+      name: '超导',
+      base_coef: 50,
+      attack_weight_pct: 250,
+      status_duration_ms: 4000,
+      aoe_radius: 0,
+      spread_stacks: 0,
+      dispel_shield: false,
+      amplify_pct: 600, // 服务端契约：600‰ = +60%
+      armor_shred_permille: 0,
+      knockback: 0,
+      descr: '受击伤害 +60%',
+    },
+  ]
+}
+
+async function mountReactions(
+  elements: 'fire_ice' | 'fire_only' = 'fire_ice',
+  reactions = reactionFixtures(),
+) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const cfg = makeConfig({
-    reactions: reactionFixtures() as never,
+    reactions: reactions as never,
   })
   mockApi.fetchConfigIfVersion.mockResolvedValue({
     status: 'modified',
@@ -128,7 +152,11 @@ describe('reactions.vue 反应图鉴', () => {
     expect(text).toContain('过热')
     // 参数（这些此前客户端一处都没读）
     expect(text).toContain('系数 60')
-    expect(text).toContain('攻击力权重 300%')
+    // 服务端契约（domain/elements.go:112-114）：attack_weight_pct 是千分比，
+    // 红线 300‰ = 30%。页面顶部说明也写「权重被结构性限制在 30% 以内」，
+    // 所以显示成「300%」是自相矛盾的单位错（与 amplify_pct 同类）。
+    expect(text).toContain('攻击力权重 30%')
+    expect(text).not.toContain('攻击力权重 300%')
     expect(text).toContain('溅射半径 120')
     expect(text).toContain('持续 1.5s')
     expect(text).toContain('驱散护盾')
@@ -149,6 +177,19 @@ describe('reactions.vue 反应图鉴', () => {
     const wrapper = await mountReactions('fire_only')
     expect(wrapper.findAll('.rxn-hit').length).toBe(0)
     expect(wrapper.text()).toContain('凑不出任何反应链')
+    wrapper.unmount()
+  })
+
+  it('amplify_pct 是千分比：显示成百分比且强度排行按千分比计算', async () => {
+    const wrapper = await mountReactions('fire_ice', reactionFixturesWithAmplify())
+    const text = wrapper.text()
+    // 服务端 600‰ = 60%，应显示「增幅 60%」而不是「增幅 600%」
+    expect(text).toContain('增幅 60%')
+    expect(text).not.toContain('增幅 600%')
+    // 强度排行：超导 base_coef 50 × (1 + 600/1000) = 80，不是 350
+    const rows = wrapper.findAll('.sr-row')
+    const sc = rows.find((r) => r.find('.sr-name')?.text() === '超导')
+    expect(sc?.find('.sr-val').text()).toBe('80')
     wrapper.unmount()
   })
 })

@@ -45,6 +45,7 @@ vi.mock('@/api/client', () => ({
   //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
   //   login / saveLastUsername —— 口令登录与用户名回填
   hasUsableToken: vi.fn(() => false),
+  onAuthFailure: vi.fn(() => () => {}),
   loadProfile: vi.fn(() => null),
   saveProfile: vi.fn(),
   login: vi.fn(),
@@ -224,10 +225,13 @@ describe('bag.vue 背包页', () => {
     expect(text).not.toContain('尚未接入')
   })
 
-  it('复活币接通消费端点后必须写成「可用」，不能还留着「已下架」', async () => {
-    // 第 150 轮续：服务端已在 StartBattle 接通复活币（开战扣 1 枚 + 血量加成），
-    // 商品也恢复了上架。界面如果还写「已下架」，就是在陈述一个已经不成立的
-    // 事实 —— 玩家会以为自己买了却用不了，而实际上开战就自动生效了。
+  it('复活币文案必须匹配服务端契约：多扛 3 次漏怪，而非无效的「基础血量 +50%」', async () => {
+    // 服务端 server/internal/domain/revive.go 明确：
+    //   - ReviveExtraBaseHP(l) = l.BaseHP*3/10，加在【当前血量】上，baseHpMax 不变；
+    //   - LeakDamageDivisor=10，每次普通漏怪扣 baseHpMax/10；
+    //   - 所以一枚复活币 ≈ 多扛 3 次漏怪。
+    // 旧「+50% 基础血量」是第 148 轮被证明无效的设计（倍率改不动漏怪数），
+    // 界面继续承诺它等于在骗玩家花钱买了个没效果的 buff。
     mockApi.fetchWallet.mockResolvedValue({
       coin: 1, gem: 2, energy: 3, keys: 4,
       tokens: { revive_token: 2 },
@@ -237,7 +241,11 @@ describe('bag.vue 背包页', () => {
     const text = wrapper.text()
     expect(text).toContain('复活币')
     expect(text).toContain('开战时自动消耗 1 枚')
-    expect(text).toContain('+50%')
+    // 断言用户实际看到的行为语义，不扫源码字符串
+    expect(text).toContain('多扛 3 次漏怪')
+    expect(text).toContain('30%')
+    expect(text).not.toContain('+50%')
+    expect(text).not.toContain('基础血量 +50%')
   })
 
   it('背包页不再承诺「词条可洗练」—— 玩家拿不到宝石实例', async () => {
@@ -284,6 +292,37 @@ describe('bag.vue 背包页', () => {
       const { wrapper } = mountPage(Bag)
       await flushPromises()
       expect(wrapper.text()).toContain('还没有宝石')
+    })
+
+    // 品质档位表与「我的宝石」必须说同一种语言：
+    // 服务端 /config 下发的是英文 key（gray/blue/.../gold），但持有宝石走
+    // qualityName 显示中文。若档位表直出 q.name，玩家会看到「金」和「gold」
+    // 指同一档 —— 判断宝石价值的关键说明反而像两套体系。
+    it('品质档位表把服务端英文 key 翻译成中文，与持有宝石同名', async () => {
+      mockApi.fetchConfigIfVersion.mockResolvedValue({
+        status: 'modified',
+        config: bagConfig({
+          gem_qualities: [
+            { name: 'gray', affix_count: 1, mult: 1000 },
+            { name: 'gold', affix_count: 3, mult: 2000 },
+            { name: 'newkey', affix_count: 4, mult: 2500 },
+          ],
+        }),
+        serverTimeMs: 0,
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+
+      const table = wrapper.findAll('.gem-name').map((n) => n.text()).join(' | ')
+      // 已知档位必须走中文映射；未知档位保留原 key（不吞掉服务端新增）
+      expect(table).toContain('灰')
+      expect(table).toContain('金')
+      expect(table).toContain('newkey')
+      // 同一页两处不能再各说各话：已知档位的裸英文 key 不许上屏
+      expect(table).not.toContain('gray')
+      expect(table).not.toContain('gold')
+      // 倍率仍来自服务端，未被中文化替换掉（行为断言，不是源码扫描）
+      expect(table).toContain('×2.00')
     })
 
     it('洗练：成功后就地替换该颗宝石并刷新余额（以服务端为准）', async () => {
@@ -780,7 +819,9 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
     mockApi.fetchPresets.mockResolvedValue({
       presets: [{
         id: 9, name: '进攻套', is_current: true, created_at: 'x',
-        slots: { skills: [1, 4, 7], equipment: [1, 10], gems: [7, 8] },
+        // 第 94 轮：技能 id 必须在本文件 bagConfig 的技能库里（原 [1,4,7] 的 7 不存在，
+        // 4 还是被动）—— 应用预设后槽位会真实渲染这些技能，不存在的 id 会让模板崩。
+        slots: { skills: [1, 3, 5], equipment: [1, 10], gems: [7, 8] },
       }],
     })
     // 当前已佩戴一颗宝石（id 5）→ 应用时要先卸下。
@@ -788,7 +829,7 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
       gems: [{ id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare',
         affixes: [], equipped_slot: '1' }],
     })
-    mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 4, 7] })
+    mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 3, 5] })
     mockApi.saveEquippedEquipment.mockResolvedValue({ items: [] })
     mockApi.unequipGem.mockResolvedValue({
       gem: { id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare', affixes: [], equipped_slot: '' },
@@ -804,7 +845,7 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
     await flushPromises()
 
     // persistLoadout 会补齐 4 槽（不足补 0）
-    expect(mockApi.saveLoadout).toHaveBeenCalledWith([1, 4, 7, 0])
+    expect(mockApi.saveLoadout).toHaveBeenCalledWith([1, 3, 5, 0])
     expect(mockApi.saveEquippedEquipment).toHaveBeenCalledWith([1, 10])
     expect(mockApi.unequipGem).toHaveBeenCalledWith(5)
     expect(mockApi.equipGem).toHaveBeenCalledWith(7)
@@ -914,5 +955,115 @@ describe('bag.vue 背包可用性（100 轮打磨）', () => {
     await hint!.trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('已定位到上方输入框')
+  })
+
+  // ── 第 21 轮：出战热量预算上限必须与战斗引擎同一单位 ───────────────
+  //
+  // 服务端契约：build.attacker.heat_cap_permille 是**千分比加成**，
+  // engine.ts 把它注入 heat.capBonus，HeatSystem.cap 计算真实上限：
+  //   capBonus<=0 → 100；否则 100*(1000+capBonus)/1000。
+  // 技能 heat_cost 是绝对热量点（content.go 基础技能 20）。
+  // 选关/背包展示的「出战热量 X / 上限」必须与之一致，否则给玩家
+  // 一个假的预算（无加成时显示 /0、进度条恒空、永不提示过热）。
+  function attackerWith(heatCapPermille: number) {
+    return {
+      attack: 1000,
+      crit_permille: 0,
+      crit_multiplier_permille: 1500,
+      reaction_mult_permille: 1000,
+      element_cap: 3,
+      reaction_tier: 0,
+      element_coef_permille: 1000,
+      heat_cap_permille: heatCapPermille,
+      armor_permille: 0,
+      mechanic_permille: 0,
+    }
+  }
+
+  it('R21 无热量上限加成时预算上限是 100（不是 0），过热警告按真实占用显示', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2), attacker: attackerWith(0) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] }) // 20 + 20 = 40 热量
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    const head = wrapper.find('.hb-head .dim')
+    expect(head.exists()).toBe(true)
+    // 无加成：真实上限 100（HEAT_MAX），占用 40 → 不应显示 /0
+    expect(head.text()).toContain('40 / 100')
+    // 40/100 = 40% 进度条，不应是空的 0%
+    const fill = wrapper.find('.hb-fill')
+    expect(fill.attributes('style')).toContain('width: 40%')
+  })
+
+  it('R21 热量上限加成 200‰ 时预算上限是 120（不是 20）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2), attacker: attackerWith(200) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    // 真实 cap = 100*(1000+200)/1000 = 120；旧写法 200/10 = 20（低估 6 倍）
+    expect(wrapper.find('.hb-head .dim').text()).toContain('40 / 120')
+  })
+})
+
+
+describe('bag.vue 预设保存连点守卫（R271）', () => {
+  const SAVE_LINK = '.preset-save-row .link'
+
+  it('保存预设在途时重复点击不再发出第二次写入', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    mockApi.saveCurrentPreset.mockImplementation(() => gate.then(() => ({ preset: {} as any })))
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    await wrapper.find('.preset-input')!.setValue('我的连点套')
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+    // 在途期间按钮让位给「保存中…」，连点无处落脚
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(false)
+    expect(wrapper.text()).toContain('保存中…')
+
+    await wrapper.find('.preset-save-row').trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+
+    release()
+    await flushPromises()
+    // 完成后按钮恢复，可再次保存新预设
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(true)
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+  })
+
+  it('保存失败后守卫复位：反馈可见且可再次点击保存', async () => {
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    mockApi.saveCurrentPreset
+      .mockRejectedValueOnce(new Error('服务不可用'))
+      .mockResolvedValueOnce({ preset: {} as any })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    await wrapper.find('.preset-input')!.setValue('重试套')
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(1)
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '服务不可用', icon: 'none' })
+    expect(wrapper.find(SAVE_LINK).exists()).toBe(true)
+
+    await wrapper.find(SAVE_LINK)!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledTimes(2)
   })
 })

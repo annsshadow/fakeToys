@@ -18,11 +18,13 @@
         <!-- 登录表单 -->
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="form-group">
-            <label class="form-label">用户名</label>
+            <label for="login-username" class="form-label">用户名</label>
             <input
+              id="login-username"
               v-model="username"
               type="text"
               class="form-input"
+              autocomplete="username"
               placeholder="请输入用户名"
               autofocus
               :disabled="loading"
@@ -30,18 +32,22 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">密码</label>
+            <label for="login-password" class="form-label">密码</label>
             <div class="password-wrapper">
               <input
+                id="login-password"
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-input"
+                autocomplete="current-password"
                 placeholder="请输入密码"
                 :disabled="loading"
               />
               <button
                 type="button"
                 class="eye-btn"
+                aria-label="显示或隐藏密码"
+                :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
               >
                 {{ showPassword ? '🙈' : '👁' }}
@@ -51,25 +57,28 @@
 
           <!-- 验证码（需要时显示） -->
           <div v-if="showCaptcha" class="form-group">
-            <label class="form-label">验证码</label>
+            <label for="login-captcha" class="form-label">验证码</label>
             <div class="captcha-row">
               <input
+                id="login-captcha"
                 v-model="captchaAnswer"
                 type="text"
                 class="form-input captcha-input"
                 placeholder="请输入验证码"
                 :disabled="loading"
               />
-              <img
-                :src="captchaUrl"
-                alt="验证码"
-                class="captcha-img"
+              <button
+                type="button"
+                class="captcha-refresh"
+                aria-label="刷新验证码"
                 @click="refreshCaptcha"
-              />
+              >
+                <img :src="captchaUrl" alt="验证码" class="captcha-img" />
+              </button>
             </div>
           </div>
 
-          <div v-if="error" class="error-msg">{{ error }}</div>
+          <div v-if="error" class="error-msg" role="alert" aria-live="assertive">{{ error }}</div>
 
           <button
             type="submit"
@@ -129,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSession } from '@oa4rust/sdk'
+import { resolveSafeRedirect, useSession } from '@oa4rust/sdk'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -180,11 +189,8 @@ async function handleLogin(): Promise<void> {
   try {
     await session.login(username.value, password.value, captchaId.value, captchaAnswer.value)
 
-    // 登录后跳转：query 值可能是数组形态；且只允许站内相对路径（防 //host 协议相对开放重定向）
-    const raw = route.query.redirect
-    const candidate = typeof raw === 'string' ? raw : Array.isArray(raw) && typeof raw[0] === 'string' ? raw[0] : ''
-    const redirect = candidate.startsWith('/') && !candidate.startsWith('//') ? candidate : '/app/dashboard'
-    router.replace(redirect)
+    // 登录后跳转：只接受同源站内路径（反斜杠/控制字符/协议相对会被 helper 拦下）
+    router.replace(resolveSafeRedirect(route.query.redirect))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '登录失败，请重试'
     error.value = msg
@@ -211,8 +217,14 @@ function initParticles(): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
+  // 高 DPR 屏按 2 倍封顶：再高的像素密度对 0.5px 粒子线没有可见收益，
+  // 却让 GPU 合成面积翻 4~9 倍；ctx.setTransform 把绘制坐标仍保持在 CSS 像素。
+  const dpr = Math.min(2, window.devicePixelRatio || 1)
+  canvas.width = Math.floor(window.innerWidth * dpr)
+  canvas.height = Math.floor(window.innerHeight * dpr)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  const viewWidth = window.innerWidth
+  const viewHeight = window.innerHeight
 
   interface Particle {
     x: number
@@ -224,12 +236,12 @@ function initParticles(): void {
   }
 
   const particles: Particle[] = []
-  const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000))
+  const count = Math.min(80, Math.floor((viewWidth * viewHeight) / 15000))
 
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: Math.random() * viewWidth,
+      y: Math.random() * viewHeight,
       vx: (Math.random() - 0.5) * 0.5,
       vy: (Math.random() - 0.5) * 0.5,
       size: Math.random() * 2 + 1,
@@ -238,15 +250,15 @@ function initParticles(): void {
   }
 
   function animate(): void {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, viewWidth, viewHeight)
 
     // 绘制粒子
     for (const p of particles) {
       p.x += p.vx
       p.y += p.vy
 
-      if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-      if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+      if (p.x < 0 || p.x > viewWidth) p.vx *= -1
+      if (p.y < 0 || p.y > viewHeight) p.vy *= -1
 
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
@@ -254,8 +266,11 @@ function initParticles(): void {
       ctx.fill()
     }
 
-    // 绘制连线
-    for (let i = 0; i < particles.length; i++) {
+    // 绘制连线：每帧最多 LINE_LIMIT 条，避免 80 个粒子做 3160 次
+    // 连线计算 + stroke 把低端设备的主线程打死。
+    const LINE_LIMIT = 60
+    let links = 0
+    outer: for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x
         const dy = particles[i].y - particles[j].y
@@ -268,6 +283,8 @@ function initParticles(): void {
           ctx.strokeStyle = `rgba(0, 212, 255, ${0.1 * (1 - dist / 150)})`
           ctx.lineWidth = 0.5
           ctx.stroke()
+          links++
+          if (links >= LINE_LIMIT) break outer
         }
       }
     }
@@ -282,19 +299,35 @@ function cleanupParticles(): void {
   if (animFrame) cancelAnimationFrame(animFrame)
 }
 
+function handleResize(): void {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  // resize 后粒子坐标按 CSS 像素保存，重设尺寸会清空画布；下一帧重绘即可。
+  const dpr = Math.min(2, window.devicePixelRatio || 1)
+  canvas.width = Math.floor(window.innerWidth * dpr)
+  canvas.height = Math.floor(window.innerHeight * dpr)
+  canvas.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0)
+}
+
+/** 页面切到后台时暂停 rAF；回到前台再续，减少无意义的后台 CPU/GPU 占用。 */
+function handleVisibility(): void {
+  if (document.hidden) {
+    cleanupParticles()
+  } else if (!animFrame) {
+    initParticles()
+  }
+}
+
 onMounted(() => {
   initParticles()
-  window.addEventListener('resize', () => {
-    const canvas = canvasRef.value
-    if (canvas) {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-  })
+  window.addEventListener('resize', handleResize)
+  document.addEventListener('visibilitychange', handleVisibility)
 })
 
 onBeforeUnmount(() => {
   cleanupParticles()
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('visibilitychange', handleVisibility)
 })
 </script>
 
@@ -439,12 +472,26 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
+.captcha-refresh {
+  display: block;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.captcha-refresh:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .captcha-img {
+  display: block;
   width: 100px;
   height: 40px;
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 1px solid var(--border-subtle);
   object-fit: cover;
 }
 

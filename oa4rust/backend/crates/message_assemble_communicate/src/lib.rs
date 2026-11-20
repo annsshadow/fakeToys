@@ -552,17 +552,29 @@ pub async fn im_conversation(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let client = shared::db::acquire(&pool).await?;
+    let sess = require_session(session)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
     let id = Uuid::new_v4().to_string();
+    let member_id = Uuid::new_v4().to_string();
 
-    let result = client
+    // 会话创建者必须同时是自己的成员：send_message 先过 is_conversation_member 门禁，
+    // 原实现只 INSERT conversation 不写 member，创建者给自己会话发消息必被拒（not a conversation member）。
+    // 二写同事务：会话行与成员行要么同时可见，要么都不落库。
+    let tx = client.transaction().await?;
+    let result = tx
         .execute("INSERT INTO x_message_conversation (id, name, type, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &name, &conversation_type])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    tx.execute(
+        "INSERT INTO x_message_conversation_member (id, conversation_id, person_id, create_time) VALUES ($1, $2, $3, NOW())",
+        &[&member_id, &id, &sess.person_unique],
+    )
+    .await
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
