@@ -84,7 +84,8 @@ describe('R294 空状态与交互反馈（H5 美化迭代）', () => {
     expect(app).toContain('.o2-empty')
     expect(app).toContain('.o2-empty-icon')
     for (const page of emptyPages) {
-      expect(page).toContain('class="o2-empty"')
+      // R304：允许修饰类（如 class="o2-empty empty-guide"），但 o2-empty 必须是独立 class token。
+      expect(page).toMatch(/class="[^"]*\bo2-empty\b[^"]*"/)
       expect(page).toContain('o2-empty-icon')
     }
   })
