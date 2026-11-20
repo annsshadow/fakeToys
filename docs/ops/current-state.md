@@ -4197,3 +4197,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 交付（design-lead 停工上报 → 队长接管裁决）：t20 终审 verdict=pass/findings=[]，t21 契约 Objective/In scope/Acceptance/Verify 全空，无未达标项可修。design-lead 遵从铁律⑧不臆造 bug 停工上报（attempt a2619861，标 failed，未改动/未提交，工作树干净 HEAD=UP=a4352c94e），队长复核其判断正确。按 t23/t29 先例 reassign_task(assignee=captain, attempt 2) 接管，裁决为空操作完成：未改动任何源码、未提交、工作树保持干净；design-lead 停工不作为失职。t22 全量门禁解锁。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 217. R301 E1 全量门禁与集成台账（t22，2026-11-21）
+- 交付（design-lead 队长集成角色，只读门禁无改码）：全量门禁六项落地。typecheck（pnpm --recursive run typecheck）EXIT=0，Scope 6/7 projects（locales/sdk/apis/ui/mobile/desktop）全 Done；desktop build（pnpm build）EXIT=0，index-BomljjCy.js、2.31s；H5 build（pnpm build:h5）EXIT=0，Build complete；biome（pnpm run lint）Checked 585 files，Found 65 errors/18 warnings/125 infos，为历轮累积格式长行（例 processTitle.ts:7 长正则、R302Announcer.contract.test.ts、public/sw.js format），非本轮引入；desktop 单测 14 failed|177 passed files、19 failed|1040 passed tests；mobile 单测 1 failed|68 passed files、1 failed|429 passed tests。t22 只读门禁、未改任何源码，工作树干净；HEAD=UP=eb9945611（含队长先行追加的 §216）。
+- 队长独立复核（不采信自述）：逐项核实两处单测失配均为开工前 HEAD 基线既有——adminTitleDedup.contract.test.ts:81 断言 /<h1[^>]*class="admin-title"/ 但 t27 已给 h1 加 ai-gradient-text；src/design-system.contract.test.ts:87 断言 class="o2-empty" 但 t32 已加 empty-guide；皆因契约未随实现同步，非 t22 引入（t22 未改源码、工作树干净）。按 t29/t21 先例，基线既有失败如实记录为后续迭代待办，不阻塞本轮门禁验收；typecheck 与双端 build 全绿为门禁核心结论。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
