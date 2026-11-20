@@ -4265,3 +4265,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 两任务写域不重叠（t48 desktop views org/attendance/bam/bbs；t49 search/file/im），提交交错（序列 48f451d02→29e9ecbf6→c7ba2e2a8）均已定点按 hash 复核、未依赖 HEAD=@{u}；t48 诚实披露 HEAD 被 t49 在途提交前进、未回滚。改业务接口/路由为零，令牌深度消费与 DOM aiPage 口径对齐达成。t51（H5 品牌渐变/骨架屏）仍在途，t52 终审待 t48/t49/t51 齐备。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 227. R305 H5 品牌渐变实心与骨架口径对齐（2026-11-21）
+- t51（mobile-eng）commit 0ea4f0e6b 精确 19 文件（118+/21-）：17 个 previously branded=0 页每页落地 ≥1 个 .ai-brand-fill 品牌渐变锚点（复用 t9 高特异性规则，scoped .tab.on 选中底色不冲突）；关键取证纠正 t50『骨架 0/19』口径——.o2-skeleton 与 .ai-skeleton-list/.ai-skeleton-line 双 class 已被 [class*=skeleton] 覆盖，0/19 是采样太晚（真实 API 已返回、v-if 关闭），故不改骨架 class 名，避免破坏 t17 结构化骨架契约。
+- RED→GREEN：r305Branded.contract.test.ts 新增时 17/21 真红、修复后 22/22；含 t25 日历信封/t29 UUID 遮蔽/t32 空态引导不回退断言。队长定点复跑 src/r305Branded.contract.test.ts 22/22 exit0。
+- 队长独立复核（不采信自述）：git show --stat 精确 19 文件（17 页 + 契约 + 文档）、HEAD=TRACK=0ea4f0e6b、工作树干净；文档 19 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence.json（318 行）source 明确非物理真机、19/19 页 branded≥1 且 computed 渐变为 linear-gradient(135deg,#4f46e5,#0891b2)、11 页捕获骨架、pageErrors=[]/apiFailures=[]、passed=true；真域名仅存在于 gitignored 证据目录，不入库。
+- t52（design-reviewer）R305 终审已自动派发（claimed），待其对 t48/t49/t51/t50 逐条复核。R305 实现侧全部就绪。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
