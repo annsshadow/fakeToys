@@ -3940,3 +3940,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 漏网补修：QueryManagerDeep.vue 与 QueryTableDesignerApp.vue 不在分族清单且使用裸 <h1>，surgical 删除重复 h1 与 /api 副标题，保留 deepReadText/描述/按钮/API。
 - 验证：全量 vitest 211 文件 / 1921 passed、typecheck 6 子项目、desktop build EXIT=0（index-CYMWG6eo.js）、R300 改动集 scoped biome 0 error；8901 代理指向新 dist，截图 10 页 + 补修 2 页均 h1Count=1、apiLeak=[]、按钮完整，队长逐张目视确认。
 - 真值纪律：截图/临时脚本不入仓库；口令仅部署期读取，台账与提交不含密钥/口令/域名/IP/SSH 端口真值；本轮不部署测试服。
+
+## 174. R300 系统管理区去重部署测试服（2026-11-20）
+- 部署源：commit 8338f0060（R300 去重）；5bc4f1307..HEAD 的 backend/mobile diff=0，纯前端变更，后端与 H5 沿用现有产物。
+- 流程：重编 desktop dist（index-CYMWG6eo.js，181 文件）→ 打包 web-r300.tgz（805390 字节）→ 远程备份 web.bak-r300-20261120-2330 → scp 上传 → tar 解包 web.new → 原子替换 web/ → systemctl is-active oa4rust=active。
+- 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；远程 web/index.html 已服务新 hash index-CYMWG6eo.js。
+- 真值纪律：口令仅部署期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。
