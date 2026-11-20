@@ -752,7 +752,8 @@ async function loadFiles(folderId?: string): Promise<void> {
   loading.value = true
   loadError.value = ''
   try {
-    const resp = await api.get(`/api/file/assemble/control/file/list/${folderId || ''}`)
+    // 空目录必须用 root 段，空路径段会得到 404（资源不存在或已被删除）。
+    const resp = await api.get(`/api/file/assemble/control/file/list/${folderId || 'root'}`)
     if (seq !== fileListSeq) return
     files.value = ((resp as any)?.data ?? []) as FileItem[]
   } catch (e) {

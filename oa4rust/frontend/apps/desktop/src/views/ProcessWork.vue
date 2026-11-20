@@ -99,7 +99,7 @@
     <div v-if="opened" class="modal-overlay" @click.self="closeWork">
       <section class="work-dialog glass-card">
         <header>
-          <div><h2>{{ opened.title || opened.processName || '流程办理' }}</h2><p>{{ opened.id }}</p></div>
+          <div><h2>{{ displayTitle(opened) }}</h2><p>{{ opened.id }}</p></div>
           <button class="btn-sm" @click="closeWork">关闭</button>
         </header>
         <div v-if="detailLoading" class="state">正在加载表单...</div>

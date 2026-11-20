@@ -93,8 +93,8 @@ async function loadRoles() {
   loading.value = true
   loadError.value = ''
   try {
-    // 后端角色列表仅注册 POST /api/role/list（GET 会被 {flag} 宽路由吞掉）。
-    const r = await api.post('/api/role/list')
+    // control crate 未注册 /api/role/list，真实列表路由在 auth crate。
+    const r = await api.get('/api/authentication/role/list')
     roles.value = r.data ?? []
   } catch (e) {
     // 失败保留旧数据并显式报错，不能和「真的没有角色」混成同一种空态。
