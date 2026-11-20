@@ -4070,6 +4070,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 3 文件、git show diff 确认 value 改为 approvalCount.value 且 approvalCount 由 pendingItems.length 派生；定点复跑 Dashboard 套件 3 files/13 tests passed（exit 0）；commit message 自述 typecheck/build/原子部署通过、真浏览器统计卡 5=待办 5 条 statMatchesList=true，证据 gitignored oa4rust/test-results/r302-dr02/（非物理真机）；实读文档首段用 <YOUR_TEST_DOMAIN> 占位。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 193. R302 设计令牌消费度只读审计（t35，2026-11-21）
+- 交付（qa-e2e，commit f8587ae74，精确 1 文档 110 行）：docs/ops/oa4rust-token-consumption-audit-r302.md；只读审计未改源码、未提交实现代码，工作树并行 M 文件系队友 t27/t32/t33/t34 在途未触碰。数据来自源码 OPS grep + 已落盘 C1 测试服真浏览器 evidence.json（PC 74/H5 19），未伪造、未新造截图。
+- 三口径：① PC 源码 var(--ai-*) 覆盖 21/75 文件（28%、175 处），栅格/玻璃各 18 文件、骨架屏 11 路由视图；② C1 DOM aiPage 分布 0=31/1=9/2=17/3=10/4=7（31 页 DOM 无 ai-page，43 页有；Dashboard 源码 11 处但 DOM=0 因用 .dash-view 等非 ai-page 类，org/attendance 源码 0+DOM 0 是真缺口）；③ H5 令牌集中 App.vue（49 处），19/19 页解析到渐变+8px 栅格+ai-surface-gradient，但 pages 目录 var(--ai-*)=0、17/19 页 branded=0（仅 index/login 有品牌渐变实心）。
+- 缺口优先级：P0 org/attendance/bam/bbs/search/file/im 核心业务页双重未消费；P1 H5 渐变实心 17 页 branded=0 + PC 九页 aiPage=1；P2 骨架屏（PC 63/H5 14 缺）、空态（PC 14/H5 8）、命令面板 --ai-cmd-* 仅外壳零星消费。队长独立复核：git show --stat 精确 1 文档、HEAD=追踪=f8587ae74；实读 110 行文档首段用 <YOUR_TEST_DOMAIN> 占位、LEAK_HITS=[]/NO_SECRET_PATTERN 自述一致。后续按此清单排视觉重构轮次。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
