@@ -173,7 +173,8 @@ test('IM: seed conversation via API, open in GUI and send a message', async ({ p
   const input = page.getByPlaceholder(/输入消息/).first()
   await input.fill(msgText)
   const sendResp = audit.waitForWrite((r) => /\/im\/msg$/.test(new URL(r.url()).pathname))
-  await page.getByRole('button', { name: '发送' }).click()
+  // 「发送文件」按钮名也含「发送」，getByRole 会 strict mode violation；用唯一 testid。
+  await page.getByTestId('im-message-send').click()
   const sendBody = await (await sendResp).json()
   expect((sendBody as { type?: string })?.type, 'im msg write must not error').not.toBe('error')
   await expect(page.locator('.msg-content', { hasText: msgText })).not.toHaveCount(0)
@@ -190,7 +191,8 @@ test('workflow reject: start a process, then reject the pending task from my-sta
   await expect(page.getByRole('heading', { name: '工作流待办' })).toBeVisible()
   const processName = process.env.E2E_PROCESS_NAME ?? 'seed-approval-flow'
   await page.getByRole('button', { name: '发起流程' }).click()
-  await page.getByLabel(/流程/).selectOption({ label: processName })
+  // getByLabel(/流程/) 会命中 modal 的 aria-labelledby（h2「发起流程」）而非 select；用 id。
+  await page.locator('#start-flow').selectOption({ label: processName })
   await page.getByLabel(/标题/).fill(title)
   await page.getByLabel(/申请原因/).fill('E2E reject path')
   const startResp = audit.waitForWrite((r) => /\/service\/processing\/work$/.test(new URL(r.url()).pathname))
@@ -198,8 +200,10 @@ test('workflow reject: start a process, then reject the pending task from my-sta
   const startBody = await (await startResp).json()
   expect((startBody as { type?: string })?.type, 'work start must succeed').not.toBe('error')
 
-  await expect(page.getByRole('button', { name: '我发起的' })).toHaveClass(/active/)
-  await page.getByText(title, { exact: true }).click()
+  // 「刷新我发起的」按钮名包含「我发起的」，必须 exact 才唯一命中页签。
+  await expect(page.getByRole('button', { name: '我发起的', exact: true })).toHaveClass(/active/)
+  // 三个页签列表 v-show 常驻 DOM，标题在三个列表各出现一次；限定「我发起的」列表。
+  await page.getByTestId('work-started-list').getByText(title, { exact: true }).click()
 
   const rejectResp = audit.waitForWrite((r) => /\/api\/task\/[^/]+\/reject$/.test(new URL(r.url()).pathname))
   await page.getByLabel(/处理意见/).fill('E2E rejected')

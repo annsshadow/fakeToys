@@ -155,17 +155,18 @@ test.describe('live GUI - 表单填写与提交', () => {
 })
 
 test.describe('live GUI - 表格查询与分页操作', () => {
-  test('通讯录查询本页渲染数据表格与表头', async ({ page }) => {
+  test('通讯录搜索人员渲染名册列表与统计', async ({ page }) => {
     const audit = auditApiResponses(page)
     await login(page)
     await page.goto('/app/directory')
     await expect(page.getByRole('heading', { name: '组织通讯录' })).toBeVisible()
-    await page.getByRole('button', { name: /查询本页/ }).click()
-    const table = page.locator('table.data-table')
-    await expect(table).toBeVisible()
-    await expect(table.locator('thead th').first()).toBeVisible()
-    await expect(table.locator('tbody tr').first()).toBeVisible()
-    await expect(page.locator('.result-meta', { hasText: '命中' })).toBeVisible()
+    // 业务化视图无自动加载：点「搜索人员」触发 person/list/filter，渲染人员列表。
+    await page.getByTestId('org-search-button').click()
+    const list = page.getByTestId('org-person-list')
+    await expect(list).toBeVisible()
+    await expect(list.locator('li.person-item').first()).toBeVisible()
+    await expect(page.getByTestId('org-person-meta')).toContainText('共')
+    await expect(page.getByTestId('org-person-meta')).toContainText('人')
     await assertNo404OrServerErrors(audit)
   })
 
@@ -173,9 +174,9 @@ test.describe('live GUI - 表格查询与分页操作', () => {
     const audit = auditApiResponses(page)
     await login(page)
     await page.goto('/app/directory')
-    await page.getByRole('button', { name: '人员', exact: true }).click()
-    await page.getByRole('button', { name: '按页查询人员' }).click()
-    const meta = page.locator('.pager-bar .result-meta')
+    // 加载名册后 meta 显示「共 N 人 · 第 X / Y 页」；21 人 / 每页 20 → 2 页。
+    await page.getByTestId('org-person-reload').click()
+    const meta = page.getByTestId('org-person-meta')
     await expect(meta, '服务端分页信息必须渲染').toBeVisible()
     await expect(meta).toContainText('第 1 /')
     await page.getByRole('button', { name: '下一页' }).click()

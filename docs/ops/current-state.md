@@ -3893,4 +3893,14 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 陈旧断言修复：abnormalFormGuards（BBSForum 按钮改 data-testid）、BBSForum.closeA11y（新关闭文案）、imMessagePaging（IMChat 恢复 R106 分页面板「上一页/下一页」）、twinBatch（删 D 类基线）、w13-w14-closure（manifest 重建）、IMChat.business（放行分页 handler）、AppShell（删 3 条已删 D 类导航）、main.test.ts（去 /sso 断言、路由数门槛 80→≥80）。四文件复跑 47/47 passed。
 - 真值纪律：无密钥/口令/域名/SSH 端口入库；/.admin-credentials 口径仅部署期 shell 变量，不进入代码、台账或提交。
 
+## 168. 全量真机 E2E 转绿：七红修复 + 限流环境覆盖 + 选择器对齐业务化视图（2026-11-20）
+- 背景：§167 收尾后全量真机 E2E（BASE_URL 指向测试服子路径部署）出现 7 红。逐一定位根因并修复，不改业务逻辑、不弱化防护。
+- 审计空转（影响 designer-roundtrip 等）：e2e/support/live.ts:28 审计谓词 startsWith('/api/') 在子路径部署（api.setBase('/oa4rust-api')，pathname=/oa4rust-api/api/...）下漏掉全部 API 响应 → 改 includes('/api/')；designer-roundtrip.spec.ts:55 保存谓词 ==='/api/form' → endsWith('/api/form')。
+- 选择器对齐业务化视图：① oa-flows-live IM 发送 getByRole('发送') 与「发送文件」strict violation → getByTestId('im-message-send')；② 发起 modal getByLabel(/流程/) 命中 aria-labelledby 的 h2 而非 select → #start-flow（oa-flows-live 与 workflow-runtime 两处，后者原 #start-process 已不存在）；③ 「我发起的」页签 getByRole 加 exact:true（「刷新我发起的」按钮名包含导致 strict violation，两处）；④ ProcessWork 三页签列表 v-show 常驻 DOM，同一标题在 pending/started/completed 三列表各出现一次 → 标题定位限定 getByTestId('work-started-list')/('work-pending-list')（workflow-runtime 可见性/点击/待办清零三处 + oa-flows reject 点击一处）。
+- 通讯录两测试重写对齐 OrgDirectoryApp 业务化视图：查询测试改「搜索人员渲染名册列表与统计」（org-search-button → org-person-list li.person-item + org-person-meta 共/人）；分页测试改 org-person-reload 加载 → org-person-meta「第 1 /」→ 下一页「第 2 /」→ 上一页「第 1 /」（seed 21 人 / 每页 20 = 2 页）。
+- 密码表单：Personal.vue 三个密码 input 去掉原生 required——「填写不完整时校验报错且不发写请求」测试依赖应用层校验提示，原生 required 会拦截 submit 使 .error-msg 不渲染；Personal.business.contract.test.ts 不要求 required 属性（11 例契约复跑全绿）。前端重编（vite base='/oa4rust/'）并部署测试服（旧产物备份 web.bak-r297-pwdfix），Personal chunk grep required=0。
+- 登录 429 根因与处置：复跑中导航两测试偶发登录失败，error-context 快照为登录页 alert「HTTP 429: Too Many Requests」。机制：shared/middleware/rbac.rs:647 rate_limit_middleware 对认证路径独立 auth:{ip} 桶，constants.rs:434 auth_rate_limit() 默认 30/分钟（env OA4RUST_AUTH_RATE_LIMIT 可覆盖，注释明示压测/应急通道），窗口 1 分钟；auth 登录成功后不调 limiter.reset()，E2E 每测试 login(page) ×2 project 单轮上百次登录必然打满。处置：不改代码，测试服部署 EnvironmentFile 追加 OA4RUST_AUTH_RATE_LIMIT / OA4RUST_GENERAL_RATE_LIMIT 覆盖（先备份 .env.bak-r297-ratelimit），重启服务并验证进程 environ 已加载。真值与服务器定位信息不入库。
+- app-coverage.spec.ts 路由数门槛 >80 → ≥80（D 类清理后命名路由恰为 80）。
+- 全量门禁（修复后）：真机 E2E 118 passed（59 测试 × live-chromium/coverage-chromium 双 project，1.4m，EXIT=0）；oa4rust vitest 197 文件 / 1782 passed（EXIT=0）；@oa4rust/desktop typecheck EXIT=0；scoped biome 7 文件 0 error（EXIT=0）。
+- 真值纪律：口令仅部署期 shell 变量读取；台账与提交不含密钥/口令/域名/IP/SSH 端口/个人路径。
 

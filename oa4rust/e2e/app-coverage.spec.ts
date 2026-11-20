@@ -224,6 +224,6 @@ test.describe('main.ts source coverage', () => {
   test('Has route count verification', () => {
     const routeMatches = source.match(/name: '/g)
     expect(routeMatches).not.toBeNull()
-    expect(routeMatches!.length).toBeGreaterThan(80)
+    expect(routeMatches!.length).toBeGreaterThanOrEqual(80)
   })
 })

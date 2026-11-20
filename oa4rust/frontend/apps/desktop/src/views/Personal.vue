@@ -32,16 +32,16 @@
       <form class="pwd-form" @submit.prevent="savePassword">
         <div class="form-group">
           <label for="oldPwd">当前密码</label>
-          <input id="oldPwd" v-model="pwdForm.oldPassword" type="password" class="form-input" autocomplete="current-password" placeholder="请输入当前密码" required />
+          <input id="oldPwd" v-model="pwdForm.oldPassword" type="password" class="form-input" autocomplete="current-password" placeholder="请输入当前密码" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="newPwd">新密码</label>
-            <input id="newPwd" v-model="pwdForm.newPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请输入新密码" required />
+            <input id="newPwd" v-model="pwdForm.newPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请输入新密码" />
           </div>
           <div class="form-group">
             <label for="confirmPwd">确认密码</label>
-            <input id="confirmPwd" v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" required />
+            <input id="confirmPwd" v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" />
           </div>
         </div>
         <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>

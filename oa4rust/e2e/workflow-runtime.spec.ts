@@ -16,7 +16,7 @@ test('starts, renders, and returns a workflow through visible web controls', asy
   // Xform 填报（申请原因）→ 提交 → 我发起的可见 → 发起人办理 begin 任务审批通过。
   const processName = process.env.E2E_PROCESS_NAME ?? 'seed-approval-flow'
   await page.getByRole('button', { name: /发起流程/ }).click()
-  await page.locator('#start-process').selectOption({ label: processName })
+  await page.locator('#start-flow').selectOption({ label: processName })
   await page.locator('#start-title').fill(title)
   await page.getByLabel(/申请原因/).fill('S3 GUI E2E round-trip')
   const startResponse = audit.waitForWrite((response) =>
@@ -25,9 +25,11 @@ test('starts, renders, and returns a workflow through visible web controls', asy
   await page.getByRole('button', { name: '发起', exact: true }).click()
   await expectSuccessfulWrite(await startResponse)
 
-  await expect(page.getByRole('button', { name: '我发起的' })).toHaveClass(/active/)
-  await expect(page.getByText(title, { exact: true })).toBeVisible()
-  await page.getByText(title, { exact: true }).click()
+  await expect(page.getByRole('button', { name: '我发起的', exact: true })).toHaveClass(/active/)
+  // 三个页签列表用 v-show 常驻 DOM，同一标题在三个列表各出现一次；必须限定当前页签列表。
+  const startedItem = page.getByTestId('work-started-list').getByText(title, { exact: true })
+  await expect(startedItem).toBeVisible()
+  await startedItem.click()
   await expect(page.getByLabel(/申请原因/)).toHaveValue('S3 GUI E2E round-trip')
 
   const completeResponse = audit.waitForWrite((response) =>
@@ -38,6 +40,6 @@ test('starts, renders, and returns a workflow through visible web controls', asy
   await expectSuccessfulWrite(await completeResponse)
   // 审批完成后工作收尾为 completed，待办中不再出现
   await page.getByRole('button', { name: '待我处理' }).click()
-  await expect(page.getByText(title, { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('work-pending-list').getByText(title, { exact: true })).toHaveCount(0)
   await assertNo404OrServerErrors(audit)
 })

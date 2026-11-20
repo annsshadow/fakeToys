@@ -25,7 +25,9 @@ export function auditApiResponses(page: Page): ResponseAudit {
   const failures: string[] = []
   page.on('response', (response) => {
     const url = new URL(response.url())
-    if (!url.pathname.startsWith('/api/')) return
+    // 子路径部署（api.setBase('/oa4rust-api')）下 pathname=/oa4rust-api/api/...，
+    // startsWith 会漏掉全部 API 响应导致审计空转；按包含匹配。
+    if (!url.pathname.includes('/api/')) return
     if (response.status() === 404 || response.status() >= 500) failures.push(`${response.status()} ${url.pathname}`)
   })
 
