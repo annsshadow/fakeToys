@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="CMS 索引设计" />
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
       <div class="crud-view">
