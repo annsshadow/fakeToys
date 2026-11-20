@@ -4013,4 +4013,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：commit stat 精确 1 文档、HEAD=远端追踪=edebebe54、工作树干净；实读 98 行确认来源声明用 <YOUR_TEST_DOMAIN> 占位、口令仅运行期读取、tabbit 非真机与 H5 桌面宽视口均如实标注；取证限制单列一节，符合只审计不修约定。非终态，真 bug 待后续 RED→GREEN 轮次实施。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 183. R300 B1 PC 应用外壳与导航重构（2026-11-21）
+- 交付（shell-eng，commit 09f24cc23，精确 3 文件）：oa4rust/docs/ops/oa4rust-pc-shell-r300-b1.md（28 行）+ AppShell.vue（+548/-75）+ AppShell.aiShell.contract.test.ts（54 行）。基于 t1 --ai-* 令牌落地侧栏品牌/激活渐变、多段面包屑、活动页签条、Ctrl/⌘K 命令面板（15 项、过滤、↑↓/Enter/Esc）、全局搜索跳 /app/search、主题切换；保留 15 侧栏项与 58 管理路由。
+- 契约测试先 RED 5 失败后 GREEN；队长独立复跑 AppShell.aiShell.contract.test.ts 5/5 passed（exit 0）；typecheck/build 通过；构建产物部署测试服，Playwright Chromium 真页面流程（登录→导航→命令面板→主题→搜索→关页签）通过，5 张 PNG + evidence.json 落盘 gitignored 的 oa4rust/test-results/r300-b1-shell/（非物理真机）。
+- 队长独立复核：git show --stat 确认为精确 3 文件、HEAD=远端追踪=09f24cc23、工作树干净；实读 28 行文档确认真域名/SSH/凭据不入库、截图来源如实标注非真机。非终态，t5/t6/t7 待调度。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
