@@ -4158,3 +4158,13 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认 commandPaletteRoot ref 与 installFocusTrap/release 集成；定点复跑 focusTrap 契约 6/6 passed（PIPE=0）、oa4rust 全 workspace typecheck EXIT=0；实读文档 <YOUR_TEST_DOMAIN> 占位、证据标注 Playwright Chromium headless/not a physical device 与焦点循环检查项。HEAD 已含该提交。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 209. R301 工作台与个人域实质升级（t13 / C4，2026-11-21）
+- 交付（page-core，commit 77ead4e9e，精确 3 文件 245+/22-）：oa4rust/docs/ops/oa4rust-r301-c4-dashboard-upgrade.md（37 行）+ Dashboard.r301.contract.test.ts（48 行）+ Dashboard.vue。工作台快捷入口 8 项真实渲染、日程/通知改真实接口空态、统计卡去硬编码并加相对归一分布条；RED 4 失败→GREEN，6 契约 26 测试全绿，typecheck/build 通过。测试服原子部署 + Playwright Chromium headless 真浏览器实测 0 pageerror，截图/evidence.json 落 gitignored oa4rust/test-results/r301-c4/（非物理真机）。按 history rewrite 通报 fetch+rebase 后精确提交并推送。
+- 队长独立复核（不采信自述）：git show --stat 精确 3 文件、父提交为 f4d361196（rebase 链正确）；定点复跑 Dashboard.r301.contract.test.ts 5/5 passed（PIPE=0）；实读文档用 <YOUR_TEST_DOMAIN> 占位、声明非物理真机，evidence.json source 标注 not a physical device；git merge-base 确认 77ead4e9e 已在远端历史链中。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 210. R301 H5 结构化骨架屏与按压微交互（t17 / C8，2026-11-21）
+- 交付（mobile-eng，commit cc0c47b58，精确 15 文件 195+/41-）：oa4rust/docs/ops/oa4rust-r301-h5-skeleton.md（24 行）+ App.vue（新增 .ai-skeleton-list/.ai-skeleton-line.short/.ai-pressable 与 :active 按压态，prefers-reduced-motion 守卫）+ 10 页 14 处裸加载文字替换为结构化骨架占位 + h5Skeleton.emptyState.test.ts（58 行）。契约 RED→GREEN，13/13 passed，pages 46 files/202 tests、typecheck/build 通过；测试服原子部署 + 真 Chromium 390×844 真实登录逐页采样 bad=0/pageErrors=0，证据落 gitignored oa4rust/test-results/r301-h5-skeleton/（非物理真机、非假数据拼图）。
+- 队长独立复核（不采信自述）：git show --stat 精确 15 文件；定点复跑 h5Skeleton.emptyState.test.ts 13/13 passed（PIPE=0）；实读文档明确非物理真机、占位非伪造业务数据、≥1000 轮非终态，无真值泄露；LOCAL=UPSTREAM=cc0c47b58。此前 §208 误提交已 mixed reset 修正，本提交为成员 rebase 后正常链上提交。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
