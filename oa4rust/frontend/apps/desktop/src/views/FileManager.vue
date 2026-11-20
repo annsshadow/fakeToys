@@ -45,6 +45,7 @@
           <div v-else-if="files.length === 0" class="empty-state modern-empty">
             <div class="empty-icon">📁</div>
             <p>当前文件夹为空</p>
+            <button class="empty-cta" type="button" @click="handleUpload">📤 上传文件，开始协作</button>
           </div>
           <div v-else class="file-content">
             <ul v-if="viewType === 'list'" class="file-list" data-testid="files-mine-list">
@@ -1448,6 +1449,8 @@ async function loadFileTwin3() {
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 .empty-icon{font-size:48px;opacity:.4}
+.empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.empty-cta:hover{transform:translateY(-1px)}
 .ref-panel{padding:16px;margin-top:8px}
 .ref-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;color:var(--color-primary)}
 .ref-chips{display:flex;gap:8px;flex-wrap:wrap}

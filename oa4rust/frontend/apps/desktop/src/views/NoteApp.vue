@@ -13,7 +13,7 @@
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 内容..." class="search-input" />
-        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="note-endpoint-fold">
+        <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="note-endpoint-fold">
           <template #group-read>
             <button class="btn-refresh" @click="loadData">🔄 刷新</button>
           </template>
@@ -21,7 +21,7 @@
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📓</div><p>暂无笔记</p></div>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📓</div><p>暂无笔记</p><button class="empty-cta" type="button" @click="openCreate">✏️ 新建第一条笔记</button></div>
       <table v-else class="data-table">
         <thead><tr><th>标题</th><th>内容摘要</th><th>成员</th><th>更新时间</th><th>操作</th></tr></thead>
         <tbody>
@@ -200,6 +200,8 @@ function fmtTime(t?: string) {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
+.empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.empty-cta:hover{transform:translateY(-1px)}
 .modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:480px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
