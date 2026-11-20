@@ -69,6 +69,10 @@ onShow(async () => {
   if (!(await ensureAuthenticated())) return
   load()
 })
+function goBrowse() {
+  uni.navigateTo({ url: '/pages/browse/browse' })
+}
+
 </script>
 
 <template>
@@ -78,7 +82,15 @@ onShow(async () => {
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="loaded && rows.length === 0" class="tip">暂无收藏</view>
+    <view v-else-if="loaded && rows.length === 0" class="empty-guide">
+      <view class="empty-guide-emoji" aria-hidden="true">⭐</view>
+      <text class="empty-guide-text">暂无收藏</text>
+      <text class="empty-guide-hint">还没有收藏，浏览内容时收藏后可在这里快速找到</text>
+      <view class="empty-guide-actions">
+        <view class="empty-guide-link primary" @tap="goBrowse">去浏览内容</view>
+        <view class="empty-guide-link" @tap="load">刷新</view>
+      </view>
+    </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>
@@ -96,6 +108,54 @@ onShow(async () => {
 </template>
 
 <style scoped>
+/* t32 空态引导：明确文案 + 可点击入口，不伪造数据 */
+.empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 56rpx 32rpx;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.empty-guide-emoji {
+  font-size: 64rpx;
+  line-height: 1.2;
+}
+.empty-guide-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.empty-guide-hint {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+.empty-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+.empty-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 26rpx;
+}
+.empty-guide-link.primary {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .page {
   padding: 12px;
   min-height: 100vh;

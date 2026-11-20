@@ -107,7 +107,11 @@ function goPage(url: string) {
         <text class="error-text">{{ noticesError }}</text>
         <view class="retry-btn" @tap="loadNotices(true)">重试</view>
       </view>
-      <view v-else-if="notices.length === 0" class="sec-empty">暂无公告</view>
+      <view v-else-if="notices.length === 0" class="sec-empty empty-guide">
+        <text class="empty-guide-text">暂无公告</text>
+        <text class="empty-guide-hint">刷新后再看看最新公告</text>
+        <view class="empty-guide-link" @tap="loadNotices(true)">刷新公告</view>
+      </view>
       <view v-if="noticesError && notices.length > 0" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
         <view class="retry-btn" @tap="loadNotices(true)">重试</view>
@@ -183,6 +187,23 @@ function goPage(url: string) {
 </template>
 
 <style scoped>
+/* t32 首页公告空态：紧凑布局，保留刷新入口 */
+.sec-empty.empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8rpx;
+  padding: 16rpx 0;
+}
+.sec-empty .empty-guide-text { font-size: 24rpx; font-weight: 600; color: var(--color-text-primary); }
+.sec-empty .empty-guide-hint { font-size: 22rpx; color: var(--color-text-muted); }
+.sec-empty .empty-guide-link {
+  display: inline-flex; align-items: center; min-height: 44px;
+  padding: 0 24rpx; border-radius: 999rpx;
+  border: 1rpx solid var(--color-primary);
+  background: var(--color-primary-soft); color: var(--color-primary); font-size: 24rpx;
+}
+
 .page {
   padding: 32rpx;
 }
