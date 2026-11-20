@@ -321,7 +321,6 @@ async function loadCalendars(scope: 'my' | 'public') {
     calListError.value = describeListError('日历列表加载失败', e)
   }
 }
-loadCalendars('my')
 
 // ── 选中日历 → 事件管理（消费 core calendar 事件族真实路由）──────────
 interface CalDetail {
@@ -337,6 +336,10 @@ const calEvents = ref<CalendarEvent[]>([])
 const calEventsError = ref('')
 const calListError = ref('')
 const evtForm = ref({ title: '', startTime: '', endTime: '', location: '' })
+
+// 初始加载必须晚于 calListError 等 ref 声明：loadCalendars 首行写 calListError.value，
+// 提前调用会触发暂时性死区（浏览器报 Cannot access 'calListError' before initialization）。
+loadCalendars('my')
 
 async function selectCalendar(c: CalItem): Promise<void> {
   activeCal.value = c
