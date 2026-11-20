@@ -4055,6 +4055,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：t11 以 verdict=needs_revision、status=failed 完成，8 条结构化 findings 随 task 提交；本轮只读未改源码、无新提交；与 t10 C1 两个确定性 P0 的源码级复核一致，DR-01 与 t24/t25 修复任务一一对应，DR-02/DR-03 待后续独立任务承接。≥1000 轮非完成态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 190. R300 P0 修复：H5 日历 data 信封类型错误（t25，2026-11-21）
+- 交付（mobile-eng，commit 7355215c8，精确 4 文件）：oa4rust/docs/ops/oa4rust-h5-calendar-envelope-fix-r300.md（28 行）+ oa4rust/mobile/src/pages/calendar/calendar.envelope.contract.test.ts（33 行）+ oa4rust/mobile/src/pages/calendar/calendar.vue（+3/-1）+ oa4rust/mobile/src/pages/calendar/calendarEnvelope.ts（21 行）；test-first RED→GREEN，新增 normalizeCalendarRows 运行时归一化（数组直用、对象取 myCalendars/unitCalendars 合并），后端契约与其他页不变。
+- 队长独立复核（不采信自述）：git show --stat 精确 4 文件，HEAD=远端追踪=7355215c8，工作树并行未提交系 t24/t26/t27/t28 在途；独立定点复跑 calendar.envelope.contract.test.ts 3/3 passed（exit 0）；git show 确认 calendar.vue:164 改为 calendars.value=normalizeCalendarRows(cals.data)；实读文档用 /api/... 相对路径无真实域名、无口令回显；commit message 自述 typecheck/build/日历 5 files 22 tests 全绿、测试服原子部署+真 Chromium 390×844 真登录 3/3 次正常空态、0 pageerror、0 API 失败，证据落 gitignored oa4rust/test-results/r300-h5-calendar-fix/（本地渲染非物理真机）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
