@@ -28,7 +28,7 @@
           <tr v-for="item in filtered" :key="item.id">
             <td>{{ item.title||'—' }}</td>
             <td class="desc-cell">{{ item.content||'—' }}</td>
-            <td class="mono">{{ item.personName || '团队成员' }}</td>
+            <td data-testid="note-member-cell">{{ item.personName || '团队成员' }}</td>
             <td>{{ fmtTime(item.updateTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
@@ -43,7 +43,7 @@
         <h3>{{ showEdit?'编辑':'新建' }}笔记</h3>
         <div class="form-group"><label>标题</label><input v-model="form.title" placeholder="标题" class="form-input" /></div>
         <div class="form-group"><label>内容</label><textarea v-model="form.content" rows="4" placeholder="笔记内容" class="form-textarea"></textarea></div>
-        <div class="form-group"><label>成员 ID</label><input v-model="form.personId" placeholder="personId" class="form-input mono" /></div>
+        <div class="form-group"><label>成员</label><input v-model="form.personId" data-testid="note-member-input" placeholder="成员姓名 / 工号（可选）" class="form-input" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="closeModal">取消</button>
           <button class="btn-save" :disabled="!form.title?.trim()||saving" @click="saveItem">{{ saving?'保存中…':'保存' }}</button>

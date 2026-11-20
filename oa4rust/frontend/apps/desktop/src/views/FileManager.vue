@@ -14,6 +14,7 @@
     <section class="modern-section modern-card file-toolbar">
       <div class="toolbar-actions">
         <button class="modern-btn primary" @click="handleUpload">📤 上传</button>
+        <button class="modern-btn ghost" data-testid="file-create-json" @click="createRecyclableFile">🗂️ 新建可清理文件</button>
         <button class="modern-btn ghost" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </section>
@@ -73,6 +74,18 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="files-recyclable modern-section modern-card">
+        <h2 class="section-title modern-section-title">可清理文件</h2>
+        <p class="muted">通过上方「新建可清理文件」创建的真实文件，删除后进入回收站</p>
+        <ul class="item-list" data-testid="files-recyclable-list">
+          <li v-for="f in recyclableFiles" :key="f.id" class="item-body">
+            <span class="item-title">{{ f.name }}</span>
+            <button class="icon-action danger" :disabled="deletingId === f.id" @click="deleteFile(f)" title="删除（进入回收站）">🗑</button>
+          </li>
+        </ul>
+        <p v-if="!recyclableFiles.length" class="muted modern-empty">尚未新建文件</p>
       </section>
 
       <section class="files-shared modern-section modern-card">
@@ -155,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
@@ -165,6 +178,8 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+const session = useSession()
 
 interface FileItem {
   id: string
@@ -190,6 +205,25 @@ const queryClient = useQueryClient()
 const fileKeyword = ref('')
 const sharedFiles = ref<FileItem[]>([])
 const recycleFiles = ref<FileItem[]>([])
+const recyclableFiles = ref<FileItem[]>([])
+
+async function createRecyclableFile(): Promise<void> {
+  const name = prompt('新建文件名称:', '') || ''
+  if (!name.trim()) return
+  try {
+    const resp = await api.post('/api/file/core/entity/file', {
+      name,
+      person: session.state.user?.unique ?? '',
+      reference_type: 'attachment',
+    })
+    const created = (resp as { data?: { id?: string } })?.data
+    const id = String(created?.id ?? '')
+    recyclableFiles.value = [{ id, name, type: 'file' }, ...recyclableFiles.value]
+    toast.success('文件已创建，可删除进入回收站')
+  } catch (e: any) {
+    toast.error(`新建文件失败: ${e?.message ?? ''}`)
+  }
+}
 
 const visibleFiles = computed(() => {
   const kw = fileKeyword.value.trim().toLowerCase()
@@ -864,7 +898,10 @@ async function deleteFile(f: FileItem): void {
   if (!(await confirmMsg(`确定删除「${f.name}」？`))) return
   deletingId.value = f.id
   deleteMutation.mutate(f.id, {
-    onSuccess: () => toast.success('文件已删除'),
+    onSuccess: () => {
+      recyclableFiles.value = recyclableFiles.value.filter((x) => x.id !== f.id)
+      toast.success('文件已删除')
+    },
     onError: () => toast.error('删除失败'),
     onSettled: () => (deletingId.value = ''),
   })
