@@ -4188,3 +4188,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 1 文档；实读 172 行文档，来源声明用 <YOUR_TEST_DOMAIN> 占位、≥1000 轮非终态、同路由表量化对照表与遗留项齐全；gitignored oa4rust/test-results/r301-d1-full-pc/evidence.json 与 r301-d1-full-h5/evidence.json 的 source 均标注 Playwright Chromium headless/not a physical device（H5 390x844 isMobile/hasTouch），routesFrom 指向第一轮同路由表脚本；HEAD=TRACK=463057d08，暂存区纯净。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 215. R301 D2 终审 verdict=pass（t20，2026-11-21）
+- 交付（design-reviewer，只读无改码无提交）：R300→R303 全部承诺整改达标，findings=[]。逐条关闭：DR-01~07（PC/H5 日历 0 pageerror、统计 5=5、调试门控 debugTextTotal=0、org 21 人+重试、h1=1、H5 空态 6/6）；DR-06-R/DR-07-R（r303-dr06 rawTitleLeak 双 false、r303-dr07 三页 h1Count=1+modernPage=1）；BBS 发帖写现役表+版块筛选回显闭环 result=PASS；DR-01~05 无回归（t19 D1 当前字节 PC 74/74+H5 19/19、0 pageerror/errorText/API 失败、待审批 0→5）。完整性守卫 sha 变化查明：R301 升级链(t12-t19)叠加在 R302/R303 修复之上非回退，对当前 HEAD 字节(818a5285c)逐一源码级复核所有修复标识保留，专项 evidence 对应 rebase 前字节、终审主依据为当前字节 D1 全页实测。诚实附注非阻断：PC 令牌深度消费 21/75、H5 branded=0 17 页属后续迭代方向。
+- 队长独立复核（不采信自述）：读取 t20 任务终态 status=completed/verdict=pass/findings=[]，output 逐条与源码及 D1 实测证据交叉印证；HEAD=TRACK=818a5285c，暂存区纯净、工作树干净。终审通过，未引入新的阻断项；t21（终审未达标项定向修复）虽已自动 claimed，但无 finding 需修，判定为空操作/无实际改动，随后 t22 全量门禁并入账。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
