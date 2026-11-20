@@ -12,6 +12,7 @@ unpackage/
 .mvn/
 *.class
 *.jar
+*.tgz
 *.war
 
 # Python
