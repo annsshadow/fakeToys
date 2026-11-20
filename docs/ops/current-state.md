@@ -4086,6 +4086,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 8 文件、HEAD=上游=71237ad94；定点复跑契约 7/7 passed；实读文档合规，路径偏差已披露（任务 inScope 的 favorite/**、home/** 实为 collect/collect.vue、index/index.vue）；commit message 自述 typecheck/H5 build 全绿、原子部署测试服+真 Chromium 390×844 真 UI 登录 6/6 页通过（bad=0/tapBad=0/pageErrors=0），证据 gitignored oa4rust/test-results/r300-h5-empty-guide/（7 PNG+evidence.json+manifest.md，非物理真机、非静态假数据）。t32 与 t29 原文件重叠，队长已把 t29 依赖扩为含 t32/t33，待两者落地后再启动。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 196. R302 PC 首屏数据缺失与 BAM 加载失败复核（t34，2026-11-21）
+- 交付（page-core，commit 9519e678，精确 4 文件）：oa4rust/docs/ops/oa4rust-pc-firstscreen-fix-r300.md（50 行）+ FirstScreenData.contract.test.ts（57 行）+ FileManager.vue（+3）+ NoteApp.vue（+6/-2）。BAM 重部署后真浏览器无 data is undefined（统计卡 90/0/22/10、summary HTTP 200），判定历史部署滞后未改 BamApp/SDK；真浏览器五页探测锁定真缺陷 FileManager/NoteApp 空态死胡同，复用既有 handleUpload/openCreate 新增 --ai-gradient-brand 引导 CTA。契约 RED 2 failed→GREEN 4/4。
+- 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认两页空态 CTA 使用 --ai-gradient-brand、复用既有函数；定点复跑 FirstScreenData.contract.test.ts 4/4 passed（exit 0）；实读文档前 13 行确认真值纪律（本地渲染非物理真机、占位域名）。commit message 自述 typecheck/build exit 0、原子部署+真 Chromium 五页复验 ctaGreen={file:true,note:true,noLongLoading:true,noErrorText:true}，证据 gitignored oa4rust/test-results/r34-firstscreen/。全量 views 套件 11 个失败文件系队友并行未提交改动、与本任务四文件无重叠，已如实记录。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
