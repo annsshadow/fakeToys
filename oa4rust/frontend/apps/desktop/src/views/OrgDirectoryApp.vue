@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dir-view modern-page" data-testid="org-directory-business-view">
-    <header class="modern-hero" data-testid="org-directory-header">
+  <div class="dir-view modern-page ai-page" data-testid="org-directory-business-view">
+    <header class="modern-hero ai-panel" data-testid="org-directory-header">
       <div class="hero-copy">
         <h1>组织通讯录</h1>
         <p class="subtitle" data-testid="org-directory-subtitle">查找同事、浏览部门结构，快速定位组织内的联系人</p>
@@ -563,4 +563,18 @@ async function orgAuth(op: string): Promise<void> {
 .cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px }
 .manage-row { display: flex; flex-wrap: wrap; gap: 8px }
+/* R300 B3：通讯录域 AI 令牌覆盖。 */
+.ai-page.dir-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .modern-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .modern-hero h1 { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ai-page .search-form { display: grid; grid-template-columns: 1fr auto; gap: var(--ai-grid-2); align-items: center; }
+.ai-page .search-section,
+.ai-page .tree-section,
+.ai-page .person-section { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
+.ai-page .tree-node { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: calc(var(--ai-grid-1) + 2px); transition: background var(--ai-motion-fast) var(--ai-ease-spring), transform var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .tree-node:hover { transform: translateX(2px); border-color: var(--ai-indigo); }
+.ai-page .run-btn { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); }
+.ai-page .person-avatar { background: var(--ai-gradient-brand); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; transition: transform var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .person-item:hover .person-avatar { transform: scale(1.08); }
+.ai-page .person-item { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); }
 </style>

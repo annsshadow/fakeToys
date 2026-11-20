@@ -2,10 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="work-view modern-page">
-    <header class="work-hero modern-hero">
+  <div class="work-view modern-page ai-page ai-panel">
+    <header class="work-hero modern-hero ai-panel">
       <div class="hero-copy">
-        <h1 class="admin-title">工作流待办</h1>
+        <h1 class="admin-title ai-gradient-text">工作流待办</h1>
         <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
       </div>
       <div class="modern-hero-actions">
@@ -35,13 +35,13 @@
         加载失败: {{ (query.error.value as Error)?.message }}
         <button class="btn-sm" @click="query.refetch()">重试</button>
       </div>
-      <div v-else-if="!items.length" class="state modern-empty">暂无待办任务</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无待办任务，去流程中心发起</div>
       <ul v-else class="item-list" data-testid="work-pending-list">
         <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
           <div class="item-info">
             <span class="item-title">{{ displayTitle(item) }}</span>
             <div class="item-meta">
-              <span class="item-id muted">{{ item.id }}</span>
+              <span class="item-id muted" title="工作编号">{{ displayTitle(item) }}</span>
               <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
             </div>
           </div>
@@ -63,7 +63,7 @@
           <div class="item-info">
             <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
             <div class="item-meta">
-              <span class="item-id muted">{{ item.id }}</span>
+              <span class="item-id muted" title="工作编号">{{ item.title || item.processName || item.appName || '工作实例' }}</span>
               <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
             </div>
           </div>
@@ -85,7 +85,7 @@
           <div class="item-info">
             <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
             <div class="item-meta">
-              <span class="item-id muted">{{ item.id }}</span>
+              <span class="item-id muted" title="工作编号">{{ item.title || item.processName || item.appName || '已办工作' }}</span>
               <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
             </div>
           </div>
@@ -99,7 +99,7 @@
     <div v-if="opened" class="modal-overlay" @click.self="closeWork">
       <section class="work-dialog glass-card">
         <header>
-          <div><h2>{{ displayTitle(opened) }}</h2><p>{{ opened.id }}</p></div>
+          <div><h2>{{ displayTitle(opened) }}</h2><p class="detail-subtitle">工作详情</p></div>
           <button class="btn-sm" @click="closeWork">关闭</button>
         </header>
         <div v-if="detailLoading" class="state">正在加载表单...</div>
@@ -3243,4 +3243,16 @@ function fmtTime(value: unknown): string {
 .work-view .item-meta { display: flex; flex-wrap: wrap; gap: 12px; }
 .work-view .item-id { font-family: monospace; font-size: 11px; }
 .work-view .item-status { margin-left: auto; }
+/* R300 B3：审批域 AI 令牌覆盖。 */
+.ai-page.work-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page.work-view.ai-panel { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-2); }
+.ai-gradient-text { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ai-page .work-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .work-hero .admin-title { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ai-page .tabs { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); }
+.ai-page .tab-btn.active { background: var(--ai-gradient-brand); color: #fff; border-radius: calc(var(--ai-grid-1) + 2px); }
+.ai-page .item-card { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .item-card:hover { transform: translateY(-2px); box-shadow: var(--ai-shadow-2); }
+.ai-page .btn-sm.primary { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); }
+.ai-page .modern-empty { background: var(--ai-glass-bg); border: 1px dashed var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-4); text-align: center; color: var(--text-muted); }
 </style>
