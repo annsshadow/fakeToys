@@ -5,10 +5,6 @@
   <div class="editor-view">
     <!-- Header -->
     <div class="view-header glass-card">
-      <div>
-        <h1>配置设计器</h1>
-        <p class="subtitle">/api/config/* — 系统配置与参数管理</p>
-      </div>
       <div class="header-actions">
         <button class="btn-outline" @click="showFormat=true">📐 格式化</button>
         <button class="btn-outline" @click="showHistory=true">📜 历史</button>
@@ -447,7 +443,7 @@ const api_config_i_771_data = ref<any[]>([])
 .sb-list{flex:1;overflow-y:auto;padding:4px}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .sb-item:hover{background:var(--bg-hover)}
-.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.sb-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 .si-icon{font-size:16px;flex-shrink:0}
 .si-info{flex:1;min-width:0}
 .si-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -476,7 +472,7 @@ const api_config_i_771_data = ref<any[]>([])
 .empty{padding:12px;color:var(--text-muted);text-align:center;font-size:12px}
 .loading-sm{padding:12px;color:var(--text-muted);font-size:12px}
 /* Modals */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:20px;width:560px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;gap:12px;overflow:hidden}
 .modal h3{font-size:15px;color:var(--color-primary);margin:0;font-family:'Orbitron',sans-serif}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border-color)}

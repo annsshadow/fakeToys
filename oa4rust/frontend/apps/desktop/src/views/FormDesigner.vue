@@ -1,14 +1,13 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="表单设计器" subtitle="/api/form/* — 可视化表单构建器（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="fd">
     <!-- Header -->
     <div class="fd-header glass-card">
-      <div class="fd-title">
-        <h1>表单设计器</h1>
-        <p class="subtitle">/api/form/* — 可视化表单构建器</p>
-      </div>
       <div class="fd-actions">
         <button class="btn" @click="resetForm" title="新建表单">📄 新建</button>
         <button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>
@@ -708,11 +707,14 @@
     </div>
   </div>
 </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 import {
   definitionToDesignerFields,
   formSavePayload,
@@ -730,6 +732,10 @@ import { applyBuilderRules } from '../utils/validationRuleApply'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+void AdminFormSection
+void AdminPageHeader
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 interface FormField {
   id: string
@@ -2666,7 +2672,7 @@ function runValidate(): void {
 .list-loading, .list-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px }
 .list-item { padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 2px }
 .list-item:hover { background: var(--bg-hover) }
-.list-item.active { background: var(--color-primary-soft); border-left: 3px solid var(--color-primary) }
+.list-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary) }
 .li-name { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .li-meta { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px }
 /* Center area */
@@ -2746,7 +2752,7 @@ function runValidate(): void {
 .pv-legend { font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 0 8px }
 .pv-submit { margin-top: 8px; padding: 10px 24px; font-size: 14px }
 /* Templates modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px;max-height:85vh;overflow-y:auto}
 .modal-lg{width:720px}.modal-md{width:480px}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}

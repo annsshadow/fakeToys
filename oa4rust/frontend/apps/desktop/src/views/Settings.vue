@@ -2,59 +2,61 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="settings-view">
-    <div class="view-header glass-card">
+  <div class="settings-view" data-testid="settings-business-view">
+    <div class="view-header glass-card settings-header" data-testid="settings-header">
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
-    <!-- 侧边导航 -->
     <div class="settings-layout">
-      <aside class="s-sidebar glass-card">
-        <ul class="s-nav">
-          <li v-for="s in sections" :key="s.id" class="s-item" :class="{active:activeSection===s.id}" @click="activeSection=s.id">
+      <aside class="s-sidebar glass-card" data-testid="settings-sidebar">
+        <h2 class="section-title">设置分组</h2>
+        <ul class="s-nav" role="tablist" aria-label="设置分组">
+          <li v-for="s in sections" :key="s.id" class="s-item" role="tab" :aria-selected="activeSection===s.id" :class="{active:activeSection===s.id}" @click="activeSection=s.id">
             <span class="s-icon">{{s.icon}}</span><span class="s-label">{{s.label}}</span>
           </li>
         </ul>
       </aside>
 
-      <main class="s-main glass-card">
-        <!-- 基础设置 -->
-        <div v-if="activeSection==='basic'" class="s-panel">
-          <h3>基础配置</h3>
-          <div class="form-grid">
-            <div class="fg"><label>系统名称</label><input v-model="cfg.systemName" class="fi" /></div>
-            <div class="fg"><label>系统 Logo</label><input v-model="cfg.logoUrl" class="fi" placeholder="图片 URL" /></div>
-            <div class="fg"><label>时区</label><select v-model="cfg.timezone" class="fs"><option value="Asia/Shanghai">Asia/Shanghai</option><option value="UTC">UTC</option></select></div>
-            <div class="fg"><label>语言</label><select v-model="cfg.locale" class="fs"><option value="zh-cn">中文</option><option value="en">English</option><option value="es">Español</option></select></div>
-          </div>
-          <button class="save-btn" :disabled="saving" @click="saveCfg('basic')">保存设置</button>
+      <main class="s-main glass-card" data-testid="settings-main">
+        <div v-if="activeSection==='basic'" class="s-panel basic-panel">
+          <h2>基础配置</h2>
+          <form @submit.prevent="saveCfg('basic')">
+            <div class="form-grid">
+              <div class="fg"><label for="cfgName">系统名称</label><input id="cfgName" v-model="cfg.systemName" class="fi" /></div>
+              <div class="fg"><label for="cfgLogo">系统 Logo</label><input id="cfgLogo" v-model="cfg.logoUrl" class="fi" placeholder="图片 URL" /></div>
+              <div class="fg"><label for="cfgTz">时区</label><select id="cfgTz" v-model="cfg.timezone" class="fs"><option value="Asia/Shanghai">Asia/Shanghai</option><option value="UTC">UTC</option></select></div>
+              <div class="fg"><label for="cfgLocale">语言</label><select id="cfgLocale" v-model="cfg.locale" class="fs"><option value="zh-cn">中文</option><option value="en">English</option><option value="es">Español</option></select></div>
+            </div>
+            <button type="submit" class="save-btn" :disabled="saving">保存设置</button>
+          </form>
         </div>
 
-        <!-- 安全设置 -->
-        <div v-if="activeSection==='security'" class="s-panel">
-          <h3>安全配置</h3>
-          <div class="form-grid">
-            <div class="fg"><label>密码最小长度</label><input v-model.number="cfg.minPwdLen" type="number" class="fi" /></div>
-            <div class="fg"><label>登录失败锁定次数</label><input v-model.number="cfg.lockAttempts" type="number" class="fi" /></div>
-            <div class="fg"><label>会话超时（分钟）</label><input v-model.number="cfg.sessionTimeout" type="number" class="fi" /></div>
-            <div class="fg"><label>允许注册</label><select v-model="cfg.allowRegister" class="fs"><option :value="true">是</option><option :value="false">否</option></select></div>
-          </div>
-          <button class="save-btn" :disabled="saving" @click="saveCfg('security')">保存设置</button>
+        <div v-if="activeSection==='security'" class="s-panel security-panel">
+          <h2>安全配置</h2>
+          <form @submit.prevent="saveCfg('security')">
+            <div class="form-grid">
+              <div class="fg"><label for="cfgPwdLen">密码最小长度</label><input id="cfgPwdLen" v-model.number="cfg.minPwdLen" type="number" class="fi" /></div>
+              <div class="fg"><label for="cfgLock">登录失败锁定次数</label><input id="cfgLock" v-model.number="cfg.lockAttempts" type="number" class="fi" /></div>
+              <div class="fg"><label for="cfgTimeout">会话超时（分钟）</label><input id="cfgTimeout" v-model.number="cfg.sessionTimeout" type="number" class="fi" /></div>
+              <div class="fg"><label for="cfgRegister">允许注册</label><select id="cfgRegister" v-model="cfg.allowRegister" class="fs"><option :value="true">是</option><option :value="false">否</option></select></div>
+            </div>
+            <button type="submit" class="save-btn" :disabled="saving">保存设置</button>
+          </form>
         </div>
 
-        <!-- 通知设置 -->
-        <div v-if="activeSection==='notify'" class="s-panel">
-          <h3>通知配置</h3>
-          <div class="toggle-row" v-for="t in toggles" :key="t.key">
-            <span class="tr-label">{{t.label}}</span>
-            <label class="switch"><input v-model="t.on" type="checkbox" /><span class="slider"></span></label>
-          </div>
-          <button class="save-btn" :disabled="saving" @click="saveToggles">保存</button>
+        <div v-if="activeSection==='notify'" class="s-panel notify-panel">
+          <h2>通知配置</h2>
+          <form @submit.prevent="saveToggles">
+            <div class="toggle-row" v-for="t in toggles" :key="t.key">
+              <label class="tr-label" :for="'cfg-'+t.key">{{t.label}}</label>
+              <label class="switch"><input :id="'cfg-'+t.key" v-model="t.on" type="checkbox" /><span class="slider"></span></label>
+            </div>
+            <button type="submit" class="save-btn" :disabled="saving">保存</button>
+          </form>
         </div>
 
-        <!-- 关于 -->
-        <div v-if="activeSection==='about'" class="s-panel">
-          <h3>关于 OA4Rust</h3>
+        <div v-if="activeSection==='about'" class="s-panel about-panel">
+          <h2>关于 OA4Rust</h2>
           <div class="about-info">
             <div class="logo-box">◆</div>
             <div class="ai-text">

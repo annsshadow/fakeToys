@@ -3,60 +3,69 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>分类管理</h1>
-      <p class="subtitle">/api/categoryinfo/*</p>
-    </div>
-    <div class="content-panel glass-card">
-      <div class="stats-row">
-        <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
-          <div class="stat-num" :style="{color:s.color}">{{s.value}}</div>
-          <div class="stat-label">{{s.label}}</div>
-        </div>
-      </div>
-      <div class="cat-toolbar">
-        <button class="btn-create" @click="createCategory">+ 新建分类</button>
-        <button class="btn-refresh" @click="load">刷新</button>
-      </div>
-      <div class="list-panel">
-        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="load" />
-        <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
-        <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="load" />
-        <div v-else-if="items.length===0" class="empty"><div class="ei">📂</div><p>暂无分类数据</p></div>
-        <div v-else class="item-grid">
-          <div v-for="item in items" :key="item.id" class="item-card glass-card">
-            <div class="ic">📁</div>
-            <div class="ib">
-              <div class="it">{{ item.name || item.title || item.categoryName || '未命名' }}</div>
-              <div class="im">{{ item.desc || item.description || item.alias || '' }}</div>
-              <div class="meta">flag: {{ item.flag || item.id }}</div>
-            </div>
-            <button class="btn-del" @click.stop="deleteCategory(item)">删除</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AdminPageHeader title="分类管理" subtitle="管理应用下的内容分类与层级">
+      <template #actions>
+        <span class="stat-chip">共 {{ items.length }} 项</span>
+      </template>
+    </AdminPageHeader>
+    <AdminTable
+      :columns="columns"
+      :rows="items"
+      :loading="loading"
+      :error="loadError"
+      empty-text="暂无分类数据"
+      @retry="load"
+    >
+      <template #cell-name="{ row }">
+        <span class="item-name">{{ row.name || row.title || row.categoryName || '未命名' }}</span>
+      </template>
+      <template #cell-desc="{ row }">
+        <span class="item-desc">{{ row.desc || row.description || row.alias || '—' }}</span>
+      </template>
+      <template #cell-flag="{ row }">
+        <span class="mono">{{ row.flag || row.id }}</span>
+      </template>
+      <template #cell-actions="{ row }">
+        <button class="btn-del" @click="deleteCategory(row as any)">删除</button>
+      </template>
+    </AdminTable>
+    <AdminToolbar
+      :model-value="keyword"
+      search-placeholder="搜索分类"
+      create-label="+ 新建分类"
+      @update:model-value="keyword = $event"
+      @search="load"
+      @refresh="load"
+      @create="createCategory"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
+import { AdminPageHeader, AdminTable, type AdminTableColumn, AdminToolbar } from '../components/admin/'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
 
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
+
+const columns: AdminTableColumn[] = [
+  { key: 'name', label: '分类名称', width: '26%' },
+  { key: 'desc', label: '描述 / 别名', width: '38%' },
+  { key: 'flag', label: '标识', width: '20%' },
+  { key: 'actions', label: '操作', width: '16%' },
+]
+
+const keyword = ref('')
 const loading = ref(false)
 const loadError = ref('')
 const items = ref<any[]>([])
-
-const stats = computed(() => [
-  { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
-  { label: '有效', value: items.value.length, color: 'var(--color-success)' },
-  { label: '禁用', value: 0, color: 'var(--color-error)' },
-  { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-warning)' },
-])
 
 async function load() {
   loading.value = true
@@ -64,7 +73,17 @@ async function load() {
   try {
     // 后端真实列表端点为 categoryinfo/list/all（裸 /list 会被 {id} 宽路由吞掉）。
     const r = await api.get('/api/categoryinfo/list/all')
-    items.value = r.data ?? []
+    const all = (r.data ?? []) as any[]
+    const kw = keyword.value.trim().toLowerCase()
+    items.value = kw
+      ? all.filter((c) =>
+          [c.name, c.title, c.categoryName, c.alias].some((v) =>
+            String(v ?? '')
+              .toLowerCase()
+              .includes(kw),
+          ),
+        )
+      : all
   } catch (e) {
     // 失败保留旧数据并显式报错，不能和「真的没有分类」混成同一种空态。
     loadError.value = describeListError('分类加载失败', e)
@@ -94,6 +113,10 @@ async function deleteCategory(item: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 load()
 
@@ -112,31 +135,10 @@ const api_list_p_1_860_data = ref<any[]>([])
 </script>
 
 <style scoped>
-.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
-.content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.stat-card{padding:16px;text-align:center}
-.stat-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700}
-.stat-label{font-size:12px;color:var(--text-muted);margin-top:4px}
-.list-panel{flex:1}
-.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.item-card{display:flex;align-items:center;gap:12px;padding:14px;transition:all var(--transition-fast);border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated)}
-.item-card:hover{border-color:var(--color-primary);transform:translateX(4px);box-shadow:var(--shadow-glow)}
-.ic{font-size:28px}
-.ib{flex:1;min-width:0}
-.it{font-size:14px;font-weight:600;color:var(--text-primary)}
-.im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
-.cat-toolbar{display:flex;gap:8px}
-.btn-create{padding:8px 16px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
-.btn-refresh{padding:8px 16px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-md);font-size:13px;cursor:pointer}
-.btn-del{padding:4px 10px;border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0}
-.empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
-.ei{font-size:48px;opacity:0.4}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
-@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.mod-view{display:flex;flex-direction:column;gap:16px;height:100%;padding:20px 24px;overflow-y:auto}
+.item-name{font-weight:600;color:var(--text-primary)}
+.item-desc,.mono{color:var(--text-muted);font-size:12px}
+.mono{font-family:'JetBrains Mono',monospace}
+.stat-chip{padding:4px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.btn-del{padding:4px 10px;border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer}
 </style>

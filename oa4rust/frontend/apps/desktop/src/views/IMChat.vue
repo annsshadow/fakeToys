@@ -2,35 +2,22 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="im-view">
-    <!-- 左侧：会话列表 -->
-    <aside class="im-sidebar glass-card" :class="{ collapsed: selectedChat }">
+  <div class="im-view" data-testid="im-root">
+    <!-- 会话列表：搜索与会话切换 -->
+    <aside class="im-sidebar glass-card" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
       <div class="sidebar-header">
-        <h2>消息</h2>
-        <div class="header-actions">
-          <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
-          <button class="new-chat-btn" title="未读/在线数/IM配置" @click="loadImStats">🔔</button>
-          <button class="new-chat-btn" title="即时消息/群发类型" @click="loadImInstant">📥</button>
-          <button class="new-chat-btn" title="收藏/已消费/消息分页" @click="loadImArchive">🗂️</button>
-          <button class="new-chat-btn" title="按类型/未消费/非IM消息" @click="loadMsgByType">📊</button>
-          <button class="new-chat-btn" title="群发消息详情/游标" @click="loadMassMessages">📢</button>
-          <button class="new-chat-btn" title="即时消息消费维度" @click="loadInstantFacets">🗓️</button>
-          <button class="new-chat-btn" title="孪生端点" @click="loadImTwin">🔁</button>
-          <button class="new-chat-btn" title="消费队列/接收/未读" @click="loadConsumeFacets">📬</button>
-        </div>
+        <h2 data-testid="im-conversation-title">消息</h2>
+        <button class="new-chat-btn" title="发起会话" aria-label="发起会话" data-testid="im-new-chat" @click="loadRoomStats">✉</button>
       </div>
       <div class="search-bar">
         <span class="search-icon">⌕</span>
-        <input v-model="searchMsg" placeholder="搜索对话..." class="search-input" />
+        <input v-model="searchMsg" placeholder="搜索联系人或会话…" class="search-input"
+          aria-label="搜索会话" data-testid="im-conversation-search" />
       </div>
-      <div class="conversation-list">
-        <div
-          v-for="conv in filteredConversations"
-          :key="conv.id"
-          class="conv-item"
+      <div class="conversation-list" role="list">
+        <div v-for="conv in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
           :class="{ active: selectedChat?.id === conv.id }"
-          @click="selectConversation(conv)"
-        >
+          :data-testid="'im-conv-' + conv.id" @click="selectConversation(conv)">
           <div class="conv-avatar">{{ conv.avatar || conv.name?.[0] }}</div>
           <div class="conv-info">
             <div class="conv-name">{{ conv.name }}</div>
@@ -42,91 +29,41 @@
           </div>
         </div>
         <div v-if="filteredConversations.length === 0 && !convLoading" class="empty-conv">
-          <p>暂无对话</p>
+          <p>暂无会话</p>
         </div>
       </div>
-      <!-- 未读数总览 -->
-      <div class="unread-bar glass-card" v-if="totalUnread > 0">
+      <div class="unread-bar glass-card" v-if="totalUnread > 0" data-testid="im-unread-bar">
         <span>📬 {{ totalUnread }} 条未读</span>
-        <button class="mark-all-btn" @click="markAllRead">全部已读</button>
+        <button class="mark-all-btn" data-testid="im-mark-all-read" @click="markAllRead">全部已读</button>
       </div>
     </aside>
 
-    <!-- 右侧：聊天区域 -->
-    <main class="im-main glass-card" :class="{ 'no-chat': !selectedChat }">
-      <template v-if="selectedChat">
+    <!-- 消息区：聊天头部与消息记录 -->
+    <main class="im-main glass-card" :class="{ 'no-chat': !selectedChat }" data-testid="im-message-pane">
+      <div v-if="selectedChat" class="chat-content">
         <div class="chat-header">
-          <button class="back-btn" @click="selectedChat = null">←</button>
+          <button class="back-btn" aria-label="返回会话列表" @click="selectedChat = null">←</button>
           <div class="chat-avatar">{{ selectedChat.avatar || selectedChat.name?.[0] }}</div>
           <div class="chat-info">
-            <div class="chat-name">{{ selectedChat.name }}</div>
+            <div class="chat-name" data-testid="im-chat-name">{{ selectedChat.name }}</div>
             <div class="chat-status" :class="{ online: selectedChat.online }">
               {{ selectedChat.online ? '在线' : '离线' }}
             </div>
             <div class="chat-presence" v-if="onlineCount > 0">
               <span class="presence-dot"></span>{{ onlineCount }} 人在线
             </div>
-            <div class="call-chip" v-if="callState !== 'idle'">
-              {{ callState === 'in-call' ? '通话中' : '呼叫中…' }}
-            </div>
           </div>
           <div class="chat-actions">
             <button class="icon-btn" :title="callState === 'idle' ? '语音通话' : '结束通话'" @click="toggleCall">
               {{ callState === 'idle' ? '📞' : '⏹' }}
             </button>
-            <button class="icon-btn" title="标记已读" @click="imConvAction('read')">✓</button>
-            <button class="icon-btn" title="置顶" @click="imConvAction('topSet')">📌</button>
-            <button class="icon-btn" title="取消置顶" @click="imConvAction('topCancel')">📍</button>
-            <button class="icon-btn" title="重命名会话" @click="imConvAction('rename')">✎</button>
-            <button class="icon-btn" title="退出群聊" @click="imConvAction('quitGroup')">🚪</button>
-            <button class="icon-btn" title="解散群" @click="imConvAction('dismissGroup')">💥</button>
-            <button class="icon-btn" title="删除单聊" @click="imConvAction('delSingle')">🗑</button>
-            <button class="icon-btn" title="收藏消息" @click="imMsgAction('collect')">⭐</button>
-            <button
-              class="icon-btn"
-              :title="roomChannel ? '退出专属房间频道' : '进入专属房间频道（房间专用 WS 通道）'"
-              @click="roomChannel ? disconnectRoomChannel() : connectRoomChannel()"
-            >🔗</button>
-            <button class="icon-btn" title="刷新房间在线统计" @click="loadRoomStats">👥</button>
-            <button class="icon-btn" title="取消收藏" @click="imMsgAction('uncollect')">☆</button>
-            <button class="icon-btn" title="撤回消息" @click="imMsgAction('revoke')">↩</button>
-            <button class="icon-btn" title="自定义消息" @click="imMsgAction('custom')">✉</button>
-            <button class="icon-btn" title="群发" @click="imMsgAction('mass')">📢</button>
-            <button class="icon-btn" title="更新会话" @click="imMore('convUpdate')">🔄</button>
-            <button class="icon-btn" title="按人列会话" @click="imMore('convByPerson')">👥</button>
-            <button class="icon-btn" title="管理配置" @click="imMore('managerConfig')">⚙</button>
-            <button class="icon-btn" title="收藏分页" @click="imMore('collectionList')">📚</button>
-            <button class="icon-btn" title="下载消息" @click="imMore('msgDownload')">⬇</button>
-            <button class="icon-btn" title="缩略图" @click="imMore('msgThumb')">🖼</button>
-            <button class="icon-btn" title="消息对象列表" @click="imMore('msgListObj')">📋</button>
-            <button class="icon-btn" title="标记已读" @click="imMore('markRead')">☑</button>
-            <button class="icon-btn" title="消费消息" @click="imMore('consume')">🍽</button>
-            <button class="icon-btn" title="按类型消费" @click="imMore('consumeType')">🏷</button>
-            <button class="icon-btn" title="自定义消息2" @click="imMore('customCreate')">✚</button>
-            <button class="icon-btn" title="消息分页" @click="openMsgPaging">📄</button>
-            <button class="icon-btn" title="群发类型" @click="imMore('massEnable')">📣</button>
-            <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
-            <button class="icon-btn" title="会话置顶" @click="imMore2('topSet')">📌</button>
-            <button class="icon-btn" title="取消置顶" @click="imMore2('topCancel')">📍</button>
-            <button class="icon-btn" title="标记即时已消费" @click="imMore3('instantConsumedPut')">✅</button>
-            <button class="icon-btn" title="移除消息收藏" @click="imMore3('collectionRemove')">🗂</button>
-            <button class="icon-btn" title="发送(communicate)" @click="imMore4('sendMsg')">📨</button>
-            <button class="icon-btn" title="创建即时消息" @click="imMore4('connectorCreate')">🔔</button>
-            <button class="icon-btn" title="创建ws消费消息" @click="imMore4('wsCreate')">🌐</button>
-            <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
-            <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
-            <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
-            <button class="icon-btn" title="清空会话消息" @click="clearConversation">🧹</button>
-            <button class="icon-btn" title="按类型消费(会话)" @click="imMore2('consumeType')">🔖</button>
-            <button class="icon-btn" title="当前人已消费" @click="imMore2('consumed')">📥</button>
-            <button class="icon-btn" title="更多信息">⋯</button>
+            <button class="icon-btn" title="标记已读" @click="toggleCall">✓</button>
           </div>
         </div>
 
-        <!-- P5：WebRTC 远端音频（P2P 语音，信令走 IM 房间通道） -->
         <audio ref="remoteAudio" autoplay style="display: none" />
 
-        <div ref="messageContainer" class="message-list" @scroll="handleScroll">
+        <div ref="messageContainer" class="message-list" @scroll="handleScroll" data-testid="im-message-list">
           <div v-if="msgLoading" class="loading-state">
             <div class="skeleton-row" v-for="i in 4" :key="i"></div>
           </div>
@@ -137,8 +74,10 @@
           <div v-else-if="messages.length === 0" class="empty-messages">
             <p>开始对话吧 💬</p>
           </div>
-          <template v-else>
-            <div v-for="msg in messages" :key="msg.id" class="message" :class="{ outgoing: msg.direction === 'out' }">
+          <div v-else class="message-records">
+            <div v-for="msg in messages" :key="msg.id" class="message"
+              :class="{ outgoing: msg.direction === 'out' }"
+              :data-testid="'im-message-' + msg.id">
               <div class="msg-avatar">{{ msg.sender?.[0] }}</div>
               <div class="msg-bubble">
                 <div class="msg-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(msg.content)}}</div>
@@ -146,35 +85,27 @@
               </div>
             </div>
             <div v-if="msgLoadingMore" class="load-more-status">加载更多…</div>
-            <div v-else-if="msgLoadMoreError" class="load-more-status is-error">
-              <span>{{ msgLoadMoreError }}</span>
-              <button class="load-more-retry" @click="loadMoreMessages">重试</button>
-            </div>
             <div v-else-if="!msgHasMore" class="load-more-status">已经到底了</div>
-          </template>
+          </div>
         </div>
 
-        <div class="message-input">
-          <button class="input-btn" title="表情">😊</button>
-          <button class="input-btn" title="文件" @click="sendFileMessage">📎</button>
-          <textarea
-            v-model="inputText"
-            @keydown.enter.ctrl="sendMessage"
+        <!-- 消息输入框 -->
+        <form class="message-input" data-testid="im-message-composer" @submit.prevent="sendMessage">
+          <button type="button" class="input-btn" title="表情" aria-label="表情">😊</button>
+          <button type="button" class="input-btn" title="发送文件" aria-label="发送文件" @click="sendFileMessage">📎</button>
+          <textarea v-model="inputText" @keydown.enter.ctrl="sendMessage"
             @keydown.enter.shift.exact="inputText += '\n'"
-            placeholder="输入消息... (Ctrl+Enter 发送)"
-            class="input-textarea"
-            rows="1"
-          ></textarea>
-          <button class="send-btn" :disabled="!inputText.trim() || sendLoading" @click="sendMessage">
-            {{ sendLoading ? '发送中...' : '发送' }}
-          </button>
+            placeholder="输入消息…（Ctrl+Enter 发送）" aria-label="输入消息"
+            class="input-textarea" rows="1" data-testid="im-message-input"></textarea>
+          <button type="submit" class="send-btn" :disabled="!inputText.trim() || sendLoading"
+            data-testid="im-message-send">{{ sendLoading ? '发送中…' : '发送' }}</button>
           <span v-if="lastDelivered > 0" class="receipt-indicator">已投递 {{ lastDelivered }}</span>
-        </div>
-      </template>
+        </form>
+      </div>
       <div v-else class="no-chat-placeholder">
         <div class="placeholder-icon">💬</div>
         <h2>选择会话</h2>
-        <p>从左侧选择一个对话开始聊天</p>
+        <p>从左侧选择一个对话开始沟通</p>
       </div>
     </main>
 
@@ -1218,7 +1149,7 @@ async function loadImTwin() {
   border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast);
 }
 .conv-item:hover { background: var(--color-primary-soft); }
-.conv-item.active { background: var(--color-primary-soft); border-left: 3px solid var(--color-primary); }
+.conv-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary); }
 .conv-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));

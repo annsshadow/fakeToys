@@ -38,9 +38,9 @@ describe('导航 landmark 与当前位置语义（WCAG 1.3.1 / 2.4.8）', () => 
     expect(new Set(labels).size, '两处导航 aria-label 不得相同').toBe(labels.length)
   })
 
-  it('侧边栏与底部 Tab 导航项都用 isActive 派生 aria-current="page"（共两处）', () => {
+  it('员工侧栏、管理员折叠区与底部 Tab 导航项都用 isActive 派生 aria-current="page"（共三处）', () => {
     const matches = src.match(/:aria-current="isActive\(item\.path\)\s*\?\s*'page'\s*:\s*undefined"/g) ?? []
-    expect(matches.length, '应为侧边栏 nav-item 与底部 tab-item 各一处 aria-current').toBe(2)
+    expect(matches.length, '应为员工侧栏 nav-item、管理员折叠区 nav-item 与底部 tab-item 各一处 aria-current').toBe(3)
   })
 
   it('不得把 aria-current 静态写死为 page（否则每项都宣称当前页）', () => {

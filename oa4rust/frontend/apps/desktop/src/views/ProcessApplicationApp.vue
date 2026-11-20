@@ -1,13 +1,14 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程应用管理" subtitle="/api/program_center/application/* — 流程应用 CRUD 与设计器读取" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索名称 / 应用 ID..." :error="loadError" />
+      <AdminTable :columns="adminColumns" :rows="items as unknown as Record<string, unknown>[]" :loading="loading" :error="loadError" @retry="reload" />
+
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>流程应用管理</h1>
-        <p class="subtitle">/api/program_center/application/*（x_applications）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -61,11 +62,42 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
+import {
+  ADMIN_HIDE_PAGE_TITLE,
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
+hidePageTitle!.value = true
+onUnmounted(() => {
+  hidePageTitle!.value = false
+})
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
+
+const adminColumns: AdminTableColumn[] = [
+  { key: 'name', label: '名称' },
+  { key: 'appId', label: '应用 ID' },
+  { key: 'description', label: '描述' },
+  { key: 'disable', label: '禁用' },
+  { key: 'createTime', label: '创建时间' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, inject, onUnmounted, ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -330,7 +362,7 @@ function fmtTime(t?: string) {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:460px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}

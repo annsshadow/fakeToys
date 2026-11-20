@@ -2,181 +2,101 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="personal-view">
-    <div class="view-header glass-card">
-      <h1>个人中心</h1>
-      <p class="subtitle">管理您的账户信息</p>
-    </div>
+  <div class="personal-view modern-page" data-testid="personal-business-view">
+    <header class="profile-header modern-hero" data-testid="personal-header">
+      <div class="hero-copy">
+        <h1>个人中心</h1>
+        <p class="subtitle">维护个人资料、账户安全与授权委托</p>
+      </div>
+      <span class="modern-chip hero-chip">PROFILE</span>
+    </header>
 
-    <div class="profile-card glass-card">
+    <section class="profile-overview modern-section modern-card" data-testid="personal-profile">
+      <h2 class="section-title modern-section-title">我的资料</h2>
       <div class="avatar-section">
-        <div class="avatar-large">{{ user?.name?.charAt(0) || 'U' }}</div>
+        <div class="avatar-large" data-testid="personal-avatar">{{ user?.name?.charAt(0) || 'U' }}</div>
         <div class="avatar-actions">
-          <label class="upload-btn">
+          <label class="upload-btn modern-btn primary">
             {{ avatarSaving ? '上传中...' : '📷 更换头像' }}
-            <input type="file" accept="image/*" class="hidden-input" :disabled="avatarSaving" @change="handleAvatarUpload" />
+            <input type="file" accept="image/*" class="hidden-input" :disabled="avatarSaving" @change="handleAvatarUpload" aria-label="更换头像" />
           </label>
         </div>
       </div>
-      <div class="profile-info">
-        <div class="info-row">
-          <span class="info-label">姓名</span>
-          <span class="info-value">{{ user?.name || '—' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">唯一标识</span>
-          <span class="info-value mono">{{ user?.unique || '—' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">手机</span>
-          <span class="info-value">{{ user?.mobile || '未设置' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">邮箱</span>
-          <span class="info-value">{{ user?.email || '未设置' }}</span>
-        </div>
-      </div>
-    </div>
+      <ul class="profile-info">
+        <li class="info-row"><span class="info-label">姓名</span><span class="info-value">{{ user?.name || '—' }}</span></li>
+        <li class="info-row"><span class="info-label">唯一标识</span><span class="info-value mono">{{ user?.unique || '—' }}</span></li>
+        <li class="info-row"><span class="info-label">手机</span><span class="info-value">{{ user?.mobile || '未设置' }}</span></li>
+        <li class="info-row"><span class="info-label">邮箱</span><span class="info-value">{{ user?.email || '未设置' }}</span></li>
+      </ul>
+    </section>
 
-    <!-- 密码修改 -->
-    <div class="settings-card glass-card">
-      <h3>修改密码</h3>
-      <div class="form-row">
+    <section class="pwd-card modern-section modern-card" data-testid="personal-password">
+      <h2 class="section-title modern-section-title">修改密码</h2>
+      <form class="pwd-form" @submit.prevent="savePassword">
         <div class="form-group">
-          <label>当前密码</label>
-          <input v-model="pwdForm.oldPassword" type="password" class="form-input" autocomplete="current-password" placeholder="请输入当前密码" />
+          <label for="oldPwd">当前密码</label>
+          <input id="oldPwd" v-model="pwdForm.oldPassword" type="password" class="form-input" autocomplete="current-password" placeholder="请输入当前密码" />
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>新密码</label>
-          <input v-model="pwdForm.newPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请输入新密码" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPwd">新密码</label>
+            <input id="newPwd" v-model="pwdForm.newPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请输入新密码" />
+          </div>
+          <div class="form-group">
+            <label for="confirmPwd">确认密码</label>
+            <input id="confirmPwd" v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>确认密码</label>
-          <input v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" />
-        </div>
-      </div>
-      <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>
-      <button class="save-btn" :disabled="pwdSaving" @click="savePassword">{{ pwdSaving ? '保存中...' : '保存修改' }}</button>
-    </div>
+        <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>
+        <button type="submit" class="save-btn modern-btn primary" :disabled="pwdSaving">{{ pwdSaving ? '保存中...' : '保存修改' }}</button>
+      </form>
+    </section>
 
-    <!-- 签名管理 -->
-    <div class="settings-card glass-card">
-      <h3>个人签名</h3>
-      <textarea v-model="signature" class="form-textarea" rows="3" placeholder="设置您的个性签名..." maxlength="200" />
-      <div class="char-count">{{ signature.length }}/200</div>
-      <button class="save-btn" @click="saveSignature">保存签名</button>
-      <button class="save-btn ghost" @click="uploadSignatureImage" title="POST /api/person/signature/upload（multipart 落 x_custom，十类功能6）">上传签名图片</button>
-      <button class="save-btn ghost" @click="loadSignatureManagers">查看全员签名（管理员）</button>
+    <section class="sig-card modern-section modern-card" data-testid="personal-signature">
+      <h2 class="section-title modern-section-title">个人签名</h2>
+      <form @submit.prevent="saveSignature">
+        <textarea v-model="signature" class="form-textarea" rows="3" placeholder="设置您的个性签名..." maxlength="200" aria-label="个人签名" />
+        <div class="char-count">{{ signature.length }}/200</div>
+        <button type="submit" class="save-btn modern-btn primary">保存签名</button>
+      </form>
       <div v-if="sigManagers.length" class="sig-mgr-list">
-        <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip">{{ sm.personName || sm.name || sm.id }}</span>
+        <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip modern-chip">{{ sm.personName || sm.name || sm.id }}</span>
       </div>
-    </div>
+    </section>
 
-    <!-- 登录方式/账户绑定 -->
-    <div class="settings-card glass-card">
-      <h3>登录方式 / 账户绑定</h3>
-      <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
-      <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
-      <button class="save-btn ghost" @click="loadAuthOAuthServer">OAuth/认证诊断</button>
-      <button class="save-btn ghost" @click="loadAuthShortDiag">短前缀认证诊断</button>
-      <button class="save-btn ghost" @click="loadMailMeta">内部邮件/注册方式</button>
-      <button class="save-btn ghost" @click="loadAuthScopes">我的单位/角色/群组</button>
-      <button class="save-btn ghost" @click="loadAuthDetails">认证明细/绑定</button>
-      <button class="save-btn ghost" @click="loadPersonalExtras">头像/签名/授权明细</button>
-      <button class="save-btn ghost" @click="loadPersonalMore">当前/日志/管理明细</button>
-      <button class="save-btn ghost" @click="loadPersonalRegistEmpower">人员游标/校验/授权启用</button>
-      <button class="save-btn ghost" @click="loadPersonalTwin">孪生端点</button>
-      <button class="save-btn ghost" @click="loadPersonalTwin2">孪生端点B</button>
-      <!-- 十类功能1：账号安全中心（两步验证/全设备登出/短信/注册/找回/验证码，用户触发真端点） -->
-      <div class="acct-sec">
-        <span class="muted">账号安全：</span>
-        <button class="save-btn ghost" @click="acctSec('twoFactor')">两步验证登录</button>
-        <button class="save-btn ghost" @click="acctSec('safeLogout')">全设备登出</button>
-        <button class="save-btn ghost" @click="acctSec('smsSend')">发短信验证码</button>
-        <button class="save-btn ghost" @click="acctSec('smsVerify')">校验短信码</button>
-        <button class="save-btn ghost" @click="acctSec('captchaVerify')">校验登录验证码</button>
-        <button class="save-btn ghost" @click="acctSec('secretSet')">设系统密钥</button>
-        <button class="save-btn ghost" @click="acctSec('secretCancel')">取消密钥设定</button>
-        <button class="save-btn ghost" @click="acctSec('regist')">注册用户</button>
-        <button class="save-btn ghost" @click="acctSec('registCheckPwd')">注册口令校验</button>
-        <button class="save-btn ghost" @click="acctSec('registCaptcha')">注册验证码图</button>
-        <button class="save-btn ghost" @click="acctSec('registCode')">取注册短信码</button>
-        <button class="save-btn ghost" @click="acctSec('registCodeMobile')">查注册码</button>
-        <button class="save-btn ghost" @click="acctSec('reset')">重置密码</button>
-        <button class="save-btn ghost" @click="acctSec('resetCheckPwd')">找回口令校验</button>
-        <button class="save-btn ghost" @click="acctSec('resetCode')">取找回码</button>
-        <button class="save-btn ghost" @click="acctSec('resetCheckCred')">校验找回凭据</button>
-        <button class="save-btn ghost" @click="acctSec('resetAnon')">匿名重置</button>
-      </div>
-      <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
-      <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
-      <div v-if="authOAuthText" class="auth-note">{{ authOAuthText }}</div>
-      <div v-if="authDetailText" class="auth-note">{{ authDetailText }}</div>
-    </div>
+    <section class="auth-card modern-section modern-card" data-testid="personal-security">
+      <h2 class="section-title modern-section-title">账户安全与绑定</h2>
+      <ul class="auth-info">
+        <li v-if="authMetaText" class="auth-note">{{ authMetaText }}</li>
+        <li v-if="authOAuthText" class="auth-note">{{ authOAuthText }}</li>
+        <li v-if="authDetailText" class="auth-note">{{ authDetailText }}</li>
+        <li v-if="personalExtraText" class="muted">{{ personalExtraText }}</li>
+      </ul>
+      <p v-if="!authMetaText && !authOAuthText && !authDetailText && !personalExtraText" class="muted modern-empty">账户安全信息暂无更新</p>
+    </section>
 
-    <!-- 授权委托 -->
-    <div class="settings-card glass-card">
-      <h3>授权委托</h3>
-      <div class="emp-tabs">
-        <button class="emp-tab" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMineTotal }}）</button>
-        <button class="emp-tab" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empToTotal }}）</button>
+    <section class="emp-card modern-section modern-card" data-testid="personal-empower">
+      <h2 class="section-title modern-section-title">授权委托</h2>
+      <div class="emp-tabs" role="tablist" aria-label="授权范围">
+        <button class="emp-tab" role="tab" :aria-selected="empScope==='mine'" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMineTotal }}）</button>
+        <button class="emp-tab" role="tab" :aria-selected="empScope==='to'" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empToTotal }}）</button>
       </div>
       <ListLoadError v-if="(empScope==='mine'?empMine:empTo).length > 0 && empError" mode="banner" :message="empError" @retry="loadEmpower(empScope)" />
       <div v-if="(empScope==='mine'?empMineTotal:empToTotal) > (empScope==='mine'?empMine:empTo).length" class="emp-note">
-        后端只返回前 {{ (empScope==='mine'?empMine:empTo).length }} 条（总 {{ empScope==='mine'?empMineTotal:empToTotal }} 条）
+        当前显示前 {{ (empScope==='mine'?empMine:empTo).length }} 条（共 {{ empScope==='mine'?empMineTotal:empToTotal }} 条）
       </div>
-      <ListLoadError v-if="(empScope==='mine'?empMine:empTo).length===0 && empError" mode="empty" :message="empError" @retry="loadEmpower(empScope)" />
-      <div v-else-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
-      <div v-else class="emp-list">
-        <div v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item">
-          <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
+      <ListLoadError v-else-if="(empScope==='mine'?empMine:empTo).length===0 && empError" mode="empty" :message="empError" @retry="loadEmpower(empScope)" />
+      <div v-else-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty modern-empty">暂无授权记录</div>
+      <ul v-else class="emp-list modern-grid">
+        <li v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item modern-card">
+          <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status modern-chip" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
           <div v-if="empScope==='mine'" class="emp-acts">
             <button class="emp-btn" @click="toggleEmpower(e, true)">启用</button>
             <button class="emp-btn" @click="toggleEmpower(e, false)">禁用</button>
           </div>
-        </div>
-      </div>
-      <div class="emp-manage">
-        <button class="save-btn ghost" @click="empManage('create')">新建授权</button>
-        <button class="save-btn ghost" @click="empManage('detail')">授权详情</button>
-        <button class="save-btn ghost" @click="empManage('update')">改授权</button>
-        <button class="save-btn ghost" @click="empManage('delete')">删授权</button>
-        <button class="save-btn ghost" @click="empManage('managerCreate')">管理员授权</button>
-        <button class="save-btn ghost" @click="empManage('managerList')">管理授权列表</button>
-        <button class="save-btn ghost" @click="empManage('logMine')">我的授权日志</button>
-        <button class="save-btn ghost" @click="empManage('logTo')">授给我日志</button>
-        <button class="save-btn ghost" @click="empManage('logManager')">管理授权日志</button>
-        <button class="save-btn ghost" @click="empManage('logDelete')">删授权日志</button>
-        <button class="save-btn ghost" @click="personMore('personGet')">人员详情</button>
-        <button class="save-btn ghost" @click="personMore('personPut')">改人员</button>
-        <button class="save-btn ghost" @click="personMore('personDelete')">删人员</button>
-        <button class="save-btn ghost" @click="personMore('mgrEmpPut')">改管理授权</button>
-        <button class="save-btn ghost" @click="personMore('mgrEmpDel')">删管理授权</button>
-        <button class="save-btn ghost" @click="personMore('personList')">人员清单</button>
-        <button class="save-btn ghost" @click="personMore('personFilter')">人员过滤</button>
-        <button class="save-btn ghost" @click="personMore('personDetail')">人员详情2</button>
-        <button class="save-btn ghost" @click="personMore('personAttr')">人员属性</button>
-        <button class="save-btn ghost" @click="personMore('personSupDirect')">上级人员</button>
-        <button class="save-btn ghost" @click="personMore('unitSubDirect')">单位下人员</button>
-        <button class="save-btn ghost" @click="personMore('unitSubNested')">单位嵌套人员</button>
-        <button class="save-btn ghost" @click="personMore('unitSubDirectLike')">单位模糊人员</button>
-        <button class="save-btn ghost" @click="personMore('unitSubNestedLike')">单位嵌套模糊</button>
-        <button class="save-btn ghost" @click="personMore('personalSetting')">个人设置</button>
-        <button class="save-btn ghost" @click="personMore('customPut')">存自定义</button>
-        <button class="save-btn ghost" @click="personMore('customDel')">删自定义</button>
-        <button class="save-btn ghost" @click="personMore('customMgr')">管理自定义</button>
-        <button class="save-btn ghost" @click="personMore('defPut')">存定义</button>
-        <button class="save-btn ghost" @click="personMore('defDel')">删定义</button>
-        <button class="save-btn ghost" @click="personMore('personalUpdate')">更新资料</button>
-        <button class="save-btn ghost" @click="personExtra('empEnable')">启用授权</button>
-        <button class="save-btn ghost" @click="personExtra('empDisable')">禁用授权</button>
-        <button class="save-btn ghost" @click="personExtra('exmail')">企业邮箱回调</button>
-        <button class="save-btn ghost" @click="personExtra('exmailSso')">企业邮箱SSO</button>
-        <button class="save-btn ghost" @click="personExtra('exmailCount')">邮箱新邮件计数</button>
-      </div>
-    </div>
+        </li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -822,6 +742,21 @@ async function loadPersonalTwin2() {
 </script>
 
 <style scoped>
+/* Layout/geometry layered on shared ModernUI classes. */
+.personal-view.modern-page { display: flex; flex-direction: column; gap: 16px }
+.modern-hero { display: flex; align-items: center; justify-content: space-between }
+.hero-copy { display: flex; flex-direction: column }
+.modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
+.hero-chip { background: var(--color-primary); color: #000 }
+.modern-section-title { margin: 0 0 12px }
+.upload-btn.modern-btn { display: inline-flex; align-items: center; cursor: pointer }
+.hidden-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0 }
+.profile-info { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px }
+.profile-info .info-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-elevated) }
+.profile-info .info-row + .info-row { margin-top: 0 }
+.modern-empty { padding: 20px; text-align: center; color: var(--text-muted) }
+.emp-list.modern-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px }
+.emp-item.modern-card { display: flex; align-items: center; justify-content: space-between; gap: 10px }
 .profile-card{display:flex;gap:16px;align-items:flex-start;padding:16px}
 .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .form-input{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px 12px;color:var(--text-primary);font-size:14px}

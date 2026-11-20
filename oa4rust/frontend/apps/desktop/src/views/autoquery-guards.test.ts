@@ -11,7 +11,6 @@ const read = (name: string) => readFileSync(resolve(import.meta.dirname, name), 
 // queries the template actually consumes. Stub blocks that auto-fire on mount
 // (placeholder ids, module roots, write handlers, unconsumed mirrors) were removed.
 const baseline: Array<[string, number]> = [
-  ['AIChatApp.vue', 0],
   ['AppInfoApp.vue', 0],
   ['BBSForum.vue', 3],
   ['CalendarApp.vue', 1],
@@ -27,7 +26,6 @@ const baseline: Array<[string, number]> = [
   ['IMChat.vue', 1],
   ['JPushApp.vue', 0],
   ['MeetingApp.vue', 1],
-  ['MindApp.vue', 0],
   ['PortalDesigner.vue', 0],
   ['ProcessDesigner.vue', 0],
   ['ProcessWork.vue', 1],
@@ -36,7 +34,6 @@ const baseline: Array<[string, number]> = [
   ['QueryViewApp.vue', 0],
   ['RoleManager.vue', 0],
   ['ServerApp.vue', 0],
-  ['UnitApp.vue', 0],
 ]
 
 describe('view auto-query invariants', () => {
@@ -72,7 +69,6 @@ describe('view auto-query invariants', () => {
           '/api/comment/c-1/commend',
         ],
       ],
-      ['AIChatApp.vue', ['/api/ai_assemble_control/config/delete/mcp/flag', '/api/ai/chat']],
       ['HotpicApp.vue', ['/api/hotpic/save/hotpic', '/api/hotpic/delete/hotpic']],
       ['DocumentApp.vue', ['/api/document/d-1/update', '/api/document/publish/d-1']],
       ['ServerApp.vue', ['/api/cache/commonscript/flush', '/api/cache/config/flush']],
@@ -80,8 +76,6 @@ describe('view auto-query invariants', () => {
       ['AppInfoApp.vue', ['/api/appinfo/a-1/permission', '/api/appinfo/a-1/icon/size/64']],
       ['QueryViewApp.vue', ['/api/queryview/query/qf-1', '/api/queryview/importmodel/record/r-1']],
       ['PortalDesigner.vue', ['/api/portal/assemble/designer/get/design-1']],
-      ['MindApp.vue', ['/api/mind/core/entity/folder/folder-001']],
-      ['UnitApp.vue', []],
       ['ProgramCenterApp.vue', ['/api/program_center/market/m-1/install/log']],
       ['ProcessWork.vue', ['/api/processplatform/task/processing/task-001']],
       ['CommonApp.vue', ['/api/general/assemble/control/securityclearance/enable']],

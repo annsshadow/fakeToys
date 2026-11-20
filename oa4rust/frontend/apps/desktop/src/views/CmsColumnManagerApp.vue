@@ -3,39 +3,48 @@
 
 <template>
   <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>CMS列管理器</h1>
-        <p class="subtitle">/api/cms/core/entity/column_manager/*</p>
-      </div>
-      <button class="btn-primary" @click="openCreate">+ 新建</button>
-    </div>
+    <AdminPageHeader title="CMS 列管理器" subtitle="栏目权限（column_manager）" />
+    <AdminToolbar
+      v-model="search"
+      search-placeholder="搜索栏目 / 成员"
+      create-label="+ 新建"
+      @search="loadData"
+      @refresh="loadData"
+      @create="openCreate"
+    >
+    </AdminToolbar>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
-      <div class="toolbar">
-        <input v-model="search" placeholder="搜索栏目 / 成员..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无管理记录</p></div>
-      <table v-else class="data-table">
-        <thead><tr><th>栏目 ID</th><th>成员 ID</th><th>角色</th><th>更新时间</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td class="mono">{{ item.columnId||'—' }}</td>
-            <td class="mono">{{ item.personId||'—' }}</td>
-            <td>{{ item.role||'manager' }}</td>
-            <td>{{ fmtTime(item.updateTime) }}</td>
-            <td>
-              <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📐</div><p>暂无数据</p></div>
+      <AdminTable v-else
+        :columns="columns"
+        :rows="filtered as any[]"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无管理记录"
+        @retry="reload"
+      >
+      <template #cell-columnId="{ row }">
+        {{ row.columnId||'—' }}
+      </template>
+      <template #cell-personId="{ row }">
+        {{ row.personId||'—' }}
+      </template>
+      <template #cell-role="{ row }">
+        {{ row.role||'manager' }}
+      </template>
+      <template #cell-updateTime="{ row }">
+        {{ fmtTime(row.updateTime) }}
+      </template>
+      <template #cell-actions="{ row: item }">
+        <button class="btn-sm" @click="editItem(item as any)">编辑</button>
+          <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item as any)">删除</button>
+      </template>
+    </AdminTable>
     </div>
-    <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
+<div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit?'编辑':'新建' }}列管理</h3>
         <div class="form-group"><label>栏目 ID</label><input v-model="form.columnId" class="form-input mono" /></div>
@@ -47,12 +56,20 @@
         </div>
       </div>
     </div>
-  </div>
-</template>
+  </div></template>
 <script setup lang="ts">
+const columns: AdminTableColumn[] = [
+  { key: 'columnId', label: '栏目 ID' },
+  { key: 'personId', label: '成员 ID' },
+  { key: 'role', label: '角色' },
+  { key: 'updateTime', label: '更新时间' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { AdminPageHeader, AdminTable, type AdminTableColumn, AdminToolbar } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -60,6 +77,11 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 interface Item {
   id: string
@@ -165,6 +187,10 @@ function loadData() {
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -185,7 +211,7 @@ function fmtTime(t?: string) {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:460px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}

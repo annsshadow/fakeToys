@@ -2,77 +2,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="work-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>工作流待办</h1>
+  <div class="work-view modern-page">
+    <header class="work-hero modern-hero">
+      <div class="hero-copy">
+        <h1 class="admin-title">工作流待办</h1>
         <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
       </div>
-      <div class="header-actions">
-        <button class="btn-sm" @click="loadDrafts">草稿箱</button>
-        <button class="btn-sm" @click="loadHandovers">工作交接</button>
-        <button class="btn-sm" @click="loadReviews">审阅记录</button>
-        <button class="btn-sm" @click="loadSerials">流水号</button>
-        <button class="btn-sm" @click="loadWorkV2">全部工作</button>
-        <button class="btn-sm" @click="loadReadLists">待阅/已阅</button>
-        <button class="btn-sm" @click="loadTaskLists">全部任务</button>
-        <button class="btn-sm" @click="loadWorkFilterCursors">工作游标/按工作</button>
-        <button class="btn-sm" @click="loadWorkAuxReads">日志/流水号/文件</button>
-        <button class="btn-sm" @click="loadByWorkJobLists">按工作/按job</button>
-        <button class="btn-sm" @click="loadDocReadPaging">文档版本/我的待阅</button>
-        <button class="btn-sm" @click="loadWorkFullCursors">工作全量游标/详情</button>
-        <button class="btn-sm" @click="loadSurfaceReadA">表面深度读A</button>
-        <button class="btn-sm" @click="loadSurfaceReadB">表面深度读B</button>
-        <button class="btn-sm" @click="surfaceList('taskV2')">待办v2</button>
-        <button class="btn-sm" @click="surfaceList('taskCount')">待办计数</button>
-        <button class="btn-sm" @click="surfaceList('taskMy')">我的待办</button>
-        <button class="btn-sm" @click="surfaceList('taskCompletedV2')">已办v2</button>
-        <button class="btn-sm" @click="surfaceList('taskCompletedMy')">我的已办</button>
-        <button class="btn-sm" @click="surfaceList('readV2')">待阅v2</button>
-        <button class="btn-sm" @click="surfaceList('readMy')">我的待阅</button>
-        <button class="btn-sm" @click="surfaceList('readCompletedV2')">已阅v2</button>
-        <button class="btn-sm" @click="surfaceList('readCompletedMy')">我的已阅</button>
-        <button class="btn-sm" @click="surfaceList('reviewV2')">评审v2</button>
-        <button class="btn-sm" @click="surfaceList('reviewCount')">评审计数</button>
-        <button class="btn-sm" @click="surfaceList('reviewSearch')">评审搜索</button>
-        <button class="btn-sm" @click="surfaceList('workV2')">工作v2</button>
-        <button class="btn-sm" @click="surfaceList('workMy')">我的工作</button>
-        <button class="btn-sm" @click="surfaceList('draftMy')">我的草稿</button>
-        <button class="btn-sm" @click="surfaceList('handover')">交接分页</button>
-        <button class="btn-sm" @click="surfaceList('serialnumber')">流水号分页</button>
-        <button class="btn-sm" @click="surfaceList('snapMy')">我的快照</button>
-        <button class="btn-sm" @click="surfaceList2('taskV2Paging')">待办分页</button>
-        <button class="btn-sm" @click="surfaceList2('taskV2Next')">待办游标</button>
-        <button class="btn-sm" @click="surfaceList2('taskManage')">待办管理</button>
-        <button class="btn-sm" @click="surfaceList2('taskCompletedPaging')">已办分页</button>
-        <button class="btn-sm" @click="surfaceList2('taskCompletedManage')">已办管理</button>
-        <button class="btn-sm" @click="surfaceList2('readV2Paging')">待阅分页</button>
-        <button class="btn-sm" @click="surfaceList2('readManage')">待阅管理</button>
-        <button class="btn-sm" @click="surfaceList2('readCompletedPaging')">已阅分页</button>
-        <button class="btn-sm" @click="surfaceList2('readCompletedManage')">已阅管理</button>
-        <button class="btn-sm" @click="surfaceList2('reviewV2Paging')">评审分页</button>
-        <button class="btn-sm" @click="surfaceList2('reviewManage')">评审管理</button>
-        <button class="btn-sm" @click="surfaceList2('workV2Paging')">工作分页</button>
-        <button class="btn-sm" @click="surfaceList2('workManage')">工作管理</button>
-        <button class="btn-sm" @click="surfaceList2('workCompletedManage')">完成件管理</button>
-        <button class="btn-sm" @click="surfaceList2('snapManage')">快照管理</button>
-        <button class="btn-sm" @click="surfaceList2('taskCountFilter')">待办筛选计数</button>
+      <div class="modern-hero-actions">
         <button class="btn-sm primary" @click="openStart">发起流程</button>
       </div>
-    </div>
-    <p v-if="draftText" class="subtitle draft-note">{{ draftText }}</p>
-    <p v-if="handoverText" class="subtitle draft-note">{{ handoverText }}</p>
-    <p v-if="reviewText" class="subtitle draft-note">{{ reviewText }}</p>
-    <p v-if="serialText" class="subtitle draft-note">{{ serialText }}</p>
-    <p v-if="workV2Text" class="subtitle draft-note">{{ workV2Text }}</p>
-    <p v-if="readListText" class="subtitle draft-note">{{ readListText }}</p>
-    <p v-if="taskListText" class="subtitle draft-note">{{ taskListText }}</p>
-    <p v-if="workCursorText" class="subtitle draft-note">{{ workCursorText }}</p>
-    <p v-if="surfaceReadText" class="subtitle draft-note">{{ surfaceReadText }}</p>
-    <p v-if="byWorkJobText" class="subtitle draft-note">{{ byWorkJobText }}</p>
-    <p v-if="docReadPagingText" class="subtitle draft-note">{{ docReadPagingText }}</p>
-    <p v-if="workFullText" class="subtitle draft-note">{{ workFullText }}</p>
-    <div class="tabs glass-card">
+    </header>
+
+    <div class="tabs glass-card modern-grid">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -83,32 +24,82 @@
         {{ tab.label }}
       </button>
     </div>
-    <div class="content-panel glass-card">
+
+    <section class="work-pending" :class="'modern-section'" v-show="activeTab === 'pending'">
+      <h2 class="section-title">待我处理</h2>
+      <form class="task-search" @submit.prevent="query.refetch()">
+        <button type="submit" class="btn-sm">刷新待办</button>
+      </form>
       <div v-if="query.isLoading.value" class="state">加载中...</div>
       <div v-else-if="query.error.value" class="state error-state">
         加载失败: {{ (query.error.value as Error)?.message }}
         <button class="btn-sm" @click="query.refetch()">重试</button>
       </div>
-      <div v-else-if="!items.length" class="state">暂无任务</div>
-      <div v-else class="item-list">
-        <article v-for="item in items" :key="item.id" class="item-card">
-          <div class="item-body" @click="openWork(item)">
-            <div class="item-title">{{ item.title || item.processName || item.id }}</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无待办任务</div>
+      <ul v-else class="item-list" data-testid="work-pending-list">
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ displayTitle(item) }}</span>
             <div class="item-meta">
-              <span>{{ item.appName || item.applicationName }}</span>
-              <span>{{ item.processName }}</span>
-              <span>{{ fmtTime(item.createTime) }}</span>
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
             </div>
           </div>
-          <button class="btn-sm primary" @click="openWork(item)">{{ activeTab === 'pending' ? '办理' : '查看' }}</button>
-        </article>
-      </div>
-    </div>
+          <span class="item-status modern-chip">待处理</span>
+          <button class="btn-sm primary" @click.stop="openWork(item)">办理</button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="work-started" :class="'modern-section'" v-show="activeTab === 'started'">
+      <h2 class="section-title">我发起的</h2>
+      <form class="task-search" @submit.prevent="query.refetch()">
+        <button type="submit" class="btn-sm">刷新我发起的</button>
+      </form>
+      <div v-if="query.isLoading.value" class="state">加载中...</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无发起的流程</div>
+      <ul v-else class="item-list" data-testid="work-started-list">
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
+            <div class="item-meta">
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
+            </div>
+          </div>
+          <span class="item-status modern-chip">我发起</span>
+          <button class="btn-sm" @click.stop="openWork(item)">查看</button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="work-completed" :class="'modern-section'" v-show="activeTab === 'completed'">
+      <h2 class="section-title">已办</h2>
+      <form class="task-search" @submit.prevent="query.refetch()">
+        <button type="submit" class="btn-sm">刷新已办</button>
+      </form>
+      <div v-if="query.isLoading.value" class="state">加载中...</div>
+      <div v-else-if="!items.length" class="state modern-empty">暂无已办任务</div>
+      <ul v-else class="item-list" data-testid="work-completed-list">
+        <li v-for="item in items" :key="item.id" class="item-card item-body modern-card" @click="openWork(item)">
+          <div class="item-info">
+            <span class="item-title">{{ item.title || item.processName || item.appName || '未命名流程' }}</span>
+            <div class="item-meta">
+              <span class="item-id muted">{{ item.id }}</span>
+              <span v-if="item.createTime">🕒 {{ fmtTime(item.createTime) }}</span>
+            </div>
+          </div>
+          <span class="item-status modern-chip">已办</span>
+          <button class="btn-sm" @click.stop="openWork(item)">查看</button>
+        </li>
+      </ul>
+    </section>
+
 
     <div v-if="opened" class="modal-overlay" @click.self="closeWork">
       <section class="work-dialog glass-card">
         <header>
-          <div><h2>{{ opened.title || opened.processName || '流程办理' }}</h2><p>{{ opened.id }}</p></div>
+          <div><h2>{{ displayTitle(opened) }}</h2><p>{{ opened.id }}</p></div>
           <button class="btn-sm" @click="closeWork">关闭</button>
         </header>
         <div v-if="detailLoading" class="state">正在加载表单...</div>
@@ -205,292 +196,6 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineTaskAction('v3add')">追加任务</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineTaskAction('processing')">进入处理</button>
           </div>
-          <div class="detail-block">
-            <h3>流程引擎动作</h3>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('goback')">退回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('reroute')">改路由</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('retract')">撤回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('rollback')">回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('edit')">改标题</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineWorkAction('draftDelete')">删草稿</button>
-            <button class="btn-sm" @click="engineAttAction('edit')">改附件名</button>
-            <button class="btn-sm" @click="engineAttAction('delete')">删附件</button>
-            <button class="btn-sm" @click="engineReadAction('processing')">待阅处理</button>
-            <button class="btn-sm" @click="engineReadAction('replace')">待阅接替</button>
-            <button class="btn-sm" @click="engineReadAction('reset')">待阅重置</button>
-            <button class="btn-sm" @click="engineReadAction('delete')">删待阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workStart')">启动工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workComplete')">完成工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workProcessing')">工作处理中</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workTerminate')">终止工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('workRetract')">撤回工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskClaim')">认领任务</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskTransfer')">转交任务</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('timerCancel')">取消定时器</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attCopy')">复制附件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadWork')">附件上传(工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadCallback')">附件上传(回调)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadSaveAs')">附件另存</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadWorkcompleted')">附件上传(已办)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadV2')">v2附件上传</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadV2Base64')">v2附件(base64)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUpdateCallback')">附件更新(回调)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attBatchManage')">批量上传(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attWithUrl')">URL 拉取上传</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attCopyWork')">复制附件到工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('htmlToPdf')">HTML→PDF 归档</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('htmlToImage')">HTML→图片归档</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('reviewWork')">创建阅件(工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('reviewWorkcompleted')">创建阅件(已办)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('modeSave')">保存处理模式</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('modeClearPerson')">清除个人模式</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('snapUploadSurface')">上传快照(surface)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('pressCompleted')">已办催办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('signalSeries')">流水号信号驱动</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attEditText')">改附件文本</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('snapRestore')">恢复快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Goback')">v2退回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Reroute')">v2改路由</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Rollback')">v2回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2AddSplit')">v2分叉追加</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v3Retract')">v3撤回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('wcMerge')">已办合并</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('wcRollback')">已办回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskPassExpired')">超时通过</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskReplace')">任务替换</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('appendIdentity')">追加身份</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('addSplit')">分叉追加</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2AddSplit')">v2分叉</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2Matrix')">v2身份矩阵</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('v2Terminate')">v2终止</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('workByProcess')">按流程发起</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('wcByProcess')">已办按流程</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapDelete')">删快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapWcAbandon')">已办废弃快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapWcSnap')">已办快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapAbandoned')">废弃快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('snapSuspend')">挂起快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attCopyWc')">已办复制附件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attDelWork')">工作删附件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('attDelWc')">已办删附件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('recordWorkProc')">记录工作处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('recordWorkTerm')">记录工作终止</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('readByWork')">待阅按工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('readByWc')">待阅按已办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('docVersion')">文档版本</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('taskPassExpired')">任务超时通过</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('taskUrge')">任务催办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('dataDelete')">删工作数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest2('touch')">触达服务</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskProcessing')">表面办理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskProcMgr')">表面办理(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskOpinion')">表面意见</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskPress')">表面催办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskNeural')">表面智能办理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskReference')">表面参考</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskResetMgr')">表面重置</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskWill')">表面待办转正</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Pause')">表面v2暂停</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Reset')">表面v2重置</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Resume')">表面v2恢复</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV2Trigger')">表面v2触发</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV3Add')">表面v3追加</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('taskV3Pin')">表面v3置顶</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readOpinion')">表面阅意见</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readProcessing')">表面阅处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readReference')">表面阅参考</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('readResetMgr')">表面阅重置</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workCloseCheck')">表面关闭校验</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workProcessing')">表面工作处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Split')">表面v2分叉</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Reroute')">表面v2改路由</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Retract')">表面v2撤回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Rollback')">表面v2回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Terminate')">表面v2终止</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('workV2Goback')">表面v2退回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('handoverCancel')">取消交接</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps3('wcDeleteMgr')">删已办(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceReads3">表面清单读</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readIdProcessing')">表面阅办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readProcMgr')">表面阅办(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readResetMgr')">表面阅重置(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readManageDel')">删待阅(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readWork')">按工作记阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('readWorkCompleted')">按已办记阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('tcRefCtrl')">已办参考控制</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workForce')">按流程强制</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workV2TermMgr')">v2终止(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('workV2Trigger')">v2触发处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('worklogSplit')">分叉日志追加</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapRestore')">表面恢复快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapAbandoned')">按工作废弃快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('snapSuspend')">按工作挂起快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('draftStart')">草稿启动</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('dataWorkDel')">删工作数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('attachDel')">删附件(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('tcListPrev')">已办前翻清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('wcRollback')">已办回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagGet')">按应用查未完成</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('appFlagDel')">按应用清未完成</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagGet')">按流程查未完成</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps4('procFlagDel')">按流程清未完成</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readCountApp')">待阅按应用计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedCountApp')">已阅按应用计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDownload')">附件下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDownloadStream')">附件流下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attPreviewPdf')">附件PDF预览</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readV2Next')">待阅v2后翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readV2Prev')">待阅v2前翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedV2Next')">已阅v2后翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readcompletedV2Prev')">已阅v2前翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationJob')">建关联</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationUpdate')">改关联</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('correlationDelete')">删关联</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('readOpinionMgr')">待阅意见(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('attDelete')">删附件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps5('modeDelete')">删模式</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadManage')">附件下载(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadByWork')">附件下载(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadByWc')">附件下载(按已办)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attDownloadWorkAtt')">工作附件下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('attPreviewImgPage')">附件图片分页预览</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('readListFilter')">待阅过滤游标</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('readcompletedListFilter')">已阅过滤游标</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('processListFilter')">按应用流程过滤</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps6('documentVersion')">文档版本</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('tcPressWork')">已办催办(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('wcMergeFlag')">已办合并(按flag)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('wcRollbackFlag')">已办回滚(按flag)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('workProcessing')">工作处理(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('dataPathDel')">按路径删数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('workSerial')">流水号建工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest4('snapWcAbandoned')">已办废弃快照(按类型)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('docToWord')">附件转Word(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('docToWordWowc')">附件转Word(工作或已办)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('editByWork')">附件编辑(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWork')">附件复制到工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWorkSoft')">附件软复制到工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('copyToWc')">附件复制到已办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateContent')">附件内容更新</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps7('updateByWork')">附件更新(按工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('appComplexManage')">应用复杂清单(按人)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('dataJobArray')">数据Job数组</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('dataFetchJob')">数据抓取Job</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readPrevFilter')">待阅前翻过滤</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readcompletedPrevFilter')">已阅前翻过滤</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readV2ListNext')">待阅v2列表后翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('readV2ListPrev')">待阅v2列表前翻</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('modeClear')">清模式(按人)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attTransfer')">附件转存下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewPdfResult')">附件PDF预览结果</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps8('attPreviewImgResult')">附件图片预览结果</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('fileAppDownload')">按应用文件下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('attBatchZip')">附件批量ZIP</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('attInvoice')">发票下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('readV2Paging')">待阅v2分页</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('readcompletedV2Paging')">已阅v2分页</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('reviewV2Paging')">传阅v2分页</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps9('taskcompletedV2Paging')">已办v2分页</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWorkCreatePath')">按路径建数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWorkUpdatePath')">按路径改数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataJobPath')">按路径改Job数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('dataWcPath')">按路径改已办数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest5('attCopyWork')">附件复制到工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('wcShiftTime')">已办时间平移</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyParam')">附件复制(参数化)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('workTouch')">在办touch</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('attCopyWcSoft')">附件软复制到已办</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('keyLock')">密钥锁</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest6('serialGen')">生成序列号</button>
-            <button class="btn-sm" @click="loadTwinA">孪生读A</button>
-            <button class="btn-sm" @click="loadTwinB">孪生读B</button>
-            <button class="btn-sm" @click="loadTwinC">孪生读C</button>
-            <button class="btn-sm" @click="loadTwinD">孪生读D</button>
-            <button class="btn-sm" @click="loadTwinE">孪生读E</button>
-            <button class="btn-sm" @click="loadTwinF">孪生读F</button>
-            <button class="btn-sm" @click="loadTwinG">孪生读G</button>
-            <button class="btn-sm" @click="loadTwinH">孪生读H</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('appListRange')">应用范围清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('modeList')">模式清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('processListIds')">按ids取流程</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('readCountFilter')">待阅计数过滤</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('readV2Count')">待阅v2计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchDelete')">附件批量删</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps10('attBatchUpdate')">附件批量改</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('appListKey')">应用按key清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('appListTerminal')">应用按终端清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('routeList')">路由清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('readCompletedV2Count')">已阅v2计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('reviewCountApp')">摘要按应用计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps11('taskCompletedV2Count')">已办v2计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('createSurface')">新建流程表面</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('openapi')">表面OpenAPI</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('reviewFilterEntry')">摘要过滤入口</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('workV3Retract')">工作v3召回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps12('wcShiftTime')">已办调整时间</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskWill')">任务将办信息</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('taskPressManage')">任务催办(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps13('workCloseCheck')">工作可关闭校验</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('taskV2Trigger')">任务v2触发处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV2Goback')">工作v2活动回退清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps14('workV3RetractStage')">工作v3按job召回阶段</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('serialGen')">按流程生成流水号</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('signDownload')">签名下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps15('snapDownload')">快照下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('worklogRollback')">回滚工作日志清单</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('reviewCountPerson')">按人摘要计数</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps16('attDownloadManage')">附件管理流下载</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readProcessing')">待阅处理(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('readCompletedOpinion')">已阅意见(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps17('taskCompletedOpinion')">已办意见(管理)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('workProcess')">按流程发起工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcProcess')">已办按流程</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps18('wcRollback')">已办回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('reroute')">工作v2改流</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('retract')">工作v2召回</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('rollback')">工作v2回滚</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('addSplit')">工作v2分裂</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps19('terminate')">工作v2终止</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Pause')">任务v2暂停</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Resume')">任务v2恢复</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v2Reset')">任务v2重置</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v3Pin')">任务v3置顶</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="surfaceOps20('v3Add')">任务v3追加</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdProcessing')">任务处理(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdReplace')">任务替换(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdPress')">任务催办(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskIdExpire')">任务超时(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Pause')">v2暂停(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Reset')">v2重置(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV2Resume')">v2恢复(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('taskV3Add')">v3追加(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('attEditText')">附件文本编辑</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('dataPathDelete')">按路径删数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('manualAfter')">手工后处理</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('manualAppendId')">手工追加身份</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('recordJob')">记录 Job</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('serviceWorkTouch')">服务触达工作</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapIdRestore')">恢复快照(位置态)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('attCopy2')">附件复制(源→工作)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('snapUpload')">上传快照</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineRest3('jobDelete')">删 Job</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('urge')">催办超时任务</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('handover')">接管无主作业</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('deletedraft')">清理遗留草稿</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('touchdelay')">超时顺延登记</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('mergeitem')">附件合并去重</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('cleanevent')">清理过期事件</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('loglong')">登记长滞留</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineTouch('reviewCreate')">建工作待阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewWc')">建已办待阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('manualAfterBody')">工作后处理(体)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('v3RetractBody')">工作v3撤回(体)</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('reviewInit')">初始化待阅</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('nextIdentity')">改已办下一身份</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineReviewWork('dataJobPut')">按Job写数据</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineAttachmentOrder('site')">附件改站点</button>
-            <button class="btn-sm" :disabled="engineBusy" @click="engineAttachmentOrder('order')">附件改顺序</button>
-          </div>
         </section>
 
         <textarea v-if="canHandle" v-model="opinion" class="opinion" placeholder="处理意见" aria-label="处理意见" />
@@ -510,10 +215,10 @@
         <div v-if="startLoading" class="state">加载流程列表...</div>
         <template v-else>
           <div class="start-row">
-            <label for="start-process">流程</label>
-            <select id="start-process" v-model="startProcessId" @change="onStartProcessChange">
+            <label for="start-flow">流程</label>
+            <select id="start-flow" v-model="startFlowId" @change="onStartFlowChange">
               <option value="">请选择流程</option>
-              <option v-for="proc in startProcesses" :key="proc.id" :value="proc.id">{{ proc.name }}</option>
+              <option v-for="proc in startFlows" :key="proc.id" :value="proc.id">{{ proc.name }}</option>
             </select>
           </div>
           <div class="start-row">
@@ -526,9 +231,9 @@
             :definition="startDefinition"
             :errors="startErrors"
           />
-          <div v-else-if="startProcessId" class="state">当前流程未绑定表单，可直接发起</div>
+          <div v-else-if="startFlowId" class="state">当前流程未绑定表单，可直接发起</div>
           <footer>
-            <button class="btn-sm primary" :disabled="!startProcessId || !startTitle.trim() || startSubmitting" @click="submitStart">
+            <button class="btn-sm primary" :disabled="!startFlowId || !startTitle.trim() || startSubmitting" @click="submitStart">
               {{ startSubmitting ? '发起中…' : '发起' }}
             </button>
           </footer>
@@ -571,7 +276,7 @@ interface TaskItem {
 type TabKey = 'pending' | 'completed' | 'started'
 const tabs = [
   { key: 'pending' as const, label: '待我处理' },
-  { key: 'completed' as const, label: '已完成' },
+  { key: 'completed' as const, label: '已办' },
   { key: 'started' as const, label: '我发起的' },
 ]
 const activeTab = ref<TabKey>('pending')
@@ -597,6 +302,19 @@ const query = useQuery({
   },
   staleTime: 30_000,
 })
+function displayTitle(item: TaskItem): string {
+  const raw = String(item.title || item.processName || item.appName || item.applicationName || '').trim()
+  if (!raw) return '未命名流程'
+  if (/^work-reject-/i.test(raw)) return '驳回的工作'
+  const cleaned = raw
+    .replace(/^start:\s*/i, '')
+    .replace(/\s*work-(?:reject-)?\d+-[a-z0-9]+\s*$/i, '')
+    .trim()
+  if (!cleaned || /^[\w-]+$/.test(cleaned)) {
+    return String(item.processName || item.appName || item.applicationName || '工作实例')
+  }
+  return cleaned
+}
 const items = computed(() => query.data.value ?? [])
 const opened = ref<TaskItem | null>(null)
 const formDefinition = ref<XformDefinition | null>(null)
@@ -3347,8 +3065,8 @@ async function taskV2Action(kind: 'pause' | 'resume' | 'reset'): Promise<void> {
 // ── 发起流程（从零创建工作实例）────────────────────────────────
 const showStart = ref(false)
 const startLoading = ref(false)
-const startProcesses = ref<Array<{ id: string; name: string }>>([])
-const startProcessId = ref('')
+const startFlows = ref<Array<{ id: string; name: string }>>([])
+const startFlowId = ref('')
 const startTitle = ref('')
 const startDefinition = ref<XformDefinition | null>(null)
 const startValues = ref<Record<string, FormValue>>({})
@@ -3358,7 +3076,7 @@ const startSubmitting = ref(false)
 async function openStart(): Promise<void> {
   showStart.value = true
   startLoading.value = true
-  startProcessId.value = ''
+  startFlowId.value = ''
   startTitle.value = ''
   startDefinition.value = null
   startValues.value = {}
@@ -3368,7 +3086,7 @@ async function openStart(): Promise<void> {
     // 该端点返回分页包裹 {count, data:[rows], page, size}（兼容直接数组形态）
     const payload = r?.data ?? {}
     const rows: unknown[] = Array.isArray(payload) ? payload : (payload.data ?? [])
-    startProcesses.value = (rows as Array<Record<string, unknown>>)
+    startFlows.value = (rows as Array<Record<string, unknown>>)
       .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
       .filter((proc) => proc.id)
   } catch (error: any) {
@@ -3380,21 +3098,21 @@ async function openStart(): Promise<void> {
 
 function closeStart(): void {
   showStart.value = false
-  startProcessId.value = ''
+  startFlowId.value = ''
   startTitle.value = ''
   startDefinition.value = null
   startValues.value = {}
   startErrors.value = {}
 }
 
-async function onStartProcessChange(): Promise<void> {
+async function onStartFlowChange(): Promise<void> {
   startDefinition.value = null
   startValues.value = {}
   startErrors.value = {}
-  if (!startProcessId.value) return
+  if (!startFlowId.value) return
   try {
     const detail: any = await api.get(
-      `/api/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}`,
+      `/api/processplatform/assemble/designer/get/${encodeURIComponent(startFlowId.value)}`,
     )
     const definition = detail?.data?.processDefinition as Record<string, unknown> | undefined
     const formFlag = (() => {
@@ -3414,7 +3132,7 @@ async function onStartProcessChange(): Promise<void> {
 }
 
 async function submitStart(): Promise<void> {
-  if (!startProcessId.value || !startTitle.value.trim()) return
+  if (!startFlowId.value || !startTitle.value.trim()) return
   if (startDefinition.value) {
     startErrors.value = validateFormValues(startDefinition.value, startValues.value)
     if (Object.keys(startErrors.value).length) {
@@ -3425,7 +3143,7 @@ async function submitStart(): Promise<void> {
   startSubmitting.value = true
   try {
     const created: any = await api.post('/api/processplatform/service/processing/work', {
-      process: startProcessId.value,
+      process: startFlowId.value,
       title: startTitle.value.trim(),
     })
     const workId = String(created?.data?.id ?? '')
@@ -3482,8 +3200,11 @@ function fmtTime(value: unknown): string {
 
 <style scoped>
 .work-view { display: flex; flex-direction: column; gap: 16px; height: 100%; }
-.view-header, .content-panel { padding: 20px 24px; }
-.view-header h1, .work-dialog h2 { margin: 0; color: var(--color-primary); }
+.content-panel { padding: 20px 24px; }
+.work-hero { position: relative }
+.work-hero .hero-copy { display: flex; flex-direction: column }
+.work-hero h1, .work-dialog h2 { margin: 0; color: var(--color-primary) }
+@media(max-width:768px){.work-hero{flex-direction:column;align-items:flex-start}}
 .subtitle, .work-dialog p { margin: 4px 0 0; color: var(--text-muted); font-size: 12px; }
 .tabs { display: flex; gap: 4px; padding: 6px; }
 .tab-btn { flex: 1; padding: 9px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--text-muted); cursor: pointer; }
@@ -3499,7 +3220,7 @@ function fmtTime(value: unknown): string {
 .btn-sm.reject { border-color: var(--color-error); color: var(--color-error); }
 .state { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 50px; color: var(--text-muted); }
 .error-state { color: var(--color-error); }
-.modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0,0,0,.62); }
+.modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background:var(--bg-overlay); }
 .work-dialog { width: min(860px, 92vw); max-height: 88vh; overflow: auto; padding: 22px; }
 .work-dialog header, .work-dialog footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .work-dialog header { margin-bottom: 22px; }
@@ -3514,4 +3235,12 @@ function fmtTime(value: unknown): string {
 .detail-list li.clickable { cursor: pointer; }
 .detail-list li.clickable:hover .name { color: var(--color-primary); }
 .detail-block .muted { margin: 0; color: var(--text-muted); font-size: 12px; }
+/* ── R298 t3-B：卡片行信息层级，原 id 仅作次级详情 ── */
+.work-view .item-list { display: flex; flex-direction: column; gap: 8px; }
+.work-view .item-card { flex-wrap: wrap; }
+.work-view .item-info { flex: 1; min-width: 0; }
+.work-view .item-title { display: block; }
+.work-view .item-meta { display: flex; flex-wrap: wrap; gap: 12px; }
+.work-view .item-id { font-family: monospace; font-size: 11px; }
+.work-view .item-status { margin-left: auto; }
 </style>

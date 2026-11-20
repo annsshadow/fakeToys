@@ -2,104 +2,86 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="meeting-view">
-    <div class="view-header glass-card">
-      <h1>会议管理</h1>
-      <p class="subtitle">/api/meeting/assemble/control/*</p>
-      <button class="new-btn" @click="showCreate=true">+ 新建会议</button>
-    </div>
-    <div class="filter-bar glass-card">
-      <input v-model="searchKey" placeholder="搜索会议室/楼栋..." class="si" />
-      <select v-model="statusFilter" class="fs">
-        <option value="">全部状态</option><option value="0">未开始</option><option value="1">进行中</option><option value="2">已结束</option>
-      </select>
-      <button class="sb" @click="loadMeetings">搜索</button>
-      <button class="sb" @click="loadMyApplied">我的申请</button>
-      <button class="sb" @click="loadMyInvited">我的邀请</button>
-      <button class="sb" @click="loadMeetingMore">待接受/本月/配置</button>
-      <button class="sb" @click="loadMeetingSearch">检索/前瞻</button>
-      <button class="sb" @click="loadMeetingCore">核心资源/日程</button>
-      <button class="sb" @click="loadMeetingTwin">孪生端点</button>
-      <button class="sb" @click="loadMeetingPinyin">拼音检索</button>
-      <button class="sb" @click="loadMeetingEntities">会议实体</button>
-      <button class="sb" @click="loadMeetingControlAssets">控制台资源</button>
-      <button class="sb" @click="loadMeetingDateLists">日期列表</button>
-      <button class="sb" @click="loadMeetingOpenRooms">开放会议室</button>
-      <button class="sb" @click="addBuilding">+ 楼栋</button>
-      <button class="sb" @click="meetingWrite('accept')">接受会议</button>
-      <button class="sb" @click="meetingWrite('mtgCreate')">建会议(根)</button>
-      <button class="sb" @click="meetingWrite('mtgCtrlCreate')">建会议控制</button>
-      <button class="sb" @click="meetingWrite('sysCfgManage')">系统配置(管理)</button>
-      <button class="sb" @click="meetingWrite('attFromPp')">流程附件入会议</button>
-      <button class="sb" @click="meetingAttachmentUpload">会议附件上传</button>
-      <button class="sb" @click="meetingAttachmentUploadCallback">会议附件上传(回调)</button>
-      <button class="sb" @click="meetingAttachmentUpdate">会议附件更新</button>
-      <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
-      <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
-      <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
-      <button class="sb" @click="meetingWrite('checkin')">签到</button>
-      <button class="sb" @click="meetingWrite('delete')">删会议</button>
-      <button class="sb" @click="meetingWrite('buildingEdit')">改楼栋</button>
-      <button class="sb" @click="meetingWrite('buildingDelete')">删楼栋</button>
-      <button class="sb" @click="meetingWrite('roomEdit')">改会议室</button>
-      <button class="sb" @click="meetingWrite('roomDelete')">删会议室</button>
-      <button class="sb" @click="meetingWrite('roomPhoto')">会议室照片</button>
-      <button class="sb" @click="meetingWrite('config')">存配置</button>
-      <button class="sb" @click="meetingWrite('coreRoomCreate')">建核心会议室</button>
-      <button class="sb" @click="meetingWrite('coreRoomSave')">存核心会议室</button>
-      <button class="sb" @click="meetingWrite('attDelete')">删附件</button>
-      <button class="sb" @click="meetingWrite('attUpdate')">改附件</button>
-      <button class="sb" @click="meetingMore('addInvite')">加邀请</button>
-      <button class="sb" @click="meetingMore('delInvite')">删邀请</button>
-      <button class="sb" @click="meetingMore('modifyStart')">改开始时间</button>
-      <button class="sb" @click="meetingMore('modifyComplete')">改结束时间</button>
-      <button class="sb" @click="meetingMore('manualComplete')">手动结束</button>
-      <button class="sb" @click="meetingMore('coreSave')">存核心会议</button>
-      <button class="sb" @click="meetingMore('coreDelete')">删核心会议</button>
-      <button class="sb" @click="meetingLists">会议清单读</button>
-      <button class="sb" @click="meetingMore2('ctrlDelete')">删会议(控制级)</button>
-      <button class="sb" @click="meetingMore2('meetingDelete')">删会议</button>
-      <button class="sb" @click="meetingMore2('roomDelete')">删会议室</button>
-      <button class="sb" @click="meetingMore2('attDownload')">附件下载</button>
-    </div>
-    <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
-    <div v-if="buildings.length" class="bld-bar glass-card">
-      <span class="bld-title">楼栋：</span>
-      <span v-for="b in buildings" :key="b.id" class="bld-chip">{{ b.name }}<button class="bld-del" @click="removeBuilding(b)">×</button></span>
-    </div>
-    <div class="bld-bar glass-card">
-      <span class="bld-title">会议室：</span>
-      <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
-      <button class="sb" @click="addRoom">+ 会议室</button>
-      <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}<button class="bld-del" @click="removeRoom(rm)">×</button></span>
-      <ListLoadError v-if="roomError" mode="banner" :message="roomError" @retry="loadRoomList" />
-    </div>
-    <div class="content-panel glass-card">
-      <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
-      <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
-      <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
-      <div v-else-if="meetings.length===0" class="es"><div class="ei">👥</div><p>暂无会议</p></div>
-      <div v-else class="ml">
-        <div v-for="m in meetings" :key="m.id" class="mc" @click="viewMeeting(m)">
-          <div class="ms" :class="statusCls(m)">{{statusTxt(m)}}</div>
-          <div class="mi"><div class="mt">{{m.title||m.name||'未命名会议'}}</div><div class="mm">
-            <span v-if="m.buildingName">🏢{{m.buildingName}}</span>
-            <span v-if="m.roomName">🚪{{m.roomName}}</span>
-            <span v-if="m.startTime">📅{{fmtTime(m.startTime)}}</span>
-            <span v-if="m.attendeeCount">👤{{m.attendeeCount}}人</span>
-          </div></div>
-          <div class="ma">
-            <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
-            <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
-            <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
-            <button class="bsm" @click.stop="manageInvitee(m)">邀请管理</button>
-            <button class="bsm" @click.stop="modifyMeetingTime(m)">改时间</button>
-            <button class="bsm" @click.stop="markMeetingCompleted(m)">标记完成</button>
-            <button class="bsm" @click.stop="showCheckinCode(m)">签到码</button>
-          </div>
+  <div class="meeting-view modern-page">
+    <header class="meeting-hero modern-hero">
+      <div class="hero-copy">
+        <h1 class="admin-title">会议管理</h1>
+        <p class="subtitle">会议室预订 · 我的会议 · 日程安排</p>
+      </div>
+      <div class="modern-hero-actions"><button class="new-btn" @click="showCreate=true">+ 新建会议</button></div>
+    </header>
+
+    <section class="booking glass-card modern-section">
+      <h2 class="section-title">会议室预订</h2>
+      <form class="booking-form modern-grid" @submit.prevent="createMeeting">
+        <div class="fg"><label>会议主题</label><input v-model="form.title" class="fi" placeholder="例如：周例会" /></div>
+        <div class="fg"><label>楼栋</label><select v-model="form.buildingId" class="fs2" @change="loadRooms"><option value="">选择楼栋</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select></div>
+        <div class="fg"><label>会议室</label><select v-model="form.roomId" class="fs2"><option value="">选择会议室</option><option v-for="rm in rooms" :key="rm.id" :value="rm.id">{{rm.name}}</option></select></div>
+        <div class="fg"><label>预订日期</label><input :value="bookingDate" @change="onBookingDate" type="date" class="fi" /></div>
+        <div class="fg"><label>开始时间</label><input v-model="form.startTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>结束时间</label><input v-model="form.endTime" type="datetime-local" class="fi" /></div>
+        <div class="fg"><label>会议说明</label><input v-model="form.content" class="fi" placeholder="可选" /></div>
+        <div v-if="err" class="em">{{err}}</div>
+        <button type="submit" class="bs" :disabled="!form.title || createSaving">{{ createSaving ? '预订中...' : '预订会议室' }}</button>
+      </form>
+      <div class="room-picker">
+        <span class="bld-title">可选会议室：</span>
+        <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
+        <span v-for="rm in roomList" :key="rm.id" class="bld-chip modern-chip">{{ rm.name }}</span>
+        <ListLoadError v-if="roomError" mode="banner" :message="roomError" @retry="loadRoomList" />
+      </div>
+    </section>
+
+    <section class="mine glass-card modern-section">
+      <h2 class="section-title">我的会议</h2>
+      <form class="mine-search" @submit.prevent="loadMeetings">
+        <input v-model="searchKey" placeholder="搜索会议主题/会议室" class="si" />
+        <select v-model="statusFilter" class="fs">
+          <option value="">全部状态</option><option value="0">未开始</option><option value="1">进行中</option><option value="2">已结束</option>
+        </select>
+        <button type="submit" class="sb">搜索</button>
+      </form>
+      <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
+      <div class="content-panel">
+        <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
+        <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
+        <div v-else-if="meetings.length===0" class="es modern-empty"><div class="ei">👥</div><p>暂无会议</p></div>
+        <ul v-else class="ml">
+          <li v-for="m in meetings" :key="m.id" class="mc modern-card" @click="viewMeeting(m)">
+            <div class="ms modern-chip" :class="statusCls(m)">{{statusTxt(m)}}</div>
+            <div class="mi"><div class="mt">{{m.title||m.name||'未命名会议'}}</div><div class="mm">
+              <span v-if="m.buildingName">🏢{{m.buildingName}}</span>
+              <span v-if="m.roomName">🚪{{m.roomName}}</span>
+              <span v-if="m.startTime">📅{{fmtTime(m.startTime)}}</span>
+              <span v-if="m.attendeeCount">👤{{m.attendeeCount}}人</span>
+            </div></div>
+            <div class="ma">
+              <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
+              <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
+              <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
+              <button class="bsm" @click.stop="manageInvitee(m)">邀请管理</button>
+              <button class="bsm" @click.stop="modifyMeetingTime(m)">改时间</button>
+              <button class="bsm" @click.stop="markMeetingCompleted(m)">标记完成</button>
+              <button class="bsm" @click.stop="showCheckinCode(m)">签到码</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="calendar glass-card modern-section">
+      <h2 class="section-title">日历视图</h2>
+      <p class="section-hint">未来 7 天会议安排（点击日程查看详情）</p>
+      <div class="calendar-grid">
+        <div v-for="day in calendarDays" :key="day.key" class="calendar-day modern-card">
+          <div class="calendar-day-head"><span class="modern-stat">{{ day.label }}</span><span class="modern-chip">{{ day.meetings.length }} 场</span></div>
+          <div v-for="m in day.meetings" :key="m.id" class="calendar-event" @click="viewMeeting(m)">{{ m.title || m.name || '未命名会议' }}</div>
+          <div v-if="!day.meetings.length" class="calendar-empty">—</div>
         </div>
       </div>
-    </div>
+    </section>
+
     <div v-if="showCreate" class="mo" @click.self="showCreate=false">
       <div class="modal glass-card">
         <h3>新建会议</h3>
@@ -133,7 +115,7 @@
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -174,6 +156,33 @@ const searchKey = ref(''),
   qc = useQueryClient()
 const session = useSession()
 const form = ref({ title: '', content: '', buildingId: '', roomId: '', startTime: '', endTime: '' })
+
+// ── R296 P2 业务视图模型：预订日期 → 未来 7 天日程，按本地日期归组展示 ──
+const bookingDate = ref(new Date().toISOString().slice(0, 10))
+function onBookingDate(e: Event) {
+  bookingDate.value = (e.target as HTMLInputElement).value || bookingDate.value
+  const day = bookingDate.value
+  form.value.startTime = `${day}T09:00`
+  form.value.endTime = `${day}T10:00`
+}
+const calendarDays = computed(() => {
+  const base = new Date()
+  const [by, bm, bd] = bookingDate.value.split('-').map(Number)
+  base.setFullYear(by, bm - 1, bd)
+  base.setHours(0, 0, 0, 0)
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { key, label: `${d.getMonth() + 1}/${d.getDate()}`, meetings: [] as M[] }
+  })
+  for (const m of meetings.value) {
+    const key = String(m.startTime ?? '').slice(0, 10)
+    const day = days.find((d) => d.key === key)
+    if (day) day.meetings.push(m)
+  }
+  return days
+})
 const { data: bData } = useQuery({
   queryKey: ['meeting', 'bldgs'],
   queryFn: () => api.get('/api/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
@@ -1002,9 +1011,11 @@ async function loadMeetingTwin() {
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.meeting-hero{position:relative}
+.meeting-hero h1{margin:0 0 4px;font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);text-shadow:0 0 15px var(--color-primary-glow)}
+.meeting-hero .hero-copy{display:flex;flex-direction:column}
+.meeting-hero .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+@media(max-width:768px){.meeting-hero{flex-direction:column;align-items:flex-start}}
 .new-btn{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .filter-bar{display:flex;align-items:center;gap:10px;padding:12px 16px}
 .si{flex:1;min-width:160px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:8px 12px;color:var(--text-primary);font-size:13px;outline:none}
@@ -1045,4 +1056,29 @@ async function loadMeetingTwin() {
 .bld-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 .bld-del{border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
 .applied-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.section-title{font-size:15px;color:var(--color-primary);margin:0 0 12px}
+.section-hint{font-size:12px;color:var(--text-muted);margin:0 0 10px}
+.booking{padding:16px 20px}
+.booking-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end}
+.booking-form .bs{grid-column:1/-1;justify-self:start}
+.mine{padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+.mine-search{display:flex;gap:10px;align-items:center}
+.mine .content-panel{padding:0;max-height:340px}
+.calendar{padding:16px 20px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;min-height:120px}
+.calendar-day{background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:6px;min-width:0}
+.calendar-day-head{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.calendar-event{font-size:11px;color:var(--color-primary);background:var(--color-primary-soft);border-radius:var(--radius-sm);padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calendar-empty{font-size:11px;color:var(--text-muted);opacity:.5}
+/* ── R298 t3-B：复用 modern 原语，仅补本页特有布局 ── */
+.meeting-view .view-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.meeting-view .booking-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 16px; }
+.meeting-view .booking-form > .em, .meeting-view .booking-form > .bs { grid-column: 1 / -1; }
+.meeting-view .booking-form > .bs { justify-self: start; }
+.meeting-view .room-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.meeting-view .ml .mc { display: flex; align-items: center; gap: 14px; }
+.meeting-view .ml .mi { flex: 1; min-width: 0; }
+.meeting-view .ma { flex-wrap: wrap; justify-content: flex-end; }
+.meeting-view .calendar-day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.meeting-view .calendar-day-head .modern-stat { font-size: 13px; font-weight: 600; }
 </style>

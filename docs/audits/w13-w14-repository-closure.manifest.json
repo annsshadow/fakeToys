@@ -25,46 +25,6 @@
   },
   "entries": [
     {
-      "id": "w13:AnnApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "AnnApp.vue",
-      "route": "/app/ann",
-      "title": "神经网络AI配置",
-      "endpoint": "/api/ai/assemble/control/ann/list",
-      "status": "implemented",
-      "replacementClaim": true,
-      "acceptance": "AI 公告/模型公告家族数据驱动 CRUD：list/create/save/delete 实挂迁移 096 x_ai_ann（title/content/category/status 类型化字段、参数化写、软删、删除需确认）",
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/AnnApp.vue",
-            "contains": "const listEp = '/api/ai/assemble/control/ann/list'"
-          },
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/AnnApp.vue",
-            "contains": "api.post(createEp, payload)"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
-            "contains": "import('./views/AnnApp.vue')"
-          }
-        ],
-        "backend": [
-          {
-            "file": "oa4rust/backend/crates/ai_assemble_control/src/routes.rs",
-            "contains": "\"/api/ai/assemble/control/ann/create\""
-          },
-          {
-            "file": "oa4rust/backend/migrations/096_create_ai_ann_ftsearch_tables.sql",
-            "contains": "CREATE TABLE IF NOT EXISTS \"x_ai_ann\""
-          }
-        ]
-      }
-    },
-    {
       "id": "w13:CmsColumnApp.vue",
       "workItem": "W13",
       "kind": "crud_view",
@@ -472,82 +432,6 @@
           {
             "file": "oa4rust/backend/crates/console/src/routes.rs",
             "contains": "\"/api/server/deploy/create\""
-          }
-        ]
-      }
-    },
-    {
-      "id": "w13:FaceSetApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "FaceSetApp.vue",
-      "route": "/app/face-set",
-      "title": "人脸设置",
-      "endpoint": "/api/personal/face/list",
-      "status": "implemented",
-      "replacementClaim": true,
-      "acceptance": "人脸设置数据驱动 CRUD：list/create/save/delete 实挂 x_person_face（personId/faceName/faceType/status 类型化字段，参数化写、软删、删除需确认）",
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue",
-            "contains": "const listEp = '/api/personal/face/list'"
-          },
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue",
-            "contains": "api.post(createEp, payload)"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
-            "contains": "import('./views/FaceSetApp.vue')"
-          }
-        ],
-        "backend": [
-          {
-            "file": "oa4rust/backend/crates/personal_extend/src/routes.rs",
-            "contains": "\"/api/personal/face/create\""
-          }
-        ]
-      }
-    },
-    {
-      "id": "w13:FtSearchApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "FtSearchApp.vue",
-      "route": "/app/ftsearch",
-      "title": "全文搜索引擎",
-      "endpoint": "/api/ftsearch/list",
-      "status": "implemented",
-      "replacementClaim": true,
-      "acceptance": "检索文档数据驱动 CRUD：list/create/save/delete 实挂 x_ftsearch_document（title/body/source 类型化字段，参数化写、软删、删除需确认）",
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/FtSearchApp.vue",
-            "contains": "const listEp = '/api/ftsearch/list'"
-          },
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/views/FtSearchApp.vue",
-            "contains": "api.post(createEp, payload)"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust/frontend/apps/desktop/src/main.ts",
-            "contains": "import('./views/FtSearchApp.vue')"
-          }
-        ],
-        "backend": [
-          {
-            "file": "oa4rust/backend/crates/search/src/lib.rs",
-            "contains": "\"/api/ftsearch/create\""
-          },
-          {
-            "file": "oa4rust/backend/migrations/096_create_ai_ann_ftsearch_tables.sql",
-            "contains": "CREATE TABLE IF NOT EXISTS \"x_ftsearch_document\""
           }
         ]
       }
@@ -1231,8 +1115,8 @@
       "routes": [
         "/app/mind"
       ],
-      "status": "implemented",
-      "replacementClaim": true,
+      "status": "out_of_scope",
+      "replacementClaim": false,
       "decision": "MindApp 目录树 GET /api/mind/folder/tree/my、导图列表改调已注册 PUT /api/mind/assemble/control/mind/filter/list/{folderId}/next/1（原 /mind/mind/list/{folder}/1 死路由不再调用），并有新建导图 + 保存入口。",
       "blockerCodes": [],
       "evidence": {
@@ -1259,7 +1143,13 @@
           }
         ]
       },
-      "acceptance": "脑图目录树浏览 + 按目录导图列表 + 新建/保存导图（x_mind 实表）"
+      "acceptance": "脑图目录树浏览 + 按目录导图列表 + 新建/保存导图（x_mind 实表）",
+      "acceptedBoundary": {
+        "scope": "D 类空壳页面按 R297 清单删除，脑图功能不再由 oa4rust PC 端承载",
+        "impact": "普通员工无法在办公系统中使用脑图；该能力已从产品范围移除",
+        "owner": "产品负责人（R297 拍板）",
+        "replacementClaim": false
+      }
     },
     {
       "id": "w14:x_component_MinderEditor",
@@ -1272,8 +1162,8 @@
       "routes": [
         "/app/mind"
       ],
-      "status": "implemented",
-      "replacementClaim": true,
+      "status": "out_of_scope",
+      "replacementClaim": false,
       "decision": "MindApp 内置画布编辑器：节点树/SVG 连线/拖拽换父/缩放/双击重命名/增删节点，保存走 POST /api/mind/assemble/control/mind/save（x_mind + 版本），列表卡展示 fileVersion；Minder JSON 已结构化为节点编辑，非仅查看弹窗。",
       "blockerCodes": [],
       "evidence": {
@@ -1304,7 +1194,13 @@
           }
         ]
       },
-      "acceptance": "脑图画布编辑（增删节点/换父/重命名/缩放）+ 服务端保存 + 版本号展示"
+      "acceptance": "脑图画布编辑（增删节点/换父/重命名/缩放）+ 服务端保存 + 版本号展示",
+      "acceptedBoundary": {
+        "scope": "D 类空壳页面按 R297 清单删除，脑图功能不再由 oa4rust PC 端承载",
+        "impact": "普通员工无法在办公系统中使用脑图；该能力已从产品范围移除",
+        "owner": "产品负责人（R297 拍板）",
+        "replacementClaim": false
+      }
     },
     {
       "id": "w14:x_component_service_AgentDesigner",
@@ -1872,14 +1768,14 @@
     }
   ],
   "summary": {
-    "total": 47,
+    "total": 44,
     "byWorkItem": {
-      "W13": 32,
+      "W13": 29,
       "W14": 15
     },
     "byStatus": {
-      "implemented": 44,
-      "out_of_scope": 3
+      "implemented": 39,
+      "out_of_scope": 5
     }
   }
 }

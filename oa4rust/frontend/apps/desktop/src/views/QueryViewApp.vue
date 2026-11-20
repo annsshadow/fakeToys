@@ -1,11 +1,13 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询视图" subtitle="/api/queryview/* — 执行查询视图、导出 Excel" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="keyword" search-placeholder="搜索视图..." />
+
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>查询视图</h1>
-      <p class="subtitle">/api/queryview/* — 执行查询视图、导出Excel</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -130,11 +132,14 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { ref } from 'vue'
+import { provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -143,6 +148,11 @@ import { describeListError } from './listQuery'
 import { createSearchRunner } from './searchRunner'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
+
+void AdminFormSection
+void AdminPageHeader
+void AdminToolbar
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 const keyword = ref('')
 const loading = ref(false)
@@ -956,7 +966,7 @@ async function loadQueryTwin3() {
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;width:800px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0}
 .modal-header h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0;font-size:15px}

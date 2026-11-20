@@ -1,9 +1,14 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程脚本设计器" subtitle="/api/processplatform/assemble/designer/script/* — 脚本 CRUD 与版本历史（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="view-shell">
     <ScriptWorkbench title="流程脚本" :adapter="adapter" with-category />
+  </div>
+    </AdminFormSection>
   </div>
 </template>
 
@@ -11,6 +16,8 @@
 // W7：真实脚本设计器——CodeMirror 编辑器（ScriptWorkbench 内建 XScript 补全）
 // + PP_E_SCRIPT 写路径（u2_script）+ PP_E_SCRIPTVERSION 版本历史。
 import { api } from '@oa4rust/sdk'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptWorkbench, {
   type ScriptListItem,

@@ -3,26 +3,44 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>服务器管理</h1>
-      <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
-      <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
-      <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
-      <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
-      <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
-      <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
-      <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
-      <button class="srv-meta-btn" @click="loadServerTwin">孪生端点</button>
-      <button class="srv-meta-btn" @click="loadServerTwin2">孪生端点B</button>
-      <button class="srv-meta-btn" @click="loadServerTwin3">日志/调度/资源C</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
-      <button class="srv-meta-btn" @click="serverConsoleOps('sysConfig')">系统配置读</button>
-      <button class="srv-meta-btn" @click="loadExecuteStatus">执行状态</button>
-      <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
+    <AdminPageHeader title="服务器管理" subtitle="系统状态、命令执行与运维操作">
+      <template #actions>
+        <span v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</span>
+      </template>
+    </AdminPageHeader>
+    <div class="admin-section-nav glass-card" aria-label="服务器管理分区">
+      <details class="endpoint-group" open>
+        <summary>状态与信息</summary>
+        <div class="endpoint-group-body">
+          <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
+          <button class="srv-meta-btn" @click="loadGeneralMeta">通用/区域/工时</button>
+          <button class="srv-meta-btn" @click="loadGeneralMeta2">密级/考勤范围/二维码</button>
+          <button class="srv-meta-btn" @click="loadGeneralMeta3">密级对象/主体/内网</button>
+          <button class="srv-meta-btn" @click="loadExecuteStatus">执行状态</button>
+        </div>
+      </details>
+      <details class="endpoint-group">
+        <summary>诊断端点</summary>
+        <div class="endpoint-group-body">
+          <button class="srv-meta-btn" @click="loadBaseMeta">Echo/缓存详情/OpenAPI</button>
+          <button class="srv-meta-btn" @click="loadBaseMeta2">根Echo/根缓存/根OpenAPI</button>
+          <button class="srv-meta-btn" @click="loadServerTwin">孪生端点</button>
+          <button class="srv-meta-btn" @click="loadServerTwin2">孪生端点B</button>
+          <button class="srv-meta-btn" @click="loadServerTwin3">日志/调度/资源C</button>
+        </div>
+      </details>
+      <details class="endpoint-group danger">
+        <summary>运维操作</summary>
+        <div class="endpoint-group-body">
+          <button class="srv-meta-btn" @click="serverConsoleOps('cacheClear')">清理缓存(按类型)</button>
+          <button class="srv-meta-btn" @click="serverConsoleOps('cmdExecute')">控制台命令</button>
+          <button class="srv-meta-btn" @click="serverConsoleOps('sendMessage')">广播消息</button>
+          <button class="srv-meta-btn" @click="serverConsoleOps('deploySave')">保存部署</button>
+          <button class="srv-meta-btn" @click="serverConsoleOps('deployDelete')">删除部署</button>
+          <button class="srv-meta-btn" @click="serverConsoleOps('sysConfig')">系统配置读</button>
+          <button class="btn-stop" @click="stopServer">停止服务器</button>
+        </div>
+      </details>
     </div>
     <div class="content-panel glass-card">
       <div class="grid-2col">
@@ -55,11 +73,6 @@
           <div v-if="execError" class="cmd-error">{{ execError }}</div>
         </div>
       </div>
-      <!-- Stop server -->
-      <div class="danger-zone glass-card">
-        <h3 style="color:var(--color-error)">⚠ 危险操作</h3>
-        <button class="btn-stop" @click="stopServer">停止服务器</button>
-      </div>
     </div>
   </div>
 </template>
@@ -67,6 +80,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: used in Vue template.
+import { AdminPageHeader } from '../components/admin'
 import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -358,8 +373,11 @@ async function loadServerTwin3() {
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .srv-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
 .srv-meta-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);word-break:break-all}
-.view-header{padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.admin-section-nav{display:flex;flex-wrap:wrap;gap:12px;padding:12px 16px}
+.endpoint-group{border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:8px 12px;background:var(--bg-elevated)}
+.endpoint-group summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text-primary)}
+.endpoint-group.danger summary{color:var(--color-error)}
+.endpoint-group-body{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
 .content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
 .grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}

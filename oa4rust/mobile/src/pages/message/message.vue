@@ -74,18 +74,23 @@ function openConversation(row: Record<string, unknown>) {
 <template>
   <view class="page">
     <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
+      <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
+    </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">暂无会话</view>
+    <view v-else-if="rows.length === 0" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">暂无会话</text>
+    </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>
         <view class="retry-btn" @tap="load">重试</view>
       </view>
-      <view v-for="(row, i) in rows" :key="i" class="item" @tap="openConversation(row)">
+      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openConversation(row)">
         <view class="title">{{ conversationTitle(row) }}</view>
         <view class="meta">{{ (row.lastMessage as string) || ' ' }}</view>
       </view>
@@ -148,5 +153,15 @@ function openConversation(row: Record<string, unknown>) {
   margin-top: 8rpx;
   font-size: 24rpx;
   color: var(--color-text-secondary);
+}
+/* R293：首屏加载用骨架屏替代文字提示，降低等待白屏感。 */
+.skeleton {
+  padding: 24rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.skeleton-row {
+  height: 104rpx;
 }
 </style>

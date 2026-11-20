@@ -236,14 +236,19 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
       </view>
     </view>
 
-    <view v-if="loading && rows.length === 0" class="tip">加载中…</view>
+    <view v-if="loading && rows.length === 0" class="skeleton" aria-hidden="true">
+      <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
+    </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="loadFirst">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">暂无{{ tabs.find((t) => t.key === active)?.label }}</view>
+    <view v-else-if="rows.length === 0" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">暂无{{ tabs.find((t) => t.key === active)?.label }}</text>
+    </view>
     <view v-else class="list">
-      <view v-for="(row, i) in rows" :key="i" class="item" @tap="openDetail(row, i)">
+      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openDetail(row, i)">
         <view class="title">{{ titleOf(row, i) }}</view>
         <view class="meta">{{ metaOf(row) || ' ' }}</view>
         <view v-if="active === 'pending'" class="actions">
@@ -272,7 +277,9 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
           <text class="sheet-title">{{ detailTitle }}</text>
           <text class="sheet-close" @tap="closeDetail">✕</text>
         </view>
-        <view v-if="detailLoading" class="tip">加载中…</view>
+        <view v-if="detailLoading" class="skeleton skeleton-compact" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="o2-skeleton skeleton-row"></view>
+        </view>
         <scroll-view v-else scroll-y class="sheet-body">
           <view v-if="detailError" class="tip-error error-banner">
             <text class="error-text">{{ detailError }}</text>
@@ -392,7 +399,9 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 .fab {
   position: fixed;
   right: 32rpx;
-  bottom: 64rpx;
+  /* R293：全面屏安全区，避免浮动按钮被 Home Indicator 遮挡。 */
+  bottom: calc(64rpx + constant(safe-area-inset-bottom));
+  bottom: calc(64rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   gap: 8rpx;
@@ -424,6 +433,9 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   border-radius: 24rpx 24rpx 0 0;
   display: flex;
   flex-direction: column;
+  /* R293：全面屏底部安全区，避免内容被 Home Indicator 遮挡。 */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .sheet-head {
   display: flex;
@@ -467,5 +479,18 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 .sec-time {
   color: var(--color-text-secondary);
   font-size: 22rpx;
+}
+/* R293：首屏加载用骨架屏替代文字提示。 */
+.skeleton {
+  padding: 24rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.skeleton-compact {
+  padding: 12rpx 32rpx 24rpx;
+}
+.skeleton-row {
+  height: 96rpx;
 }
 </style>

@@ -29,6 +29,15 @@ function isAuthenticatedUser(user: O2User | null | undefined): user is O2User {
   return Boolean(user?.unique)
 }
 
+// whoami 的 roleList 可能是字符串数组，也可能是 {name} 对象数组；统一成 string[]。
+// 只映射真实角色名，空值/异常形状一律收敛为空数组（fail-closed）。
+function normalizeRoles(roleList: unknown): string[] {
+  if (!Array.isArray(roleList)) return []
+  return roleList
+    .map((role) => (typeof role === 'string' ? role : (role as { name?: unknown })?.name))
+    .filter((name): name is string => typeof name === 'string')
+}
+
 export const useSessionStore = defineStore('session', () => {
   const state = ref<SessionState>({
     user: null,
@@ -43,9 +52,15 @@ export const useSessionStore = defineStore('session', () => {
 
   async function restoreCurrentUser(ticket: number): Promise<void> {
     try {
-      const resp = await api.get<O2User>('/api/authentication/who', { requireAuth: false })
+      const resp = await api.get<O2User & { roleList?: unknown }>('/api/authentication/who', {
+        requireAuth: false,
+      })
       // 旧请求（被 force 取代）即使后返回，也不得覆盖新身份。
-      if (ticket === initTicket) state.value.user = isAuthenticatedUser(resp.data) ? resp.data : null
+      if (ticket === initTicket) {
+        const user = isAuthenticatedUser(resp.data) ? resp.data : null
+        if (user) user.roles = normalizeRoles(resp.data.roleList)
+        state.value.user = user
+      }
     } catch {
       if (ticket === initTicket) state.value.user = null
     }

@@ -1,10 +1,13 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="数据表设计器" subtitle="/api/query/assemble/designer/table/* — typed columns 与受限 DDL（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="designer-shell">
     <header class="designer-header glass-card">
-      <div><h1>数据表设计器</h1><p>typed columns → 后端生成并执行受限 DDL</p></div>
+      <div><p class="designer-hint">typed columns → 后端生成并执行受限 DDL</p></div>
       <div class="actions"><button class="btn" @click="newTable">新建表</button><button class="btn primary" :disabled="!canSave || saving" @click="saveTable">{{ saving ? '保存中…' : '保存定义' }}</button><button class="btn success" :disabled="!activeFlag || executing" @click="executeTable">{{ executing ? '执行中…' : '执行建表/加列' }}</button><button class="btn" :disabled="!activeFlag || saving" @click="editTableStructure" title="按 flag 编辑表结构（PUT table/edit/{flag}）">编辑结构</button></div>
     </header>
     <main class="main-grid">
@@ -26,10 +29,14 @@
       </section>
     </main>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 import { designerPaths, extractList, type TableColumnDefinition, tablePayload } from '../contracts/designer'
 import { toast } from '../utils/toast'
 

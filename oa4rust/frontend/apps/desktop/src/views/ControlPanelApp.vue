@@ -3,10 +3,11 @@
 
 <template>
   <div class="nav-view">
-    <div class="view-header glass-card">
-      <div><h1>控制面板</h1><p class="subtitle">系统总览 · 快速导航</p></div>
-      <button class="refresh-btn" @click="loadStats">🔄 刷新</button>
-    </div>
+    <AdminPageHeader title="控制面板" subtitle="系统总览 · 快速导航">
+      <template #actions>
+        <button class="refresh-btn" @click="loadStats">🔄 刷新</button>
+      </template>
+    </AdminPageHeader>
     <div class="stats-row glass-card">
       <div class="stat-card" v-for="s in stats" :key="s.label">
         <div class="stat-num" :style="{ color: s.color }">{{ s.value }}</div>
@@ -26,7 +27,7 @@
     <div class="content-panel glass-card" v-if="apps.length > 0">
       <h3 class="panel-title">最近应用</h3>
       <div class="app-list">
-        <router-link v-for="a in apps.slice(0,6)" :key="a.id" :to="'/app/program'" class="app-item">
+        <router-link v-for="a in apps.slice(0,6)" :key="a.id" :to="'/app/admin/program'" class="app-item">
           <span class="app-icon">📱</span>
           <span class="app-name">{{ a.name }}</span>
           <span class="app-flag">{{ a.flag }}</span>
@@ -38,6 +39,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { onMounted, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: used in Vue template.
+import { AdminPageHeader } from '../components/admin'
 
 const stats = ref([
   { label: '待办事项', value: '--', color: 'var(--color-warning)' },
@@ -47,16 +50,16 @@ const stats = ref([
 ])
 const apps = ref<Array<{ id: string; name: string; flag: string }>>([])
 const designers = [
-  { icon: '⚡', title: '流程设计器', desc: '可视化流程编排', path: '/app/process-designer' },
-  { icon: '📋', title: '表单设计器', desc: 'JSON表单构建', path: '/app/form-designer' },
-  { icon: '🔍', title: '查询设计器', desc: 'SQL与可视化查询', path: '/app/query-designer' },
-  { icon: '🖼', title: '门户设计器', desc: '页面与组件设计', path: '/app/portal-designer' },
+  { icon: '⚡', title: '流程设计器', desc: '可视化流程编排', path: '/app/admin/process-designer' },
+  { icon: '📋', title: '表单设计器', desc: 'JSON表单构建', path: '/app/admin/form-designer' },
+  { icon: '🔍', title: '查询设计器', desc: 'SQL与可视化查询', path: '/app/admin/query-designer' },
+  { icon: '🖼', title: '门户设计器', desc: '页面与组件设计', path: '/app/admin/portal-designer' },
   // CMS dict/form/view 家族后端已实装（shared::crud 参数化 CRUD + 迁移 093 表），
   // 卡片不再标记"未启用"；脚本设计走 /api/script/* 已注册路由。
-  { icon: '📝', title: 'CMS表单设计', desc: '内容模型表单', path: '/app/cms-form-designer' },
-  { icon: '👁', title: 'CMS视图设计', desc: '内容展示视图', path: '/app/cms-view-designer' },
-  { icon: '💻', title: 'CMS脚本设计', desc: '内容处理脚本', path: '/app/cms-script-designer' },
-  { icon: '📚', title: 'CMS字典设计', desc: '内容字典配置', path: '/app/cms-dict-designer' },
+  { icon: '📝', title: 'CMS表单设计', desc: '内容模型表单', path: '/app/admin/cms-form-designer' },
+  { icon: '👁', title: 'CMS视图设计', desc: '内容展示视图', path: '/app/admin/cms-view-designer' },
+  { icon: '💻', title: 'CMS脚本设计', desc: '内容处理脚本', path: '/app/admin/cms-script-designer' },
+  { icon: '📚', title: 'CMS字典设计', desc: '内容字典配置', path: '/app/admin/cms-dict-designer' },
 ]
 async function loadStats() {
   try {

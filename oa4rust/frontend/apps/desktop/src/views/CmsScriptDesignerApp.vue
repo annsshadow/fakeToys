@@ -2,11 +2,16 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="view-shell">
+  <div class="mod-view">
+    <AdminPageHeader title="CMS 脚本设计器" subtitle="脚本 CRUD 与按唯一名加载（/api/script/*）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+      <div class="view-shell">
     <div class="script-toolbar">
       <button class="stb" @click="loadByUnique">按唯一名加载脚本</button>
     </div>
     <ScriptWorkbench title="CMS 脚本" :adapter="adapter" />
+  </div>
+    </AdminFormSection>
   </div>
 </template>
 
@@ -14,9 +19,14 @@
 // W7：真实脚本设计器——CodeMirror 编辑器（ScriptWorkbench 内建 XScript 补全）
 // + /api/script u2 CRUD + 脚本内容（scriptContent）。
 import { api } from '@oa4rust/sdk'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 import ScriptWorkbench, { type ScriptListItem, type ScriptWorkbenchAdapter } from '../components/ScriptWorkbench.vue'
 import { toast } from '../utils/toast'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void ScriptWorkbench
 
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
@@ -65,6 +75,9 @@ async function loadByUnique() {
     toast.error(`加载脚本失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
 </script>
 
 <style scoped>

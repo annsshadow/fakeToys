@@ -3,10 +3,7 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>热帖管理</h1>
-      <p class="subtitle">/api/hotpic/core/entity/*</p>
-    </div>
+    <AdminPageHeader title="热帖管理" subtitle="热帖 / 组件 / 控制配置（/api/hotpic/*）" />
     <div class="content-panel glass-card">
       <div class="stats-row">
         <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
@@ -14,7 +11,7 @@
           <div class="stat-label">{{s.label}}</div>
         </div>
       </div>
-      <div class="list-toolbar">
+      <AdminToolbar v-model="keyword" search-placeholder="搜索热帖..." @search="doSearch" @refresh="doSearch">
         <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
@@ -36,8 +33,9 @@
         <button class="btn-primary" @click="hotpicMore('cipherList')">密文热图列表</button>
         <button class="btn-primary" @click="hotpicMore('userList')">用户热图列表</button>
         <button class="btn-primary" @click="hotpicMore('userDelete2')">删用户热图2</button>
-      </div>
+      </AdminToolbar>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
+      <AdminTable :columns="hotpicColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="doSearch">
       <div class="list-panel">
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -55,11 +53,27 @@
           </div>
         </div>
       </div>
+      </AdminTable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import {
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+const hotpicColumns: AdminTableColumn[] = [
+  { key: 'title', label: '标题' },
+  { key: 'appId', label: '应用' },
+  { key: 'status', label: '状态' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
@@ -67,6 +81,12 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
 import { describeBatchOutcome, runTwinBatch } from './twinBatch'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 const keyword = ref('')
 const loading = ref(false)
@@ -210,7 +230,10 @@ async function doSearch() {
   loadError.value = ''
   try {
     const r = await api.get('/api/hotpic/core/entity/list')
-    items.value = r.data ?? []
+    // 响应可能是 { data: { count, data: [...] } } 包装，需解包成数组，否则 stats.filter 抛错。
+    const payload: any = (r as any)?.data
+    const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []
+    items.value = list
   } catch (e) {
     // 失败保留旧热帖并显式报错，不能和「真的没有热帖」混成同一种空态。
     loadError.value = describeListError('热帖加载失败', e)
@@ -286,6 +309,11 @@ async function loadHotpicTwin() {
   const summary = describeBatchOutcome('热图孪生端点', outcome)
   toast[summary.tone](summary.message)
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 
 <style scoped>

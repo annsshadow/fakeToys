@@ -1,13 +1,14 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询管理" subtitle="/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="qm">
     <!-- Header -->
     <div class="qm-header glass-card">
       <div class="qm-title">
-        <h1>查询管理</h1>
-        <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
         <p v-if="deepReadText" class="subtitle">{{ deepReadText }}</p>
       </div>
       <div class="qm-actions">
@@ -426,12 +427,16 @@
       </div>
     </div>
 
+    </AdminFormSection>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { buildCsv, parseCsv } from '../utils/csv'
@@ -1252,7 +1257,7 @@ const api_qu_39_data = ref<any[]>([])
 .qs-loading,.qs-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
 .qs-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .qs-item:hover{background:var(--bg-hover)}
-.qs-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.qs-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 .qi-icon{font-size:18px;flex-shrink:0}
 .qi-info{flex:1;min-width:0}
 .qi-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1302,7 +1307,7 @@ const api_qu_39_data = ref<any[]>([])
 .sr-key{font-size:12px;color:var(--text-muted);margin-right:8px}
 .sr-val{font-size:16px;font-weight:600;color:var(--color-primary)}
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:24px;width:560px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0}
 .form-group{display:flex;flex-direction:column;gap:4px}

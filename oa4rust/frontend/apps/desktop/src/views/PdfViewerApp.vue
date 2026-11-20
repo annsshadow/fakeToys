@@ -4,7 +4,6 @@
 <template>
   <div class="viewer-view">
     <div class="view-header glass-card">
-      <div><h1>PDF查看器</h1><p class="subtitle">在线预览文件</p></div>
       <div class="header-actions">
         <input v-model="fileId" placeholder="输入文件ID" class="file-input" />
         <button class="btn-primary" @click="loadPdf" :disabled="loading">加载</button>

@@ -1,13 +1,13 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询浏览器" subtitle="/api/query/assemble/surface/explorer/list — 查询资源浏览" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索视图 / 类型..." />
+
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>查询浏览器</h1>
-        <p class="subtitle">/api/query/assemble/surface/explorer/list（x_query_view，只读）</p>
-      </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
@@ -31,11 +31,14 @@
       </table>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
@@ -47,6 +50,11 @@ interface Item {
   queryType?: string
   createTime?: string
 }
+
+void AdminFormSection
+void AdminPageHeader
+void AdminToolbar
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 const listEp = '/api/query/assemble/surface/explorer/list'
 const qk = ['QueryExplorer', 'list']

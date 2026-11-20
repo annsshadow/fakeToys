@@ -161,14 +161,19 @@ const emptyText = computed(() =>
       </view>
     </view>
 
-    <view v-if="listView === 'loading'" class="tip">加载中…</view>
+    <view v-if="listView === 'loading'" class="skeleton" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="o2-skeleton skeleton-row"></view>
+    </view>
     <view v-else-if="listView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
     </view>
-    <view v-else-if="listView === 'empty'" class="tip">{{ emptyText }}</view>
+    <view v-else-if="listView === 'empty'" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">{{ emptyText }}</text>
+    </view>
 
-    <view v-for="m in rows" :key="m.id" class="card">
+    <view v-for="m in rows" :key="m.id" class="card o2-list-item">
       <view class="card-head">
         <text class="card-title">{{ titleOf(m) }}</text>
         <text class="card-status">{{ statusText(m) }}</text>
@@ -353,5 +358,15 @@ const emptyText = computed(() =>
   letter-spacing: 4rpx;
   word-break: break-all;
   margin-bottom: 24rpx;
+}
+/* R293：首屏加载用骨架屏替代文字提示。 */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.skeleton-row {
+  height: 150rpx;
+  border-radius: 16rpx;
 }
 </style>

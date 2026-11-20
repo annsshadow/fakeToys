@@ -60,6 +60,35 @@ test.describe('live GUI - 导航与应用外壳', () => {
     await expect(page.getByRole('heading', { name: '组织通讯录' })).toBeVisible()
   })
 
+  test('管理导航指向已注册路由而非跳登录 (R296)', async ({ page }) => {
+    await expect(page).toHaveURL(/\/app\//)
+    // R298: 系统管理已收敛为侧栏单一入口，点击直达管理区，不再有折叠子项
+    await page.getByRole('button', { name: '⚙ 系统管理', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('navigation', { name: '管理区导航' })).toBeVisible()
+  })
+
+  test('R297 分组侧栏切换与管理员折叠区均不跳登录', async ({ page }) => {
+    await expect(page).toHaveURL(/\/app\//)
+    // 员工四组齐全，disabled「工具」占位已移除
+    for (const group of ['工作台', '沟通', '协作', '个人']) {
+      await expect(page.locator('.nav-section-label', { hasText: group })).toBeVisible()
+    }
+    await expect(page.locator('.sidebar-nav').getByText('工具', { exact: true })).toHaveCount(0)
+
+    // 员工分组项切换走真实路由，不命中兜底 → /login
+    await page.getByRole('button', { name: '📒 通讯录', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/directory/)
+    await expect(page).not.toHaveURL(/\/login/)
+
+    // R298: 管理区入口收敛为侧栏单一「⚙ 系统管理」，点击直达 AdminLayout 六组导航，不跳登录
+    await page.getByRole('button', { name: '⚙ 系统管理', exact: true }).click()
+    await expect(page).toHaveURL(/\/app\/admin\/control-panel/)
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('navigation', { name: '管理区导航' })).toBeVisible()
+  })
+
   test('用户菜单可打开并跳转到个人中心', async ({ page }) => {
     await page.locator('.user-menu').click()
     const menu = page.locator('.user-dropdown')
@@ -125,17 +154,18 @@ test.describe('live GUI - 表单填写与提交', () => {
 })
 
 test.describe('live GUI - 表格查询与分页操作', () => {
-  test('通讯录查询本页渲染数据表格与表头', async ({ page }) => {
+  test('通讯录搜索人员渲染名册列表与统计', async ({ page }) => {
     const audit = auditApiResponses(page)
     await login(page)
     await page.goto('/app/directory')
     await expect(page.getByRole('heading', { name: '组织通讯录' })).toBeVisible()
-    await page.getByRole('button', { name: /查询本页/ }).click()
-    const table = page.locator('table.data-table')
-    await expect(table).toBeVisible()
-    await expect(table.locator('thead th').first()).toBeVisible()
-    await expect(table.locator('tbody tr').first()).toBeVisible()
-    await expect(page.locator('.result-meta', { hasText: '命中' })).toBeVisible()
+    // 业务化视图无自动加载：点「搜索人员」触发 person/list/filter，渲染人员列表。
+    await page.getByTestId('org-search-button').click()
+    const list = page.getByTestId('org-person-list')
+    await expect(list).toBeVisible()
+    await expect(list.locator('li.person-item').first()).toBeVisible()
+    await expect(page.getByTestId('org-person-meta')).toContainText('共')
+    await expect(page.getByTestId('org-person-meta')).toContainText('人')
     await assertNo404OrServerErrors(audit)
   })
 
@@ -143,9 +173,9 @@ test.describe('live GUI - 表格查询与分页操作', () => {
     const audit = auditApiResponses(page)
     await login(page)
     await page.goto('/app/directory')
-    await page.getByRole('button', { name: '人员', exact: true }).click()
-    await page.getByRole('button', { name: '按页查询人员' }).click()
-    const meta = page.locator('.pager-bar .result-meta')
+    // 加载名册后 meta 显示「共 N 人 · 第 X / Y 页」；21 人 / 每页 20 → 2 页。
+    await page.getByTestId('org-person-reload').click()
+    const meta = page.getByTestId('org-person-meta')
     await expect(meta, '服务端分页信息必须渲染').toBeVisible()
     await expect(meta).toContainText('第 1 /')
     await page.getByRole('button', { name: '下一页' }).click()

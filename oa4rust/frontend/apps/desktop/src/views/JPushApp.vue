@@ -3,10 +3,6 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>消息推送</h1>
-      <p class="subtitle">/api/jpush/* — 设备与模板管理</p>
-    </div>
     <div class="content-panel glass-card">
       <div class="tabs">
         <button :class="{active:tab==='device'}" @click="tab='device'">设备管理</button>

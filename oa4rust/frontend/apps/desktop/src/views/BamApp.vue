@@ -4,33 +4,39 @@
 <template>
   <div class="dash-view">
     <div class="view-header glass-card">
-      <div><h1>业务活动监控</h1><p class="subtitle">/api/processplatform/assemble/bam/*</p></div>
+      <div><h1>业务活动监控</h1></div>
       <span class="hdr-a">
-        <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
-        <button class="btn-primary ghost" @click="loadBamConfigs">BAM定义</button>
-        <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
-        <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
-        <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
-        <button class="btn-primary ghost" @click="loadUnitStubs">单位维度存根</button>
-        <button class="btn-primary ghost" @click="loadDimensionStats">维度周期统计</button>
-        <button class="btn-primary ghost" @click="loadCountStats">计数聚合</button>
-        <button class="btn-primary ghost" @click="loadPeriodMatrix">周期多维矩阵</button>
-        <button class="btn-primary ghost" @click="loadPeriodMatrix2">周期维度聚合</button>
-        <button class="btn-primary ghost" @click="bamWrite('create')">建BAM</button>
-        <button class="btn-primary ghost" @click="bamWrite('delete')">删BAM</button>
-        <button class="btn-primary ghost" @click="bamWrite('trigger')">触发状态</button>
-        <button class="btn-primary ghost" @click="bamWrite('periodTaskApp')">周期任务应用</button>
-        <button class="btn-primary ghost" @click="bamWrite('periodTaskUnit')">周期任务单位</button>
-        <button class="btn-primary ghost" @click="bamWrite('periodAppWork')">周期应用工作</button>
-        <button class="btn-primary ghost" @click="bamWrite('periodWorkUnit')">周期工作单位</button>
-        <button class="btn-primary ghost" @click="bamMore('delete')">删BAM定义</button>
-        <button class="btn-primary ghost" @click="bamMore('completedStubs')">完成任务存根</button>
-        <button class="btn-primary ghost" @click="bamMore('expiredStubs')">超时工作存根</button>
-        <button class="btn-primary ghost" @click="bamMore('startStubs')">开始工作存根</button>
-        <button class="btn-primary ghost" @click="bamMore('appTrigger')">应用状态触发</button>
-        <button class="btn-primary ghost" @click="bamMore('catTrigger')">分类状态触发</button>
-        <button class="btn-primary ghost" @click="bamMore('periodTaskByApp')">周期任务按应用</button>
-        <button class="btn-primary ghost" @click="bamMore('periodByApp')">周期按应用</button>
+      <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="bam-endpoint-fold">
+        <template #group-read>
+      <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
+      <button class="btn-primary ghost" @click="loadBamConfigs">BAM定义</button>
+      <button class="btn-primary ghost" @click="loadStateStats">状态监控</button>
+      <button class="btn-primary ghost" @click="loadStartStubs">起始统计</button>
+      <button class="btn-primary ghost" @click="loadCompletedStubs">已办/超期存根</button>
+      <button class="btn-primary ghost" @click="loadUnitStubs">单位维度存根</button>
+      <button class="btn-primary ghost" @click="loadDimensionStats">维度周期统计</button>
+      <button class="btn-primary ghost" @click="loadCountStats">计数聚合</button>
+      <button class="btn-primary ghost" @click="loadPeriodMatrix">周期多维矩阵</button>
+      <button class="btn-primary ghost" @click="loadPeriodMatrix2">周期维度聚合</button>
+      <button class="btn-primary ghost" @click="bamMore('completedStubs')">完成任务存根</button>
+      <button class="btn-primary ghost" @click="bamMore('expiredStubs')">超时工作存根</button>
+      <button class="btn-primary ghost" @click="bamMore('startStubs')">开始工作存根</button>
+        </template>
+        <template #group-write>
+      <button class="btn-primary ghost" @click="bamWrite('create')">建BAM</button>
+      <button class="btn-primary ghost" @click="bamWrite('delete')">删BAM</button>
+      <button class="btn-primary ghost" @click="bamWrite('trigger')">触发状态</button>
+      <button class="btn-primary ghost" @click="bamWrite('periodTaskApp')">周期任务应用</button>
+      <button class="btn-primary ghost" @click="bamWrite('periodTaskUnit')">周期任务单位</button>
+      <button class="btn-primary ghost" @click="bamWrite('periodAppWork')">周期应用工作</button>
+      <button class="btn-primary ghost" @click="bamWrite('periodWorkUnit')">周期工作单位</button>
+      <button class="btn-primary ghost" @click="bamMore('delete')">删BAM定义</button>
+      <button class="btn-primary ghost" @click="bamMore('appTrigger')">应用状态触发</button>
+      <button class="btn-primary ghost" @click="bamMore('catTrigger')">分类状态触发</button>
+      <button class="btn-primary ghost" @click="bamMore('periodTaskByApp')">周期任务按应用</button>
+      <button class="btn-primary ghost" @click="bamMore('periodByApp')">周期按应用</button>
+        </template>
+      </EndpointFold>
         <button class="btn-primary" @click="refresh">🔄 刷新</button>
       </span>
     </div>
@@ -65,11 +71,19 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { EndpointFold } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
+
+const foldGroups = [
+  { key: 'read', label: '读取与统计' },
+  { key: 'write', label: '写入与变更' },
+]
+const endpointCount = 25
 
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })

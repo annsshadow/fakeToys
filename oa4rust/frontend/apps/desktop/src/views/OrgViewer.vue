@@ -5,105 +5,117 @@
   <div class="org-view">
     <div class="view-header glass-card">
       <h1>组织架构</h1>
-      <p class="subtitle">/api/organization/assemble/control/*</p>
-      <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
-      <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
-      <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
-      <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
-      <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
-      <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
-      <button class="org-meta-btn" @click="loadUnitNested">单位嵌套/游标</button>
-      <button class="org-meta-btn" @click="loadDutyDetails">职务/身份明细</button>
-      <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
-      <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
-      <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
-      <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
-      <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
-      <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
-      <button class="org-meta-btn" @click="loadUnitScope">单位归属/群角</button>
-      <button class="org-meta-btn" @click="loadDutyBatch">职务批量</button>
-      <button class="org-meta-btn" @click="loadGroupTree">群组树/关系</button>
-      <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
-      <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
-      <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
-      <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
-      <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
-      <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
-      <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
-      <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
-      <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
-      <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
-      <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
-      <button class="org-meta-btn" @click="loadOrgTwin2">桶外端点A</button>
-      <button class="org-meta-btn" @click="loadOrgTwin3">桶外端点B</button>
-      <button class="org-meta-btn" @click="loadOrgTwin4">桶外端点C</button>
-      <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('groupCreate')">建群组(express)</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('groupUpdate')">改群组(express)</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('groupDelete')">删群组(express)</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('unitCreate')">建单位(express)</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('unitUpdate')">改单位(express)</button>
-      <button class="org-meta-btn" @click="orgUnitWrite('unitDelete')">删单位(express)</button>
-      <button class="org-meta-btn" @click="orgLikeReads">模糊/拼音/分页读</button>
-      <button class="org-meta-btn" @click="orgCtlActions('memberAdd')">加群组成员</button>
-      <button class="org-meta-btn" @click="orgCtlActions('memberDel')">删群组成员</button>
-      <button class="org-meta-btn" @click="orgCtlActions('identityOrder')">身份排序</button>
-      <button class="org-meta-btn" @click="orgCtlActions('cardQr')">名片二维码</button>
-      <button class="org-meta-btn" @click="orgCtlActions('unitSupType')">单位上级按类型</button>
-      <button class="org-meta-btn" @click="orgCtlActions('personByGroup')">群组下人员</button>
-      <button class="org-meta-btn" @click="orgCtlActions('exportAll')">导出全部</button>
-      <button class="org-meta-btn" @click="orgCtlActions('personBatchDel')">批量删人员</button>
-      <button class="org-meta-btn" @click="orgExpressReads">快递平台状态/配置/同步</button>
-      <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
-      <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
-      <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
-      <button class="org-meta-btn" @click="orgCreate('group')">建群组</button>
-      <button class="org-meta-btn" @click="orgCreate('role')">建角色</button>
-      <button class="org-meta-btn" @click="orgCreate('personattribute')">建人员属性</button>
-      <button class="org-meta-btn" @click="orgCreate('permissionsetting')">建权限设置</button>
-      <button class="org-meta-btn" @click="orgCreate('personcard')">建名片</button>
-      <button class="org-meta-btn" @click="orgCreate('inputperson')">建导入人员</button>
-      <button class="org-meta-btn" @click="orgUpdate('person')">改人员</button>
-      <button class="org-meta-btn" @click="orgUpdate('unit')">改单位</button>
-      <button class="org-meta-btn" @click="orgUpdate('identity')">改身份</button>
-      <button class="org-meta-btn" @click="orgUpdate('group')">改群组</button>
-      <button class="org-meta-btn" @click="orgUpdate('role')">改角色</button>
-      <button class="org-meta-btn" @click="orgUpdate('unitduty')">改职务</button>
-      <button class="org-meta-btn" @click="orgUpdate('permissionsetting')">改权限设置</button>
-      <button class="org-meta-btn" @click="orgUpdate('personcard')">改名片</button>
-      <button class="org-meta-btn" @click="orgDelete('person')">删人员</button>
-      <button class="org-meta-btn" @click="orgDelete('unit')">删单位</button>
-      <button class="org-meta-btn" @click="orgDelete('identity')">删身份</button>
-      <button class="org-meta-btn" @click="orgDelete('group')">删群组</button>
-      <button class="org-meta-btn" @click="orgDelete('role')">删角色</button>
-      <button class="org-meta-btn" @click="orgDelete('personattribute')">删人员属性</button>
-      <button class="org-meta-btn" @click="orgDelete('permissionsetting')">删权限设置</button>
-      <button class="org-meta-btn" @click="orgDelete('personcard')">删名片</button>
-      <button class="org-meta-btn" @click="orgAccount('lock')">锁定人员</button>
-      <button class="org-meta-btn" @click="orgAccount('ban')">禁用人员</button>
-      <button class="org-meta-btn" @click="orgAccount('unban')">解禁人员</button>
-      <button class="org-meta-btn" @click="orgAccount('password')">重置密码</button>
-      <button class="org-meta-btn" @click="orgAccount('icon')">改头像</button>
-      <button class="org-meta-btn" @click="orgAccount('reserve')">保留删除</button>
-      <button class="org-meta-btn" @click="orgAccount('tmSave')">存三员</button>
-      <button class="org-meta-btn" @click="orgAccount('tmDelete')">删三员</button>
-      <button class="org-meta-btn" @click="orgEntity('groupCreate')">建群组(实体)</button>
-      <button class="org-meta-btn" @click="orgEntity('groupUpdate')">改群组(实体)</button>
-      <button class="org-meta-btn" @click="orgEntity('groupDelete')">删群组(实体)</button>
-      <button class="org-meta-btn" @click="orgEntity('identityCreate')">建身份(实体)</button>
-      <button class="org-meta-btn" @click="orgEntity('identityUpdate')">改身份(实体)</button>
-      <button class="org-meta-btn" @click="orgEntity('identityDelete')">删身份(实体)</button>
-      <button class="org-meta-btn" @click="orgRelQuery('personHasRole')">查人员含角色</button>
-      <button class="org-meta-btn" @click="orgRelQuery('identityList')">批查身份</button>
-      <button class="org-meta-btn" @click="orgRelQuery('groupList')">批查群组</button>
-      <button class="org-meta-btn" @click="orgRelQuery('roleList')">批查角色</button>
-      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityLevel')">身份链单位(级别)</button>
-      <button class="org-meta-btn" @click="orgRelQuery('unitIdentityType')">身份链单位(类型)</button>
-      <button class="org-meta-btn" @click="orgRelQuery('unitCheckHasIdentity')">单位含身份校验</button>
-      <button class="org-meta-btn" @click="orgRelQuery('dutyNameIdentity')">职务名(按身份)</button>
-      <button class="org-meta-btn" @click="orgRelQuery('dutyIdentityUnitName')">职务(身份单位名)</button>
+      <EndpointFold
+        label="端点调试"
+        :groups="foldGroups"
+        :total-count="endpointCount"
+        test-id="org-endpoint-fold"
+      >
+        <template #group-read>
+          <button class="org-meta-btn" @click="loadOrgMeta">权限/卡类型</button>
+          <button class="org-meta-btn" @click="loadPinyinIndex">拼音首字母索引</button>
+          <button class="org-meta-btn" @click="loadExpressMeta">同步配置/单位/状态</button>
+          <button class="org-meta-btn" @click="loadPersonCards">名片抽样</button>
+          <button class="org-meta-btn" @click="loadOrgDetails">身份/角色/职务明细</button>
+          <button class="org-meta-btn" @click="loadUnitDetails">单位明细</button>
+          <button class="org-meta-btn" @click="loadUnitNested">单位嵌套/游标</button>
+          <button class="org-meta-btn" @click="loadDutyDetails">职务/身份明细</button>
+          <button class="org-meta-btn" @click="loadAttrDetails">单位/个人属性</button>
+          <button class="org-meta-btn" @click="loadCursorLists">身份/角色/职务游标</button>
+          <button class="org-meta-btn" @click="loadCursorListsPrev">游标(逆序)</button>
+          <button class="org-meta-btn" @click="loadGroupDetails">群组明细</button>
+          <button class="org-meta-btn" @click="loadIdentityRelations">身份关系</button>
+          <button class="org-meta-btn" @click="loadOrgMembers">成员/层级</button>
+          <button class="org-meta-btn" @click="loadUnitScope">单位归属/群角</button>
+          <button class="org-meta-btn" @click="loadDutyBatch">职务批量</button>
+          <button class="org-meta-btn" @click="loadGroupTree">群组树/关系</button>
+          <button class="org-meta-btn" @click="loadUnitRelations">单位关系</button>
+          <button class="org-meta-btn" @click="loadIdentityUnitTree">身份单位树</button>
+          <button class="org-meta-btn" @click="loadPersonLogins">人员登录/配对</button>
+          <button class="org-meta-btn" @click="loadOrgSearchCursors">搜索/人员游标</button>
+          <button class="org-meta-btn" @click="loadOrgAttributes">属性/职务/拼音</button>
+          <button class="org-meta-btn" @click="loadOrgListCursors">核心列表游标</button>
+          <button class="org-meta-btn" @click="loadOrgControlReads">控制读取族</button>
+          <button class="org-meta-btn" @click="loadOrgControlDeep">控制深度读</button>
+          <button class="org-meta-btn" @click="loadOrgObjectReads">对象投影批读</button>
+          <button class="org-meta-btn" @click="orgUnitExpress">单位树/校验/属性读</button>
+          <button class="org-meta-btn" @click="orgLikeReads">模糊/拼音/分页读</button>
+          <button class="org-meta-btn" @click="orgCtlActions('unitSupType')">单位上级按类型</button>
+          <button class="org-meta-btn" @click="orgCtlActions('personByGroup')">群组下人员</button>
+          <button class="org-meta-btn" @click="orgCtlActions('exportAll')">导出全部</button>
+          <button class="org-meta-btn" @click="orgExpressReads">快递平台状态/配置/同步</button>
+          <button class="org-meta-btn" @click="orgRelQuery('personHasRole')">查人员含角色</button>
+          <button class="org-meta-btn" @click="orgRelQuery('identityList')">批查身份</button>
+          <button class="org-meta-btn" @click="orgRelQuery('groupList')">批查群组</button>
+          <button class="org-meta-btn" @click="orgRelQuery('roleList')">批查角色</button>
+          <button class="org-meta-btn" @click="orgRelQuery('unitIdentityLevel')">身份链单位(级别)</button>
+          <button class="org-meta-btn" @click="orgRelQuery('unitIdentityType')">身份链单位(类型)</button>
+          <button class="org-meta-btn" @click="orgRelQuery('unitCheckHasIdentity')">单位含身份校验</button>
+          <button class="org-meta-btn" @click="orgRelQuery('dutyNameIdentity')">职务名(按身份)</button>
+          <button class="org-meta-btn" @click="orgRelQuery('dutyIdentityUnitName')">职务(身份单位名)</button>
+        </template>
+        <template #group-write>
+          <button class="org-meta-btn" @click="orgUnitWrite('attrSet')">单位属性替换</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('attrAppend')">单位属性追加</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('groupCreate')">建群组(express)</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('groupUpdate')">改群组(express)</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('groupDelete')">删群组(express)</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('unitCreate')">建单位(express)</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('unitUpdate')">改单位(express)</button>
+          <button class="org-meta-btn" @click="orgUnitWrite('unitDelete')">删单位(express)</button>
+          <button class="org-meta-btn" @click="orgCtlActions('memberAdd')">加群组成员</button>
+          <button class="org-meta-btn" @click="orgCtlActions('memberDel')">删群组成员</button>
+          <button class="org-meta-btn" @click="orgCtlActions('identityOrder')">身份排序</button>
+          <button class="org-meta-btn" @click="orgCtlActions('cardQr')">名片二维码</button>
+          <button class="org-meta-btn" @click="orgCtlActions('personBatchDel')">批量删人员</button>
+          <button class="org-meta-btn" @click="orgCreate('person')">建人员</button>
+          <button class="org-meta-btn" @click="orgCreate('unit')">建单位</button>
+          <button class="org-meta-btn" @click="orgCreate('identity')">建身份</button>
+          <button class="org-meta-btn" @click="orgCreate('group')">建群组</button>
+          <button class="org-meta-btn" @click="orgCreate('role')">建角色</button>
+          <button class="org-meta-btn" @click="orgCreate('personattribute')">建人员属性</button>
+          <button class="org-meta-btn" @click="orgCreate('permissionsetting')">建权限设置</button>
+          <button class="org-meta-btn" @click="orgCreate('personcard')">建名片</button>
+          <button class="org-meta-btn" @click="orgCreate('inputperson')">建导入人员</button>
+          <button class="org-meta-btn" @click="orgUpdate('person')">改人员</button>
+          <button class="org-meta-btn" @click="orgUpdate('unit')">改单位</button>
+          <button class="org-meta-btn" @click="orgUpdate('identity')">改身份</button>
+          <button class="org-meta-btn" @click="orgUpdate('group')">改群组</button>
+          <button class="org-meta-btn" @click="orgUpdate('role')">改角色</button>
+          <button class="org-meta-btn" @click="orgUpdate('unitduty')">改职务</button>
+          <button class="org-meta-btn" @click="orgUpdate('permissionsetting')">改权限设置</button>
+          <button class="org-meta-btn" @click="orgUpdate('personcard')">改名片</button>
+          <button class="org-meta-btn" @click="orgDelete('person')">删人员</button>
+          <button class="org-meta-btn" @click="orgDelete('unit')">删单位</button>
+          <button class="org-meta-btn" @click="orgDelete('identity')">删身份</button>
+          <button class="org-meta-btn" @click="orgDelete('group')">删群组</button>
+          <button class="org-meta-btn" @click="orgDelete('role')">删角色</button>
+          <button class="org-meta-btn" @click="orgDelete('personattribute')">删人员属性</button>
+          <button class="org-meta-btn" @click="orgDelete('permissionsetting')">删权限设置</button>
+          <button class="org-meta-btn" @click="orgDelete('personcard')">删名片</button>
+          <button class="org-meta-btn" @click="orgAccount('lock')">锁定人员</button>
+          <button class="org-meta-btn" @click="orgAccount('ban')">禁用人员</button>
+          <button class="org-meta-btn" @click="orgAccount('unban')">解禁人员</button>
+          <button class="org-meta-btn" @click="orgAccount('password')">重置密码</button>
+          <button class="org-meta-btn" @click="orgAccount('icon')">改头像</button>
+          <button class="org-meta-btn" @click="orgAccount('reserve')">保留删除</button>
+          <button class="org-meta-btn" @click="orgAccount('tmSave')">存三员</button>
+          <button class="org-meta-btn" @click="orgAccount('tmDelete')">删三员</button>
+          <button class="org-meta-btn" @click="orgEntity('groupCreate')">建群组(实体)</button>
+          <button class="org-meta-btn" @click="orgEntity('groupUpdate')">改群组(实体)</button>
+          <button class="org-meta-btn" @click="orgEntity('groupDelete')">删群组(实体)</button>
+          <button class="org-meta-btn" @click="orgEntity('identityCreate')">建身份(实体)</button>
+          <button class="org-meta-btn" @click="orgEntity('identityUpdate')">改身份(实体)</button>
+          <button class="org-meta-btn" @click="orgEntity('identityDelete')">删身份(实体)</button>
+        </template>
+        <template #group-config>
+          <button class="org-meta-btn" @click="loadOrgAdminOps">管理员解锁/授权日志</button>
+          <button class="org-meta-btn" @click="loadOrgTwin">孪生端点</button>
+          <button class="org-meta-btn" @click="loadOrgTwin2">桶外端点A</button>
+          <button class="org-meta-btn" @click="loadOrgTwin3">桶外端点B</button>
+          <button class="org-meta-btn" @click="loadOrgTwin4">桶外端点C</button>
+        </template>
+      </EndpointFold>
       <span v-if="orgMetaText" class="org-meta-note">{{ orgMetaText }}</span>
     </div>
     <div class="org-layout">
@@ -222,12 +234,20 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { EndpointFold } from '../components/admin/'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
 import { createSearchRunner } from './searchRunner'
 
+const foldGroups = [
+  { key: 'read', label: '读取与统计' },
+  { key: 'write', label: '写入与变更' },
+  { key: 'config', label: '配置与管理' },
+]
+const endpointCount = 98
 interface N {
   id: string
   name: string

@@ -18,4 +18,13 @@ describe('移动端会议页状态渲染接线（R290）', () => {
     expect(source).not.toContain("if (s === '2') return '已结束'")
     expect(source).not.toContain("if (s === '3') return '已取消'")
   })
+
+  it('时间窗推断统一走 parseServerDate（R293），不得内联 new Date 解析服务端时间', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'meetingStatus.ts'), 'utf8')
+    expect(source).toContain("import { parseServerDate } from '@/utils/datetime'")
+    expect(source).toContain('parseServerDate(startTime)')
+    expect(source).toContain('parseServerDate(endTime)')
+    expect(source).not.toContain('new Date(startTime')
+    expect(source).not.toContain('new Date(endTime')
+  })
 })

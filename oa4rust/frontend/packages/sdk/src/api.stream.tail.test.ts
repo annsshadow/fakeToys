@@ -46,4 +46,27 @@ describe('ApiClient.stream 流尾事件', () => {
       ['done', '[DONE]'],
     ])
   })
+
+  it('流尾为截断的多字节字符时：flush 字节必须接在未闭合尾部事件之后', async () => {
+    const encoder = new TextEncoder()
+    const first = encoder.encode('data: hel') // 未闭合尾部事件（无终止空行）
+    const truncated = encoder.encode('好').slice(0, 2) // 截断的多字节字符，flush 时输出 U+FFFD
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(first)
+        controller.enqueue(truncated)
+        controller.close()
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } })),
+    )
+    const events: Array<[string, string]> = []
+    await new ApiClient().stream('/api/ai/stream', {}, (e, d) => events.push([e, d]))
+    // 修复前：flush 字节被拼在尾部事件之前，最后一条事件内容错乱。
+    expect(events).toEqual([['message', 'hel\uFFFD']])
+  })
 })

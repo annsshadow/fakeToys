@@ -4,8 +4,6 @@
 <template>
   <div class="query-view">
     <div class="view-header glass-card">
-      <h1>查询管理</h1>
-      <p class="subtitle">/api/query/assemble/designer/*</p>
       <span class="hdr-a">
         <button class="nb ghost" @click="loadQueryMeta">分类/语句</button>
         <button class="nb ghost" @click="loadQueryExtra">模型/导出</button>

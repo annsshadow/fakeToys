@@ -2,24 +2,52 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="calendar-view">
-    <div class="view-header glass-card">
-      <h1>日历</h1>
-      <div class="header-controls">
+  <div class="calendar-view" data-testid="calendar-business-view">
+    <div class="cal-header view-header glass-card" data-testid="calendar-header">
+      <div>
+        <h1>工作日历</h1>
+        <p class="subtitle">查看日程安排、管理日程事件</p>
+      </div>
+      <div class="header-controls" role="group" aria-label="月份导航">
         <button class="nav-btn" aria-label="上一月" @click="prevMonth">‹</button>
         <span class="month-label">{{ currentYear }}年{{ currentMonth }}月</span>
         <button class="nav-btn" aria-label="下一月" @click="nextMonth">›</button>
-        <button class="today-btn" @click="goToday">今天</button>
+        <button class="today-btn" @click="goToday">回到今天</button>
       </div>
     </div>
 
-    <div class="calendar-grid glass-card">
-      <!-- 星期头 -->
+    <div class="cal-scope glass-card" role="tablist" aria-label="日历范围" data-testid="calendar-scope-tabs">
+      <button
+        class="cll-tab"
+        role="tab"
+        :aria-selected="calScope==='my'"
+        :class="{on:calScope==='my'}"
+        @click="loadCalendars('my')"
+      >我的日历（{{ myCals.length }}）</button>
+      <button
+        class="cll-tab"
+        role="tab"
+        :aria-selected="calScope==='public'"
+        :class="{on:calScope==='public'}"
+        @click="loadCalendars('public')"
+      >公共日历（{{ pubCals.length }}）</button>
+      <div v-if="calListError" class="cll-error">{{ calListError }}</div>
+      <div v-if="(calScope==='my'?myCals:pubCals).length" class="cal-chip-row">
+        <button
+          v-for="c in (calScope==='my'?myCals:pubCals)"
+          :key="c.id"
+          class="cal-chip"
+          :class="{on: activeCal?.id === c.id}"
+          :style="{borderColor:c.color||'var(--color-primary)'}"
+          @click="selectCalendar(c)"
+        >{{ c.name }}</button>
+      </div>
+    </div>
+
+    <div class="calendar-grid glass-card" data-testid="calendar-month-grid">
       <div class="weekday-row">
         <div v-for="d in weekdays" :key="d" class="weekday">{{ d }}</div>
       </div>
-
-      <!-- 日期网格 -->
       <div class="days-grid">
         <div
           v-for="cell in calendarCells"
@@ -47,90 +75,12 @@
       </div>
     </div>
 
-    <div class="cal-list-bar glass-card">
-      <span class="cll-title">日历：</span>
-      <span v-if="calListError" class="cll-error">{{ calListError }}<button class="cll-tab" @click="loadCalendars(calScope)">重试</button></span>
-      <span role="group" aria-label="日历范围">
-        <button class="cll-tab" :aria-pressed="calScope==='my'" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
-        <button class="cll-tab" :aria-pressed="calScope==='public'" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
-      </span>
-      <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
-      <button class="cll-tab" @click="loadCalCoreEntities">🗓️ 实体日历</button>
-      <button class="cll-tab" @click="loadCalTwin">🔁 孪生端点</button>
-      <button class="cll-tab" @click="calWrite('eventDelSingle')">删单次</button>
-      <button class="cll-tab" @click="calWrite('eventDelAfter')">删此后</button>
-      <button class="cll-tab" @click="calWrite('eventDelAll')">删全部</button>
-      <button class="cll-tab" @click="calWrite('eventUpdSingle')">改单次</button>
-      <button class="cll-tab" @click="calWrite('eventUpdAfter')">改此后</button>
-      <button class="cll-tab" @click="calWrite('eventUpdAll')">改全部</button>
-      <button class="cll-tab" @click="calWrite('eventManage')">事件管理</button>
-      <button class="cll-tab" @click="calWrite('calDelete')">删日历</button>
-      <button class="cll-tab" @click="calWrite('settingCreate')">建设置</button>
-      <button class="cll-tab" @click="calWrite('msgCreate')">提醒消息</button>
-      <button class="cll-tab" @click="calMore('detail')">日历详情</button>
-      <button class="cll-tab" @click="calMore('followCancel')">取消关注</button>
-      <button class="cll-tab" @click="calMore('calFilter')">日历筛选</button>
-      <button class="cll-tab" @click="calMore('eventSample')">事件抽样</button>
-      <button class="cll-tab" @click="calMore('eventManager')">事件抽样(管理)</button>
-      <button class="cll-tab" @click="calWriteCE('calCreate')">建日历</button>
-      <button class="cll-tab" @click="calWriteCE('calUpdate')">改日历</button>
-      <button class="cll-tab" @click="calWriteCE('calRemove')">删日历(实体)</button>
-      <button class="cll-tab" @click="calWriteCE('eventCreate')">建事件</button>
-      <button class="cll-tab" @click="calWriteCE('eventUpdate')">改事件</button>
-      <button class="cll-tab" @click="calWriteCE('eventRemove')">删事件(实体)</button>
-      <span v-if="calSettingText" class="cll-note">{{ calSettingText }}</span>
-      <span
-        v-for="c in (calScope==='my'?myCals:pubCals)"
-        :key="c.id"
-        class="cll-chip"
-        :class="{on: activeCal?.id === c.id}"
-        :style="{borderColor:c.color||'var(--color-primary)'}"
-        @click="selectCalendar(c)"
-      >{{ c.name }}</span>
-    </div>
-
-    <!-- 选中日历：事件管理面板 -->
-    <div v-if="activeCal" class="event-mgr glass-card">
+    <div v-if="selectedDate" class="cal-events event-panel glass-card" data-testid="calendar-day-events">
       <div class="panel-header">
-        <h3>{{ activeCal.name }} · 事件管理</h3>
-        <button class="close-btn" @click="closeCalendar">✕</button>
+        <h2>{{ selectedDate.year }}年{{ selectedDate.month }}月{{ selectedDate.day }}日 · 当日日程</h2>
+        <button class="close-btn" aria-label="关闭当日日程" @click="selectedDate = null">✕</button>
       </div>
-      <div v-if="activeCalDetail" class="cll-note">类型：{{ activeCalDetail.calendarType || '—' }} · 负责人：{{ activeCalDetail.createor || '—' }}</div>
-      <div v-if="calMeta" class="cll-note">{{ calMeta }}</div>
-
-      <form class="evt-form" @submit.prevent="createEvent">
-        <input v-model="evtForm.title" class="evt-input" placeholder="事件标题" required />
-        <input v-model="evtForm.startTime" class="evt-input" type="datetime-local" required />
-        <input v-model="evtForm.endTime" class="evt-input" type="datetime-local" required />
-        <input v-model="evtForm.location" class="evt-input" placeholder="地点（可选）" />
-        <button type="submit" class="today-btn">新建事件</button>
-      </form>
-
-      <ListLoadError v-if="calEvents.length > 0 && calEventsError" mode="banner" :message="calEventsError" @retry="loadCalEvents" />
-      <ListLoadError v-if="calEvents.length === 0 && calEventsError" mode="empty" :message="calEventsError" @retry="loadCalEvents" />
-      <div v-else-if="calEvents.length === 0" class="empty-events"><p>该日历暂无事件</p></div>
-      <div v-else class="event-list">
-        <div v-for="evt in calEvents" :key="evt.id" class="event-card">
-          <div class="event-color" :style="{ background: 'var(--color-primary)' }"></div>
-          <div class="event-info">
-            <div class="event-title">{{ evt.title }}</div>
-            <div class="event-time">{{ evt.startTime }} - {{ evt.endTime }}<span v-if="evt.location"> · 📍{{ evt.location }}</span></div>
-          </div>
-          <button class="evt-del" title="结束事件" :disabled="finishingEvent" @click="finishEvent(evt)">✓ 结束</button>
-          <button class="evt-del" title="删除事件" :disabled="removingEvent" @click="removeEvent(evt)">✕</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 选中日期事件列表 -->
-    <div v-if="selectedDate" class="event-panel glass-card">
-      <div class="panel-header">
-        <h3>{{ selectedDate.year }}年{{ selectedDate.month }}月{{ selectedDate.day }}日</h3>
-        <button class="close-btn" @click="selectedDate = null">✕</button>
-      </div>
-      <div v-if="dayEvents.length === 0" class="empty-events">
-        <p>当天无事件</p>
-      </div>
+      <div v-if="dayEvents.length === 0" class="empty-events"><p>当天暂无日程安排</p></div>
       <div v-else class="event-list">
         <div v-for="evt in dayEvents" :key="evt.id" class="event-card">
           <div class="event-color" :style="{ background: evt.color || 'var(--color-primary)' }"></div>
@@ -138,6 +88,38 @@
             <div class="event-title">{{ evt.title }}</div>
             <div class="event-time">{{ evt.startTime }} - {{ evt.endTime }}</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="activeCal" class="cal-compose event-mgr glass-card" data-testid="calendar-event-manager">
+      <div class="panel-header">
+        <h2>{{ activeCal.name }} · 日程管理</h2>
+        <button class="close-btn" aria-label="关闭日程管理" @click="closeCalendar">✕</button>
+      </div>
+      <div v-if="activeCalDetail" class="cal-meta">类型：{{ activeCalDetail.calendarType || '—' }} · 负责人：{{ activeCalDetail.createor || '—' }}</div>
+      <div v-if="calMeta" class="cal-meta">{{ calMeta }}</div>
+
+      <form class="evt-form" @submit.prevent="createEvent" data-testid="calendar-event-form">
+        <input v-model="evtForm.title" class="evt-input" placeholder="日程标题" aria-label="日程标题" required />
+        <input v-model="evtForm.startTime" class="evt-input" type="datetime-local" aria-label="开始时间" required />
+        <input v-model="evtForm.endTime" class="evt-input" type="datetime-local" aria-label="结束时间" required />
+        <input v-model="evtForm.location" class="evt-input" placeholder="地点（可选）" aria-label="地点" />
+        <button type="submit" class="today-btn">新建日程</button>
+      </form>
+
+      <ListLoadError v-if="calEvents.length > 0 && calEventsError" mode="banner" :message="calEventsError" @retry="loadCalEvents" />
+      <ListLoadError v-if="calEvents.length === 0 && calEventsError" mode="empty" :message="calEventsError" @retry="loadCalEvents" />
+      <div v-else-if="calEvents.length === 0" class="empty-events"><p>该日历暂无日程</p></div>
+      <div v-else class="event-list">
+        <div v-for="evt in calEvents" :key="evt.id" class="event-card">
+          <div class="event-color" :style="{ background: 'var(--color-primary)' }"></div>
+          <div class="event-info">
+            <div class="event-title">{{ evt.title }}</div>
+            <div class="event-time">{{ evt.startTime }} - {{ evt.endTime }}<span v-if="evt.location"> · 📍{{ evt.location }}</span></div>
+          </div>
+          <button class="evt-del" title="结束日程" :disabled="finishingEvent" @click="finishEvent(evt)">✓ 结束</button>
+          <button class="evt-del" title="删除日程" :disabled="removingEvent" @click="removeEvent(evt)">✕</button>
         </div>
       </div>
     </div>

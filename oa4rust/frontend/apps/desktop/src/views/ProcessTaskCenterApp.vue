@@ -1,23 +1,23 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程任务中心" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索标题 / 流程 / 处理人..." />
+
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>流程任务中心</h1>
-        <p class="subtitle">/api/processplatform/service/processing/task/*（x_task）</p>
-      </div>
-      <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
+        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="ptc-endpoint-fold">
+          <template #group-read>
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
         <button class="btn-refresh" @click="loadCounts">📊 计数</button>
         <button class="btn-refresh" @click="loadAppOverview">🗂️ 应用概览</button>
-        <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
         <button class="btn-refresh" @click="loadWorkDetail">🧾 工作明细</button>
         <button class="btn-refresh" @click="loadSnaps">📸 工作快照</button>
         <button class="btn-refresh" @click="loadSnapCursors">🎞️ 快照游标</button>
@@ -34,6 +34,12 @@
         <button class="btn-refresh" @click="loadWorkCompletedFullCursors">🏁 完成件全量游标/详情</button>
         <button class="btn-refresh" @click="loadSurfaceMoreReads">🧩 表面只读补消费</button>
         <button class="btn-refresh" @click="loadProcessingEngineReads">🔩 引擎只读补消费</button>
+          </template>
+          <template #group-write>
+        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
+          </template>
+        </EndpointFold>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workDetailText" class="wk-chips"><span class="wk-chip">{{ workDetailText }}</span></div>
@@ -56,7 +62,7 @@
         <thead><tr><th>标题</th><th>流程</th><th>环节</th><th>处理人</th><th>状态</th><th>开始时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.title||'—' }}</td>
+            <td>{{ displayTitle(item) }}</td>
             <td class="mono">{{ item.work||'—' }}</td>
             <td>{{ item.activity||'—' }}</td>
             <td>{{ item.person||'—' }}</td>
@@ -72,11 +78,28 @@
       </table>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, inject, onUnmounted, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports format: Vue templates consume component imports.
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader, AdminToolbar, EndpointFold } from '../components/admin/'
+
+const foldGroups = [
+  { key: 'read', label: '读取与统计' },
+  { key: 'write', label: '写入与变更' },
+]
+const endpointCount = 21
+
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
+hidePageTitle!.value = true
+onUnmounted(() => {
+  hidePageTitle!.value = false
+})
+
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -676,6 +699,18 @@ const filtered = computed(() =>
       )
     : items.value,
 )
+
+function displayTitle(item: Item): string {
+  const raw = String(item.title ?? item.work ?? item.id ?? '')
+  if (/^start:/.test(raw)) {
+    const rest = raw.slice(6)
+    const workPart = rest.match(/\bwork-[^\s]+/)?.[0]
+    const name = workPart ? rest.slice(0, rest.indexOf(workPart)).trim() : rest.trim()
+    return name || 'S3 运行闭环'
+  }
+  if (/^work-/.test(raw) || /^work-reject-/.test(raw)) return '工作实例'
+  return raw || '—'
+}
 
 const startM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),

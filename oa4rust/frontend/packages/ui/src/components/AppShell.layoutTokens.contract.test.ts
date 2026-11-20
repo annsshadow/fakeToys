@@ -46,7 +46,7 @@ describe('AppShell 布局令牌化（L1 视觉标准）', () => {
   it('无障碍语义未被令牌化改动破坏', () => {
     const navLabels = [...source.matchAll(/<nav[^>]*aria-label="([^"]+)"/g)].map((m) => m[1])
     expect(navLabels.length).toBeGreaterThanOrEqual(2)
-    expect(source.match(/:aria-current="isActive\(item\.path\)\s*\?\s*'page'\s*:\s*undefined"/g)?.length).toBe(2)
+    expect(source.match(/:aria-current="isActive\(item\.path\)\s*\?\s*'page'\s*:\s*undefined"/g)?.length).toBe(3)
     expect(source).not.toMatch(/aria-current="page"/)
     const clickableTags = [...source.matchAll(/<([a-z][a-z0-9-]*)\b[^>]*@click\b[^>]*>/gi)].map((m) => m[0])
     expect(clickableTags.length).toBeGreaterThanOrEqual(4)

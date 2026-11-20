@@ -2,109 +2,116 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
+  <div class="mod-view">
+    <AdminPageHeader title="CMS 索引设计" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+      <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>CMS索引设计</h1>
-        <p class="subtitle">/api/cms/core/entity/index/*</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索索引 / 目标..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-        <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
-        <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
-        <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
-        <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
-        <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
-        <button class="btn-refresh" @click="loadCmsTwin">🔁 孪生端点</button>
-        <button class="btn-refresh" @click="loadCmsTwin2">🔁 孪生端点B</button>
-        <button class="btn-refresh" @click="loadCmsTwin3">🔁 孪生端点C</button>
-        <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
-        <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
-        <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
-        <button class="btn-refresh" @click="loadCmsAppReads2">🔎 视图/搜索过滤/脚本游标/应用视图</button>
-        <button class="btn-refresh" @click="loadCmsDeepReads">🔬 控制配置/分类/文档批次/脚本版本</button>
-        <button class="btn-refresh" @click="createCmsCategory">➕ 新建分类</button>
-        <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
-        <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
-        <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
-        <button class="btn-refresh" @click="cmsDelete('dict')">删字典</button>
-        <button class="btn-refresh" @click="cmsDelete('form')">删表单</button>
-        <button class="btn-refresh" @click="cmsDelete('view')">删视图</button>
-        <button class="btn-refresh" @click="cmsDelete('xform')">删xform</button>
-        <button class="btn-refresh" @click="cmsDelete('templateform')">删模板表单</button>
-        <button class="btn-refresh" @click="cmsSaveConfig">存控制配置</button>
-        <button class="btn-refresh" @click="cmsUpdateDocument">更新文档</button>
-        <button class="btn-refresh" @click="cmsRoot('formUpdate')">改表单</button>
-        <button class="btn-refresh" @click="cmsRoot('formDelete')">删表单2</button>
-        <button class="btn-refresh" @click="cmsRoot('viewCreate')">建视图2</button>
-        <button class="btn-refresh" @click="cmsRoot('viewUpdate')">改视图2</button>
-        <button class="btn-refresh" @click="cmsRoot('viewDelete')">删视图2</button>
-        <button class="btn-refresh" @click="cmsRoot('scriptUpdate')">改脚本</button>
-        <button class="btn-refresh" @click="cmsRoot('scriptDelete')">删脚本</button>
-        <button class="btn-refresh" @click="cmsRoot('tplCreate')">建模板表单2</button>
-        <button class="btn-refresh" @click="cmsRoot('tplDelete')">删模板表单2</button>
-        <button class="btn-refresh" @click="cmsRoot('viewCatCreate')">建视图分类</button>
-        <button class="btn-refresh" @click="cmsRoot('viewCatDelete')">删视图分类</button>
-        <button class="btn-refresh" @click="cmsRoot('viewFieldCreate')">建视图字段</button>
-        <button class="btn-refresh" @click="cmsRoot('viewFieldUpdate')">改视图字段</button>
-        <button class="btn-refresh" @click="cmsRoot('viewFieldDelete')">删视图字段</button>
-        <button class="btn-refresh" @click="cmsRoot('commentCreate')">建评论</button>
-        <button class="btn-refresh" @click="cmsRoot('commentDelete')">删评论</button>
-        <button class="btn-refresh" @click="cmsRoot('appdictCreate')">建设计字典</button>
-        <button class="btn-refresh" @click="cmsRoot('appdictUpdate')">改设计字典</button>
-        <button class="btn-refresh" @click="cmsRoot('appdictDelete')">删设计字典</button>
-        <button class="btn-refresh" @click="cmsRoot('entColumnSave')">存实体列</button>
-        <button class="btn-refresh" @click="cmsRoot('entModuleSave')">存实体模块</button>
-        <button class="btn-refresh" @click="cmsRoot('entIndexSave')">存实体索引</button>
-        <button class="btn-refresh" @click="cmsRoot('entNoteSave')">存实体备注</button>
-        <button class="btn-refresh" @click="cmsQuery('docFilterPaging')">文档筛选分页</button>
-        <button class="btn-refresh" @click="cmsQuery('docFilterManager')">文档管理筛选</button>
-        <button class="btn-refresh" @click="cmsQuery('docDraft')">文档草稿列表</button>
-        <button class="btn-refresh" @click="cmsQuery('docListData')">文档数据列表</button>
-        <button class="btn-refresh" @click="cmsQuery('docFilterCount')">文档筛选计数</button>
-        <button class="btn-refresh" @click="cmsQuery('logFilterList')">日志筛选列表</button>
-        <button class="btn-refresh" @click="cmsQuery('logFilterNext')">日志游标</button>
-        <button class="btn-refresh" @click="cmsQuery('catFilter')">分类筛选</button>
-        <button class="btn-refresh" @click="cmsQuery('appFilterNext')">应用游标</button>
-        <button class="btn-refresh" @click="cmsQuery('commentNext')">评论游标</button>
-        <button class="btn-refresh" @click="cmsQuery('commentPaging')">评论分页</button>
-        <button class="btn-refresh" @click="cmsQuery3('catNextApp')">分类游标(应用)</button>
-        <button class="btn-refresh" @click="cmsQuery3('catPrevApp')">分类逆游标(应用)</button>
-        <button class="btn-refresh" @click="cmsQuery3('formNextApp')">表单游标(应用)</button>
-        <button class="btn-refresh" @click="cmsQuery3('formPrevApp')">表单逆游标(应用)</button>
-        <button class="btn-refresh" @click="cmsQuery3('docNext')">文档游标</button>
-        <button class="btn-refresh" @click="cmsQuery3('docPrev')">文档逆游标</button>
-        <button class="btn-refresh" @click="cmsQuery3('appPrev')">应用逆游标</button>
-        <button class="btn-refresh" @click="cmsQuery3('scriptPaging')">脚本分页</button>
-        <button class="btn-refresh" @click="cmsQuery3('viewRecordLog')">视图记录日志</button>
-        <button class="btn-refresh" @click="cmsQuery3('viewCat')">视图分类详情</button>
-        <button class="btn-refresh" @click="cmsWrite3('catPermission')">分类权限</button>
-        <button class="btn-refresh" @click="cmsWrite3('catExtContent')">分类扩展内容</button>
-        <button class="btn-refresh" @click="cmsWrite3('catListObjects')">分类对象清单</button>
-        <button class="btn-refresh" @click="cmsWrite3('catProjection')">分类投影执行</button>
-        <button class="btn-refresh" @click="cmsWrite3('docPublishContent')">文档发布内容</button>
-        <button class="btn-refresh" @click="cmsWrite3('scriptRunApp')">脚本按应用运行</button>
-        <button class="btn-refresh" @click="cmsQuery3('viewField')">视图字段详情</button>
-        <button class="btn-refresh" @click="cmsQuery3('docArchive')">文档归档</button>
-        <button class="btn-refresh" @click="cmsQuery3('uuid')">UUID</button>
-        <button class="btn-refresh" @click="cmsQuery3('viewUnread')">视图未读</button>
-        <button class="btn-refresh" @click="cmsWrite2('docCatChange')">改文档分类</button>
-        <button class="btn-refresh" @click="cmsWrite2('catBindView')">分类绑视图</button>
-        <button class="btn-refresh" @click="cmsWrite2('appErase')">擦除应用</button>
-        <button class="btn-refresh" @click="cmsWrite2('catErase')">擦除分类</button>
-        <button class="btn-refresh" @click="cmsWrite2('docBatchModify')">批量改文档</button>
-        <button class="btn-refresh" @click="cmsWrite2('docBatchDelete')">批量删文档</button>
-        <button class="btn-refresh" @click="cmsWrite2('docPublishHtml')">发布HTML</button>
-        <button class="btn-refresh" @click="cmsWrite2('viewPublish')">发布视图</button>
-        <button class="btn-refresh" @click="cmsWrite2('colDelete')">删栏目</button>
-        <button class="btn-refresh" @click="cmsWrite2('moduleDelete')">删模块</button>
-        <button class="btn-refresh" @click="cmsWrite2('indexDelete')">删索引</button>
-        <button class="btn-refresh" @click="cmsWrite2('noteDelete')">删笔记</button>
+      <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="cms-index-endpoint-fold">
+        <template #group-read>
+          <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+          <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
+          <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
+          <button class="btn-refresh" @click="loadCmsExpress">📰 内容/视图</button>
+          <button class="btn-refresh" @click="loadCmsDetails">🗃️ 分类/文章明细</button>
+          <button class="btn-refresh" @click="loadFormDetails">📋 表单明细</button>
+          <button class="btn-refresh" @click="loadCmsTwin">🔁 孪生端点</button>
+          <button class="btn-refresh" @click="loadCmsTwin2">🔁 孪生端点B</button>
+          <button class="btn-refresh" @click="loadCmsTwin3">🔁 孪生端点C</button>
+          <button class="btn-refresh" @click="loadCmsAliasForm">🔖 别名/发布/表单</button>
+          <button class="btn-refresh" @click="loadViewRecords">👁️ 浏览记录(文档/人员)</button>
+          <button class="btn-refresh" @click="loadCmsAppReads">📚 分类/表单/脚本按应用</button>
+          <button class="btn-refresh" @click="loadCmsAppReads2">🔎 视图/搜索过滤/脚本游标/应用视图</button>
+          <button class="btn-refresh" @click="loadCmsDeepReads">🔬 控制配置/分类/文档批次/脚本版本</button>
+          <button class="btn-refresh" @click="cmsQuery('docFilterPaging')">文档筛选分页</button>
+          <button class="btn-refresh" @click="cmsQuery('docFilterManager')">文档管理筛选</button>
+          <button class="btn-refresh" @click="cmsQuery('docDraft')">文档草稿列表</button>
+          <button class="btn-refresh" @click="cmsQuery('docListData')">文档数据列表</button>
+          <button class="btn-refresh" @click="cmsQuery('docFilterCount')">文档筛选计数</button>
+          <button class="btn-refresh" @click="cmsQuery('logFilterList')">日志筛选列表</button>
+          <button class="btn-refresh" @click="cmsQuery('logFilterNext')">日志游标</button>
+          <button class="btn-refresh" @click="cmsQuery('catFilter')">分类筛选</button>
+          <button class="btn-refresh" @click="cmsQuery('appFilterNext')">应用游标</button>
+          <button class="btn-refresh" @click="cmsQuery('commentNext')">评论游标</button>
+          <button class="btn-refresh" @click="cmsQuery('commentPaging')">评论分页</button>
+          <button class="btn-refresh" @click="cmsQuery3('catNextApp')">分类游标(应用)</button>
+          <button class="btn-refresh" @click="cmsQuery3('catPrevApp')">分类逆游标(应用)</button>
+          <button class="btn-refresh" @click="cmsQuery3('formNextApp')">表单游标(应用)</button>
+          <button class="btn-refresh" @click="cmsQuery3('formPrevApp')">表单逆游标(应用)</button>
+          <button class="btn-refresh" @click="cmsQuery3('docNext')">文档游标</button>
+          <button class="btn-refresh" @click="cmsQuery3('docPrev')">文档逆游标</button>
+          <button class="btn-refresh" @click="cmsQuery3('appPrev')">应用逆游标</button>
+          <button class="btn-refresh" @click="cmsQuery3('scriptPaging')">脚本分页</button>
+          <button class="btn-refresh" @click="cmsQuery3('viewRecordLog')">视图记录日志</button>
+          <button class="btn-refresh" @click="cmsQuery3('viewCat')">视图分类详情</button>
+          <button class="btn-refresh" @click="cmsQuery3('viewField')">视图字段详情</button>
+          <button class="btn-refresh" @click="cmsQuery3('docArchive')">文档归档</button>
+          <button class="btn-refresh" @click="cmsQuery3('uuid')">UUID</button>
+          <button class="btn-refresh" @click="cmsQuery3('viewUnread')">视图未读</button>
+        </template>
+        <template #group-write>
+          <button class="btn-refresh" @click="createCmsCategory">➕ 新建分类</button>
+          <button class="btn-refresh" @click="createCmsArticle">📝 新建文章</button>
+          <button class="btn-refresh" @click="toggleViewPublish(true)">📢 发布视图</button>
+          <button class="btn-refresh" @click="toggleViewPublish(false)">🚫 取消发布</button>
+          <button class="btn-refresh" @click="cmsDelete('dict')">删字典</button>
+          <button class="btn-refresh" @click="cmsDelete('form')">删表单</button>
+          <button class="btn-refresh" @click="cmsDelete('view')">删视图</button>
+          <button class="btn-refresh" @click="cmsDelete('xform')">删xform</button>
+          <button class="btn-refresh" @click="cmsDelete('templateform')">删模板表单</button>
+          <button class="btn-refresh" @click="cmsUpdateDocument">更新文档</button>
+          <button class="btn-refresh" @click="cmsRoot('formUpdate')">改表单</button>
+          <button class="btn-refresh" @click="cmsRoot('formDelete')">删表单2</button>
+          <button class="btn-refresh" @click="cmsRoot('viewCreate')">建视图2</button>
+          <button class="btn-refresh" @click="cmsRoot('viewUpdate')">改视图2</button>
+          <button class="btn-refresh" @click="cmsRoot('viewDelete')">删视图2</button>
+          <button class="btn-refresh" @click="cmsRoot('scriptUpdate')">改脚本</button>
+          <button class="btn-refresh" @click="cmsRoot('scriptDelete')">删脚本</button>
+          <button class="btn-refresh" @click="cmsRoot('tplCreate')">建模板表单2</button>
+          <button class="btn-refresh" @click="cmsRoot('tplDelete')">删模板表单2</button>
+          <button class="btn-refresh" @click="cmsRoot('viewCatCreate')">建视图分类</button>
+          <button class="btn-refresh" @click="cmsRoot('viewCatDelete')">删视图分类</button>
+          <button class="btn-refresh" @click="cmsRoot('viewFieldCreate')">建视图字段</button>
+          <button class="btn-refresh" @click="cmsRoot('viewFieldUpdate')">改视图字段</button>
+          <button class="btn-refresh" @click="cmsRoot('viewFieldDelete')">删视图字段</button>
+          <button class="btn-refresh" @click="cmsRoot('commentCreate')">建评论</button>
+          <button class="btn-refresh" @click="cmsRoot('commentDelete')">删评论</button>
+          <button class="btn-refresh" @click="cmsRoot('appdictCreate')">建设计字典</button>
+          <button class="btn-refresh" @click="cmsRoot('appdictUpdate')">改设计字典</button>
+          <button class="btn-refresh" @click="cmsRoot('appdictDelete')">删设计字典</button>
+          <button class="btn-refresh" @click="cmsRoot('entColumnSave')">存实体列</button>
+          <button class="btn-refresh" @click="cmsRoot('entModuleSave')">存实体模块</button>
+          <button class="btn-refresh" @click="cmsRoot('entIndexSave')">存实体索引</button>
+          <button class="btn-refresh" @click="cmsRoot('entNoteSave')">存实体备注</button>
+          <button class="btn-refresh" @click="cmsWrite3('catPermission')">分类权限</button>
+          <button class="btn-refresh" @click="cmsWrite3('catExtContent')">分类扩展内容</button>
+          <button class="btn-refresh" @click="cmsWrite3('catListObjects')">分类对象清单</button>
+          <button class="btn-refresh" @click="cmsWrite3('catProjection')">分类投影执行</button>
+          <button class="btn-refresh" @click="cmsWrite3('docPublishContent')">文档发布内容</button>
+          <button class="btn-refresh" @click="cmsWrite3('scriptRunApp')">脚本按应用运行</button>
+          <button class="btn-refresh" @click="cmsWrite2('docCatChange')">改文档分类</button>
+          <button class="btn-refresh" @click="cmsWrite2('catBindView')">分类绑视图</button>
+          <button class="btn-refresh" @click="cmsWrite2('appErase')">擦除应用</button>
+          <button class="btn-refresh" @click="cmsWrite2('catErase')">擦除分类</button>
+          <button class="btn-refresh" @click="cmsWrite2('docBatchModify')">批量改文档</button>
+          <button class="btn-refresh" @click="cmsWrite2('docBatchDelete')">批量删文档</button>
+          <button class="btn-refresh" @click="cmsWrite2('docPublishHtml')">发布HTML</button>
+          <button class="btn-refresh" @click="cmsWrite2('viewPublish')">发布视图</button>
+          <button class="btn-refresh" @click="cmsWrite2('colDelete')">删栏目</button>
+          <button class="btn-refresh" @click="cmsWrite2('moduleDelete')">删模块</button>
+          <button class="btn-refresh" @click="cmsWrite2('indexDelete')">删索引</button>
+          <button class="btn-refresh" @click="cmsWrite2('noteDelete')">删笔记</button>
+        </template>
+        <template #group-config>
+          <button class="btn-refresh" @click="cmsSaveConfig">存控制配置</button>
+        </template>
+      </EndpointFold>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
@@ -141,11 +148,14 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader, EndpointFold } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -153,6 +163,21 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void EndpointFold
+
+// R301 端点折叠：91 个调试端点按语义分组收纳，默认折叠由 EndpointFold 保证
+const foldGroups = [
+  { key: 'read', label: '读取与统计' },
+  { key: 'write', label: '写入与变更' },
+  { key: 'config', label: '配置与管理' },
+]
+const endpointCount = 91
 
 interface Item {
   id: string
@@ -857,6 +882,9 @@ async function loadCmsTwin3() {
     toast.error(`内容孪生端点C失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -878,14 +906,11 @@ async function loadCmsTwin3() {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:480px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
-.form-input,.form-textarea{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
-.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
 .btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}

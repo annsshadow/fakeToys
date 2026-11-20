@@ -1,14 +1,13 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="SQL语句设计器" subtitle="/api/query/assemble/designer/* — 语句编辑与执行（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="smd">
     <!-- Header -->
     <div class="smd-header glass-card">
-      <div class="smd-title">
-        <h1>SQL语句设计器</h1>
-        <p class="subtitle">/api/query/assemble/designer/*</p>
-      </div>
       <div class="smd-actions">
         <button class="btn" @click="newStatement">+ 新建</button>
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
@@ -878,12 +877,15 @@
       </div>
     </div>
 
+    </AdminFormSection>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
 import { buildCsv } from '../utils/csv'
@@ -896,6 +898,10 @@ import { toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { mutationErrorMessage } from './mutationError'
+
+void AdminFormSection
+void AdminPageHeader
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 interface Stmt {
   id: string
@@ -2238,7 +2244,7 @@ function copySqlWithTimestamp() {
 .sb-loading,.sb-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .sb-item:hover{background:var(--bg-hover)}
-.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.sb-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 .si-icon{font-size:18px;flex-shrink:0}
 .si-info{flex:1;min-width:0}
 .si-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2279,7 +2285,7 @@ function copySqlWithTimestamp() {
 .pg-btn:disabled{opacity:0.3;cursor:not-allowed}
 .pg-info{font-size:12px;color:var(--text-muted)}
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:24px;width:560px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0}
 .form-group{display:flex;flex-direction:column;gap:4px}
@@ -2364,7 +2370,7 @@ function copySqlWithTimestamp() {
 .sb-tabs{display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid var(--border-color)}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .sb-item:hover{background:var(--bg-hover)}
-.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.sb-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 /* SQL Editor enhancement */
 .sql-editor{flex:1;min-height:200px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'Fira Code','JetBrains Mono',monospace;font-size:13px;outline:none;resize:none;line-height:1.6;tab-size:2}
 .sql-editor:focus{border-color:var(--color-primary)}

@@ -45,7 +45,7 @@ const SPECS: GuardSpec[] = [
     mutationMarker: 'const createMutation = useMutation({',
     fnMarker: 'function createTopic(): void {',
     mutateExpr: 'createMutation.mutate(',
-    button: /<button class="btn-submit" :disabled="[^"]*topicSaving[^"]*" @click="createTopic">/,
+    button: /<button type="submit" class="btn-submit"[^>]*data-testid="bbs-compose-submit"[^>]*>/,
   },
   {
     name: 'BBSForum 发送回复',
@@ -54,7 +54,7 @@ const SPECS: GuardSpec[] = [
     mutationMarker: 'const replyMutation = useMutation({',
     fnMarker: 'function submitReply(): void {',
     mutateExpr: 'replyMutation.mutate(',
-    button: /<button class="reply-btn" :disabled="[^"]*replySaving[^"]*" @click="submitReply">/,
+    button: /<button class="reply-btn"[^>]*data-testid="bbs-reply-submit"[^>]*@click="submitReply">/,
   },
   {
     name: 'QueryManager 创建查询',

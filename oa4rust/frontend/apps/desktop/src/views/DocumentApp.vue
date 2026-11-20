@@ -3,16 +3,13 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>文档管理</h1>
-      <p class="subtitle">/api/document/*</p>
-    </div>
+    <AdminPageHeader title="文档管理" subtitle="文档发布 / 草稿 / 权限（/api/document/*）" />
     <div class="content-panel glass-card">
       <div class="tabs">
         <button :class="{active:tab==='published'}" @click="tab='published'">已发布</button>
         <button :class="{active:tab==='draft'}" @click="tab='draft'">草稿</button>
       </div>
-      <div class="toolbar">
+      <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="reload">
         <input v-model="keyword" placeholder="搜索文档..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
@@ -23,7 +20,8 @@
         <button class="btn-primary" @click="loadDocTwin3">数据·文档深度C</button>
         <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
-      </div>
+      </AdminToolbar>
+      <AdminTable :columns="documentColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="reload">
       <div class="list-panel">
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -60,6 +58,7 @@
           </div>
         </div>
       </div>
+      </AdminTable>
     </div>
     <!-- Create modal -->
     <div v-if="showCreate" class="modal-overlay" @click.self="showCreate=false">
@@ -104,6 +103,21 @@
 </template>
 
 <script setup lang="ts">
+import {
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+const documentColumns: AdminTableColumn[] = [
+  { key: 'title', label: '标题' },
+  { key: 'status', label: '状态' },
+  { key: 'createdAt', label: '创建时间' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
@@ -111,6 +125,12 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
 import { createSearchRunner } from './searchRunner'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 type Tab = 'published' | 'draft'
 type DocItem = { id: string; title?: string; name?: string; content?: string; status?: string; createdAt?: string }
@@ -191,9 +211,10 @@ async function doSearch() {
         const params: Record<string, string> = {}
         if (keyword.value.trim()) params.keyword = keyword.value
         if (tab.value === 'draft') params.type = 'draft'
-        // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
-        const r = await api.post('/api/document/list/document', params, { signal })
-        items.value = r.data?.list ?? r.data ?? []
+        // R302：管理视图列表走 filter/list/{page}/size/{size}/manager（管理员全量口径）。
+        // 旧端点 /document/list/document 需要 ids 参数，空 body 调用会 400 "ids required"。
+        const r: any = await api.post('/api/document/filter/list/1/size/50/manager', params, { signal })
+        items.value = (r.data?.list ?? r.data ?? []) as DocItem[]
       },
       {
         onSettled: () => {
@@ -516,6 +537,11 @@ async function loadDocTwin3() {
     toast.error(`数据·文档深度C失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 
 <style scoped>
@@ -553,7 +579,7 @@ async function loadDocTwin3() {
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;width:480px;max-width:90vw;display:flex;flex-direction:column;gap:16px}
 .modal h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0}
 .form-group{display:flex;flex-direction:column;gap:6px}

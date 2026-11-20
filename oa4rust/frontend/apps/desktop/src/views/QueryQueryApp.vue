@@ -1,13 +1,14 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询定义" subtitle="/api/query/assemble/designer/* — 查询定义与表面查询" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索名称 / 分类..." :error="loadError" />
+      <AdminTable :columns="adminColumns" :rows="items as unknown as Record<string, unknown>[]" :loading="loading" :error="loadError" @retry="reload" />
+
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>查询定义</h1>
-        <p class="subtitle">/api/query/assemble/designer/*（x_query_design）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -91,11 +92,36 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
+import {
+  ADMIN_HIDE_PAGE_TITLE,
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
+
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
+
+const adminColumns: AdminTableColumn[] = [
+  { key: 'name', label: '名称' },
+  { key: 'category', label: '分类' },
+  { key: 'id', label: '定义 ID' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -330,7 +356,7 @@ async function deleteSurface(s: Surface): Promise<void> {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:480px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}

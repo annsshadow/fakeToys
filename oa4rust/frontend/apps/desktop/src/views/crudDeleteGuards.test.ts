@@ -13,7 +13,6 @@ function view(name: string): string {
 // 但同族 CRUD 列表页的删除动作仍无守卫：confirmMsg 是异步的，快速双击会让
 // delM.mutate 执行两次（非幂等 DELETE）。这批页面必须补齐与 CollectApp 同构的守卫。
 const CRUD_DELETE_PAGES = [
-  'AnnApp.vue',
   'CmsColumnApp.vue',
   'CmsColumnManagerApp.vue',
   'CmsDictDesignerApp.vue',
@@ -24,8 +23,6 @@ const CRUD_DELETE_PAGES = [
   'CmsXformApp.vue',
   'CommonApp.vue',
   'DeploymentApp.vue',
-  'FaceSetApp.vue',
-  'FtSearchApp.vue',
   'PortalDictDesignerApp.vue',
   'PortalPageDesignerApp.vue',
   'PortalWidgetDesignerApp.vue',

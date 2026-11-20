@@ -11,7 +11,6 @@ import { liveQueryItems } from './liveQueryItems'
 
 /** 扫描时确认的 32 个同构生成页：setup 只拷贝一次 data，刷新后列表不更新。 */
 const GENERATED_PAGES = [
-  'AnnApp.vue',
   'CmsColumnApp.vue',
   'CmsColumnManagerApp.vue',
   'CmsDictDesignerApp.vue',
@@ -23,8 +22,6 @@ const GENERATED_PAGES = [
   'CollectApp.vue',
   'CommonApp.vue',
   'DeploymentApp.vue',
-  'FaceSetApp.vue',
-  'FtSearchApp.vue',
   'LogViewerApp.vue',
   'NoteApp.vue',
   'PortalDictDesignerApp.vue',
@@ -69,8 +66,8 @@ describe('生成页列表必须随 query 刷新更新（R107）', () => {
     const dir = import.meta.dirname
     const vueFiles = readdirSync(dir).filter((name) => name.endsWith('.vue'))
     // 规模下限：目录被截断/扫描范围缩小时直接红，避免「0 个文件也通过」。
-    expect(vueFiles.length).toBeGreaterThanOrEqual(80)
-    expect(GENERATED_PAGES).toHaveLength(32)
+    expect(vueFiles.length).toBeGreaterThanOrEqual(70)
+    expect(GENERATED_PAGES).toHaveLength(29)
 
     for (const file of GENERATED_PAGES) {
       const source = readFileSync(resolve(dir, file), 'utf8')
@@ -109,7 +106,7 @@ describe('桌面列表页失败必须可见（R115）', () => {
 
   it('32 个同源生成页统一走 useListError，且错误态分支排在空态之前', () => {
     const dir = import.meta.dirname
-    expect(GENERATED_PAGES).toHaveLength(32)
+    expect(GENERATED_PAGES).toHaveLength(29)
 
     for (const file of GENERATED_PAGES) {
       const source = readFileSync(resolve(dir, file), 'utf8')

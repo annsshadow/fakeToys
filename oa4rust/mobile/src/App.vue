@@ -143,6 +143,15 @@ button, .o2-btn, .o2-list-item {
 }
 
 /* ── 基础组件：统一 .o2-* 类名契约（与桌面 UnoCSS shortcut 同名）───────── */
+/* R293 触控打磨：去除 WebView 默认点击高亮，按压反馈统一交给 :active 与按钮态。 */
+page,
+view,
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .o2-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -163,6 +172,10 @@ button, .o2-btn, .o2-list-item {
   transition: opacity var(--transition-fast) var(--ease-out);
 }
 .o2-btn[disabled] { opacity: 0.6; }
+.o2-btn:active:not([disabled]) {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
 .o2-input {
   min-height: var(--control-height-md);
   padding: 0 var(--space-3);
@@ -191,6 +204,10 @@ button, .o2-btn, .o2-list-item {
 .o2-list-item {
   content-visibility: auto;
   contain-intrinsic-size: auto 72px;
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+.o2-list-item:active {
+  background: var(--color-primary-soft);
 }
 .o2-skeleton {
   border-radius: var(--radius-sm);
@@ -201,5 +218,45 @@ button, .o2-btn, .o2-list-item {
 @keyframes o2-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+/* 统一空状态：图标 + 主文案，替代单行灰字提示。 */
+.o2-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-16) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.o2-empty-icon {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+}
+.o2-empty-icon::before {
+  content: '';
+  position: absolute;
+  inset: 26rpx 22rpx;
+  border: 3rpx solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  opacity: 0.5;
+}
+.o2-empty-icon::after {
+  content: '';
+  position: absolute;
+  top: 40rpx;
+  left: 22rpx;
+  right: 22rpx;
+  height: 3rpx;
+  background: var(--color-primary);
+  opacity: 0.5;
+}
+.o2-empty-text {
+  color: var(--color-text-muted);
 }
 </style>

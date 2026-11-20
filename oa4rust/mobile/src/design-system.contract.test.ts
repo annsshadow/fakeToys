@@ -15,13 +15,28 @@ const index = src('pages/index/index.vue')
 describe('移动端设计系统令牌（与桌面 tokens.css 同名同值）', () => {
   it('App.vue 提供间距/字号/圆角/阴影/动效/层级/触控/断点增补令牌', () => {
     for (const token of [
-      '--space-0', '--space-4', '--space-8', '--space-16',
-      '--font-size-xs', '--font-size-base', '--font-size-3xl',
-      '--radius-none', '--radius-md', '--radius-lg', '--radius-full',
-      '--shadow-card-mobile', '--shadow-panel',
-      '--transition-fast', '--duration-normal', '--ease-out',
-      '--z-dropdown', '--z-modal', '--z-toast',
-      '--control-height-md', '--touch-target-min', '--breakpoint-md',
+      '--space-0',
+      '--space-4',
+      '--space-8',
+      '--space-16',
+      '--font-size-xs',
+      '--font-size-base',
+      '--font-size-3xl',
+      '--radius-none',
+      '--radius-md',
+      '--radius-lg',
+      '--radius-full',
+      '--shadow-card-mobile',
+      '--shadow-panel',
+      '--transition-fast',
+      '--duration-normal',
+      '--ease-out',
+      '--z-dropdown',
+      '--z-modal',
+      '--z-toast',
+      '--control-height-md',
+      '--touch-target-min',
+      '--breakpoint-md',
     ]) {
       expect(app, token).toMatch(new RegExp(token.replace(/[-]/g, '\\-') + '\\s*:'))
     }
@@ -53,5 +68,30 @@ describe('长列表渲染优化', () => {
     expect(index).toContain('class="notice o2-list-item"')
     expect(app).toContain('content-visibility: auto')
     expect(app).toContain('contain-intrinsic-size')
+  })
+})
+
+describe('R294 空状态与交互反馈（H5 美化迭代）', () => {
+  const emptyPages = [
+    src('pages/message/message.vue'),
+    src('pages/bbs/bbs.vue'),
+    src('pages/meeting/meeting.vue'),
+    src('pages/contacts/contacts.vue'),
+    src('pages/process/process.vue'),
+  ]
+
+  it('列表空状态统一为 o2-empty（图标 + 主文案），替代单行灰字', () => {
+    expect(app).toContain('.o2-empty')
+    expect(app).toContain('.o2-empty-icon')
+    for (const page of emptyPages) {
+      expect(page).toContain('class="o2-empty"')
+      expect(page).toContain('o2-empty-icon')
+    }
+  })
+
+  it('列表项与按钮提供按压反馈态，动效走统一令牌', () => {
+    expect(app).toContain('.o2-list-item:active')
+    expect(app).toContain('.o2-btn:active')
+    expect(app).toContain('transition: background-color var(--transition-fast) var(--ease-out)')
   })
 })

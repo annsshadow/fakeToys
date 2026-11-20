@@ -13,13 +13,43 @@
       </div>
 
       <nav class="sidebar-nav" aria-label="主导航">
-        <div v-for="item in enabledNavItems" :key="item.path" class="nav-item" role="button" tabindex="0" :aria-current="isActive(item.path) ? 'page' : undefined" :class="{ active: isActive(item.path) }" @click="navigate(item)" @keydown.enter="navigate(item)" @keydown.space.prevent="navigate(item)">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+        <div v-for="group in navGroups" :key="group.label" class="nav-group">
+          <div class="nav-section-label">{{ group.label }}</div>
+          <div
+            v-for="item in group.items"
+            :key="item.path"
+            class="nav-item"
+            role="button"
+            tabindex="0"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
+            :class="{ active: isActive(item.path) }"
+            @click="navigate(item)"
+            @keydown.enter="navigate(item)"
+            @keydown.space.prevent="navigate(item)"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+          </div>
         </div>
-        <div v-for="item in sectionNavItems" :key="item.label" class="nav-section-label">
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+
+        <!-- R298: 系统管理收敛为单一入口，分组导航移入 AdminLayout（/app/admin/*） -->
+        <div class="nav-group">
+          <div class="nav-section-label">{{ adminGroup.label }}</div>
+          <div
+            v-for="item in adminGroup.items"
+            :key="item.path"
+            class="nav-item"
+            role="button"
+            tabindex="0"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
+            :class="{ active: isActive(item.path) }"
+            @click="navigate(item)"
+            @keydown.enter="navigate(item)"
+            @keydown.space.prevent="navigate(item)"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
+          </div>
         </div>
       </nav>
 
@@ -33,12 +63,12 @@
     <!-- 主区域 -->
     <div class="main-area">
       <!-- 顶栏 -->
-      <header class="topbar" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
+      <header class="topbar">
         <div class="topbar-left">
           <button class="collapse-btn" aria-label="展开或收起侧边栏" @click="toggleSidebar">
             ☰
           </button>
-          <div class="breadcrumb">{{ currentTitle }}</div>
+          <div v-if="!isAdminArea" class="breadcrumb">{{ currentTitle }}</div>
         </div>
 
         <div class="topbar-center">
@@ -91,7 +121,7 @@
       </header>
 
       <!-- 内容区 -->
-      <main id="main-content" class="content" :style="{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
+      <main id="main-content" class="content">
         <router-view v-slot="{ Component }">
           <transition name="fade-slide" mode="out-in">
             <component :is="Component" />
@@ -142,35 +172,62 @@ const currentTitle = computed(() => {
   return (route.meta.title as string) || 'OA4Rust'
 })
 
+// R302：管理区（/app/admin/*）页名由 AdminLayout h1 单独承载，topbar 不再重复显示。
+const isAdminArea = computed(() => route.path.startsWith('/app/admin'))
+
 const user = computed(() => session.state.user ?? null)
 
-// PC 端导航项
-type NavItem = { path?: string; label: string; icon: string; disabled?: boolean }
-const navItems: NavItem[] = [
-  { path: '/app/dashboard', label: '工作台', icon: '🏠' },
-  { path: '/app/org', label: '组织', icon: '🏢' },
-  { path: '/app/directory', label: '通讯录', icon: '📒' },
-  { path: '/app/process', label: '工作流', icon: '📋' },
-  { path: '/app/im', label: '消息', icon: '💬' },
-  { path: '/app/calendar', label: '日历', icon: '📅' },
-  { path: '/app/meeting', label: '会议', icon: '👥' },
-  { path: '/app/file', label: '文件', icon: '📁' },
-  { path: '/app/bbs', label: '论坛', icon: '💭' },
-  { path: '/app/admin', label: '管理', icon: '🔧' },
-  { label: '工具', icon: '🧰', disabled: true },
-  { path: '/app/mind', label: '思维导图', icon: '🧠' },
-  { path: '/app/document', label: '文档管理', icon: '📄' },
-  { path: '/app/program', label: '程序中心', icon: '⚙️' },
-  { path: '/app/queryview', label: '查询视图', icon: '📊' },
-  { path: '/app/recycle', label: '回收站', icon: '🗑️' },
-  { path: '/app/server', label: '服务器', icon: '🖥️' },
-  { path: '/app/unit', label: '单元管理', icon: '🏗️' },
-  { path: '/app/form', label: '表单管理', icon: '📝' },
-  { path: '/app/view', label: '视图管理', icon: '👁️' },
-  { path: '/app/fileinfo', label: '文件信息', icon: '📎' },
+// PC 端导航：四组员工常用业务 + 管理员折叠区（系统管理单独渲染，不塞进员工侧栏）
+type NavItem = { path: string; label: string; icon: string }
+type NavGroup = { label: string; icon: string; admin?: boolean; items: NavItem[] }
+const navGroups: NavGroup[] = [
+  {
+    label: '工作台',
+    icon: '🏠',
+    items: [
+      { path: '/app/dashboard', label: '工作台', icon: '🏠' },
+      { path: '/app/directory', label: '通讯录', icon: '📒' },
+      { path: '/app/calendar', label: '日历', icon: '📅' },
+      { path: '/app/file', label: '文件', icon: '📁' },
+      { path: '/app/search', label: '全局搜索', icon: '🔍' },
+    ],
+  },
+  {
+    label: '沟通',
+    icon: '💬',
+    items: [
+      { path: '/app/im', label: '消息', icon: '💬' },
+      { path: '/app/meeting', label: '会议', icon: '👥' },
+      { path: '/app/bbs', label: '论坛', icon: '💭' },
+    ],
+  },
+  {
+    label: '协作',
+    icon: '📋',
+    items: [
+      { path: '/app/process', label: '工作流', icon: '📋' },
+      { path: '/app/attendance', label: '考勤', icon: '⏰' },
+      { path: '/app/note', label: '笔记', icon: '📝' },
+    ],
+  },
+  {
+    label: '个人',
+    icon: '👤',
+    items: [
+      { path: '/app/personal', label: '个人中心', icon: '👤' },
+      { path: '/app/settings', label: '系统设置', icon: '⚙️' },
+      { path: '/app/recycle', label: '回收站', icon: '🗑️' },
+    ],
+  },
 ]
-const enabledNavItems = navItems.filter((i) => !i.disabled)
-const sectionNavItems = navItems.filter((i) => i.disabled)
+
+// R298: 管理区入口收敛为单项；六组分组菜单由 AdminLayout 承载（main.ts 嵌套路由）。
+const adminGroup: NavGroup = {
+  label: '系统管理',
+  icon: '⚙',
+  admin: true,
+  items: [{ path: '/app/admin/control-panel', label: '系统管理', icon: '⚙' }],
+}
 
 // 移动端导航项（精简）
 const mobileNavItems: NavItem[] = [
@@ -208,7 +265,7 @@ function focusSearch(): void {
   input?.focus()
 }
 
-async function handleLogout(): void {
+async function handleLogout(): Promise<void> {
   showUserMenu.value = false
   await session.logout()
   router.replace('/login')
@@ -301,6 +358,7 @@ function onDocClick(e: Event): void {
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px 0;
 }
 
@@ -317,6 +375,10 @@ function onDocClick(e: Event): void {
   color: var(--text-muted);
   border-top: 1px solid var(--border-subtle);
   margin-top: 8px;
+}
+
+.nav-group {
+  display: block;
 }
 
 .nav-item {
@@ -337,9 +399,10 @@ function onDocClick(e: Event): void {
 }
 
 .nav-item.active {
-  background: var(--color-primary-soft);
+  background: linear-gradient(90deg, var(--color-primary-soft), transparent);
   color: var(--color-primary);
-  border-left: 3px solid var(--color-primary);
+  /* 内嵌阴影替代 border-left：激活态不再改变盒宽，消除导航项跳动 */
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .nav-icon {
@@ -388,6 +451,11 @@ function onDocClick(e: Event): void {
   transition: margin-left var(--transition-normal);
 }
 
+/* 折叠态仅收窄这一处偏移，杜绝内联样式与静态 margin 的双重右移 */
+.app-shell.collapsed .main-area {
+  margin-left: var(--sidebar-collapsed);
+}
+
 /* 顶栏 */
 .topbar {
   height: var(--topbar-height);
@@ -402,7 +470,6 @@ function onDocClick(e: Event): void {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  transition: margin-left var(--transition-normal);
 }
 
 .topbar-left {
@@ -508,6 +575,17 @@ function onDocClick(e: Event): void {
   border-radius: 10px;
   min-width: 16px;
   text-align: center;
+  animation: badge-pulse 2s var(--ease-in-out) infinite;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--color-error-glow, rgba(239, 68, 68, 0.35));
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
 }
 
 .user-menu {
@@ -568,6 +646,28 @@ function onDocClick(e: Event): void {
   flex-direction: column;
   gap: 2px;
   z-index: var(--z-dropdown);
+  animation: dropdown-in var(--duration-fast) var(--ease-out);
+  transform-origin: top right;
+
+
+  /* R294：玻璃表面，消除展开时与底层内容的透明叠影（t5 在案问题） */
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dropdown-item {
@@ -603,8 +703,7 @@ function onDocClick(e: Event): void {
   flex: 1;
   overflow: auto;
   padding: var(--space-5);
-  margin-left: 0;
-  transition: margin-left var(--transition-normal);
+  overscroll-behavior: contain;
   background: var(--bg-base);
 }
 
@@ -622,6 +721,19 @@ function onDocClick(e: Event): void {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(-10px);
+}
+
+/* 键盘焦点可见性：统一令牌化焦点环（WCAG 2.4.7） */
+.logo:focus-visible,
+.nav-item:focus-visible,
+.theme-toggle:focus-visible,
+.collapse-btn:focus-visible,
+.icon-btn:focus-visible,
+.user-menu:focus-visible,
+.tab-item:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* 移动端底部 Tab 栏 */
@@ -680,6 +792,12 @@ function onDocClick(e: Event): void {
 
   .main-area {
     margin-left: 0 !important;
+  }
+
+  /* 移动端侧栏仍以固定宽度可见：topbar/content 沿用与桌面同源的偏移令牌 */
+  .topbar,
+  .content {
+    margin-left: var(--sidebar-width);
   }
 
   .content {

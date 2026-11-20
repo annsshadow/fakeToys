@@ -3,38 +3,45 @@
 
 <template>
   <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>CMS字典设计器</h1>
-        <p class="subtitle">/api/cms/assemble/control/dict/*（x_cms_surface_appdict）</p>
-      </div>
-      <button class="btn-primary" @click="openCreate">+ 新建</button>
-    </div>
+    <AdminPageHeader title="CMS 字典设计器" subtitle="设计字典（surface appdict）" />
+    <AdminToolbar
+      v-model="search"
+      search-placeholder="搜索应用 / 字典标识 / 值"
+      create-label="+ 新建"
+      @search="loadData"
+      @refresh="loadData"
+      @create="openCreate"
+    >
+    </AdminToolbar>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
-      <div class="toolbar">
-        <input v-model="search" placeholder="搜索应用 / 字典标识 / 值..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📖</div><p>暂无字典项</p></div>
-      <table v-else class="data-table">
-        <thead><tr><th>应用标识</th><th>字典标识</th><th>数据值</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td class="mono">{{ item.app_info_flag||'—' }}</td>
-            <td class="mono">{{ item.app_dict_flag||'—' }}</td>
-            <td class="val-cell">{{ item.data_value||'—' }}</td>
-            <td>
-              <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📐</div><p>暂无数据</p></div>
+      <AdminTable v-else
+        :columns="columns"
+        :rows="filtered as any[]"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无字典项"
+        @retry="reload"
+      >
+      <template #cell-app_info_flag="{ row }">
+        {{ row.app_info_flag||'—' }}
+      </template>
+      <template #cell-app_dict_flag="{ row }">
+        {{ row.app_dict_flag||'—' }}
+      </template>
+      <template #cell-data_value="{ row }">
+        {{ row.data_value||'—' }}
+      </template>
+      <template #cell-actions="{ row: item }">
+        <button class="btn-sm" @click="editItem(item as any)">编辑</button>
+          <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item as any)">删除</button>
+      </template>
+    </AdminTable>
     </div>
-    <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
+<div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit?'编辑':'新建' }}字典项</h3>
         <div class="form-group"><label>应用标识</label><input v-model="form.app_info_flag" placeholder="app_info_flag" class="form-input mono" /></div>
@@ -46,18 +53,30 @@
         </div>
       </div>
     </div>
-  </div>
-</template>
+  </div></template>
 <script setup lang="ts">
+const columns: AdminTableColumn[] = [
+  { key: 'app_info_flag', label: '应用标识' },
+  { key: 'app_dict_flag', label: '字典标识' },
+  { key: 'data_value', label: '数据值' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { AdminPageHeader, AdminTable, type AdminTableColumn, AdminToolbar } from '../components/admin/'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 interface Item {
   id: string
@@ -159,6 +178,10 @@ async function deleteItem(item: Item) {
 function loadData() {
   reload()
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -180,7 +203,7 @@ function loadData() {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:480px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}

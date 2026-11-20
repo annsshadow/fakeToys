@@ -4,8 +4,6 @@
 <template>
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>视图管理</h1>
-      <p class="subtitle">/api/view/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -221,7 +219,7 @@ loadViews()
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;width:800px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0}
 .modal-header h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0;font-size:15px}
