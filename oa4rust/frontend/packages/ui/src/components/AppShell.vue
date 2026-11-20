@@ -184,9 +184,11 @@
     <!-- R300 B1：Ctrl/⌘K 命令面板，键盘可达、Escape 关闭；导航目标全部来自现有注册路由 -->
     <div v-if="showCommandPalette" class="command-palette-backdrop" data-testid="command-palette-backdrop">
       <section
+        ref="commandPaletteRoot"
         class="command-palette ai-panel"
         role="dialog"
         aria-modal="true"
+        tabindex="-1"
         aria-label="命令面板"
         data-testid="command-palette"
         @keydown.esc.prevent="closeCommandPalette"
@@ -241,6 +243,7 @@ import { useSession, useTheme } from '@oa4rust/sdk'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { isNavActive } from './navActive'
+import { installFocusTrap, type FocusTrapHandle } from './focusTrap'
 
 const router = useRouter()
 const route = useRoute()
@@ -254,6 +257,9 @@ const unreadCount = ref(0)
 const isMobile = ref(false)
 const openTabPaths = ref<string[]>([])
 const showCommandPalette = ref(false)
+const commandPaletteRoot = ref<HTMLElement | null>(null)
+let commandFocusTrap: FocusTrapHandle | null = null
+let commandTrigger: HTMLElement | null = null
 const commandQuery = ref('')
 const commandSelection = ref(0)
 
@@ -373,16 +379,22 @@ function closeTab(path: string): void {
 }
 
 function openCommandPalette(): void {
+  const active = document.activeElement as HTMLElement | null
+  commandTrigger = active?.closest?.('[data-testid="command-palette"]') ? null : active
   showCommandPalette.value = true
   commandQuery.value = ''
   commandSelection.value = 0
   searchQuery.value = ''
   void nextTick(() => {
-    document.querySelector<HTMLInputElement>('[data-oa-command-search]')?.focus()
+    if (commandPaletteRoot.value) {
+      commandFocusTrap = installFocusTrap(commandPaletteRoot.value, commandTrigger)
+    }
   })
 }
 
 function closeCommandPalette(): void {
+  commandFocusTrap?.release()
+  commandFocusTrap = null
   showCommandPalette.value = false
 }
 
@@ -444,6 +456,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  commandFocusTrap?.release()
+  commandFocusTrap = null
   window.removeEventListener('resize', checkMobile)
   document.removeEventListener('click', onDocClick)
 })
