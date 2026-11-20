@@ -4208,3 +4208,14 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 已创建 t41（qa-e2e，只读甄别审计）：逐一读 20 用例断言与当前实现源码，每条给断言期望/实现实际/判定（契约过时或真实回归）/修复建议，交付 docs/ops/oa4rust-baseline-contract-mismatch-audit-r304.md，精确单提交；修复由后续任务承接。另识别 R304 方向：t35 令牌消费度审计（PC var(--ai-*) 21/75=28%、H5 branded=0 的 17 页）、t20 诚实附注、t19 遗留（PC org 数据空/hotpic|appinfo loading/单轮采样稳定性）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 219. R304 队长对 t41 甄别审计的裁决（2026-11-21）
+- 交付（qa-e2e，t41，commit dae5dbb9，精确 1 文档 189 行）：docs/ops/oa4rust-baseline-contract-mismatch-audit-r304.md，20 用例逐条甄别，<YOUR_TEST_DOMAIN> 占位、非物理真机声明、LEAK_HITS=[]。队长独立复核：git show --stat 精确 1 文档、HEAD=TRACK=dae5dbb9、暂存区纯净；实读全文逐条核对源码证据；实读 DeploymentApp.vue:8/69-71、t38 commit a8cc1a56c diff、ModernUI.vue:1-13、ModernUI.contract.test.ts:54-60、AdminToolbar.vue:108-113 坐实关键判定。
+- 队长裁决（源码级推翻 t41 两处判定，不采信自述）：
+  ① 用例3/4（DeploymentApp h1）t41 判『真实回归/迁移遗漏、建议 h1→h2』——推翻，改判契约过时。证据：t38 commit a8cc1a56c 故意把 h2 改为 h1，并注入 ADMIN_LAYOUT_HIDE_TITLE（DeploymentApp.vue:69-71 注释『本页自带唯一 h1；隐藏 AdminLayout 的同名 shell h1，避免标题重复』，:70-71 inject 并置 true）。这是『页面自持唯一 h1 + 隐藏 shell h1』的合法第二模式。若按 t41 改回 h2，页面将失去唯一 h1（shell h1 已隐藏），反而制造 a11y 回归。同步断言应改为『页面唯一 h1 恰好 1 个（来自 shell 或页面自持均合法），且不同时出现两个 h1』，绝不改 h1→h2。
+  ② 用例9（ModernUI scoped）t41 暂判『真实回归待裁决』——裁决为契约过时。契约意图『不局部化全局类』，实现 scoped 块内只有组件私有 .ai-b5-surface（根 div 自带、scoped 对根元素生效、功能正常），未定义任何全局类，意图被满足；字面量断言 not.toMatch(/<style[^>]*scoped/) 过期。同步断言为『scoped 块内不得定义全局类（.modern-page/.glass-card/.admin-*），私有类允许 scoped』。
+  ③ 用例13（w13 manifest）判真实回归（清单治理漂移，非 UI bug）：docs/audits/w13-w14-repository-closure.manifest.json 补 6 个新增 crud-view 条目或显式豁免，契约守卫本身正确不改。
+  ④ 用例15（AdminToolbar.vue:110 color:#fff）判真实回归（低危死代码）：该行被 :112 color:var(--bg-base) 覆盖、无视觉影响，删一行即可 GREEN。
+  ⑤ 其余 15 条维持 t41『契约过时』判定，同步断言即可，不改实现。最终分类：契约过时 18 条、真实回归 2 条（用例13/15）。
+- 口径修正：§218 记 desktop 14 文件含 tabStateA11y.contract.test.mjs；t41 澄清该 .mjs 不在 vitest include(['**/*.test.ts']) 内、不参与 20 用例判定，实际为 desktop 13 失败文件/19 用例 + mobile 1 文件/1 用例 = 20。如实记录。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
