@@ -4240,3 +4240,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 卫生修复：发现 .gitignore 仅忽略 oa4rust/test-results/ 未忽略 oa4rust/mobile/test-results/（H5 任务证据落点），以单行锚点补规则，git check-ignore 确认生效，避免含真实测试数据的证据误入库。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 223. R304 t46 清单治理收官（§220 自我更正后，2026-11-21）
+- 交付（qa-e2e，commit a02f06a49，精确 3 文件 55+/2-）：docs/ops/oa4rust-r304-w13-manifest-governance.md（48 行）+ w13-w14-closure.test.ts + w13-w14-repository-closure.manifest.json。
+- 队长独立复核（本任务经历队长自我更正 §220，格外严格）：定点复跑 closure 6/6 全绿 exit 0；node 独立核验 manifest W13/crud_view=29、无重复、summary W13=29/total=44 与修复前完全一致（5 条真实 CRUD 页裁决一条未删、:157 路由校验未被绕过）。逐条 diff 确认严格遵守 §220 修正：守卫改 hasCrudViewToken（遍历 class="..." 属性值 split(/\s+/).includes('crud-view') 精确 token 匹配、拒绝 crud-view-foo/xcrud-view 子串），manifest 仅新增 token+matchRule 元数据说明 AI 后缀形态覆盖；任何 .vue 实现零改动。文档 <YOUR_TEST_DOMAIN> 占位、证据 r46-smoke/evidence.json 标注『非物理真机、非静态假数据』、真浏览器 5/5 页 crud-view token 可见且 0 pageerror/0 apiFailure。evidence_note 已 append。
+- 意义：这是 §220 自我更正后的正确落地——没有撤销任何裁决、没有语义倒退，5 个带 AI 后缀的真实 CRUD 页继续被清单追踪，过时的是守卫的精确闭合引号假设。t47 终审已自动认领。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
