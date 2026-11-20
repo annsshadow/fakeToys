@@ -4246,3 +4246,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 意义：这是 §220 自我更正后的正确落地——没有撤销任何裁决、没有语义倒退，5 个带 AI 后缀的真实 CRUD 页继续被清单追踪，过时的是守卫的精确闭合引号假设。t47 终审已自动认领。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 224. R304 收官：契约债务清零、全量测试全绿（2026-11-21）
+- t47 终审（design-reviewer，只读、未提交）：verdict=pass、findings_open=0。逐条复核 t41 的 20 用例全部关闭：15 条契约过时语义等价同步、用例3/4 严守 §219 双合法标题模式且 DeploymentApp.vue 实现零改动、用例9 scoped 按裁决落地、用例15 死代码真删、用例13 按 §220 改 token 精确匹配且 manifest 29 条裁决完整（TOTAL=44/W13_CRUD=29/DUP=0）；全仓 expect(true)/.skip/it.skip/describe.skip=0 无断言弱化；四份 evidence 非物理真机、文档 <YOUR_TEST_DOMAIN> 占位脱敏 0 命中。
+- 队长独立全量复核（不采信自述）：desktop `pnpm exec vitest run` 248 files/2065 passed/0 failed（10.97s）、mobile 69 files/430 passed/0 failed（2.52s）——与 t47 自述完全一致，t41 审计的 20 失败用例确已全部清零；HEAD=TRACK=ab6cdd4e4、工作树干净。t47 status=completed/verdict=pass/findings_open=0 已核实。
+- R304 全链收官：t41（甄别审计）→ 队长裁决 §219 → qa-e2e 阻塞报告 → §220 自我更正 → t42–t46 五任务整改（均独立复核 + 台账 §221/§222/§223）→ t47 终审 pass。6 个任务 0 失败回退；期间修正队长 1 处误判（用例13）与 1 处卫生漏洞（mobile/test-results gitignore）。
+- 下一轮方向（R305 待启）：t20 诚实附注与 t35 令牌消费度审计未消化——PC var(--ai-*) 深度消费仅 21/75 文件（28%）、H5 令牌 100% 注入但 17/19 页 branded=0；P0 缺口 /app/org、attendance、bam、bbs、search、file、im。作为持续迭代的实质视觉深化目标。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
