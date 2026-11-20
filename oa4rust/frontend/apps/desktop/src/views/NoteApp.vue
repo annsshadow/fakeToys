@@ -6,15 +6,18 @@
     <div class="view-header glass-card">
       <div>
         <h1>笔记管理</h1>
-        <p class="subtitle">/api/cms/core/entity/note/*</p>
-      </div>
+        </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 内容..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="note-endpoint-fold">
+          <template #group-read>
+            <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+          </template>
+        </EndpointFold>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
@@ -53,6 +56,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { EndpointFold } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -70,6 +75,9 @@ interface Item {
   updateTime?: string
   createTime?: string
 }
+
+const foldGroups = [{ key: 'read', label: '读取与统计' }]
+const endpointCount = 1
 
 const listEp = '/api/cms/core/entity/note/list'
 const createEp = '/api/cms/core/entity/note/create'

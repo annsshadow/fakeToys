@@ -2,18 +2,20 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>  <div class="mod-view">
-    <AdminPageHeader title="流程实例管理" subtitle="/api/processplatform/assemble/surface/process_manager/list — 流程实例只读管理" />
+    <AdminPageHeader title="流程实例管理" />
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="search" search-placeholder="搜索流程 / 分类 / 创建人..." />
 
   <div class="crud-view">
     <div class="view-header glass-card">
-      <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
+        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="pm-endpoint-fold">
+          <template #group-read>
+        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
         <button class="btn-refresh" @click="loadManagedApps">👤 我管理的应用</button>
         <button class="btn-refresh" @click="loadAppProcesses">🗂️ 应用与流程</button>
@@ -32,6 +34,8 @@
         <button class="btn-refresh" @click="loadDesignerProcessReads">🎛️ 设计器流程/应用/引出/权限</button>
         <button class="btn-refresh" @click="loadSurfaceManageReads">🗃️ 管理详情/计数/投影/路由配置</button>
         <button class="btn-refresh" @click="loadDesignerDeep">🧱 设计器深度读</button>
+          </template>
+          <template #group-write>
         <button class="btn-refresh" @click="loadEngineReads">⚡ 引擎处理读</button>
         <button class="btn-refresh" @click="pdCreate('applicationdict')">建应用字典</button>
         <button class="btn-refresh" @click="pdCreate('mapping')">建映射</button>
@@ -106,6 +110,8 @@
         <button class="btn-refresh" @click="dataWrite('dictEngineSet')">字典建(引擎)</button>
         <button class="btn-refresh" @click="dataWrite('dictEnginePut')">字典改(引擎)</button>
         <button class="btn-refresh" @click="dataWrite('dictEngineDel')">字典删(引擎)</button>
+          </template>
+          <template #group-config>
         <button class="btn-refresh" @click="pdDesigner2('appdictPaging')">应用字典分页</button>
         <button class="btn-refresh" @click="pdDesigner2('fileByApp')">按应用文件</button>
         <button class="btn-refresh" @click="pdDesigner2('fileDownload')">下载设计器文件</button>
@@ -125,6 +131,8 @@
         <button class="btn-refresh" @click="pdDesigner2('appEdition')">应用版次</button>
         <button class="btn-refresh" @click="pdDesigner2('itemAccessDel')">删项权限</button>
         <button class="btn-refresh" @click="pdDesigner2('designerDelete')">删设计器对象</button>
+          </template>
+        </EndpointFold>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -164,8 +172,15 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, inject, onUnmounted, ref } from 'vue'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
+// biome-ignore lint/correctness/noUnusedImports format: Vue templates consume component imports.
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader, AdminToolbar, EndpointFold } from '../components/admin/'
+
+const foldGroups = [
+  { key: 'read', label: '读取与统计' },
+  { key: 'write', label: '写入与变更' },
+  { key: 'config', label: '配置与管理' },
+]
+const endpointCount = 112
 
 const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
 hidePageTitle!.value = true

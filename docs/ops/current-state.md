@@ -3946,3 +3946,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 流程：重编 desktop dist（index-CYMWG6eo.js，181 文件）→ 打包 web-r300.tgz（805390 字节）→ 远程备份 web.bak-r300-20261120-2330 → scp 上传 → tar 解包 web.new → 原子替换 web/ → systemctl is-active oa4rust=active。
 - 冒烟：/oa4rust/ /oa4rust/login /oa4rust-h5/ /oa4rust-api/health /oa4rust-api/api/authentication 全 200；远程 web/index.html 已服务新 hash index-CYMWG6eo.js。
 - 真值纪律：口令仅部署期 shell 变量读取，台账/提交不含密钥/口令/域名/IP/SSH 端口真值。
+
+## 175. 全 PC 端点折叠收纳 R301（2026-11-21）
+- 背景：用户要求整个 PC 端菜单栏逐页点检、彻底美化；74 页巡检定位 7 个端点平铺重灾页（组织架构/CMS索引/流程实例/流程任务中心/BAM/笔记/流程设计器），端点按钮成百平铺且 3 页暴露 /api 副标题。
+- 方案拍板：用户选择「收进折叠面板+分类」——全部按钮保留、功能零丢失，默认折叠隐藏，按读/写/配置分组，仅露常用操作。
+- 共享基建：新增 components/admin/EndpointFold.vue（默认折叠、具名分组插槽、v-show 保 DOM、aria-expanded + data-testid 钩子、scoped 设计令牌），barrel 导出；配套 EndpointFold.contract.test.ts 4 用例。
+- 分片实施（3 个 subagent 写范围互斥、禁 git）：org 页 98 按钮 + 契约 3 例；CMS 索引 91 按钮 + 契约 5 例；流程族（流程实例 112 / 流程任务中心 21 / BAM 25 / 笔记 1）共 4 页 + 契约 4 例；每页删 /api 副标题、保留全部按钮/Api/守卫，流程任务中心列表原始 work id 经 displayTitle 降级「S3 运行闭环」。
+- 修复：CMS 页脚本截断误删 style 尾段致 build/vueStructure 失败，用 git show 精确追回尾部 + biome check --write 规范格式；ScriptCodeEditor.vue 标签正则为既有 baseline 误报（build 可过），未动。
+- 验证：全量 vitest 215 文件 / 1937 passed、typecheck 6 子项目、desktop build EXIT=0（index-DdjsuSpC.js）、R301 改动集 scoped biome 0 error；8901 代理指向新 dist，6 页截图 DOM h1Count=1 / apiLeak=[] / folds=1 / openPanels=0、按钮数 org102/bam32/note6/cms96/ptc161/pm117，队长逐张目视确认达标。
+- 真值纪律：截图/探针脚本/巡检临时产物不入仓库；口令仅截图期读取，台账与提交不含密钥/口令/域名/IP/SSH 端口真值；本轮不部署测试服。
