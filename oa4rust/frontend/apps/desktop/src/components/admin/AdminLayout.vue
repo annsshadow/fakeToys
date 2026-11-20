@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="admin-layout">
+  <div class="admin-layout ai-b5-shell">
     <nav class="admin-sidebar glass-card" aria-label="管理区导航">
       <div class="admin-sidebar-header">
         <span class="admin-sidebar-icon">⚙</span>
@@ -35,7 +35,7 @@
           <span class="admin-breadcrumb-group">{{ currentGroupLabel }}</span>
 
         </div>
-        <h1 v-if="!hideTitle" class="admin-title">{{ pageTitle }}</h1>
+        <h1 v-if="!hideTitle" class="admin-title ai-gradient-text">{{ pageTitle }}</h1>
       </header>
       <div class="admin-content">
         <router-view />
@@ -82,7 +82,9 @@ provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 </script>
 
 <style scoped>
-.admin-layout {
+.admin-layout.ai-b5-shell {
+  background: var(--ai-gradient-surface);
+  border-radius: var(--ai-radius-xl, 16px);
   display: flex;
   gap: var(--space-4);
   align-items: flex-start;
@@ -131,18 +133,20 @@ provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   text-decoration: none;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--ai-motion-fast) var(--ai-ease-spring), color var(--ai-motion-fast);
 }
 
 .admin-nav-item:hover {
-  background: var(--color-primary-soft);
+  background: var(--ai-glass-bg, var(--color-primary-soft));
   color: var(--text-primary);
+  transition: all var(--ai-motion-fast, var(--transition-fast)) var(--ai-ease-spring, ease);
 }
 
 .admin-nav-item.active {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  box-shadow: inset 2px 0 0 var(--color-primary);
+  background: var(--ai-glass-bg, var(--color-primary-soft));
+  color: var(--text-primary);
+  border: 1px solid var(--ai-glass-border, transparent);
+  box-shadow: var(--ai-shadow-2, inset 2px 0 0 var(--color-primary));
 }
 
 .admin-nav-icon {
@@ -165,6 +169,9 @@ provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 }
 
 .admin-breadcrumb {
+  background: linear-gradient(90deg, var(--ai-glass-bg, transparent), transparent);
+  padding: var(--ai-grid-1, 4px) var(--ai-grid-2, 8px);
+  border-radius: var(--ai-radius-md, 8px);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -185,7 +192,11 @@ provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
   color: var(--text-secondary);
 }
 
-.admin-title {
+.admin-title.ai-gradient-text {
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin: var(--space-2) 0 0;
   font-size: 20px;
   font-weight: 600;

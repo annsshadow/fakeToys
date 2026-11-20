@@ -2,13 +2,14 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="nav-view">
+  <div class="nav-view ai-page-b5" data-testid="control-panel-page">
     <AdminPageHeader title="控制面板" subtitle="系统总览 · 快速导航">
       <template #actions>
         <button class="refresh-btn" @click="loadStats">🔄 刷新</button>
       </template>
     </AdminPageHeader>
-    <div class="stats-row glass-card">
+    <p class="ai-gradient-text b5-title b5-subtitle">控制面板</p>
+    <div class="stats-row glass-card ai-page-b5">
       <div class="stat-card" v-for="s in stats" :key="s.label">
         <div class="stat-num" :style="{ color: s.color }">{{ s.value }}</div>
         <div class="stat-label">{{ s.label }}</div>
@@ -117,4 +118,32 @@ onMounted(loadStats)
 .app-name{font-size:13px;font-weight:500;color:var(--text-primary);flex:1}
 .app-flag{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.nav-grid{grid-template-columns:repeat(2,1fr)}}
+/* R300 B5: AI 令牌统一视觉，仅覆盖样式，不改变数据绑定与接口。 */
+.ai-page-b5.ai-page-b5, .ai-page-b5 .ai-page-b5 {
+  background: var(--ai-surface-gradient);
+  border: 1px solid var(--ai-glass-border);
+  box-shadow: var(--ai-shadow-2);
+  border-radius: var(--ai-radius-lg, 12px);
+}
+.ai-page-b5 .b5-title {
+  margin: 0 0 var(--ai-grid-2, 8px);
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 0.02em;
+}
+.ai-page-b5 .glass-card {
+  background: var(--ai-glass-bg);
+  border-color: var(--ai-glass-border);
+  backdrop-filter: var(--ai-glass-blur);
+  transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
+}
+.ai-page-b5 .glass-card:hover { box-shadow: var(--ai-shadow-2); }
+.ai-page-b5 .skel, .ai-page-b5 .skeleton {
+  background: var(--ai-skeleton-base);
+}
+
 </style>

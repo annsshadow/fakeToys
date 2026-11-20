@@ -3,7 +3,7 @@
 
 <!-- R298 标准列表表格：表头/数据行/骨架加载/空态；错误态复用 ListLoadError 并转发 retry -->
 <template>
-  <div class="admin-table glass-card">
+  <div class="admin-table glass-card ai-page-b5">
     <ListLoadError v-if="error" :message="error" mode="empty" @retry="emit('retry')" />
     <table v-else class="admin-table-grid">
       <thead>
@@ -79,8 +79,10 @@ function rowKey(row: Record<string, unknown>, index: number): string | number {
 </script>
 
 <style scoped>
-.admin-table {
-  border-radius: var(--radius-md);
+.admin-table.ai-page-b5 {
+  background: var(--ai-glass-bg);
+  border: 1px solid var(--ai-glass-border);
+  border-radius: var(--ai-radius-lg, 12px);
   padding: var(--space-3);
   overflow-x: auto;
 }
@@ -111,6 +113,7 @@ function rowKey(row: Record<string, unknown>, index: number): string | number {
 }
 
 .admin-table-td .skeleton {
+  background: var(--ai-skeleton-base);
   height: 16px;
   border-radius: var(--radius-sm);
 }

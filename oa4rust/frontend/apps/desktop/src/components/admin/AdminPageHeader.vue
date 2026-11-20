@@ -3,9 +3,9 @@
 
 <!-- R298 标准管理页页头：标题 + 副标题 + 右侧主操作插槽（新建/导出等） -->
 <template>
-  <div class="admin-page-header">
+  <div class="admin-page-header ai-page-b5">
     <div v-if="!hidePageTitle" class="admin-page-heading">
-      <h2 class="admin-page-title">{{ title }}</h2>
+      <h2 class="admin-page-title ai-gradient-text">{{ title }}</h2>
       <p v-if="subtitle" class="admin-page-subtitle">{{ subtitle }}</p>
     </div>
     <div class="admin-page-actions">
@@ -28,7 +28,11 @@ const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
 </script>
 
 <style scoped>
-.admin-page-header {
+.admin-page-header.ai-page-b5 {
+  background: var(--ai-gradient-surface);
+  border: 1px solid var(--ai-glass-border);
+  border-radius: var(--ai-radius-lg, 12px);
+  padding: var(--ai-grid-2, 8px) var(--ai-grid-3, 12px);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -36,7 +40,11 @@ const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
   margin-bottom: var(--space-4);
 }
 
-.admin-page-title {
+.admin-page-title.ai-gradient-text {
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin: 0;
   font-size: 18px;
   font-weight: 600;
