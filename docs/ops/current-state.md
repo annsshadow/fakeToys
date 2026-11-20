@@ -4213,9 +4213,17 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长裁决（源码级推翻 t41 两处判定，不采信自述）：
   ① 用例3/4（DeploymentApp h1）t41 判『真实回归/迁移遗漏、建议 h1→h2』——推翻，改判契约过时。证据：t38 commit a8cc1a56c 故意把 h2 改为 h1，并注入 ADMIN_LAYOUT_HIDE_TITLE（DeploymentApp.vue:69-71 注释『本页自带唯一 h1；隐藏 AdminLayout 的同名 shell h1，避免标题重复』，:70-71 inject 并置 true）。这是『页面自持唯一 h1 + 隐藏 shell h1』的合法第二模式。若按 t41 改回 h2，页面将失去唯一 h1（shell h1 已隐藏），反而制造 a11y 回归。同步断言应改为『页面唯一 h1 恰好 1 个（来自 shell 或页面自持均合法），且不同时出现两个 h1』，绝不改 h1→h2。
   ② 用例9（ModernUI scoped）t41 暂判『真实回归待裁决』——裁决为契约过时。契约意图『不局部化全局类』，实现 scoped 块内只有组件私有 .ai-b5-surface（根 div 自带、scoped 对根元素生效、功能正常），未定义任何全局类，意图被满足；字面量断言 not.toMatch(/<style[^>]*scoped/) 过期。同步断言为『scoped 块内不得定义全局类（.modern-page/.glass-card/.admin-*），私有类允许 scoped』。
-  ③ 用例13（w13 manifest）判真实回归（清单治理漂移，非 UI bug）：docs/audits/w13-w14-repository-closure.manifest.json 补 6 个新增 crud-view 条目或显式豁免，契约守卫本身正确不改。
+  ③ 用例13（w13 manifest）判真实回归（清单治理漂移，非 UI bug）：docs/audits/w13-w14-repository-closure.manifest.json 补 6 个新增 crud-view 条目或显式豁免，契约守卫本身正确不改。【★★ 已被 §220 自我推翻：t41 数据方向写反，实为 manifest 29 条完整、守卫精确匹配过时，见 §220】
   ④ 用例15（AdminToolbar.vue:110 color:#fff）判真实回归（低危死代码）：该行被 :112 color:var(--bg-base) 覆盖、无视觉影响，删一行即可 GREEN。
   ⑤ 其余 15 条维持 t41『契约过时』判定，同步断言即可，不改实现。最终分类：契约过时 18 条、真实回归 2 条（用例13/15）。
 - 口径修正：§218 记 desktop 14 文件含 tabStateA11y.contract.test.mjs；t41 澄清该 .mjs 不在 vitest include(['**/*.test.ts']) 内、不参与 20 用例判定，实际为 desktop 13 失败文件/19 用例 + mobile 1 文件/1 用例 = 20。如实记录。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 220. R304 用例13 自我更正：守卫精确匹配过时、manifest 完整（2026-11-21）
+- 触发：t46（qa-e2e）in_progress 阻塞报告——实测与 §219 裁决方向相反，按铁律⑧停工未改任何文件。队长不采信任何自述，独立并行复核（node 集合比对 + grep 枚举 + vitest 实跑），三路结果一致。
+- 独立核验数据：manifest W13/crud_view 裁决集 A=29；按 class token 前缀发现=29；A_not_prefix=[]、prefix_not_A=[]（完全对称）；按旧精确串 `class="crud-view"` 发现=24；差 5 个 = CmsDictDesignerApp.vue / DeploymentApp.vue / LogViewerApp.vue / NoteApp.vue / ThreeMemberApp.vue，均 R300/R302 AI 重构后 class 带后缀（如 `crud-view ai-page-b5`、`crud-view modern-page ai-panel`），仍在路由且 manifest 中 implemented 有 evidence。vitest w13-w14-closure.test.ts :76 diff 的 +5 正是这 5 个文件。
+- 自我推翻：①t41 用例13 原写『实际29/manifest23/多6』方向写反（把 vitest diff 的 expected 索引 …(23) 误读为 manifest 数）；②本队长 §219 用例13『补 6 条或豁免、守卫正确不改』建立在该错误数据上，无法执行——要补的页面都已在清单，再补会触发 :77 重复失败；改 status/加 acceptedBoundary 也无效（守卫 :72-73 过滤只看 workItem==='W13' && kind==='crud_view'，不区分 status）。§219 该条作废，以本节为准。
+- 新裁决：真实回归在守卫 exactCrudViews() 的精确闭合引号匹配假设过时，不在 manifest；manifest 29 条完整且与实际 CRUD 页集合对称。修正守卫为 class token 精确匹配（必须精确 token 等于 crud-view，不得退化为 includes 子串以免匹配 crud-view-foo），并同步 manifest discovery.crudView 的 marker 描述；不得删除 5 条裁决、不得绕过 :157 路由校验、不得改任何 .vue。
+- t46 合约修订（captain amend）：inScope 增 oa4rust/frontend/apps/desktop/src/views/w13-w14-closure.test.ts；outOfScope 移除该测试文件；objective/acceptance 改为『守卫 token 匹配 + manifest marker 同步，集合对称性不变量保持，断言不弱化』；verify 仍为该测试 GREEN。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
