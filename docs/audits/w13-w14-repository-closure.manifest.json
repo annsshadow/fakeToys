@@ -11,7 +11,9 @@
     "crudView": {
       "root": "oa4rust/frontend/apps/desktop/src/views",
       "glob": "*.vue",
-      "exactMarker": "class=\"crud-view\""
+      "exactMarker": "class=\"crud-view\"",
+      "token": "crud-view",
+      "matchRule": "class token exact match: parse each class=\"...\" attribute value, split on whitespace, require a token exactly equal to 'crud-view' (substring forms like crud-view-foo or xcrud-view do not match); AI-refactor suffixes such as class=\"crud-view ai-page-b5\" are covered"
     },
     "w14LegacyFamilies": {
       "root": "oa/o2web/source",
