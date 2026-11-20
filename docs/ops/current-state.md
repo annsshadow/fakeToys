@@ -4031,5 +4031,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 6 文件、HEAD=远端追踪=e341e480c；实读 23 行文档确认真域名/凭据不入库、非物理真机与未提交事项如实标注；工作树 M/?? 系 t7 在途改动，未触碰。非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 186. R300 B4 业务工作域 AI 风格重构与 BAM 缺陷修复（2026-11-21）
+- 交付（page-work，commit de241fe382f200de862dbd6d5609c5f0f746d965，精确 9 文件，214+/45-）：docs/ops/oa4rust-business-work-r300-b4.md（24 行）+ 8 个业务页（ProcessWork/FileManager/BBSForum/MeetingApp/BamApp/NoteApp/RecycleApp/ProcessTaskCenterApp）+ BusinessWork.aiStyle.B4.contract.test.ts（100 行）+ BamApp.summaryData.B4.contract.test.ts（15 行）。按 t1 令牌/t4 外壳统一视觉，业务接口/逻辑不变；BAM `data is undefined` 真实缺陷 test-first RED→GREEN 修复（queryFn 返回 {stats,events}）。
+- 测试服原子部署后 Playwright Chromium headless 真实登录→8 页流程→论坛真实建版块/发帖/刷新闭环：pageerror=[]，BAM 统计卡真值 90/0/22/10、错误文案 0 次；10 张 1440×900 截图 + evidence.json 落盘 gitignored 的 oa4rust/test-results/r300-b4-business/（非物理真机）。契约 6 项+typecheck+desktop build 全通过。
+- 队长独立复核：git show --stat 精确 9 文件、HEAD=远端追踪=de241fe38；独立复跑 BusinessWork.aiStyle.B4.contract.test.ts 5/5 与 BamApp.summaryData.B4.contract.test.ts 1/1（exit 0）；实读 24 行文档用 <YOUR_TEST_DOMAIN> 占位、LEAK_MATCHES=0；evidence.json 标注非物理真机。工作树仅 ?? test-results/（gitignored 运行产物）。待排既有缺陷：BBS 发帖写 bbs_subject_info、列表查 x_bbs_topic 致新帖不回显，非本轮引入、未臆造修复，留后续 bug 轮次。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+
 
 
