@@ -9,10 +9,6 @@
 
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>统计设计器</h1>
-        <p class="subtitle">/api/query/assemble/designer/stat/*（x_query_stat）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -59,6 +55,7 @@
 </template>
 <script setup lang="ts">
 import {
+  ADMIN_HIDE_PAGE_TITLE,
   AdminFormSection,
   AdminPageHeader,
   AdminTable,
@@ -72,6 +69,8 @@ void AdminPageHeader
 void AdminTable
 void AdminToolbar
 
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
+
 const adminColumns: AdminTableColumn[] = [
   { key: 'name', label: '名称' },
   { key: 'queryFlag', label: '查询标识' },
@@ -81,7 +80,7 @@ const adminColumns: AdminTableColumn[] = [
 
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'

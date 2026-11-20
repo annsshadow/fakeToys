@@ -56,7 +56,7 @@ export { ADMIN_LAYOUT_HIDE_TITLE } from './adminInjection'
 <script setup lang="ts">
 import { isNavActive } from '@oa4rust/ui/components/navActive'
 import { computed, inject, provide, ref } from 'vue'
-import { ADMIN_LAYOUT_HIDE_TITLE } from './adminInjection'
+import { ADMIN_HIDE_PAGE_TITLE, ADMIN_LAYOUT_HIDE_TITLE } from './adminInjection'
 import { useRoute } from 'vue-router'
 import { adminNavGroups } from './adminNav'
 
@@ -77,6 +77,9 @@ const currentGroupLabel = computed<string>(() => {
 const inheritedHideTitle = inject(ADMIN_LAYOUT_HIDE_TITLE, undefined)
 const hideTitle = inheritedHideTitle ?? ref(false)
 provide(ADMIN_LAYOUT_HIDE_TITLE, hideTitle)
+
+// R300：全局默认隐藏 AdminPageHeader 标题/副标题，仅保留本布局 h1 作为唯一页标题；页面如需显式显示可 inject 后改 ref(false)。
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 </script>
 
 <style scoped>

@@ -4,8 +4,6 @@
 <template>
   <div class="query-designer">
     <div class="view-header glass-card">
-      <h1>查询设计器</h1>
-      <p class="subtitle">/api/query/assemble/designer/* — 可视化查询构建</p>
       <button class="btn-create" @click="openCreate">+ 新建查询</button>
       <button class="btn-outline" @click="showSqlEditor=true">📝 SQL编辑</button>
     </div>

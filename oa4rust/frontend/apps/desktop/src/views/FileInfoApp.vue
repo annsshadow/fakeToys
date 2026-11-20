@@ -4,8 +4,6 @@
 <template>
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>文件信息</h1>
-      <p class="subtitle">/api/fileinfo/* — 文档级文件元数据</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">

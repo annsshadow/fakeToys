@@ -7,10 +7,6 @@
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
       <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>CMS索引设计</h1>
-        <p class="subtitle">/api/cms/core/entity/index/*</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -150,8 +146,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
-import { AdminFormSection, AdminPageHeader } from '../components/admin/'
+import { computed, provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -159,6 +155,8 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 // 模板专用组件引用（避免 lint 误报未使用）
 void AdminFormSection

@@ -4,10 +4,6 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>日志查看器</h1>
-        <p class="subtitle">/api/log/list（x_cms_log，只读）</p>
-      </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">

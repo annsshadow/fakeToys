@@ -8,10 +8,6 @@
 
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>流程任务中心</h1>
-        <p class="subtitle">/api/processplatform/service/processing/task/*（x_task）</p>
-      </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
@@ -82,9 +78,16 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, inject, onUnmounted, ref } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
+
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
+hidePageTitle!.value = true
+onUnmounted(() => {
+  hidePageTitle!.value = false
+})
+
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.

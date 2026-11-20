@@ -8,10 +8,6 @@
   <div class="fd">
     <!-- Header -->
     <div class="fd-header glass-card">
-      <div class="fd-title">
-        <h1>表单设计器</h1>
-        <p class="subtitle">/api/form/* — 可视化表单构建器</p>
-      </div>
       <div class="fd-actions">
         <button class="btn" @click="resetForm" title="新建表单">📄 新建</button>
         <button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>
@@ -716,10 +712,9 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader } from '../components/admin/'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 import {
   definitionToDesignerFields,
   formSavePayload,
@@ -737,6 +732,10 @@ import { applyBuilderRules } from '../utils/validationRuleApply'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+void AdminFormSection
+void AdminPageHeader
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 interface FormField {
   id: string

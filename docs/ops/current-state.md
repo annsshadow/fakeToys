@@ -3932,3 +3932,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 验证：全量 vitest 208 文件 / 1872 passed（EXIT=0）、typecheck 6 子项目 EXIT=0、desktop build EXIT=0、scoped biome 0 error；Playwright 在测试服逐页浏览器复验三处均正常（无 400/404/原始 id）。
 - 部署：commit 09ceb077a，纯前端变更（backend/mobile diff=0）；重编 dist（index-U9jAFap9.js），远程备份 web.bak-r299fix-20261120-2228 → scp → 原子替换 web/ → systemctl restart active，冒烟 5/5 全 200。
 - 真值纪律：口令仅部署期 shell 变量读取；台账与提交不含密钥/口令/域名/IP/SSH 端口真值。
+
+## 173. 系统管理区重复标题系统性清理 R300（2026-11-20）
+- 背景：用户指出应用管理页三处重复「应用管理」标题且暴露 /api/appinfo/* 副标题，要求整个系统管理区同类重复全部修复并截图自查。
+- 基座：新增 ADMIN_HIDE_PAGE_TITLE 注入键，AdminPageHeader 用 v-if 隐藏自带标题，AdminLayout provide 由 ref(false) 改 ref(true) 一次性覆盖全部 38 个 AdminPageHeader 页；保留 actions 插槽与契约要求的 admin-title h1。
+- 分族清理：t2 查询/CMS 族 18 页、t3 流程/门户族 16 页删除页面自带 h1 与 /api/* 副标题，保留全部按钮/API/守卫；两族契约 RED→GREEN（20/20、24/24）。
+- 漏网补修：QueryManagerDeep.vue 与 QueryTableDesignerApp.vue 不在分族清单且使用裸 <h1>，surgical 删除重复 h1 与 /api 副标题，保留 deepReadText/描述/按钮/API。
+- 验证：全量 vitest 211 文件 / 1921 passed、typecheck 6 子项目、desktop build EXIT=0（index-CYMWG6eo.js）、R300 改动集 scoped biome 0 error；8901 代理指向新 dist，截图 10 页 + 补修 2 页均 h1Count=1、apiLeak=[]、按钮完整，队长逐张目视确认。
+- 真值纪律：截图/临时脚本不入仓库；口令仅部署期读取，台账与提交不含密钥/口令/域名/IP/SSH 端口真值；本轮不部署测试服。

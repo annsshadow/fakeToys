@@ -5,10 +5,6 @@
   <div class="editor-view">
     <!-- Header -->
     <div class="view-header glass-card">
-      <div>
-        <h1>配置设计器</h1>
-        <p class="subtitle">/api/config/* — 系统配置与参数管理</p>
-      </div>
       <div class="header-actions">
         <button class="btn-outline" @click="showFormat=true">📐 格式化</button>
         <button class="btn-outline" @click="showHistory=true">📜 历史</button>

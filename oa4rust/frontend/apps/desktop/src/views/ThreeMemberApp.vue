@@ -4,10 +4,6 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>三方成员管理</h1>
-        <p class="subtitle">/api/organization/assemble/control/threemember/*（x_org_person）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">

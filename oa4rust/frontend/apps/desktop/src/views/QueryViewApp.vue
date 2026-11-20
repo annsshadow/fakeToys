@@ -8,8 +8,6 @@
 
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>查询视图</h1>
-      <p class="subtitle">/api/queryview/* — 执行查询视图、导出Excel</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -140,9 +138,8 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { ref } from 'vue'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
+import { provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -151,6 +148,11 @@ import { describeListError } from './listQuery'
 import { createSearchRunner } from './searchRunner'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
+
+void AdminFormSection
+void AdminPageHeader
+void AdminToolbar
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 const keyword = ref('')
 const loading = ref(false)

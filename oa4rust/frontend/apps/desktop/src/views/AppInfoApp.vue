@@ -58,12 +58,19 @@
 
 <script setup lang="ts">
 import {
+  ADMIN_HIDE_PAGE_TITLE,
   AdminFormSection,
   AdminPageHeader,
   AdminTable,
   type AdminTableColumn,
   AdminToolbar,
 } from '../components/admin/'
+
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
+hidePageTitle!.value = true
+onUnmounted(() => {
+  hidePageTitle!.value = false
+})
 
 const appInfoColumns: AdminTableColumn[] = [
   { key: 'name', label: '应用名称' },
@@ -73,7 +80,7 @@ const appInfoColumns: AdminTableColumn[] = [
 ]
 
 import { api } from '@oa4rust/sdk'
-import { computed, ref } from 'vue'
+import { computed, inject, onUnmounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'

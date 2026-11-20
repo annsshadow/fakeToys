@@ -4,7 +4,7 @@
 <!-- R298 标准管理页页头：标题 + 副标题 + 右侧主操作插槽（新建/导出等） -->
 <template>
   <div class="admin-page-header">
-    <div class="admin-page-heading">
+    <div v-if="!hidePageTitle" class="admin-page-heading">
       <h2 class="admin-page-title">{{ title }}</h2>
       <p v-if="subtitle" class="admin-page-subtitle">{{ subtitle }}</p>
     </div>
@@ -15,10 +15,16 @@
 </template>
 
 <script setup lang="ts">
+import { inject } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from './adminInjection'
+
 defineProps<{
   title: string
   subtitle?: string
 }>()
+
+// R300：AdminLayout 提供该开关；子页 inject 后置 true 隐藏标题/副标题，保留 actions 插槽。
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
 </script>
 
 <style scoped>

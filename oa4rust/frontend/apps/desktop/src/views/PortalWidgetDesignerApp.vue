@@ -4,10 +4,6 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>门户组件设计器</h1>
-        <p class="subtitle">/api/portal/assemble/designer/widget/*（x_portal_widget）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">

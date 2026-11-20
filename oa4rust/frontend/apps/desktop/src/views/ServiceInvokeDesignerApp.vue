@@ -4,10 +4,6 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>服务调用设计器</h1>
-        <p class="subtitle">/api/program_center/invoke/*（x_program_invoke）</p>
-      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">

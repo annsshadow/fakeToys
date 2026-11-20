@@ -8,10 +8,6 @@
 
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div>
-        <h1>查询浏览器</h1>
-        <p class="subtitle">/api/query/assemble/surface/explorer/list（x_query_view，只读）</p>
-      </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
@@ -41,9 +37,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
+import { computed, provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
@@ -55,6 +50,11 @@ interface Item {
   queryType?: string
   createTime?: string
 }
+
+void AdminFormSection
+void AdminPageHeader
+void AdminToolbar
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 const listEp = '/api/query/assemble/surface/explorer/list'
 const qk = ['QueryExplorer', 'list']

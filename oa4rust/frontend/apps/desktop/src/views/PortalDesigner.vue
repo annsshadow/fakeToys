@@ -4,7 +4,6 @@
 <template>
   <div class="designer-shell">
     <header class="designer-header glass-card">
-      <div><h1>门户设计器</h1><p>拖拽模块并保存到 portal design content</p></div>
       <div class="header-actions">
         <button class="btn" @click="showCreate = true">新建设计</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>

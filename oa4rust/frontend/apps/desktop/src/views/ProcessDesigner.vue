@@ -8,10 +8,6 @@
   <div class="pd">
     <!-- Header -->
     <div class="pd-header glass-card">
-      <div class="pd-title">
-        <h1>流程设计器</h1>
-        <p class="subtitle">/api/processplatform/assemble/designer/* — 可视化流程编排</p>
-      </div>
       <div class="pd-actions">
         <button class="btn" @click="undo" :disabled="!canUndo" title="撤销">↩</button>
         <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
@@ -2785,9 +2781,16 @@
 import { api } from '@oa4rust/sdk'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import { OrganizationSelector, type OrganizationSelectorItem } from '@oa4rust/ui'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader } from '../components/admin/'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
+
+const hidePageTitle = inject(ADMIN_HIDE_PAGE_TITLE, undefined)
+hidePageTitle!.value = true
+onUnmounted(() => {
+  hidePageTitle!.value = false
+})
+
 import {
   type JsonObject,
   parseProcessDefinition,

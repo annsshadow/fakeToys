@@ -4,8 +4,6 @@
 <template>
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>视图管理</h1>
-      <p class="subtitle">/api/view/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">

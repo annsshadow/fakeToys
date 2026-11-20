@@ -8,10 +8,6 @@
   <div class="smd">
     <!-- Header -->
     <div class="smd-header glass-card">
-      <div class="smd-title">
-        <h1>SQL语句设计器</h1>
-        <p class="subtitle">/api/query/assemble/designer/*</p>
-      </div>
       <div class="smd-actions">
         <button class="btn" @click="newStatement">+ 新建</button>
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
@@ -888,9 +884,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, onMounted, ref, watch } from 'vue'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader } from '../components/admin/'
+import { computed, onMounted, provide, ref, watch } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
 import { buildCsv } from '../utils/csv'
@@ -903,6 +898,10 @@ import { toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { mutationErrorMessage } from './mutationError'
+
+void AdminFormSection
+void AdminPageHeader
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 interface Stmt {
   id: string

@@ -7,7 +7,7 @@
 
   <div class="designer-shell">
     <header class="designer-header glass-card">
-      <div><h1>数据表设计器</h1><p>typed columns → 后端生成并执行受限 DDL</p></div>
+      <div><p class="designer-hint">typed columns → 后端生成并执行受限 DDL</p></div>
       <div class="actions"><button class="btn" @click="newTable">新建表</button><button class="btn primary" :disabled="!canSave || saving" @click="saveTable">{{ saving ? '保存中…' : '保存定义' }}</button><button class="btn success" :disabled="!activeFlag || executing" @click="executeTable">{{ executing ? '执行中…' : '执行建表/加列' }}</button><button class="btn" :disabled="!activeFlag || saving" @click="editTableStructure" title="按 flag 编辑表结构（PUT table/edit/{flag}）">编辑结构</button></div>
     </header>
     <main class="main-grid">

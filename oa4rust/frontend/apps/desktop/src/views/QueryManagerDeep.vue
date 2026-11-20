@@ -9,8 +9,6 @@
     <!-- Header -->
     <div class="qm-header glass-card">
       <div class="qm-title">
-        <h1>查询管理</h1>
-        <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
         <p v-if="deepReadText" class="subtitle">{{ deepReadText }}</p>
       </div>
       <div class="qm-actions">

@@ -6,7 +6,7 @@
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
 
   <div class="designer-shell">
-    <header class="designer-header glass-card"><div><h1>查询视图设计器</h1><p>可视化过滤、排序、分页与真实 simulate/bundle</p></div><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
+    <header class="designer-header glass-card"><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
     <div class="query-picker glass-card"><label>Query Flag<input v-model="queryFlag" placeholder="输入后加载视图" @change="loadViews" /></label><button class="btn" :disabled="!queryFlag.trim()" @click="loadViews">加载</button><span>后端只提供按 Query Flag 列表，未提供全量视图列表。</span></div>
     <main class="main-grid"><aside class="list glass-card"><h2>视图</h2><button v-for="item in views" :key="item.id" class="view-item" :class="{active:item.id===activeId}" @click="openView(item.id)"><strong>{{item.name}}</strong><span>{{item.viewFlag}}</span></button><p v-if="!views.length" class="muted">该 Query 下暂无视图</p></aside>
       <section class="editor glass-card"><div class="form-row"><label>名称<input v-model="form.name" /></label><label>视图 Flag<input :value="form.viewFlag||'保存后生成'" disabled /></label></div><label class="sql-label">只读 SQL<textarea v-model="form.definition.sql" rows="5" placeholder="SELECT ..." /></label>
@@ -22,9 +22,8 @@
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { computed, ref } from 'vue'
-// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
-import { AdminFormSection, AdminPageHeader } from '../components/admin/'
+import { computed, provide, ref } from 'vue'
+import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
 import {
   designerPaths,
   extractList,
@@ -42,6 +41,10 @@ interface ViewSummary {
   viewFlag: string
   queryFlag?: string
 }
+void AdminFormSection
+void AdminPageHeader
+provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
+
 const operators: QueryViewFilter['operator'][] = ['eq', 'ne', 'contains', 'gt', 'gte', 'lt', 'lte']
 const queryFlag = ref('')
 const views = ref<ViewSummary[]>([])
