@@ -262,3 +262,7 @@ b0.yaml
 # MkDocs 构建产物与本地虚拟环境
 .venv-docs/
 site/
+
+# DSH 会话产物：agent 工作树与团队状态目录，只留在本机，不入库。
+.agents/
+.agent-teams/

@@ -59,7 +59,7 @@ for (const [prefix, limitKb] of [['antd-vendor-', 1200], ['echarts-vendor-', 150
 ok('大 vendor 未超基线（antd ≤1200 / echarts ≤1500 / react ≤300 kB）')
 
 // 6) index.html 引用的资源都真实存在（防「改了构建、忘了同步产物」的半截提交）
-for (const ref of [...html.matchAll(/(?:src|href)="(?:\/[^\"]*?\/)?(assets\/[^"]+)"/g)].map((m) => m[1])) {
+for (const ref of [...html.matchAll(/(?:src|href)="(?:\/[^"]*?\/)?(assets\/[^"]+)"/g)].map((m) => m[1])) {
   if (!files.includes(ref.replace('assets/', ''))) fail(`index.html 引用了不存在的产物 ${ref}`)
 }
 ok('index.html 引用的产物全部在场')
