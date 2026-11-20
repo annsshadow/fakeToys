@@ -13,9 +13,19 @@ describe('桌面端破坏性操作二次确认与重入守卫（R153）', () => 
   it('回收站：彻底删除与清空共用进行中守卫', () => {
     const source = view('RecycleApp.vue')
     expect(source).toContain('const busy = ref(false)')
-    expect(source.split('if (busy.value) return').length - 1).toBe(2)
-    expect(source.split('busy.value = true').length - 1).toBe(2)
-    expect(source.split('busy.value = false').length - 1).toBe(2)
+    expect(source.split('if (busy.value) return').length - 1).toBeGreaterThanOrEqual(2)
+    expect(source.split('busy.value = true').length - 1).toBe(4)
+    expect(source.split('busy.value = false').length - 1).toBe(4)
+    // 四个破坏性动作（单删/批量恢复/批量删除/清空）各自必须有守卫与 finally 复位。
+    for (const fn of ['permanentDelete', 'batchResume', 'batchDelete', 'emptyRecycle']) {
+      const start = source.indexOf('async function ' + fn)
+      expect(start, fn + ' 未定义').toBeGreaterThan(-1)
+      const next = source.indexOf('async function ', start + 1)
+      const body = source.slice(start, next === -1 ? undefined : next)
+      expect(body, fn + ' 缺少重入守卫').toMatch(/if \(busy\.value(?: \|\| [^)]*)?\) return/)
+      expect(body, fn + ' 缺少 busy 上锁').toContain('busy.value = true')
+      expect(body, fn + ' 缺少 finally 复位').toContain('busy.value = false')
+    }
     expect(source).toContain(':disabled="!hasItems || busy"')
     expect(source).toContain(':disabled="busy"')
     // 不可逆动作的二次确认不能被守卫改动吞掉。

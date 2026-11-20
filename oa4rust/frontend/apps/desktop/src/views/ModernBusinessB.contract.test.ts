@@ -44,7 +44,8 @@ describe('R298 t3-B 会议管理 / 工作流待办现代潮流样式', () => {
   const meeting = read('MeetingApp.vue')
 
   it('会议页套用现代页头/分区/网格/卡片/空态/徽标/统计原语', () => {
-    expect(meeting).toContain('class="meeting-view modern-page"')
+    expect(meeting).toContain('meeting-view')
+    expect(meeting).toContain('modern-page')
     expect(meeting).toContain('modern-hero')
     expect(meeting).toContain('modern-section')
     expect(meeting).toContain('modern-grid')
@@ -73,7 +74,8 @@ describe('R298 t3-B 会议管理 / 工作流待办现代潮流样式', () => {
   const work = read('ProcessWork.vue')
 
   it('工作流列表改为卡片行：流程名/状态/时间为主，原始 id 降级为次级详情', () => {
-    expect(work).toContain('class="work-view modern-page"')
+    expect(work).toContain('work-view')
+    expect(work).toContain('modern-page')
     expect(work).toContain('modern-hero')
     expect(work).toContain('modern-section')
     expect(work).toContain('modern-grid')

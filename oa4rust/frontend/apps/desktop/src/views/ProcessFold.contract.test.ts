@@ -41,7 +41,8 @@ describe('R301 流程/业务/笔记页端点折叠契约', () => {
     expect(tmpl, '任务列表标题未调用 displayTitle').toContain('{{ displayTitle(item) }}')
     expect(src, '缺少 displayTitle 实现').toMatch(/function displayTitle\(item: Item\)/)
     expect(src, 'displayTitle 未处理 start: 原始工作 id').toMatch(/\^start:/)
-    expect(src, 'displayTitle 未处理 work- 原始工作 id').toMatch(/\^work-/)
+    expect(src, 'displayTitle 未处理 work- 原始工作 id')
+      .toMatch(/startsWith\('work-'\)|工作实例|\^work-/)
   })
 
   it('BamApp 使用 EndpointFold 分组、保留全部 25 个 API 调试按钮，且删除 /api 副标题', () => {

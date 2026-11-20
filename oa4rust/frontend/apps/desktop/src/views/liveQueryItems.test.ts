@@ -123,8 +123,11 @@ describe('桌面列表页失败必须可见（R115）', () => {
   it('Dashboard 统计计数失败不再伪装成真实的 0', () => {
     const source = readFileSync(resolve(import.meta.dirname, 'Dashboard.vue'), 'utf8')
     expect(source).toContain('countError')
-    expect(source).toContain("s.value ?? '—'")
-    // 失败时不得再用 `?? 0` 把 undefined 渲染成 0
+    expect(source).toContain('stat-placeholder')
+    expect(source).toContain('{{ s.value ?? null }}')
+    // 失败计数返回 null 占位，不再用 `?? 0` 把 undefined 渲染成 0。
+    expect(source).toContain('if (failed) return null')
+    expect(source).toContain('!pendingLoaded.value || pendingError.value ? null')
     expect(source).not.toMatch(/procCounts\.value\?\.\[[01]\]/)
     expect(source.indexOf('统计计数加载失败')).toBeGreaterThan(-1)
   })
@@ -133,8 +136,11 @@ describe('桌面列表页失败必须可见（R115）', () => {
     const source = readFileSync(resolve(import.meta.dirname, 'Dashboard.vue'), 'utf8')
     expect(source).toContain('pendingError')
     expect(source).toContain('v-else-if="pendingItems.length === 0 && pendingError"')
-    expect(source.indexOf('pendingItems.length === 0 && pendingError')).toBeGreaterThan(-1)
-    expect(source.indexOf('暂无待办事项')).toBeGreaterThan(source.indexOf('pendingItems.length === 0 && pendingError'))
+    const errorIndex = source.indexOf('v-else-if="pendingItems.length === 0 && pendingError"')
+    const emptyText = source.match(/暂无待办[^<]*/)?.[0]
+    expect(emptyText, '找不到待办空态文案').toBeTruthy()
+    expect(errorIndex).toBeGreaterThan(-1)
+    expect(source.indexOf(emptyText!)).toBeGreaterThan(errorIndex)
   })
 })
 
