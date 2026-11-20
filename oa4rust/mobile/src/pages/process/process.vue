@@ -100,12 +100,37 @@ function textOf(row: Record<string, unknown>, keys: string[], fallback = ''): st
   return fallback
 }
 
+function isRawProcessKey(value: string): boolean {
+  return /^start:/i.test(value) || /^(?:s3-process-|work-|work-reject-|probe-w-|task-|process-|node-|job-|snap-|activity-|reply-|data-)/i.test(value) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(value)
+}
+function shortId(value: string): string {
+  return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value
+}
 function titleOf(row: Record<string, unknown>, i: number): string {
-  for (const k of ['title', 'subject', 'processName']) {
+  const candidates: string[] = []
+  for (const k of ['title', 'subject', 'processName', 'work', 'workId', 'id']) {
     const v = row[k]
-    if (typeof v === 'string' && v) return v
+    if (typeof v === 'string' && v) candidates.push(v)
   }
+  const raw = candidates[0] ?? ''
+  if (/^start:/i.test(raw) || /^s3-process/i.test(raw)) {
+    const rest = raw.replace(/^start:[\s\S]*?(?=work-|task-|process-|node-|job-|snap-|activity-|reply-|data-|[0-9a-f]{16,})/i, '').replace(/^start:[\s:：]*/i, '').replace(/^s3-process[\s:：]*/i, '')
+    const workPart = rest.match(/\b(?:work|work-reject|task|process|node|job|snap)-[^\s]+/i)?.[0]
+    const name = workPart ? rest.slice(0, rest.indexOf(workPart)).trim() : rest.trim()
+    if (name && !isRawProcessKey(name)) return name
+    return 'S3 运行闭环'
+  }
+  const readable = candidates.find((v) => !isRawProcessKey(v))
+  if (readable) return readable
+  if (/^start:/i.test(raw) || /^s3-process/i.test(raw)) return 'S3 运行闭环'
+  if (raw.startsWith('work-reject-')) return '退回工作'
+  if (raw.startsWith('work-')) return '工作实例'
+  if (/^start:/i.test(raw)) return '运行闭环'
   return `流程 #${i + 1}`
+}
+function taskIdOf(row: Record<string, unknown>): string {
+  const id = workIdOf(row)
+  return id ? shortId(id) : ''
 }
 function metaOf(row: Record<string, unknown>): string {
   const parts: string[] = []
@@ -249,7 +274,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     </view>
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openDetail(row, i)">
-        <view class="title">{{ titleOf(row, i) }}</view>
+        <view class="title" data-testid="h5-process-title"><text class="task-title">{{ titleOf(row, i) }}</text><text v-if="taskIdOf(row)" class="task-id">{{ taskIdOf(row) }}</text></view>
         <view class="meta">{{ metaOf(row) || ' ' }}</view>
         <view v-if="active === 'pending'" class="actions">
           <button size="mini" type="default" :disabled="busy" @tap.stop="act(row, 'reject')">
@@ -274,7 +299,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     <view v-if="detailOpen" class="mask" @tap="closeDetail">
       <view class="sheet" @tap.stop>
         <view class="sheet-head">
-          <text class="sheet-title">{{ detailTitle }}</text>
+          <text class="sheet-title" data-testid="h5-process-detail-title">{{ detailTitle }}</text>
           <text class="sheet-close" @tap="closeDetail">✕</text>
         </view>
         <view v-if="detailLoading" class="skeleton skeleton-compact" aria-hidden="true">
@@ -374,6 +399,8 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   padding: 28rpx 32rpx;
   border-bottom: 1px solid var(--color-divider);
 }
+.task-title { font-weight: 600; }
+.task-id { display: block; margin-top: 6rpx; font-size: 22rpx; color: var(--color-text-muted); }
 .title {
   font-size: 30rpx;
   font-weight: 600;

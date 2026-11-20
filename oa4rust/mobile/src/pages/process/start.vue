@@ -60,7 +60,7 @@ async function loadProcesses() {
     map: (payload) => {
       const rows: unknown[] = Array.isArray(payload) ? payload : ((payload as { data?: unknown[] })?.data ?? [])
       return (rows as Array<Record<string, unknown>>)
-        .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
+        .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? '') }))
         .filter((p) => p.id)
     },
   })
@@ -69,6 +69,9 @@ async function loadProcesses() {
   loading.value = false
 }
 
+function shortProcessId(id: string): string {
+  return id.length > 18 ? `${id.slice(0, 8)}…${id.slice(-6)}` : id
+}
 function pickProcess(p: { id: string; name: string }): void {
   if (p.id === selectedProcessId.value) return
   selectedProcessId.value = p.id
@@ -281,9 +284,11 @@ function removeAttachment(field: MobileFormField, id: string): void {
           :key="p.id"
           class="proc-item"
           :class="{ on: selectedProcessId === p.id }"
+          data-testid="h5-start-process-item"
           @tap="pickProcess(p)"
         >
-          {{ p.name || p.id }}
+          <text class="proc-name" data-testid="h5-start-process-name">{{ p.name || '未命名流程' }}</text>
+          <text class="proc-id" data-testid="h5-start-process-id">{{ shortProcessId(p.id) }}</text>
         </view>
       </view>
     </view>
@@ -437,6 +442,8 @@ function removeAttachment(field: MobileFormField, id: string): void {
   color: var(--color-text-secondary);
   font-size: 28rpx;
 }
+.proc-name { display: block; color: var(--color-text-primary); font-weight: 600; }
+.proc-id { display: block; margin-top: 6rpx; font-size: 22rpx; color: var(--color-text-muted); }
 .proc-item.on {
   border-color: var(--color-primary);
   color: var(--color-primary);

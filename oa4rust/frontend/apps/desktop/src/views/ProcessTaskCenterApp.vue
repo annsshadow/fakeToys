@@ -702,7 +702,7 @@ const filtered = computed(() =>
 
 // 原始流程 ID/实例键只用于检索与追踪，不占据列表主视觉。
 function isRawProcessKey(value: string): boolean {
-  return /^start:/i.test(value) || /^(?:s3-process-|work-|work-reject-|task-|process-|node-|job-|snap-|activity-|reply-|data-)/i.test(value) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(value)
+  return /^start:/i.test(value) || /^(?:s3-process-|work-|work-reject-|probe-w-|task-|process-|node-|job-|snap-|activity-|reply-|data-)/i.test(value) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(value)
 }
 function shortId(value?: string): string {
   const raw = String(value ?? '')
