@@ -4076,6 +4076,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 缺口优先级：P0 org/attendance/bam/bbs/search/file/im 核心业务页双重未消费；P1 H5 渐变实心 17 页 branded=0 + PC 九页 aiPage=1；P2 骨架屏（PC 63/H5 14 缺）、空态（PC 14/H5 8）、命令面板 --ai-cmd-* 仅外壳零星消费。队长独立复核：git show --stat 精确 1 文档、HEAD=追踪=f8587ae74；实读 110 行文档首段用 <YOUR_TEST_DOMAIN> 占位、LEAK_HITS=[]/NO_SECRET_PATTERN 自述一致。后续按此清单排视觉重构轮次。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 194. R302 DR-03b 修复：通讯录加载超时兜底与首屏自动加载（t28，2026-11-21）
+- 交付（page-comm，commit bd7031a9a，精确 3 文件）：oa4rust/docs/ops/oa4rust-r302-dr03b-org-loading.md（44 行）+ OrgDirectoryApp.loadingFallback.contract.test.ts（44 行）+ OrgDirectoryApp.vue（+41/-7）。以 withTimeout(10s) 包裹名册请求、catch 落持久错误态+重试按钮、finally 复位 busy、onMounted 首屏自动加载，空态文案明确；接口/业务逻辑不变。契约 RED 4/4→GREEN，OrgDirectory 3 files/14 tests passed。
+- 队长独立复核：git show --stat 精确 3 文件、git show diff 确认错误条/重试按钮/onMounted 自动加载与空态文案；定点复跑 OrgDirectory 套件 14/14 passed（exit 0）；commit message 自述 typecheck/build/测试服哈希一致、真 Chromium headless /app/directory 自动加载 21 人（20 行/页共 2 页）、route abort 失败错误+重试恢复 21 人，证据 gitignored oa4rust/test-results/r302-dr03b/（4 PNG+evidence.json，真实测试服非物理真机）；文档用 <YOUR_TEST_DOMAIN> 占位。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
