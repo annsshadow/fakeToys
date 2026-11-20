@@ -3825,4 +3825,19 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 本地 E2E 代理 Origin 覆写同步改为真实公网 origin；完整 32 用例复跑 32 passed / 0 failed（30.8s）。
 - 结论：用户 forbidden 根因是 APP_PUBLIC_ORIGIN 配置错误（非口令），已修复；口令已按用户要求恢复。真值全程未入库、未回显。
 
+## 160. 侧栏「管理」死链修复（R296，2026-11-20，队长）
+### 160.1 根因（真 bug，用户实测「点管理又退出」）
+- 侧栏「管理」导航项指向 /app/admin，但 main.ts 路由 children 未注册 admin 子路由，命中兜底 /:pathMatch(.*)* -> /login，用户点击后直接被跳到登录页，表现为「被登出」。
+- 精确核对全部 20 个 PC 导航项 vs 路由表：仅 /app/admin 一项死链；「工具」为 disabled 占位项（非死链）。
+### 160.2 修复（RED→GREEN）
+- AppShell.vue:159 导航项 path 由 /app/admin 改为已注册的真实路由 /app/control-panel（控制面板/系统总览，管理员入口）。
+- 新增 AppShell.navIntegrity.contract.test.ts（3 用例）：全部导航项必须在 main.ts 注册 + 管理不得指向 /app/admin。RED=1（2 failed）→ GREEN=0（3 passed）。
+- e2e/live-gui-expanded.spec.ts 新增 R296 真机回归用度（点击「🔧 管理」→ URL 为 /app/control-panel 且非 /login，控制面板标题可见）。首版 hasText:'管理' 命中 5 个导航项（strict violation），改 getByRole('button',{name:'🔧 管理'}) 后通过。
+### 160.3 门禁与部署复验
+- oa4rust pnpm test EXIT=0；scoped biome 2 文件 0 error；desktop build EXIT=0（3.69s）；E2E R296 2 passed（live+coverage 双 project）。
+- web 前端已重新构建部署到测试服（备份 web.bak-r296-predeploy，index mtime 14:31:55，bundle 含 control-panel），真机 E2E 验证通过。
+### 160.4 产品定位结论（用户确认）
+- 用户明确：该系统是给普通员工日常办公使用；抽样 10+ 视图证实绝大多数页面是把 /api/* 端点平铺成按钮的「API 调试面板」，非业务界面（仅日历为真业务界面）。
+- 后续方向：第 2 步产出全量页面梳理清单（去留/归类/业务化建议）供用户拍板，再启动重构。
+
 

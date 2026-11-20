@@ -156,7 +156,7 @@ const navItems: NavItem[] = [
   { path: '/app/meeting', label: '会议', icon: '👥' },
   { path: '/app/file', label: '文件', icon: '📁' },
   { path: '/app/bbs', label: '论坛', icon: '💭' },
-  { path: '/app/admin', label: '管理', icon: '🔧' },
+  { path: '/app/control-panel', label: '管理', icon: '🔧' },
   { label: '工具', icon: '🧰', disabled: true },
   { path: '/app/mind', label: '思维导图', icon: '🧠' },
   { path: '/app/document', label: '文档管理', icon: '📄' },

@@ -60,6 +60,14 @@ test.describe('live GUI - 导航与应用外壳', () => {
     await expect(page.getByRole('heading', { name: '组织通讯录' })).toBeVisible()
   })
 
+  test('管理导航指向已注册路由而非跳登录 (R296)', async ({ page }) => {
+    await expect(page).toHaveURL(/\/app\//)
+    await page.getByRole('button', { name: '🔧 管理' }).click()
+    await expect(page).toHaveURL(/\/app\/control-panel/)
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { name: '控制面板' })).toBeVisible()
+  })
+
   test('用户菜单可打开并跳转到个人中心', async ({ page }) => {
     await page.locator('.user-menu').click()
     const menu = page.locator('.user-dropdown')
