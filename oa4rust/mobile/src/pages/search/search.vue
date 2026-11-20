@@ -80,7 +80,7 @@ function openRow(r: Row) {
         confirm-type="search"
         @confirm="doSearch"
       />
-      <button class="btn" :disabled="loading" @tap="doSearch">搜索</button>
+      <button class="btn ai-brand-fill" :disabled="loading" @tap="doSearch">搜索</button>
     </view>
 
     <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">

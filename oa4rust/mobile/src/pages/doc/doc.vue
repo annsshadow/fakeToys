@@ -193,7 +193,7 @@ function pickFromFilePicker(): void {
           <view class="error-text">{{ attachError }}</view>
           <view class="retry-btn" @tap="load()">重试</view>
         </view>
-        <view v-else-if="attachView === 'empty'" class="empty-guide">
+        <view v-else-if="attachView === 'empty'" class="empty-guide ai-brand-fill">
           <view class="empty-guide-emoji" aria-hidden="true">📎</view>
           <text class="empty-guide-text">还没有附件</text>
           <text class="empty-guide-hint">拍照或上传文件后，附件会显示在这里</text>

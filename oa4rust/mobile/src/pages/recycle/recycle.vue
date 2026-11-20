@@ -140,7 +140,7 @@ function goDoc() {
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
     </view>
-    <view v-else-if="listView === 'empty'" class="empty-guide">
+    <view v-else-if="listView === 'empty'" class="empty-guide ai-brand-fill">
       <view class="empty-guide-emoji" aria-hidden="true">🗑️</view>
       <text class="empty-guide-text">回收站为空</text>
       <text class="empty-guide-hint">删除的内容会出现在这里，便于查看或彻底清除</text>

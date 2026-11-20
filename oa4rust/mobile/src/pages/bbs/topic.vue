@@ -111,7 +111,7 @@ onLoad(async (options) => {
       </view>
       <view class="composer">
         <input v-model="text" class="composer-input" placeholder="写下你的回帖…" confirm-type="send" @confirm="send" />
-        <view class="composer-send" :class="{ disabled: sending || !text.trim() }" @tap="send">
+        <view class="composer-send ai-brand-fill" :class="{ disabled: sending || !text.trim() }" @tap="send">
           {{ sending ? '发送中…' : '发送' }}
         </view>
       </view>

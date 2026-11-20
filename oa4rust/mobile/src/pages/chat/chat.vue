@@ -229,7 +229,7 @@ async function send() {
 
 <template>
   <view class="chat ai-surface-gradient">
-    <view class="head">
+    <view class="head ai-brand-fill">
       {{ title }}
     </view>
 

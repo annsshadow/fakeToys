@@ -256,7 +256,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 <template>
   <view class="page ai-surface-gradient">
     <view class="tabs">
-      <view v-for="t in tabs" :key="t.key" class="tab" :class="{ on: active === t.key }" @tap="switchTab(t.key)">
+      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: active === t.key }" @tap="switchTab(t.key)">
         {{ t.label }}
       </view>
     </view>

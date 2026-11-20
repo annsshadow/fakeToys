@@ -80,7 +80,7 @@ function openConversation(row: Record<string, unknown>) {
 
 <template>
   <view class="page ai-surface-gradient">
-    <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
+    <view v-if="networkOffline" class="offline-banner ai-brand-fill">{{ NETWORK_OFFLINE_TEXT }}</view>
     <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
       <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
     </view>

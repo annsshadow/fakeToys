@@ -400,7 +400,7 @@ function removeAttachment(field: MobileFormField, id: string): void {
 
     <text v-if="submitTip" class="submit-tip">{{ submitTip }}</text>
 
-    <button class="submit" :disabled="submitting || !selectedProcessId" @tap="submit">
+    <button class="submit ai-brand-fill" :disabled="submitting || !selectedProcessId" @tap="submit">
       {{ submitting ? '发起中…' : '发起' }}
     </button>
   </view>

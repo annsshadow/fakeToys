@@ -252,8 +252,8 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 
 <template>
   <view class="page ai-surface-gradient">
-    <view class="tabs">
-      <view v-for="r in ranges" :key="r.key" class="tab" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
+    <view class="tabs ai-brand-fill">
+      <view v-for="r in ranges" :key="r.key" class="tab ai-brand-fill" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
         {{ r.label }}
       </view>
     </view>

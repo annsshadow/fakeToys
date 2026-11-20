@@ -149,11 +149,11 @@ const emptyText = computed(() =>
 
 <template>
   <view class="page ai-surface-gradient">
-    <view class="tabs">
+    <view class="tabs ai-brand-fill">
       <view
         v-for="t in TABS"
         :key="t.key"
-        class="tab"
+        class="tab ai-brand-fill"
         :class="{ on: tab === t.key }"
         @tap="switchTab(t.key)"
       >

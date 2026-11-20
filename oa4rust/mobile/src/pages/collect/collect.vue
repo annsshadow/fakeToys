@@ -85,7 +85,7 @@ function goBrowse() {
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="loaded && rows.length === 0" class="empty-guide">
+    <view v-else-if="loaded && rows.length === 0" class="empty-guide ai-brand-fill">
       <view class="empty-guide-emoji" aria-hidden="true">⭐</view>
       <text class="empty-guide-text">暂无收藏</text>
       <text class="empty-guide-hint">还没有收藏，浏览内容时收藏后可在这里快速找到</text>

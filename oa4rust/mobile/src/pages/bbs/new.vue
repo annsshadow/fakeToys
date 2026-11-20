@@ -95,7 +95,7 @@ onLoad(async () => {
         <textarea v-model="content" class="textarea" placeholder="请输入内容" />
       </view>
     </view>
-    <view class="submit" :class="{ disabled: !canSubmit() }" @tap="submit">
+    <view class="submit ai-brand-fill" :class="{ disabled: !canSubmit() }" @tap="submit">
       {{ submitting ? '发布中…' : '发布主题' }}
     </view>
   </view>

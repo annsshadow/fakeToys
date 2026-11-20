@@ -189,7 +189,7 @@ function statText(): string {
         <view class="retry-btn" @tap="load()">重试</view>
       </view>
       <view class="buttons">
-        <button class="btn" :disabled="checking || !pre?.canCheckIn" @tap="doCheck('checkIn')">
+        <button class="btn ai-brand-fill" :disabled="checking || !pre?.canCheckIn" @tap="doCheck('checkIn')">
           上班打卡
         </button>
         <button class="btn" :disabled="checking || !pre?.canCheckIn" @tap="doCheck('checkOut')">
@@ -212,7 +212,7 @@ function statText(): string {
         <view class="section-title">假期申请</view>
         <input v-model="leaveDate" class="leave-input" type="text" placeholder="假期日期（如 2026-10-09）" />
         <input v-model="leaveReason" class="leave-input" type="text" placeholder="事由（选填）" />
-        <button class="btn leave-btn" :disabled="leaveBusy" @tap="applyLeave">
+        <button class="btn leave-btn ai-brand-fill" :disabled="leaveBusy" @tap="applyLeave">
           {{ leaveBusy ? '提交中…' : '提交假期申请' }}
         </button>
       </view>
