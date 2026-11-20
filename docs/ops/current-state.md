@@ -3925,3 +3925,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 逐页截图审计（Playwright 1440x900，8 页）：通讯录=渐变 Hero + 搜索/组织树/名册三卡；文件管理=Hero + 上传/视图工具条 + 我的文件/共享/回收三栏；会议管理=Hero 遮挡修复后「新建会议」右置 + 预订/我的会议/日历视图分段；工作流=待办标题剥离 work-<ts>-<rand> 技术 id 改显「工作实例/S3 运行闭环」；考勤管理=45/42/3/2 统计卡 + 86 端点收进「高级操作」折叠；个人中心=Hero + 资料卡（原生 Choose File 已隐藏）+ 密码/签名/安全/授权分段；表单管理=删重复 h1 与 /api/form/* 副标题 + 卡片网格 + 名称不截断；角色管理=删重复标题 + 保留 HTTP 400 的 ListLoadError 错误态。
 - 逐弹窗审计（7 个）：新建会议/发起流程/流程办理/新建角色/上传文件/高级操作折叠/编辑表单，统一居中卡片、遮罩、标题层级与按钮右置；流程办理弹窗标题仍显后端原始 work id（非本轮改造范围），文件列表 404 与角色列表 400 属后端既有问题。
 - 门禁与真值：本轮无源码改动，仅部署与审计；截图与临时脚本不入仓库；无密钥/口令/域名/IP/SSH 端口真值入库。
+
+## 172. 修复并部署三处非样式问题（2026-11-20）
+- 背景：逐页/弹窗审计发现三处非样式问题——文件列表空目录 404、角色列表 HTTP 400、流程办理弹窗显示后端原始 work id。
+- 根因与修复：文件列表空 folderId 拼出空路径段导致 404，改用 root 段；角色列表调 control crate 未注册的 POST /api/role/list，改用 auth crate 的 GET /api/authentication/role/list；流程办理弹窗标题复用 displayTitle 清洗。新增 NonStyleFixes.contract.test.ts 3 用例，RED 3/3 → GREEN 3/3。
+- 验证：全量 vitest 208 文件 / 1872 passed（EXIT=0）、typecheck 6 子项目 EXIT=0、desktop build EXIT=0、scoped biome 0 error；Playwright 在测试服逐页浏览器复验三处均正常（无 400/404/原始 id）。
+- 部署：commit 09ceb077a，纯前端变更（backend/mobile diff=0）；重编 dist（index-U9jAFap9.js），远程备份 web.bak-r299fix-20261120-2228 → scp → 原子替换 web/ → systemctl restart active，冒烟 5/5 全 200。
+- 真值纪律：口令仅部署期 shell 变量读取；台账与提交不含密钥/口令/域名/IP/SSH 端口真值。
