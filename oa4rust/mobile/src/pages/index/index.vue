@@ -89,14 +89,14 @@ function goPage(url: string) {
       <view class="sub">OA4Rust 工作台</view>
     </view>
 
-    <view class="stat-card ai-brand-fill" @tap="goTab('/pages/process/process')">
+    <view class="stat-card ai-brand-fill ai-pressable" @tap="goTab('/pages/process/process')">
       <view class="stat-num">
         {{ loading ? '…' : pendingBadgeText }}
       </view>
       <view class="stat-label">待办审批{{ pendingOverflow ? ' · 超过 50' : '' }}</view>
     </view>
 
-    <view class="stat-card ai-brand-fill" @tap="goTab('/pages/attendance/attendance')">
+    <view class="stat-card ai-brand-fill ai-pressable" @tap="goTab('/pages/attendance/attendance')">
       <view class="stat-num">{{ todayRecords === null ? '–' : todayRecords }}</view>
       <view class="stat-label">今日出勤</view>
     </view>
@@ -110,7 +110,7 @@ function goPage(url: string) {
       <view v-else-if="notices.length === 0" class="sec-empty empty-guide">
         <text class="empty-guide-text">暂无公告</text>
         <text class="empty-guide-hint">刷新后再看看最新公告</text>
-        <view class="empty-guide-link" @tap="loadNotices(true)">刷新公告</view>
+        <view class="empty-guide-link ai-pressable" @tap="loadNotices(true)">刷新公告</view>
       </view>
       <view v-if="noticesError && notices.length > 0" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
@@ -123,52 +123,52 @@ function goPage(url: string) {
     </view>
 
     <view class="grid">
-      <view class="cell" @tap="goTab('/pages/message/message')">
+      <view class="cell ai-pressable" @tap="goTab('/pages/message/message')">
         <text class="cell-emoji">💬</text>
         <text class="cell-text">消息</text>
       </view>
-      <view class="cell" @tap="goTab('/pages/process/process')">
+      <view class="cell ai-pressable" @tap="goTab('/pages/process/process')">
         <text class="cell-emoji">✅</text>
         <text class="cell-text">审批</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/doc/doc')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/doc/doc')">
         <text class="cell-emoji">📄</text>
         <text class="cell-text">文档</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/contacts/contacts')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/contacts/contacts')">
         <text class="cell-emoji">👥</text>
         <text class="cell-text">通讯录</text>
       </view>
-      <view class="cell" @tap="goTab('/pages/attendance/attendance')">
+      <view class="cell ai-pressable" @tap="goTab('/pages/attendance/attendance')">
         <text class="cell-emoji">🕘</text>
         <text class="cell-text">考勤</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/process/start')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/process/start')">
         <text class="cell-emoji">🚀</text>
         <text class="cell-text">发起流程</text>
       </view>
       <!-- 阶段 G：移动端能力扩展新增入口 -->
-      <view class="cell" @tap="goPage('/pages/meeting/meeting')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/meeting/meeting')">
         <text class="cell-emoji">📅</text>
         <text class="cell-text">会议</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/calendar/calendar')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/calendar/calendar')">
         <text class="cell-emoji">🗓️</text>
         <text class="cell-text">日程</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/bbs/bbs')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/bbs/bbs')">
         <text class="cell-emoji">🗣</text>
         <text class="cell-text">论坛</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/browse/browse')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/browse/browse')">
         <text class="cell-emoji">📚</text>
         <text class="cell-text">浏览</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/search/search')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/search/search')">
         <text class="cell-emoji">🔍</text>
         <text class="cell-text">搜索</text>
       </view>
-      <view class="cell" @tap="goPage('/pages/recycle/recycle')">
+      <view class="cell ai-pressable" @tap="goPage('/pages/recycle/recycle')">
         <text class="cell-emoji">🗑️</text>
         <text class="cell-text">回收站</text>
       </view>

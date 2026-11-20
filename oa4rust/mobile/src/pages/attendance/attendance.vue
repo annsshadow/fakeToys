@@ -174,7 +174,10 @@ function statText(): string {
       <view class="group">{{ pre?.group?.groupName || '未加入考勤组' }}</view>
     </view>
 
-    <view v-if="loading && !pre && !preError" class="tip">加载中…</view>
+    <view v-if="loading && !pre && !preError" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="preError && !pre" class="tip tip-error">
       <view class="error-text">{{ preError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
@@ -231,7 +234,10 @@ function statText(): string {
           我的月度考勤<text v-if="apiVersion" class="ver">v{{ apiVersion }}</text>
         </view>
         <view class="stat-line">{{ statText() }}</view>
-        <view v-if="myLoading" class="tip">加载中…</view>
+        <view v-if="myLoading" class="ai-skeleton-list" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+          <view class="ai-skeleton-line short"></view>
+        </view>
         <view v-else-if="myDetails.length === 0 && mineError" class="tip tip-error">
           <view class="error-text">{{ mineError }}</view>
           <view class="retry-btn" @tap="loadMine()">重试</view>

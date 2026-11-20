@@ -132,7 +132,10 @@ function goDoc() {
 
 <template>
   <view class="page ai-surface-gradient">
-    <view v-if="listView === 'loading'" class="tip">加载中…</view>
+    <view v-if="listView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="listView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
@@ -142,8 +145,8 @@ function goDoc() {
       <text class="empty-guide-text">回收站为空</text>
       <text class="empty-guide-hint">删除的内容会出现在这里，便于查看或彻底清除</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link" @tap="load()">刷新</view>
-        <view class="empty-guide-link primary" @tap="goDoc">去文档</view>
+        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="goDoc">去文档</view>
       </view>
     </view>
 

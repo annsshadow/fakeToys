@@ -173,8 +173,8 @@ const emptyText = computed(() =>
       <text class="o2-empty-text">{{ emptyText }}</text>
       <text class="empty-guide-hint">换个页签看看或刷新</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link" @tap="load()">刷新</view>
-        <view class="empty-guide-link primary" @tap="switchTab(tab === 'mine' ? 'wait' : 'mine')">换个页签</view>
+        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="switchTab(tab === 'mine' ? 'wait' : 'mine')">换个页签</view>
       </view>
     </view>
 

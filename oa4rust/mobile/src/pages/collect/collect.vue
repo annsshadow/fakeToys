@@ -77,7 +77,10 @@ function goBrowse() {
 
 <template>
   <view class="page ai-surface-gradient">
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-if="loading && !loaded" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
@@ -87,8 +90,8 @@ function goBrowse() {
       <text class="empty-guide-text">暂无收藏</text>
       <text class="empty-guide-hint">还没有收藏，浏览内容时收藏后可在这里快速找到</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link primary" @tap="goBrowse">去浏览内容</view>
-        <view class="empty-guide-link" @tap="load">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="goBrowse">去浏览内容</view>
+        <view class="empty-guide-link ai-pressable" @tap="load">刷新</view>
       </view>
     </view>
     <view v-else class="list">

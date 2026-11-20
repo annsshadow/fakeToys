@@ -178,11 +178,17 @@ function pickFromFilePicker(): void {
         上传文件
       </button>
     </view>
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-if="loading && !loaded" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else class="page-body">
       <view class="section">
         <view class="section-title">我的附件（附件存储 FILE_FILE，上传落点）</view>
-        <view v-if="attachView === 'loading'" class="tip">加载中…</view>
+        <view v-if="attachView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+          <view class="ai-skeleton-line short"></view>
+        </view>
         <view v-else-if="attachView === 'error'" class="tip tip-error">
           <view class="error-text">{{ attachError }}</view>
           <view class="retry-btn" @tap="load()">重试</view>
@@ -194,7 +200,7 @@ function pickFromFilePicker(): void {
           <view class="empty-guide-actions">
             <button class="o2-btn" size="mini" @tap="pickFromAlbumOrCamera">拍照 / 相册</button>
             <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
-            <view class="empty-guide-link" @tap="load()">刷新</view>
+            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
           </view>
         </view>
         <view v-if="attachError && attachRows.length > 0" class="tip-error error-banner">
@@ -213,7 +219,10 @@ function pickFromFilePicker(): void {
       </view>
       <view class="section">
         <view class="section-title">我的文件（文档库 x_file）</view>
-        <view v-if="filesView === 'loading'" class="tip">加载中…</view>
+        <view v-if="filesView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+          <view class="ai-skeleton-line short"></view>
+        </view>
         <view v-else-if="filesView === 'error'" class="tip tip-error">
           <view class="error-text">{{ filesError }}</view>
           <view class="retry-btn" @tap="load()">重试</view>
@@ -224,7 +233,7 @@ function pickFromFilePicker(): void {
           <text class="empty-guide-hint">上传一份文件，或刷新查看最新文档</text>
           <view class="empty-guide-actions">
             <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
-            <view class="empty-guide-link" @tap="load()">刷新</view>
+            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
           </view>
         </view>
         <view v-if="filesError && rows.length > 0" class="tip-error error-banner">

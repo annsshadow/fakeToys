@@ -83,7 +83,10 @@ function openRow(r: Row) {
       <button class="btn" :disabled="loading" @tap="doSearch">搜索</button>
     </view>
 
-    <view v-if="loading" class="tip">搜索中…</view>
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="rows.length === 0 && searchError" class="tip tip-error">
       <view class="error-text">{{ searchError }}</view>
       <view class="retry-btn" @tap="doSearch">重试</view>

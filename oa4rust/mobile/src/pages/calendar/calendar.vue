@@ -278,7 +278,10 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view class="c-submit" :class="{ disabled: creating }" @tap="submitEvent">保存事件</view>
     </view>
 
-    <view v-if="eventsView === 'loading'" class="tip">加载中…</view>
+    <view v-if="eventsView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="eventsView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
@@ -298,7 +301,10 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view v-if="e.content" class="content">{{ e.content }}</view>
     </view>
 
-    <view v-if="detailLoading" class="tip">详情加载中…</view>
+    <view v-if="detailLoading" class="ai-skeleton-list" aria-hidden="true">
+      <view class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="detail" class="card detail">
       <view class="detail-head">
         <text class="title">{{ detail.title || '未命名日程' }}</text>

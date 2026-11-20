@@ -268,7 +268,10 @@ function removeAttachment(field: MobileFormField, id: string): void {
   <view class="page ai-surface-gradient">
     <view class="card">
       <view class="card-title">选择流程</view>
-      <view v-if="loading" class="tip">加载中…</view>
+      <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+        <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+        <view class="ai-skeleton-line short"></view>
+      </view>
       <view v-else-if="processes.length === 0 && processError" class="tip tip-error">
         <view class="error-text">{{ processError }}</view>
         <view class="retry-btn" @tap="loadProcesses">重试</view>
@@ -308,7 +311,10 @@ function removeAttachment(field: MobileFormField, id: string): void {
     </view>
     <view v-if="showForm" class="card">
       <view class="card-title">填报表单</view>
-      <view v-if="formLoading" class="tip">加载表单…</view>
+      <view v-if="formLoading" class="ai-skeleton-list" aria-hidden="true">
+        <view class="ai-skeleton-line"></view>
+        <view class="ai-skeleton-line short"></view>
+      </view>
       <template v-else>
         <view v-for="gLabel in groupOrder" :key="gLabel || 'default'" class="group">
           <view v-if="groupTitle(gLabel)" class="group-title">{{ groupTitle(gLabel) }}</view>

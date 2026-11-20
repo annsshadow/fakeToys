@@ -126,7 +126,10 @@ function goSearch() {
       </view>
     </view>
 
-    <view v-if="loading" class="tip">加载中…</view>
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
@@ -136,8 +139,8 @@ function goSearch() {
       <text class="empty-guide-text">暂无数据</text>
       <text class="empty-guide-hint">暂无浏览数据，换个页签或去搜索找找看</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link" @tap="load()">刷新</view>
-        <view class="empty-guide-link primary" @tap="goSearch">去搜索</view>
+        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="goSearch">去搜索</view>
       </view>
     </view>
 
@@ -152,7 +155,10 @@ function goSearch() {
       </view>
     </view>
 
-    <view v-if="detailLoading" class="tip">详情加载中…</view>
+    <view v-if="detailLoading" class="ai-skeleton-list" aria-hidden="true">
+      <view class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="detail" class="detail">
       <view class="detail-head">
         <text class="detail-title">详情</text>

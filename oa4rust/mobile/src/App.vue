@@ -329,4 +329,28 @@ body .ai-brand-fill.ai-brand-fill {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+/* R301 结构化骨架屏：列表占位替代裸「加载中」灰字，仅占位不伪造业务数据。 */
+.ai-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+.ai-skeleton-line.short {
+  width: 58%;
+}
+/* R301 按压微交互：触控即刻反馈，减弱动效偏好下自动关闭。 */
+.ai-pressable {
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), opacity var(--ai-motion-fast) var(--ai-ease-spring);
+}
+.ai-pressable:active {
+  transform: scale(0.97);
+  opacity: 0.82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-pressable, .ai-pressable:active {
+    transition: none;
+    transform: none;
+  }
+}
 </style>

@@ -80,7 +80,10 @@ onLoad(async (options) => {
 
 <template>
   <view class="page ai-surface-gradient">
-    <view v-if="loading" class="tip">加载中…</view>
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="!topic && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
