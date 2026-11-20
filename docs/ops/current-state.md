@@ -4202,3 +4202,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：逐项核实两处单测失配均为开工前 HEAD 基线既有——adminTitleDedup.contract.test.ts:81 断言 /<h1[^>]*class="admin-title"/ 但 t27 已给 h1 加 ai-gradient-text；src/design-system.contract.test.ts:87 断言 class="o2-empty" 但 t32 已加 empty-guide；皆因契约未随实现同步，非 t22 引入（t22 未改源码、工作树干净）。按 t29/t21 先例，基线既有失败如实记录为后续迭代待办，不阻塞本轮门禁验收；typecheck 与双端 build 全绿为门禁核心结论。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 218. R301 收官与 R304 启动·基线契约失配全量盘点（2026-11-21）
+- R301 收官：40 任务 38 completed、2 failed（t11 首轮评审、t30 次轮评审，均 needs_revision，已由 t37/t38/t39 与后续修复关闭，非未完成工作）；t12–t22 全链收官入账（§207–§217）。t21 空操作裁决见 §216。
+- R304 启动·失败盘点升级：t22 门禁仅识别 2 处失配，队长当前 HEAD 独立全量复跑发现范围更广——desktop 14 文件/19 用例 failed（1040 passed / 1059 total），mobile 1 文件/1 用例 failed（429 passed / 430 total），合计 20 失败用例。desktop 失败文件：AdminLayout.contract.test.ts、adminPrimitives.contract.test.ts、adminTitleDedup.contract.test.ts、BusinessWork.aiStyle.B4.contract.test.ts、EndpointFold.devGate.B302.contract.test.ts、ModernBusinessB.contract.test.ts、ModernUI.contract.test.ts、ProcessFold.contract.test.ts、destructiveGuards.test.ts、flowPortalAdminTitleDedup.contract.test.ts、liveQueryItems.test.ts、popupSurfaces.contract.test.ts、tabStateA11y.contract.test.mjs、w13-w14-closure.test.ts；mobile：design-system.contract.test.ts。典型失配：tabStateA11y 日历选中态辅助技术暴露、BusinessWork h1 数量、destructiveGuards 守卫计数、EndpointFold h2 分区标题、flowPortalDeployment 不得保留 h1（与 t38 修复直接冲突）、liveQueryItems 统计失败可见性、ModernBusiness 会议页现代页头等。判为历轮迭代『改实现未同步旧断言』质量债务，须逐一甄别契约过时 vs 真实回归，不得臆断。
+- 已创建 t41（qa-e2e，只读甄别审计）：逐一读 20 用例断言与当前实现源码，每条给断言期望/实现实际/判定（契约过时或真实回归）/修复建议，交付 docs/ops/oa4rust-baseline-contract-mismatch-audit-r304.md，精确单提交；修复由后续任务承接。另识别 R304 方向：t35 令牌消费度审计（PC var(--ai-*) 21/75=28%、H5 branded=0 的 17 页）、t20 诚实附注、t19 遗留（PC org 数据空/hotpic|appinfo loading/单轮采样稳定性）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
