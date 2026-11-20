@@ -4253,3 +4253,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 下一轮方向（R305 待启）：t20 诚实附注与 t35 令牌消费度审计未消化——PC var(--ai-*) 深度消费仅 21/75 文件（28%）、H5 令牌 100% 注入但 17/19 页 branded=0；P0 缺口 /app/org、attendance、bam、bbs、search、file、im。作为持续迭代的实质视觉深化目标。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 225. R305 基线实测与审计口径校正（2026-11-21）
+- t50（qa-e2e，只读）完成改造前基线：commit bacb5678e 精确 1 文档 141 行 docs/ops/oa4rust-r305-visual-baseline.md。测试服真登录 Playwright headless PC 74/74（75 PNG）+ H5 19/19（20 PNG），pageerror=0/API失败=0。PC DOM aiPage 分布 0/1/2/3/4=29/11/16/10/8（≥1 为 45/74）；H5 令牌解析 19/19、branded=0 共 17 页、骨架屏 0/19。与 R301 D1 完全一致=改造前稳定态。<YOUR_TEST_DOMAIN> 占位、非物理真机、LEAK_HITS=[]，队长独立复核 stat 精确 1 文档、HEAD=TRACK=bacb5678e、文档与 evidence 合规。
+- 【重要口径校正】t50 基于当前 HEAD 实测推翻 t35 旧审计的一处口径：org/im/file/bbs/bam/note 等并非『零令牌双未消费』，而是『源码已注入 var(--ai-*)（srcVar=4/12/12/9/13/17）但 DOM 根元素未打 ai-page class』的标记缺口；真正双未消费（srcVar=0 且 DOM aiPage=0）仅 20 页，核心为 /app/attendance、/app/search，其余 18 为 admin 设计器页。队长据此向 t48(page-work)、t49(shell-eng) 下发校正：口径差页只补 ai-page class + 令牌下沉组件深度消费，不重复从头注入；attendance/search 才全套落地。避免契约写假断言凑数字。
+- R305 改造目标细化为两类：①双未消费 20 页（attendance/search + 18 admin）全套落地；②口径差页补 class + 组件下沉；③H5 17 页 branded=0 补 .ai-brand-fill、骨架屏 0/19 补齐。改造后用 t50 同口径脚本复查量化差异。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
