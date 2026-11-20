@@ -4043,6 +4043,13 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 14 文件、HEAD=远端追踪=e84329ce；独立复跑 AdminZone.aiStyle.B5.contract.test.ts 5/5（exit 0）；实读 26 行文档用 <YOUR_TEST_DOMAIN> 占位、LEAK_MATCHES=0；evidence.json 的 urlHost 为占位符、来源标注非物理真机、9 页 rootVisible/shell=1。工作树仅 ?? test-results/（gitignored）。诚实缺口：控制面板次级标题视觉层级、部署管理页 aiPageB5=0，均为既定范围内如实标注、留后续评审细化，非本轮臆造修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 188. R300 C1 首轮全页真浏览器实测（PC 74 + H5 19）与新 P0 定位（2026-11-21）
+- 交付（qa-e2e，commit dc95aa8c880d08155c0df20e72d2fd17fbdb3150，精确 1 文档 79 行）：docs/ops/oa4rust-c1-full-browser-e2e-r300.md。测试服最新产物（PC index-BUAk0CnL.js）下 Playwright Chromium 真浏览器覆盖 PC 74/74 + H5 19/19 路由，均真实 UI 登录、逐页截图；证据 PNG+JSON+脚本落 gitignored 的 oa4rust/test-results/r300-c1-*（非物理真机）。未改业务代码。
+- 新发现两个确定性 P0 真 bug（含源码级根因实证）：① PC /app/calendar 稳定抛 `Cannot access 'q' before initialization`——CalendarApp.vue:324 在函数定义后立即同步调用 loadCalendars('my')，函数首行写 calListError.value，而 `const calListError=ref('')` 在 338 行（调用之后），TDZ 触发，独立脚本 3 次复现且压缩产物 q=calListError 堆栈吻合；② H5 #/pages/calendar/calendar `S.value.map is not a function`——真接口 GET .../calendar/list/my 返回 `data={myCalendars:[],unitCalendars:[]}`（对象非数组），calendar.vue:164 误当数组赋值、:169 .map 抛错，UI 补数无法绕过，须代码修复。另确认 P0-3 工作台统计卡全 0 与待办列表 5 条（H5 同口径 9 条）不一致（沿用 A3，Dashboard.vue:183-207）。P1/P2 逐页批判见文档。
+- 队长独立复核：git show --stat 精确 1 文档、HEAD=远端追踪=dc95aa8c；实读 79 行文档用 <YOUR_TEST_DOMAIN> 占位；源码定点确认 CalendarApp.vue:324 调用早于 :338 声明、calendar.vue:164 断言数组而 :169 .map；r300-c1-pc-calendar-repro.json 3 次相同 pageerror 堆栈、r300-c1-api-probe2.json 真实响应体 data 为对象；证据目录 PC 78 文件/H5 22 文件齐备。工作树仅 ?? test-results/（gitignored）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+
 
 
 
