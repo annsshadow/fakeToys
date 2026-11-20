@@ -4123,6 +4123,12 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 7 文件、git show diff 确认 Dashboard.vue displayTodoTitle/foldRawKeySubtext 与 IMChat.vue 稳定序号逻辑；定点复跑 R303Dr06.contract.test.ts 3/3、Dashboard.todoTitle.contract.test.ts + IMChat.name.contract.test.ts 4/4 共 7/7 passed（exit0）；实读 evidence.json 标注 Playwright Chromium headless against deployed test server、not a physical device，rawTitle 数组为业务名「运行闭环」。HEAD=远端追踪=0b394d247；工作树并行变更系 t36 在途 BBS 文件，未触碰。t37 关闭 t30 的 R302-DR06-R finding。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 203. R302 论坛发帖写现役表修复与残留列表端点（t36，2026-11-21）
+- 交付（page-work，commit 7c09befe9，精确 4 文件，98+/3-）：oa4rust/backend/crates/bbs/src/subject.rs（+31/-2）、bbs/src/tests.rs（+35）、BBSForum.test.ts（+10）、docs/ops/oa4rust-bbs-create-table-fix-r302.md（25 行）。POST /api/bbs/subject/create 改写 x_bbs_topic，字段映射对齐 u2_subject_save，require_session + reject_impersonation 保留、author_id/creator 以会话身份为权威。test-first RED exit101→GREEN；测试服 Linux ELF 二进制原子部署（期间错误部署 Windows PE32+ 致 status=203/EXEC，已用 Docker 重建 ELF 恢复），真浏览器登录→新建版块→发帖→刷新→「我的」页签回显 titleInList=1、0 pageerror，5 张 1440×900 截图+evidence.json 落 gitignored oa4rust/test-results/r302-bbs-create/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认 subject.rs INSERT 改 x_bbs_topic 且防冒名门禁保留；定点复跑 cargo test -p bbs -p bbs_assemble_control（45 passed、0 failed）与 pnpm exec vitest run src/views/BBSForum.test.ts（9 passed）均 exit0；实读文档用 <YOUR_TEST_DOMAIN> 占位、evidence 标注非物理真机；HEAD=远端追踪=7c09befe9。
+- 新发现遗留项（非 t36 范围，队长源码复核坐实）：同一 subject.rs:104-119 GET /api/bbs/subject/list/{sectionId} 的 subject::list 仍 SELECT bbs_subject_info（旧表），与已改写的 create 及 u2 列表读 x_bbs_topic 不一致，版块筛选看不到新帖；默认「全部」只列 is_top=true 属既有语义。将另开 test-first 修复任务（t40）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
 
 
 
