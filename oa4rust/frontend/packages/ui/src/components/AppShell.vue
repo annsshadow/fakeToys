@@ -32,35 +32,23 @@
           </div>
         </div>
 
-        <!-- 系统管理折叠区：管理员专用，默认收起，避免把调试入口推给普通员工 -->
-        <div class="nav-group admin-group">
-          <button
-            class="nav-section-label nav-section-toggle"
-            type="button"
-            :aria-expanded="adminExpanded"
-            aria-controls="admin-nav-items"
-            @click="adminExpanded = !adminExpanded"
+        <!-- R298: 系统管理收敛为单一入口，分组导航移入 AdminLayout（/app/admin/*） -->
+        <div class="nav-group">
+          <div class="nav-section-label">{{ adminGroup.label }}</div>
+          <div
+            v-for="item in adminGroup.items"
+            :key="item.path"
+            class="nav-item"
+            role="button"
+            tabindex="0"
+            :aria-current="isActive(item.path) ? 'page' : undefined"
+            :class="{ active: isActive(item.path) }"
+            @click="navigate(item)"
+            @keydown.enter="navigate(item)"
+            @keydown.space.prevent="navigate(item)"
           >
-            <span class="nav-icon">⚙</span>
-            <span v-show="!sidebarCollapsed" class="nav-label">系统管理</span>
-            <span v-show="!sidebarCollapsed" class="nav-caret">{{ adminExpanded ? '▾' : '▸' }}</span>
-          </button>
-          <div v-show="adminExpanded" id="admin-nav-items" class="admin-nav-items">
-            <div
-              v-for="item in adminGroup.items"
-              :key="item.path"
-              class="nav-item"
-              role="button"
-              tabindex="0"
-              :aria-current="isActive(item.path) ? 'page' : undefined"
-              :class="{ active: isActive(item.path) }"
-              @click="navigate(item)"
-              @keydown.enter="navigate(item)"
-              @keydown.space.prevent="navigate(item)"
-            >
-              <span class="nav-icon">{{ item.icon }}</span>
-              <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
-            </div>
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span v-show="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
           </div>
         </div>
       </nav>
@@ -230,30 +218,12 @@ const navGroups: NavGroup[] = [
   },
 ]
 
-const adminExpanded = ref(false)
+// R298: 管理区入口收敛为单项；六组分组菜单由 AdminLayout 承载（main.ts 嵌套路由）。
 const adminGroup: NavGroup = {
   label: '系统管理',
   icon: '⚙',
   admin: true,
-  items: [
-    { path: '/app/admin/document', label: '文档管理', icon: '📄' },
-    { path: '/app/admin/program', label: '程序中心', icon: '⚙️' },
-    { path: '/app/admin/queryview', label: '查询视图', icon: '📊' },
-    { path: '/app/admin/server', label: '服务器', icon: '🖥️' },
-    { path: '/app/admin/form', label: '表单管理', icon: '📝' },
-    { path: '/app/admin/view', label: '视图管理', icon: '👁️' },
-    { path: '/app/admin/fileinfo', label: '文件信息', icon: '📎' },
-    { path: '/app/admin/control-panel', label: '控制面板', icon: '🔧' },
-    { path: '/app/admin/design-center', label: '设计中心', icon: '🎨' },
-    { path: '/app/admin/process-designer', label: '流程设计器', icon: '🧩' },
-    { path: '/app/admin/form-designer', label: '表单设计器', icon: '📐' },
-    { path: '/app/admin/query', label: '查询管理', icon: '🔎' },
-    { path: '/app/admin/portal', label: '门户管理', icon: '🌐' },
-    { path: '/app/admin/role', label: '角色管理', icon: '🔑' },
-    { path: '/app/admin/cms-module', label: 'CMS模块', icon: '📦' },
-    { path: '/app/admin/deployment', label: '部署管理', icon: '🚀' },
-    { path: '/app/admin/log-viewer', label: '日志查看', icon: '📜' },
-  ],
+  items: [{ path: '/app/admin/control-panel', label: '系统管理', icon: '⚙' }],
 }
 
 // 移动端导航项（精简）
@@ -406,30 +376,6 @@ function onDocClick(e: Event): void {
 
 .nav-group {
   display: block;
-}
-
-.nav-section-toggle {
-  width: calc(100% - 16px);
-  background: transparent;
-  border: 0;
-  border-top: 1px solid var(--border-subtle);
-  cursor: pointer;
-  text-align: left;
-  font: inherit;
-  color: var(--text-muted);
-}
-
-.nav-section-toggle:hover {
-  color: var(--color-primary);
-}
-
-.nav-caret {
-  margin-left: auto;
-  font-size: 10px;
-}
-
-.admin-nav-items {
-  padding-left: 0;
 }
 
 .nav-item {

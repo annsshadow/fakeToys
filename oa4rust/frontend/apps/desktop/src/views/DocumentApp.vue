@@ -3,16 +3,13 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>文档管理</h1>
-      <p class="subtitle">/api/document/*</p>
-    </div>
+    <AdminPageHeader title="文档管理" subtitle="文档发布 / 草稿 / 权限（/api/document/*）" />
     <div class="content-panel glass-card">
       <div class="tabs">
         <button :class="{active:tab==='published'}" @click="tab='published'">已发布</button>
         <button :class="{active:tab==='draft'}" @click="tab='draft'">草稿</button>
       </div>
-      <div class="toolbar">
+      <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="reload">
         <input v-model="keyword" placeholder="搜索文档..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
@@ -23,7 +20,8 @@
         <button class="btn-primary" @click="loadDocTwin3">数据·文档深度C</button>
         <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
-      </div>
+      </AdminToolbar>
+      <AdminTable :columns="documentColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="reload">
       <div class="list-panel">
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -60,6 +58,7 @@
           </div>
         </div>
       </div>
+      </AdminTable>
     </div>
     <!-- Create modal -->
     <div v-if="showCreate" class="modal-overlay" @click.self="showCreate=false">
@@ -104,6 +103,21 @@
 </template>
 
 <script setup lang="ts">
+import {
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+const documentColumns: AdminTableColumn[] = [
+  { key: 'title', label: '标题' },
+  { key: 'status', label: '状态' },
+  { key: 'createdAt', label: '创建时间' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
@@ -111,6 +125,12 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
 import { createSearchRunner } from './searchRunner'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 type Tab = 'published' | 'draft'
 type DocItem = { id: string; title?: string; name?: string; content?: string; status?: string; createdAt?: string }
@@ -516,6 +536,11 @@ async function loadDocTwin3() {
     toast.error(`数据·文档深度C失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 
 <style scoped>

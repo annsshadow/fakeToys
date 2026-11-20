@@ -3,56 +3,77 @@
 
 <template>
   <div class="portal-view">
-    <div class="view-header glass-card">
-      <h1>门户管理</h1>
-      <p class="subtitle">接入 /api/portal/* — 页面设计与发布</p>
-      <span class="hdr-actions">
-        <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
-        <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
-        <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
-        <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('create')">建门户</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('publish')">发布门户</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('portalPage')">门户分页</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('pageById')">页面详情</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('dictData')">字典路径数据</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('dictSet')">存字典数据</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('dictDel')">删字典数据</button>
-        <button class="new-page-btn ghost" @click="surfaceOps('scriptByName')">按名建脚本</button>
-        <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
-        <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
-        <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
-        <button class="new-page-btn ghost" @click="loadPortalTwin">孪生端点</button>
-        <button class="new-page-btn ghost" @click="loadPortalTwin2">孪生端点B</button>
-        <button class="new-page-btn ghost" @click="designerCreate('portal')">建门户</button>
-        <button class="new-page-btn ghost" @click="designerUpdate('portal')">改门户</button>
-        <button class="new-page-btn ghost" @click="designerDelete('portal')">删门户</button>
-        <button class="new-page-btn ghost" @click="designerCreate('page')">建页面</button>
-        <button class="new-page-btn ghost" @click="designerUpdate('page')">改页面</button>
-        <button class="new-page-btn ghost" @click="designerDelete('page')">删页面</button>
-        <button class="new-page-btn ghost" @click="designerCreate('widget')">建组件</button>
-        <button class="new-page-btn ghost" @click="designerUpdate('widget')">改组件</button>
-        <button class="new-page-btn ghost" @click="designerDelete('widget')">删组件</button>
-        <button class="new-page-btn ghost" @click="designerCreate('templatepage')">建模板页</button>
-        <button class="new-page-btn ghost" @click="designerDelete('templatepage')">删模板页</button>
-        <button class="new-page-btn ghost" @click="designerDelete('dict')">删字典</button>
-        <button class="new-page-btn ghost" @click="designerCreate('script')">建脚本</button>
-        <button class="new-page-btn ghost" @click="designerDelete('script')">删脚本</button>
-        <button class="new-page-btn ghost" @click="designerMisc('portalIcon')">门户图标</button>
-        <button class="new-page-btn ghost" @click="designerMisc('portalPerm')">门户权限</button>
-        <button class="new-page-btn ghost" @click="designerMisc('pageSave')">存页面</button>
-        <button class="new-page-btn ghost" @click="designerMisc('search')">设计器检索</button>
-        <button class="new-page-btn ghost" @click="designerMisc('inputCompare')">输入比对</button>
-        <button class="new-page-btn ghost" @click="designerMisc('inputCover')">输入覆盖</button>
-        <button class="new-page-btn ghost" @click="designerMisc('inputCreate')">输入创建</button>
-        <button class="new-page-btn ghost" @click="designerMisc('inputPrepCover')">预备覆盖</button>
-        <button class="new-page-btn ghost" @click="designerMisc('inputPrepCreate')">预备创建</button>
-        <button class="new-page-btn ghost" @click="designerMisc('summaryV2')">门户汇总V2</button>
-        <button class="new-page-btn ghost" @click="designerMisc('scriptManager')">脚本管理列举</button>
+    <AdminPageHeader title="门户管理" subtitle="接入 /api/portal/* — 页面设计与发布">
+      <template #actions>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
-      </span>
+      </template>
+    </AdminPageHeader>
+    <div class="admin-section-nav endpoint-groups glass-card">
+      <details class="endpoint-group">
+        <summary>端点操作 · 门户与表面</summary>
+        <div class="endpoint-actions">
+          <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
+          <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
+          <button class="new-page-btn ghost" @click="loadPortalResources">门户资源</button>
+          <button class="new-page-btn ghost" @click="loadPortalDetail">门户明细</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('create')">建门户</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('publish')">发布门户</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('portalPage')">门户分页</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('pageById')">页面详情</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('dictData')">字典路径数据</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('dictSet')">存字典数据</button>
+        </div>
+      </details>
+      <details class="endpoint-group">
+        <summary>端点操作 · 字典与脚本</summary>
+        <div class="endpoint-actions">
+          <button class="new-page-btn ghost" @click="surfaceOps('dictDel')">删字典数据</button>
+          <button class="new-page-btn ghost" @click="surfaceOps('scriptByName')">按名建脚本</button>
+          <button class="new-page-btn ghost" @click="loadPortalSurfaceEntities">表面实体</button>
+          <button class="new-page-btn ghost" @click="loadPortalMobileFacets">移动/字典/角标</button>
+          <button class="new-page-btn ghost" @click="loadPortalDeep">深度读矩阵</button>
+          <button class="new-page-btn ghost" @click="loadPortalTwin">孪生端点</button>
+          <button class="new-page-btn ghost" @click="loadPortalTwin2">孪生端点B</button>
+        </div>
+      </details>
+      <details class="endpoint-group">
+        <summary>端点操作 · 设计器增删</summary>
+        <div class="endpoint-actions">
+          <button class="new-page-btn ghost" @click="designerCreate('portal')">建门户</button>
+          <button class="new-page-btn ghost" @click="designerUpdate('portal')">改门户</button>
+          <button class="new-page-btn ghost" @click="designerDelete('portal')">删门户</button>
+          <button class="new-page-btn ghost" @click="designerCreate('page')">建页面</button>
+          <button class="new-page-btn ghost" @click="designerUpdate('page')">改页面</button>
+          <button class="new-page-btn ghost" @click="designerDelete('page')">删页面</button>
+          <button class="new-page-btn ghost" @click="designerCreate('widget')">建组件</button>
+          <button class="new-page-btn ghost" @click="designerUpdate('widget')">改组件</button>
+          <button class="new-page-btn ghost" @click="designerDelete('widget')">删组件</button>
+          <button class="new-page-btn ghost" @click="designerCreate('templatepage')">建模板页</button>
+          <button class="new-page-btn ghost" @click="designerDelete('templatepage')">删模板页</button>
+          <button class="new-page-btn ghost" @click="designerDelete('dict')">删字典</button>
+          <button class="new-page-btn ghost" @click="designerCreate('script')">建脚本</button>
+          <button class="new-page-btn ghost" @click="designerDelete('script')">删脚本</button>
+        </div>
+      </details>
+      <details class="endpoint-group">
+        <summary>端点操作 · 设计器工具</summary>
+        <div class="endpoint-actions">
+          <button class="new-page-btn ghost" @click="designerMisc('portalIcon')">门户图标</button>
+          <button class="new-page-btn ghost" @click="designerMisc('portalPerm')">门户权限</button>
+          <button class="new-page-btn ghost" @click="designerMisc('pageSave')">存页面</button>
+          <button class="new-page-btn ghost" @click="designerMisc('search')">设计器检索</button>
+          <button class="new-page-btn ghost" @click="designerMisc('inputCompare')">输入比对</button>
+          <button class="new-page-btn ghost" @click="designerMisc('inputCover')">输入覆盖</button>
+          <button class="new-page-btn ghost" @click="designerMisc('inputCreate')">输入创建</button>
+          <button class="new-page-btn ghost" @click="designerMisc('inputPrepCover')">预备覆盖</button>
+          <button class="new-page-btn ghost" @click="designerMisc('inputPrepCreate')">预备创建</button>
+          <button class="new-page-btn ghost" @click="designerMisc('summaryV2')">门户汇总V2</button>
+          <button class="new-page-btn ghost" @click="designerMisc('scriptManager')">脚本管理列举</button>
+        </div>
+      </details>
     </div>
     <div v-if="portalListText" class="portal-note">{{ portalListText }}</div>
+    <div v-if="isPending" class="loading-state" aria-label="门户页面加载中"><div v-for="i in 6" :key="i" class="skeleton portal-skeleton"></div></div>
     <div class="page-grid glass-card">
       <ListLoadError v-if="pages.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <ListLoadError v-if="pages.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
@@ -79,6 +100,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { ref, watch } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: used in Vue template.
+import { AdminPageHeader } from '../components/admin'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -437,7 +460,7 @@ const pages = ref<PortalPage[]>([])
 const showEditor = ref(false)
 const queryClient = useQueryClient()
 
-const { data, isError, error } = useQuery({
+const { data, isError, error, isPending } = useQuery({
   queryKey: ['portal', 'pages'],
   queryFn: async () => {
     const resp = await api.get('/api/portal/assemble/surface/page/list/portal/default')
@@ -522,4 +545,11 @@ async function loadPortalTwin2() {
 .hdr-actions{display:flex;gap:8px;align-items:center}
 .new-page-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
 .portal-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.admin-section-nav{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.endpoint-group{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated)}
+.endpoint-group summary{cursor:pointer;font-size:13px;color:var(--text-secondary)}
+.endpoint-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.loading-state{display:flex;flex-direction:column;gap:8px;padding:16px}
+.skeleton{height:48px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.5s infinite}
+.portal-skeleton{margin-bottom:8px}
 </style>

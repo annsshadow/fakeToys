@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程设计器" subtitle="/api/processplatform/assemble/designer/* — 可视化流程编排（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="pd">
     <!-- Header -->
     <div class="pd-header glass-card">
@@ -2775,12 +2778,16 @@
         </div>
       </div>
     </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import { OrganizationSelector, type OrganizationSelectorItem } from '@oa4rust/ui'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 import {
   type JsonObject,
   parseProcessDefinition,

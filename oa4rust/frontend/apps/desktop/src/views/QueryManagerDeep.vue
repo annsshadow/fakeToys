@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询管理" subtitle="/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="qm">
     <!-- Header -->
     <div class="qm-header glass-card">
@@ -426,12 +429,16 @@
       </div>
     </div>
 
+    </AdminFormSection>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { buildCsv, parseCsv } from '../utils/csv'

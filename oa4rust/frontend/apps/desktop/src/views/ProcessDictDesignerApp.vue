@@ -1,7 +1,12 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程字典设计" subtitle="/api/processplatform/assemble/designer/dict/* — 数据字典 CRUD" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索字典 / 应用..." :error="loadError" />
+      <AdminTable :columns="adminColumns" :rows="items as unknown as Record<string, unknown>[]" :loading="loading" :error="loadError" @retry="reload" />
+
   <div class="crud-view">
     <div class="view-header glass-card">
       <div>
@@ -46,8 +51,30 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
+import {
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
+
+const adminColumns: AdminTableColumn[] = [
+  { key: 'name', label: '名称' },
+  { key: 'application', label: '应用' },
+  { key: 'updateTime', label: '更新时间' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'

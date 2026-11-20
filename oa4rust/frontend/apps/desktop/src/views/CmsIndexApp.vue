@@ -2,7 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
+  <div class="mod-view">
+    <AdminPageHeader title="CMS 索引设计" subtitle="索引 CRUD 与设计器（/api/cms/core/entity/index/*）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+      <div class="crud-view">
     <div class="view-header glass-card">
       <div>
         <h1>CMS索引设计</h1>
@@ -141,11 +144,14 @@
       </div>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -153,6 +159,10 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
 
 interface Item {
   id: string
@@ -857,6 +867,9 @@ async function loadCmsTwin3() {
     toast.error(`内容孪生端点C失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

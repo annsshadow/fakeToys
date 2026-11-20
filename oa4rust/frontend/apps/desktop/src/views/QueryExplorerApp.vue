@@ -1,7 +1,11 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="查询浏览器" subtitle="/api/query/assemble/surface/explorer/list — 查询资源浏览" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索视图 / 类型..." />
+
   <div class="crud-view">
     <div class="view-header glass-card">
       <div>
@@ -31,11 +35,15 @@
       </table>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'

@@ -3,9 +3,16 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>程序中心</h1>
-      <p class="subtitle">/api/program_center/* — 319条路由</p>
+    <AdminPageHeader title="程序中心" subtitle="/api/program_center/* — 应用列表与详情" />
+    <div class="admin-section-nav" aria-label="程序中心分区">
+      <button type="button" :class="{ active: tab === 'agent' }" @click="tab = 'agent'">Agent</button>
+      <button type="button" :class="{ active: tab === 'application' }" @click="tab = 'application'">应用</button>
+      <button type="button" :class="{ active: tab === 'script' }" @click="tab = 'script'">脚本</button>
+      <button type="button" :class="{ active: tab === 'dict' }" @click="tab = 'dict'">字典</button>
+      <button type="button" :class="{ active: tab === 'market' }" @click="tab = 'market'">市场</button>
+      <button type="button" :class="{ active: tab === 'invoke' }" @click="switchTab('invoke')">调用</button>
+      <button type="button" :class="{ active: tab === 'config' }" @click="switchTab('config')">配置</button>
+      <button type="button" :class="{ active: tab === 'style' }" @click="switchTab('style')">样式</button>
     </div>
     <div class="content-panel glass-card">
       <div class="tabs">
@@ -31,7 +38,7 @@
         <div v-else class="item-table">
           <div class="table-header"><span class="col-name">名称</span><span class="col-flag">Flag</span><span class="col-status">状态</span><span class="col-actions">操作</span></div>
           <div v-for="a in filteredAgents" :key="a.id" class="table-row glass-card">
-            <span class="col-name">{{ a.name || a.label || a.agentName || '未命名' }}</span>
+            <button type="button" class="detail-link" @click="openDetail('Agent', a.name || a.label || a.agentName || a.id, a)">{{ a.name || a.label || a.agentName || '未命名' }}</button>
             <span class="col-flag font-mono">{{ a.flag || a.id }}</span>
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
             <span class="col-actions">
@@ -52,7 +59,7 @@
           <div v-for="app in applications" :key="app.id" class="item-card glass-card">
             <div class="ic">📱</div>
             <div class="ib">
-              <div class="it">{{ app.name || app.appName || '未命名' }}</div>
+              <button type="button" class="detail-link" @click="openDetail('应用', app.name || app.appName || app.id, app)">{{ app.name || app.appName || '未命名' }}</button>
               <div class="im">{{ app.desc || app.description || '' }}</div>
               <div class="meta">flag: {{ app.flag || app.id }}</div>
               <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteApp(app)">删除</button>
@@ -69,7 +76,7 @@
           <div v-for="s in scripts" :key="s.flag" class="item-card glass-card">
             <div class="ic">⚡</div>
             <div class="ib">
-              <div class="it">{{ s.name || s.scriptName || '未命名' }}</div>
+              <button type="button" class="detail-link" @click="openDetail('脚本', s.name || s.scriptName || s.flag, s)">{{ s.name || s.scriptName || '未命名' }}</button>
               <div class="im">flag: {{ s.flag || s.id }}</div>
               <button class="btn-sm" style="margin-top:4px" @click="openScriptEditor(s)">编辑代码</button>
               <button class="btn-sm" style="margin-top:4px" @click="loadVersions(s)">版本</button>
@@ -91,7 +98,7 @@
           <div v-for="d in dicts" :key="d.flag" class="item-card glass-card">
             <div class="ic">📚</div>
             <div class="ib">
-              <div class="it">{{ d.name || d.dictName || '未命名' }}</div>
+              <button type="button" class="detail-link" @click="openDetail('字典', d.name || d.dictName || d.flag, d)">{{ d.name || d.dictName || '未命名' }}</button>
               <div class="im">flag: {{ d.flag || d.id }}</div>
               <button class="btn-sm" style="margin-top:4px" :disabled="!d.flag" @click="openDictData(d)">数据</button>
               <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteDict(d)">删除</button>
@@ -374,6 +381,13 @@
         <div class="modal-actions"><button class="btn-cancel" @click="closeVersions">关闭</button></div>
       </div>
     </div>
+    <div v-if="selectedDetail" class="detail-drawer" role="dialog" aria-label="对象详情">
+      <div class="detail-drawer-head">
+        <strong>{{ selectedDetail.type }} · {{ selectedDetail.name }}</strong>
+        <button type="button" @click="selectedDetail = null">关闭</button>
+      </div>
+      <pre class="detail-drawer-body">{{ selectedDetail.raw }}</pre>
+    </div>
   </div>
 </template>
 
@@ -381,6 +395,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: used in Vue template.
+import { AdminPageHeader } from '../components/admin'
 import { businessTodayYMD } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -391,6 +407,10 @@ import { mutationErrorMessage } from './mutationError'
 type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market' | 'invoke' | 'config' | 'style'
 // 本页 13 个列表取数入口共用一个失败横幅：写明是哪一条失败，重试回到同一条加载函数。
 const loadError = ref('')
+const selectedDetail = ref<{ type: string; name: string; raw: string } | null>(null)
+function openDetail(type: string, name: string, row: unknown): void {
+  selectedDetail.value = { type, name: String(name ?? '—'), raw: JSON.stringify(row ?? {}, null, 2) }
+}
 const retryLoad = ref<() => void>(() => {})
 function failLoad(label: string, e: unknown, retry: () => void): void {
   loadError.value = describeListError(label, e)
@@ -2472,4 +2492,12 @@ const program_center_module_write_m_1_ref = ref<any[]>([])
 .chip.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
 .market-acts{display:flex;gap:6px;flex-wrap:wrap}
 .app-meta{margin-left:10px;font-size:12px;color:var(--text-muted)}
+.admin-section-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.admin-section-nav button{padding:6px 14px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer}
+.admin-section-nav button.active{border-color:var(--color-primary);color:var(--color-primary)}
+.detail-link{background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
+.detail-drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,90vw);z-index:120;background:var(--bg-surface);border-left:1px solid var(--border-subtle);box-shadow:var(--shadow-glow);display:flex;flex-direction:column}
+.detail-drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--border-subtle)}
+.detail-drawer-head button{padding:6px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);cursor:pointer}
+.detail-drawer-body{flex:1;overflow:auto;margin:0;padding:16px;font-size:12px;color:var(--text-secondary)}
 </style>

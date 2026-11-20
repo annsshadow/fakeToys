@@ -3,10 +3,7 @@
 
 <template>
   <div class="mod-view">
-    <div class="view-header glass-card">
-      <h1>应用管理</h1>
-      <p class="subtitle">/api/appinfo/*</p>
-    </div>
+    <AdminPageHeader title="应用管理" subtitle="应用、权限与文档入口（/api/appinfo/*）" />
     <div class="content-panel glass-card">
       <div class="stats-row">
         <div v-for="s in stats" :key="s.label" class="stat-card glass-card">
@@ -14,7 +11,7 @@
           <div class="stat-label">{{s.label}}</div>
         </div>
       </div>
-      <div class="list-toolbar">
+      <AdminToolbar v-model="keyword" aria-label="搜索应用" search-placeholder="搜索应用..." @search="doSearch" @refresh="doSearch">
         <input v-model="keyword" aria-label="搜索应用" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="createApp">+ 新建应用</button>
@@ -22,8 +19,9 @@
         <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
         <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
         <button class="btn-primary" @click="loadAppExtra2">类型管理/含文档类型/输出</button>
-      </div>
+      </AdminToolbar>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
+      <AdminTable :columns="appInfoColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="doSearch">
       <div class="list-panel">
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -45,6 +43,7 @@
           </div>
         </div>
       </div>
+      </AdminTable>
     </div>
     <!-- Detail dialog -->
     <div v-if="detailItem" class="modal-overlay" @click.self="detailItem=null">
@@ -58,12 +57,33 @@
 </template>
 
 <script setup lang="ts">
+import {
+  AdminFormSection,
+  AdminPageHeader,
+  AdminTable,
+  type AdminTableColumn,
+  AdminToolbar,
+} from '../components/admin/'
+
+const appInfoColumns: AdminTableColumn[] = [
+  { key: 'name', label: '应用名称' },
+  { key: 'appFlag', label: 'Flag' },
+  { key: 'appType', label: '类型' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 const keyword = ref('')
 const loading = ref(false)
@@ -232,6 +252,11 @@ async function showPerms(item: any) {
     toast.error(`查询权限失败: ${e?.message ?? ''}`)
   }
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminFormSection
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 doSearch()
 

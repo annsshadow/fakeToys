@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="SQL语句设计器" subtitle="/api/query/assemble/designer/* — 语句编辑与执行（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="smd">
     <!-- Header -->
     <div class="smd-header glass-card">
@@ -878,12 +881,16 @@
       </div>
     </div>
 
+    </AdminFormSection>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
 import { buildCsv } from '../utils/csv'

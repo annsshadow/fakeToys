@@ -1,7 +1,11 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="流程任务中心" subtitle="/api/processplatform/service/processing/task/* — 任务中心与办理入口" />
+    <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
+      <AdminToolbar v-model="search" search-placeholder="搜索标题 / 流程 / 处理人..." />
+
   <div class="crud-view">
     <div class="view-header glass-card">
       <div>
@@ -72,11 +76,15 @@
       </table>
     </div>
   </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader, AdminToolbar } from '../components/admin/'
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.

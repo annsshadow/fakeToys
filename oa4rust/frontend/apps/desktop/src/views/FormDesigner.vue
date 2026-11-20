@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>
+<template>  <div class="mod-view">
+    <AdminPageHeader title="表单设计器" subtitle="/api/form/* — 可视化表单构建器（原操作入口完整保留）" />
+    <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
+
   <div class="fd">
     <!-- Header -->
     <div class="fd-header glass-card">
@@ -708,11 +711,15 @@
     </div>
   </div>
 </div>
+    </AdminFormSection>
+  </div>
 </template>
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import { AdminFormSection, AdminPageHeader } from '../components/admin/'
 import {
   definitionToDesignerFields,
   formSavePayload,

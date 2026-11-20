@@ -3,40 +3,51 @@
 
 <template>
   <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>CMS 栏目管理</h1>
-        <p class="subtitle">/api/cms/core/entity/column/*</p>
-      </div>
-      <button class="btn-primary" @click="openCreate">+ 新建栏目</button>
-    </div>
+    <AdminPageHeader title="CMS 栏目管理" subtitle="实体栏目（x_cms_entity_column）" />
+    <AdminToolbar
+      v-model="search"
+      search-placeholder="搜索栏目名称"
+      create-label="+ 新建栏目"
+      @search="loadData"
+      @refresh="loadData"
+      @create="openCreate"
+    >
+    </AdminToolbar>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
-      <div class="toolbar">
-        <input v-model="search" placeholder="搜索栏目名称..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📏</div><p>暂无栏目，点击"新建栏目"创建</p></div>
-      <table v-else class="data-table">
-        <thead><tr><th>名称</th><th>上级</th><th>排序</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.name || '—' }}</td>
-            <td class="mono">{{ item.parentId || '（顶级）' }}</td>
-            <td>{{ item.sortOrder ?? '—' }}</td>
-            <td>{{ item.status || 'active' }}</td>
-            <td>{{ fmtTime(item.updateTime || item.createTime) }}</td>
-            <td>
-              <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📐</div><p>暂无数据</p></div>
+      <AdminTable v-else
+        :columns="columns"
+        :rows="filtered as any[]"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无栏目，点击“新建栏目”创建"
+        @retry="reload"
+      >
+      <template #cell-name="{ row }">
+        {{ row.name || '—' }}
+      </template>
+      <template #cell-parentId="{ row }">
+        {{ row.parentId || '（顶级）' }}
+      </template>
+      <template #cell-sortOrder="{ row }">
+        {{ row.sortOrder ?? '—' }}
+      </template>
+      <template #cell-status="{ row }">
+        {{ row.status || 'active' }}
+      </template>
+      <template #cell-updateTime="{ row }">
+        {{ fmtTime(row.updateTime || row.createTime) }}
+      </template>
+      <template #cell-actions="{ row: item }">
+        <button class="btn-sm" @click="editItem(item as any)">编辑</button>
+          <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item as any)">删除</button>
+      </template>
+    </AdminTable>
     </div>
-    <div v-if="showCreate || showEdit" class="modal-overlay" @click.self="closeModal">
+<div v-if="showCreate || showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit ? '编辑栏目' : '新建栏目' }}</h3>
         <div class="form-group"><label>名称</label><input v-model="form.name" placeholder="栏目名称" class="form-input" /></div>
@@ -49,12 +60,21 @@
         </div>
       </div>
     </div>
-  </div>
-</template>
+  </div></template>
 <script setup lang="ts">
+const columns: AdminTableColumn[] = [
+  { key: 'name', label: '名称' },
+  { key: 'parentId', label: '上级' },
+  { key: 'sortOrder', label: '排序' },
+  { key: 'status', label: '状态' },
+  { key: 'updateTime', label: '更新时间' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { AdminPageHeader, AdminTable, type AdminTableColumn, AdminToolbar } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -62,6 +82,11 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 interface Item {
   id: string
@@ -166,6 +191,10 @@ function loadData() {
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

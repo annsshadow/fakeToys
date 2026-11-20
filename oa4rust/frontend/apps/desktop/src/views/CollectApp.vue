@@ -3,39 +3,48 @@
 
 <template>
   <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>收集管理</h1>
-        <p class="subtitle">/api/program_center/collect/*（x_program_collect）</p>
-      </div>
-      <button class="btn-primary" @click="openCreate">+ 新建</button>
-    </div>
+    <AdminPageHeader title="收集管理" subtitle="收集记录（x_program_collect）" />
+    <AdminToolbar
+      v-model="search"
+      search-placeholder="搜索标题 / 链接"
+      create-label="+ 新建"
+      @search="loadData"
+      @refresh="loadData"
+      @create="openCreate"
+    >
+    </AdminToolbar>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
-      <div class="toolbar">
-        <input v-model="search" placeholder="搜索标题 / 链接..." class="search-input" />
-        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
-      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📥</div><p>暂无收集记录</p></div>
-      <table v-else class="data-table">
-        <thead><tr><th>标题</th><th>链接</th><th>成员</th><th>创建时间</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.title||'—' }}</td>
-            <td class="mono url-cell">{{ item.url||'—' }}</td>
-            <td class="mono">{{ item.personId||'—' }}</td>
-            <td>{{ fmtTime(item.createTime) }}</td>
-            <td>
-              <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📐</div><p>暂无数据</p></div>
+      <AdminTable v-else
+        :columns="columns"
+        :rows="filtered as any[]"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无收集记录"
+        @retry="reload"
+      >
+      <template #cell-title="{ row }">
+        {{ row.title||'—' }}
+      </template>
+      <template #cell-url="{ row }">
+        {{ row.url||'—' }}
+      </template>
+      <template #cell-personId="{ row }">
+        {{ row.personId||'—' }}
+      </template>
+      <template #cell-createTime="{ row }">
+        {{ fmtTime(row.createTime) }}
+      </template>
+      <template #cell-actions="{ row: item }">
+        <button class="btn-sm" @click="editItem(item as any)">编辑</button>
+          <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item as any)">删除</button>
+      </template>
+    </AdminTable>
     </div>
-    <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
+<div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit?'编辑':'新建' }}收集记录</h3>
         <div class="form-group"><label>成员 ID</label><input v-model="form.personId" placeholder="personId" class="form-input mono" /></div>
@@ -47,12 +56,20 @@
         </div>
       </div>
     </div>
-  </div>
-</template>
+  </div></template>
 <script setup lang="ts">
+const columns: AdminTableColumn[] = [
+  { key: 'title', label: '标题' },
+  { key: 'url', label: '链接' },
+  { key: 'personId', label: '成员' },
+  { key: 'createTime', label: '创建时间' },
+  { key: 'actions', label: '操作' },
+]
+
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { AdminPageHeader, AdminTable, type AdminTableColumn, AdminToolbar } from '../components/admin/'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 import { collectMutationErrorMessage } from './collectError'
@@ -60,6 +77,11 @@ import { collectMutationErrorMessage } from './collectError'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
+
+// 模板专用组件引用（避免 lint 误报未使用）
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 
 interface Item {
   id: string
@@ -177,6 +199,10 @@ function loadData() {
 function fmtTime(t?: string) {
   return t ? formatServerDateTime(t) : ''
 }
+// __TEMPLATE_IMPORT_REFS__
+void AdminPageHeader
+void AdminTable
+void AdminToolbar
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

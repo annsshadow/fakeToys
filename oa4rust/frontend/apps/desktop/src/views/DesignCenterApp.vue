@@ -3,17 +3,12 @@
 
 <template>
   <div class="nav-view">
-    <!-- Header -->
-    <div class="view-header glass-card">
-      <div>
-        <h1>设计中心</h1>
-        <p class="subtitle">快速导航到各个设计器 · /api/* 全链路覆盖</p>
-      </div>
-      <div class="header-actions">
+    <AdminPageHeader title="设计中心" subtitle="快速导航到各个设计器 · /api/* 全链路覆盖">
+      <template #actions>
         <button class="btn-sm" @click="refreshAll">🔄 刷新状态</button>
         <button class="btn-sm" @click="showStats=true">📊 统计</button>
-      </div>
-    </div>
+      </template>
+    </AdminPageHeader>
 
     <!-- Stats bar -->
     <div class="stats-bar glass-card" v-if="showStats">
@@ -74,6 +69,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: used in Vue template.
+import { AdminPageHeader } from '../components/admin'
 
 const searchQuery = ref('')
 const showStats = ref(false)
@@ -105,8 +102,8 @@ const allDesigners = ref<Designer[]>([
     name: '流程设计器',
     icon: '⚡',
     desc: '可视化流程编排与节点配置',
-    path: '/app/process-designer',
-    href: '/app/process-designer',
+    path: '/app/admin/process-designer',
+    href: '/app/admin/process-designer',
     status: 'done',
     statusText: '已完成',
   },
@@ -115,8 +112,8 @@ const allDesigners = ref<Designer[]>([
     name: '表单设计器',
     icon: '📋',
     desc: 'JSON表单构建与字段拖拽',
-    path: '/app/form-designer',
-    href: '/app/form-designer',
+    path: '/app/admin/form-designer',
+    href: '/app/admin/form-designer',
     status: 'done',
     statusText: '已完成',
   },
@@ -125,8 +122,8 @@ const allDesigners = ref<Designer[]>([
     name: '查询设计器',
     icon: '🔍',
     desc: 'SQL与可视化查询构建',
-    path: '/app/query-designer',
-    href: '/app/query-designer',
+    path: '/app/admin/query-designer',
+    href: '/app/admin/query-designer',
     status: 'done',
     statusText: '已完成',
   },
@@ -135,8 +132,8 @@ const allDesigners = ref<Designer[]>([
     name: '语句设计器',
     icon: '💻',
     desc: 'SQL语句管理与执行',
-    path: '/app/query-statement-designer',
-    href: '/app/query-statement-designer',
+    path: '/app/admin/query-statement-designer',
+    href: '/app/admin/query-statement-designer',
     status: 'done',
     statusText: '已完成',
   },
@@ -145,8 +142,8 @@ const allDesigners = ref<Designer[]>([
     name: '门户设计器',
     icon: '🖼',
     desc: '页面与组件可视化设计',
-    path: '/app/portal-designer',
-    href: '/app/portal-designer',
+    path: '/app/admin/portal-designer',
+    href: '/app/admin/portal-designer',
     status: 'done',
     statusText: '已完成',
   },
@@ -155,8 +152,8 @@ const allDesigners = ref<Designer[]>([
     name: 'CMS表单设计',
     icon: '📝',
     desc: '内容模型表单配置',
-    path: '/app/cms-form-designer',
-    href: '/app/cms-form-designer',
+    path: '/app/admin/cms-form-designer',
+    href: '/app/admin/cms-form-designer',
     status: 'partial',
     statusText: '部分完成',
   },
@@ -165,8 +162,8 @@ const allDesigners = ref<Designer[]>([
     name: 'CMS视图设计',
     icon: '👁',
     desc: '内容展示视图配置',
-    path: '/app/cms-view-designer',
-    href: '/app/cms-view-designer',
+    path: '/app/admin/cms-view-designer',
+    href: '/app/admin/cms-view-designer',
     status: 'partial',
     statusText: '部分完成',
   },
@@ -175,8 +172,8 @@ const allDesigners = ref<Designer[]>([
     name: 'CMS脚本设计',
     icon: '💻',
     desc: '内容处理脚本编辑',
-    path: '/app/cms-script-designer',
-    href: '/app/cms-script-designer',
+    path: '/app/admin/cms-script-designer',
+    href: '/app/admin/cms-script-designer',
     status: 'todo',
     statusText: '待开发',
   },
@@ -185,8 +182,8 @@ const allDesigners = ref<Designer[]>([
     name: 'CMS字典设计',
     icon: '📚',
     desc: '内容字典配置管理',
-    path: '/app/cms-dict-designer',
-    href: '/app/cms-dict-designer',
+    path: '/app/admin/cms-dict-designer',
+    href: '/app/admin/cms-dict-designer',
     status: 'todo',
     statusText: '待开发',
   },
@@ -195,8 +192,8 @@ const allDesigners = ref<Designer[]>([
     name: '查询视图设计',
     icon: '🗂',
     desc: '查询视图定义与管理',
-    path: '/app/query-view-designer',
-    href: '/app/query-view-designer',
+    path: '/app/admin/query-view-designer',
+    href: '/app/admin/query-view-designer',
     status: 'partial',
     statusText: '部分完成',
   },
@@ -205,8 +202,8 @@ const allDesigners = ref<Designer[]>([
     name: '查询统计设计',
     icon: '📈',
     desc: '统计报表配置与设计',
-    path: '/app/query-stat-designer',
-    href: '/app/query-stat-designer',
+    path: '/app/admin/query-stat-designer',
+    href: '/app/admin/query-stat-designer',
     status: 'todo',
     statusText: '待开发',
   },
@@ -215,8 +212,8 @@ const allDesigners = ref<Designer[]>([
     name: '配置设计器',
     icon: '⚙',
     desc: '系统配置与参数设计',
-    path: '/app/config-designer',
-    href: '/app/config-designer',
+    path: '/app/admin/config-designer',
+    href: '/app/admin/config-designer',
     status: 'partial',
     statusText: '部分完成',
   },
@@ -225,8 +222,8 @@ const allDesigners = ref<Designer[]>([
     name: 'XFORM设计',
     icon: '🔄',
     desc: '表单转换规则设计',
-    path: '/app/cms-xform-designer',
-    href: '/app/cms-xform-designer',
+    path: '/app/admin/cms-xform-designer',
+    href: '/app/admin/cms-xform-designer',
     status: 'todo',
     statusText: '待开发',
   },
@@ -235,8 +232,8 @@ const allDesigners = ref<Designer[]>([
     name: '脚本设计器',
     icon: '📜',
     desc: '前端脚本与插件开发',
-    path: '/app/script-designer',
-    href: '/app/script-designer',
+    path: '/app/admin/script-designer',
+    href: '/app/admin/script-designer',
     status: 'todo',
     statusText: '待开发',
   },
