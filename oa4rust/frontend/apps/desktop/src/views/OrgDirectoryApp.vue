@@ -63,6 +63,21 @@
           <button type="button" class="run-btn" :disabled="busy" data-testid="org-person-reload" @click="loadPersonFilter">加载名册</button>
         </div>
         <div class="result-meta" data-testid="org-person-meta">共 {{ personCount }} 人 · 第 {{ personPage }} / {{ personPageTotalPages }} 页</div>
+        <div class="dept-tree-panel" data-testid="dept-tree-panel">
+          <div class="panel-header">
+            <h3>部门树</h3>
+            <button type="button" class="run-btn" data-testid="dept-tree-retry" @click="loadDeptTree">加载部门树</button>
+          </div>
+          <div v-if="deptTreeError" class="load-error" data-testid="dept-tree-error">
+            <span>{{ deptTreeError }}</span>
+            <button type="button" class="run-btn" data-testid="dept-tree-error-retry" @click="loadDeptTree">重试加载</button>
+          </div>
+          <div v-else-if="deptTreeLoading && deptTree.length === 0" class="dept-tree-loading" data-testid="dept-tree-loading">部门树加载中…</div>
+          <div v-else-if="deptTree.length === 0" class="modern-empty" data-testid="dept-tree-empty">暂无部门树数据，请点击「加载部门树」</div>
+          <ul v-else class="dept-tree-list" data-testid="dept-tree-list">
+            <li v-for="d in deptTree.slice(0, 30)" :key="String(d.id ?? d.name)">{{ d.name ?? d.id }}</li>
+          </ul>
+        </div>
         <div v-if="loadError" class="load-error" data-testid="org-load-error">
           <span>{{ loadError }}</span>
           <button type="button" class="run-btn" data-testid="org-load-retry" @click="loadPersonFilter">重试加载</button>
@@ -194,6 +209,31 @@ function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
   })
 }
 const PERSON_LOAD_TIMEOUT_MS = 10000
+const DEPT_TREE_TIMEOUT_MS = 10000
+const deptTree = ref<Array<Record<string, unknown>>>([])
+const deptTreeLoading = ref(false)
+const deptTreeError = ref('')
+async function loadDeptTree(): Promise<void> {
+  deptTreeLoading.value = true
+  deptTreeError.value = ''
+  try {
+    const resp = await withTimeout(
+      api.get(
+        '/api/departments/tree',
+      ),
+      DEPT_TREE_TIMEOUT_MS,
+    )
+    const list = take(resp)
+    deptTree.value = list
+    lastAction.value = `部门树（${list.length} 行）`
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '未知错误'
+    deptTreeError.value = `部门树加载失败：${message}。请检查网络或稍后重试。`
+    toast.error(deptTreeError.value)
+  } finally {
+    deptTreeLoading.value = false
+  }
+}
 async function loadPersonFilter(): Promise<void> {
   busy.value = true
   loadError.value = ''
@@ -220,6 +260,7 @@ async function loadPersonFilter(): Promise<void> {
 }
 onMounted(() => {
   void loadPersonFilter()
+  void loadDeptTree()
 })
 async function personFilterPage(delta: number): Promise<void> {
   const next = personPage.value + delta
@@ -400,7 +441,7 @@ function runRole(): void {
         : []
       await collect('按人员查角色', api.post('/api/role/list/person/object', { personList }))
     },
-    async () => collect('部门树', api.get('/api/departments/tree')),
+    async () => { await loadDeptTree() },
     async () => collect('用户清单', api.get('/api/users/list')),
   ])
 }
@@ -604,4 +645,10 @@ async function orgAuth(op: string): Promise<void> {
 .ai-page .person-avatar { background: var(--ai-gradient-brand); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; transition: transform var(--ai-motion-fast) var(--ai-ease-spring); }
 .ai-page .person-item:hover .person-avatar { transform: scale(1.08); }
 .ai-page .person-item { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); }
+.ai-page .dept-tree-panel { margin-top: var(--ai-grid-2); padding: var(--ai-grid-2); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .dept-tree-panel .panel-header { display: flex; align-items: center; justify-content: space-between; gap: var(--ai-grid-2); }
+.ai-page .dept-tree-panel .panel-header h3 { margin: 0; font-size: 14px; }
+.ai-page .dept-tree-loading { padding: var(--ai-grid-2); color: var(--text-muted); }
+.ai-page .dept-tree-list { list-style: none; margin: var(--ai-grid-1) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--ai-grid-1); }
+.ai-page .dept-tree-list li { padding: 6px 10px; border: 1px solid var(--ai-glass-border); border-radius: 8px; background: var(--ai-glass-bg); }
 </style>

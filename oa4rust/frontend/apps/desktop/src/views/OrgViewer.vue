@@ -6,7 +6,7 @@
     <div class="view-header glass-card">
       <h1>组织架构</h1>
       <EndpointFold
-        label="端点调试"
+        label="高级操作"
         :groups="foldGroups"
         :total-count="endpointCount"
         test-id="org-endpoint-fold"
@@ -122,10 +122,14 @@
       <aside class="org-tree glass-card">
         <div class="search-bar">
           <span class="si">⌕</span>
-          <input v-model="keyword" @input="handleSearch" placeholder="Search..." class="si2" />
+          <input v-model="keyword" @input="handleSearch" placeholder="搜索部门或人员" class="si2" />
         </div>
         <div v-if="treeLoading" class="ls"><div class="sk" v-for="i in 6" :key="i"></div></div>
-        <div v-else-if="nodes.length===0" class="es"><p>Loading...</p></div>
+        <div v-else-if="treeError" class="org-tree-error" data-testid="org-tree-error">
+          <p>{{ treeError }}</p>
+          <button type="button" data-testid="org-tree-retry" @click="loadOrgTree">重试加载</button>
+        </div>
+        <div v-else-if="nodes.length===0" class="es" data-testid="org-tree-empty"><p>暂无组织架构数据，请点击「重试加载」</p></div>
         <ul v-else class="tree-list">
           <li v-for="n in nodes" :key="n.id" class="tree-node">
             <div class="nr" :class="{active:selected?.id===n.id}" @click="selectNode(n)">
@@ -147,20 +151,20 @@
         </ul>
       </aside>
       <main class="org-detail glass-card">
-        <div v-if="!selected" class="es-lg"><div class="ei">O</div><p>Select a node to view details</p></div>
+        <div v-if="!selected" class="es-lg"><div class="ei">O</div><p>选择节点查看详情</p></div>
         <template v-else>
-          <div class="dh"><span class="di">{{selected.type==='group'?'O':'P'}}</span><div><h2>{{selected.name}}</h2><p class="ds">{{selected.type==='group'?'Dept':'Person'}}</p></div></div>
-          <div class="dg"><div class="di2"><span class="dl">ID</span><span class="dv mono">{{selected.id}}</span></div><div class="di2"><span class="dl">Name</span><span class="dv">{{selected.name}}</span></div></div>
+          <div class="dh"><span class="di">{{selected.type==='group'?'O':'P'}}</span><div><h2>{{selected.name}}</h2><p class="ds">{{selected.type==='group'?'部门':'人员'}}</p></div></div>
+          <div class="dg"><div class="di2"><span class="dl">编号</span><span class="dv mono">{{selected.id}}</span></div><div class="di2"><span class="dl">名称</span><span class="dv">{{selected.name}}</span></div></div>
           <div v-if="selected.type==='group'" class="members">
-            <h3>Members</h3>
+            <h3>成员</h3>
             <div class="mlist">
               <template v-if="(selected as any).members?.length">
                 <div v-for="m in (selected as any).members" :key="m.id" class="mc">
                   <div class="ma2">{{m.name?.charAt(0)}}</div>
-                  <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'Emp'}}</div></div>
+                  <div class="mi2"><div class="mn">{{m.name}}</div><div class="mp">{{m.position||m.role||'员工'}}</div></div>
                 </div>
               </template>
-              <div v-else class="empty-m">No members</div>
+              <div v-else class="empty-m" data-testid="org-tree-members-empty">暂无成员</div>
             </div>
             <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
             <ListLoadError v-if="subGroupsError" mode="banner" :message="subGroupsError" @retry="retrySubGroups" />
@@ -233,7 +237,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import { EndpointFold } from '../components/admin/'
 import { confirmMsg, toast } from '../utils/toast'
@@ -1406,17 +1410,34 @@ const keyword = ref('')
 const nodes = ref<N[]>([])
 const selected = ref<N | null>(null)
 const treeLoading = ref(false)
-let timer: ReturnType<typeof setTimeout>
-const { data } = useQuery({
-  queryKey: ['org', 'tree'],
-  queryFn: () =>
-    // 后端无裸 group/list；group/list/like 返回全部群组（无需 flag）。
-    api.get('/api/organization/assemble/control/group/list/like').then((r: any) => {
-      nodes.value = (r.data ?? []) as N[]
-      return r
-    }),
-  staleTime: 300000,
-})
+const treeError = ref('')
+const ORG_TREE_TIMEOUT_MS = 10000
+function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
+  let timer
+  return Promise.race([
+    p,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('请求超时')), ms) }),
+  ]).finally(() => { if (timer !== undefined) clearTimeout(timer) })
+}
+async function loadOrgTree() {
+  treeLoading.value = true
+  treeError.value = ''
+  try {
+    const resp = await withTimeout(
+      api.put(
+        '/api/organization/assemble/control/group/list/like',
+        {},
+      ),
+      ORG_TREE_TIMEOUT_MS,
+    )
+    nodes.value = ((resp as any)?.data ?? []) as N[]
+  } catch (e: any) {
+    treeError.value = `组织架构加载失败：${e?.message ?? '未知错误'}。请检查网络或稍后重试。`
+  } finally {
+    treeLoading.value = false
+  }
+}
+onMounted(() => { void loadOrgTree() })
 function toggleNode(n: N) {
   n._exp = !n._exp
   if (n._exp && !n.children) {
@@ -1508,9 +1529,10 @@ async function selectNode(n: N) {
 // R145：`@input` 每个字符都触发搜索——300ms 防抖 + 只落地最后一次响应。
 const searchRun = createSearchRunner({ debounceMs: 300 })
 async function handleSearch() {
+  treeError.value = ''
   if (!keyword.value.trim()) {
     searchRun.cancel()
-    nodes.value = []
+    void loadOrgTree()
     return
   }
   try {
@@ -1569,4 +1591,7 @@ async function handleSearch() {
 .sk{height:32px;border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-elevated)}
 .empty-m{color:var(--text-muted);font-size:13px;padding:20px;text-align:center}
 @media(max-width:768px){.org-layout{flex-direction:column}.org-tree{width:100%;max-height:200px}}
+.org-tree-error{margin:12px;padding:16px;border-radius:var(--radius-md);border:1px solid var(--ai-glass-border);background:var(--ai-glass-bg);color:var(--text-primary);font-size:13px}
+.org-tree-error p{margin:0 0 12px;color:var(--text-secondary);line-height:1.6}
+.org-tree-error button{padding:7px 14px;border-radius:var(--radius-md);border:1px solid var(--ai-indigo);background:var(--ai-gradient-brand);color:#fff;cursor:pointer;font-size:12px}
 </style>
