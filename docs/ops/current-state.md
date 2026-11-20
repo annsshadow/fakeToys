@@ -4183,3 +4183,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：git show --stat 精确 5 文件；定点复跑 AdminSystemUpgrade.C301.contract.test.ts 5/5 passed（PIPE=0，首次误用不存在路径 AdminZone.r301C7.contract.test.ts 报 No test files found，改用 commit stat 中真实路径）；实读文档用 <YOUR_TEST_DOMAIN> 占位、非物理真机如实标注；evidence.json source 标注 not a physical device；HEAD=TRACK=2c28335df，暂存区纯净。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 214. R301 D1 第二轮全页真浏览器实测与第一轮量化对照（t19，2026-11-21）
+- 交付（qa-e2e，commit 463057d08，精确 1 文档 172+/0-）：docs/ops/oa4rust-r301-d1-full-e2e-comparison.md。测试服真 UI 登录逐页截图 PC 74/74 + H5 19/19，errors/apiFailures 均 0（第二轮监听含 400 口径更严），截图为无头渲染非物理真机。与第一轮 R300-C1 同路由表量化对照：PC pageerror 1→0（日历 TDZ 收敛）、H5 errorText 1→0（日历信封收敛）、PC org Loading 常驻→重试空态、工作台待审批 0→5；两轮 API 失败均 0；逐页耗时量级持平（PC ~1615→1626ms、H5 ~1682→1678ms）。遗留如实回流：PC org 数据仍空、hotpic/appinfo loading、单轮采样稳定性（文档第 6 节）。LEAK_HITS=[]。
+- 队长独立复核（不采信自述）：git show --stat 精确 1 文档；实读 172 行文档，来源声明用 <YOUR_TEST_DOMAIN> 占位、≥1000 轮非终态、同路由表量化对照表与遗留项齐全；gitignored oa4rust/test-results/r301-d1-full-pc/evidence.json 与 r301-d1-full-h5/evidence.json 的 source 均标注 Playwright Chromium headless/not a physical device（H5 390x844 isMobile/hasTouch），routesFrom 指向第一轮同路由表脚本；HEAD=TRACK=463057d08，暂存区纯净。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
