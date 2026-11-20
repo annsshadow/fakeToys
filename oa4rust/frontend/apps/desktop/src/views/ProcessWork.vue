@@ -3499,7 +3499,7 @@ function fmtTime(value: unknown): string {
 .btn-sm.reject { border-color: var(--color-error); color: var(--color-error); }
 .state { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 50px; color: var(--text-muted); }
 .error-state { color: var(--color-error); }
-.modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(0,0,0,.62); }
+.modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background:var(--bg-overlay); }
 .work-dialog { width: min(860px, 92vw); max-height: 88vh; overflow: auto; padding: 22px; }
 .work-dialog header, .work-dialog footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .work-dialog header { margin-bottom: 22px; }

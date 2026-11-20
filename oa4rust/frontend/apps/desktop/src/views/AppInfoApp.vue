@@ -288,7 +288,7 @@ const api_list_i_1_574_data = ref<any[]>([])
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:24px;max-width:520px;width:90%;max-height:80vh;overflow:auto}
 .modal h3{font-family:'Orbitron',sans-serif;color:var(--color-primary);margin:0 0 12px}
 .detail-pre{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all}

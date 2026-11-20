@@ -2238,7 +2238,7 @@ function copySqlWithTimestamp() {
 .sb-loading,.sb-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .sb-item:hover{background:var(--bg-hover)}
-.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.sb-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 .si-icon{font-size:18px;flex-shrink:0}
 .si-info{flex:1;min-width:0}
 .si-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2279,7 +2279,7 @@ function copySqlWithTimestamp() {
 .pg-btn:disabled{opacity:0.3;cursor:not-allowed}
 .pg-info{font-size:12px;color:var(--text-muted)}
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{padding:24px;width:560px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0}
 .form-group{display:flex;flex-direction:column;gap:4px}
@@ -2364,7 +2364,7 @@ function copySqlWithTimestamp() {
 .sb-tabs{display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid var(--border-color)}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
 .sb-item:hover{background:var(--bg-hover)}
-.sb-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.sb-item.active{background:var(--color-primary-soft);box-shadow: inset 3px 0 0 var(--color-primary)}
 /* SQL Editor enhancement */
 .sql-editor{flex:1;min-height:200px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'Fira Code','JetBrains Mono',monospace;font-size:13px;outline:none;resize:none;line-height:1.6;tab-size:2}
 .sql-editor:focus{border-color:var(--color-primary)}

@@ -231,7 +231,7 @@ function loadData() {
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .detail-val{padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);color:var(--text-primary);word-break:break-all}
 .empty-icon{font-size:32px;margin-bottom:8px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:520px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}

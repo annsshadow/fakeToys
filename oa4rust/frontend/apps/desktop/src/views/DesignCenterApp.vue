@@ -294,7 +294,7 @@ const design_appdict_u3_dedup_target_ref = ref<any[]>([])
 .nc-status.todo{background:rgba(239,68,68,0.15);color:#ef4444}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text-muted);gap:12px;flex:1}
 .ei{font-size:48px;opacity:0.4}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:20px;width:700px;max-height:80vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
 .modal-header{display:flex;align-items:center;justify-content:space-between}
 .modal-header span{font-family:'Orbitron',sans-serif;color:var(--color-primary);font-size:15px}

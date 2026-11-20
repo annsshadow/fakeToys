@@ -587,6 +587,15 @@ function onDocClick(e: Event): void {
   z-index: var(--z-dropdown);
   animation: dropdown-in var(--duration-fast) var(--ease-out);
   transform-origin: top right;
+
+
+  /* R294：玻璃表面，消除展开时与底层内容的透明叠影（t5 在案问题） */
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
 }
 
 @keyframes dropdown-in {

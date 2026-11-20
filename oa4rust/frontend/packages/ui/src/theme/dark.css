@@ -102,6 +102,10 @@
   --bg-overlay: rgba(240, 244, 248, 0.9);
   --bg-glass: rgba(255, 255, 255, 0.8);
 
+  /* R294：补齐浅色玻璃令牌（此前仅 dark 定义，light 下顶栏/侧栏/下拉的 blur 与边框失效） */
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(16px);
+
   /* WCAG 2.1 AA 1.4.11：边框合成到三种背景均 ≥3:1（见 nonTextContrast.contract.test.ts）。 */
   --border-subtle: rgba(0, 0, 0, 0.44);
   --border-active: rgba(37, 99, 235, 0.85);

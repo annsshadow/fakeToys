@@ -1492,7 +1492,7 @@ const api_control_list_top_720_data = ref<any[]>([])
   font-size: 13px; transition: all var(--transition-fast); margin-bottom: 2px;
 }
 .section-item:hover { background: var(--color-primary-soft); color: var(--color-primary); }
-.section-item.active { background: var(--color-primary-soft); color: var(--color-primary); border-left: 3px solid var(--color-primary); }
+.section-item.active { background: var(--color-primary-soft); color: var(--color-primary); box-shadow: inset 3px 0 0 var(--color-primary); }
 .sec-icon { font-size: 16px; width: 20px; text-align: center; }
 .sec-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sec-count { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); padding: 1px 6px; border-radius: 8px; }

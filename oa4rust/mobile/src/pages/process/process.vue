@@ -243,7 +243,10 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="loadFirst">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">暂无{{ tabs.find((t) => t.key === active)?.label }}</view>
+    <view v-else-if="rows.length === 0" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">暂无{{ tabs.find((t) => t.key === active)?.label }}</text>
+    </view>
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openDetail(row, i)">
         <view class="title">{{ titleOf(row, i) }}</view>

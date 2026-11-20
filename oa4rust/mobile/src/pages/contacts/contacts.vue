@@ -219,7 +219,10 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         <view class="error-text">{{ loadError }}</view>
         <view class="retry-btn" @tap="search()">重试</view>
       </view>
-      <view v-else-if="listView === 'empty'" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
+      <view v-else-if="listView === 'empty'" class="o2-empty">
+        <view class="o2-empty-icon" aria-hidden="true"></view>
+        <text class="o2-empty-text">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</text>
+      </view>
       <view v-else class="list">
         <view v-for="(row, i) in rows" :key="i" class="item o2-list-item">
           <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
@@ -242,8 +245,9 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         <view class="error-text">{{ orgError }}</view>
         <view class="retry-btn" @tap="loadOrg()">重试</view>
       </view>
-      <view v-else-if="orgView === 'empty'" class="tip">
-        {{ mode === 'unit' ? '暂无单位' : '暂无群组' }}
+      <view v-else-if="orgView === 'empty'" class="o2-empty">
+        <view class="o2-empty-icon" aria-hidden="true"></view>
+        <text class="o2-empty-text">{{ mode === 'unit' ? '暂无单位' : '暂无群组' }}</text>
       </view>
       <view v-else class="list">
         <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item o2-list-item">
@@ -269,7 +273,10 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         <view class="error-text">{{ unitPeopleError }}</view>
         <view v-if="unitPeopleTarget" class="retry-btn" @tap="openUnit(unitPeopleTarget)">重试</view>
       </view>
-      <view v-else-if="unitPeople.length === 0" class="tip">该单位暂无人员</view>
+      <view v-else-if="unitPeople.length === 0" class="o2-empty">
+        <view class="o2-empty-icon" aria-hidden="true"></view>
+        <text class="o2-empty-text">该单位暂无人员</text>
+      </view>
       <view v-for="(p, i) in unitPeople" :key="i" class="item o2-list-item">
         <text class="avatar">{{ nameOf(p).slice(0, 1).toUpperCase() }}</text>
         <view class="body" @tap="openPerson(p)">

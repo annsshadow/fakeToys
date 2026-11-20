@@ -2666,7 +2666,7 @@ function runValidate(): void {
 .list-loading, .list-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px }
 .list-item { padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 2px }
 .list-item:hover { background: var(--bg-hover) }
-.list-item.active { background: var(--color-primary-soft); border-left: 3px solid var(--color-primary) }
+.list-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary) }
 .li-name { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .li-meta { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px }
 /* Center area */
@@ -2746,7 +2746,7 @@ function runValidate(): void {
 .pv-legend { font-size: 13px; font-weight: 600; color: var(--color-primary); padding: 0 8px }
 .pv-submit { margin-top: 8px; padding: 10px 24px; font-size: 14px }
 /* Templates modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:200}
 .modal{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px;max-height:85vh;overflow-y:auto}
 .modal-lg{width:720px}.modal-md{width:480px}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}

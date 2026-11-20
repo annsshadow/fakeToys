@@ -81,7 +81,10 @@ function openConversation(row: Record<string, unknown>) {
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">暂无会话</view>
+    <view v-else-if="rows.length === 0" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">暂无会话</text>
+    </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>

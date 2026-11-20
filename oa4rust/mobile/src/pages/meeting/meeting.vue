@@ -168,7 +168,10 @@ const emptyText = computed(() =>
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
     </view>
-    <view v-else-if="listView === 'empty'" class="tip">{{ emptyText }}</view>
+    <view v-else-if="listView === 'empty'" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">{{ emptyText }}</text>
+    </view>
 
     <view v-for="m in rows" :key="m.id" class="card o2-list-item">
       <view class="card-head">

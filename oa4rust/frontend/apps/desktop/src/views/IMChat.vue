@@ -1218,7 +1218,7 @@ async function loadImTwin() {
   border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast);
 }
 .conv-item:hover { background: var(--color-primary-soft); }
-.conv-item.active { background: var(--color-primary-soft); border-left: 3px solid var(--color-primary); }
+.conv-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary); }
 .conv-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));

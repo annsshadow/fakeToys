@@ -91,7 +91,10 @@ function newTopic() {
       <view class="error-text">{{ bbsError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">论坛暂无主题</view>
+    <view v-else-if="rows.length === 0" class="o2-empty">
+      <view class="o2-empty-icon" aria-hidden="true"></view>
+      <text class="o2-empty-text">论坛暂无主题</text>
+    </view>
     <view v-else class="topic-list">
       <view v-if="bbsError" class="error-banner">
         <text class="error-text">{{ bbsError }}</text>
