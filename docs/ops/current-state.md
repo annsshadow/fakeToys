@@ -4272,3 +4272,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t52（design-reviewer）R305 终审已自动派发（claimed），待其对 t48/t49/t51/t50 逐条复核。R305 实现侧全部就绪。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 228. R305 收官：视觉深度消费达标、全量测试全绿（2026-11-21）
+- t52 终审（design-reviewer，attempt fdc20018，只读、未提交）：verdict=pass、findings_open=0。同口径真浏览器复查量化：PC aiPage≥1 由 45/74 升至 52/74（+7，t48/t49 目标页 org/attendance/bam/bbs/search/file/im 全达标，双未消费 20 页中 attendance/search 核心业务页清零、18 admin 设计器按边界未纳入）；H5 branded 2/19→16/19（另 3 页 message/doc/bbs-topic 条件锚点经 r305Branded 契约源码断言、专项延迟采样 19/19、骨架 11/19）。契约均真断言（R305 4it/R305b 3it/r305Branded 22it）、全仓 expect(true) 15 处全在历史 api-with-sdk.test.ts 非 contract。无回归：pageerror/API 失败改造前后均 0、rawUuid 4 页/loading 2 页与基线相同、DR-01~07 与 BBS/t33/t37/t38 修复无回退。证据非物理真机、文档 <YOUR_TEST_DOMAIN> 占位。
+- 队长独立全量复核（不采信自述）：desktop `pnpm exec vitest run` 250 files/2072 passed/0 failed（11.23s）、mobile 70 files/452 passed/0 failed（2.73s）——与 t52 自述一致，较 R304 收官基线（248/2065、69/430）净增契约且全绿；t52 status=completed/verdict=pass/findings_open=0 已核实；HEAD=TRACK=b2d16d876、工作树干净。
+- R305 全链收官：t50 基线（§225，重要口径校正：org/im/file/bbs/bam/note 是源码已注入但 DOM 缺 ai-page 的标记差页，非双未消费）→ t48/t49 PC 七页改造（§226）→ t51 H5 17 页品牌渐变+骨架口径纠正（§227）→ t52 终审 pass。5 任务 0 失败回退，期间坚持『断言不弱化/不制造回归』（骨架 class 不改以护 t17、IMChat UUID 遮蔽不回退、双合法 h1 模式延续）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
