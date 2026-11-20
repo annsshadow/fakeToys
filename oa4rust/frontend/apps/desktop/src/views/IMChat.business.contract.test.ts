@@ -23,7 +23,7 @@ describe('IMChat 业务视图契约（R296 P2）', () => {
     expect(template).toContain('data-testid="im-conversation-search"')
     expect(template).toContain('data-testid="im-conversation-list"')
     expect(template).toContain('role="list"')
-    expect(template).toMatch(/v-for="conv in filteredConversations"/)
+    expect(template).toMatch(/v-for="\(conv,\s*convIndex\) in filteredConversations"/)
     expect(template).toContain('data-testid="im-mark-all-read"')
   })
 
@@ -35,7 +35,7 @@ describe('IMChat 业务视图契约（R296 P2）', () => {
   })
 
   it('消息输入框是真实表单（文本域 + 提交按钮）', () => {
-    const composer = template.slice(template.indexOf('<form class="message-input"'))
+    const composer = template.slice(template.indexOf('<form class="message-input ai-panel"'))
     expect(composer).toContain('<form')
     expect(composer).toContain('<textarea')
     expect(composer).toContain('data-testid="im-message-input"')

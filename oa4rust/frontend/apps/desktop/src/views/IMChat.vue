@@ -15,13 +15,13 @@
           aria-label="搜索会话" data-testid="im-conversation-search" />
       </div>
       <div class="conversation-list" role="list">
-        <div v-for="conv in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
+        <div v-for="(conv, convIndex) in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
           :class="{ active: selectedChat?.id === conv.id }"
-          :data-testid="'im-conv-' + conv.id" @click="selectConversation(conv)">
-          <div class="conv-avatar">{{ conv.avatar || conv.name?.[0] }}</div>
+          :data-testid="'im-conv-' + (convIndex + 1)" @click="selectConversation(conv)">
+          <div class="conv-avatar">{{ conv.avatar || displayConversationName(conv)?.[0] }}</div>
           <div class="conv-info">
-            <div class="conv-name">{{ conv.name }}</div>
-            <div class="conv-preview">{{ conv.lastMessage || '暂无消息' }}</div>
+            <div class="conv-name">{{ displayConversationName(conv) }}</div>
+            <div class="conv-preview">{{ displayConversationPreview(conv) }}</div>
           </div>
           <div class="conv-meta">
             <span class="conv-time">{{ conv.time }}</span>
@@ -291,6 +291,24 @@ function endCall(notify = true): void {
   if (notify && convId) wsClient.value?.send(convId, { webrtc: 'end', to: convId })
 }
 
+// R302 DR-06：源数据 name 为机器生成键（如 im-conv-<ts>-<rand>），只在检索/追踪中使用，
+// 绝不把原始键直接呈现给用户；无真人姓名接口时降级为「类型 + 脱敏尾号」。
+function isRawConversationName(name: string): boolean {
+  return /^im-conv-[0-9]+-[a-z0-9]+$/i.test(name) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(name)
+}
+function displayConversationName(c: Conversation): string {
+  const name = String(c.name ?? '').trim()
+  if (!name) return '未命名会话'
+  if (!isRawConversationName(name)) return name
+  const tail = name.slice(-4)
+  return c.type === 'group' ? `群聊 · ${tail}` : `单聊 · ${tail}`
+}
+function displayConversationPreview(c: Conversation): string {
+  const last = String(c.lastMessage ?? '').trim()
+  if (!last || isRawConversationName(last)) return '暂无消息，点击开始对话'
+  return last
+}
+
 function toggleCall(): void {
   if (callState.value === 'idle') void startCall()
   else endCall()
@@ -318,7 +336,7 @@ const filteredConversations = computed(() => {
   if (!searchMsg.value) return conversations.value
   const q = searchMsg.value.toLowerCase()
   return conversations.value.filter(
-    (c) => c.name.toLowerCase().includes(q) || (c.lastMessage ?? '').toLowerCase().includes(q),
+    (c) => c.name.toLowerCase().includes(q) || displayConversationName(c).toLowerCase().includes(q) || (c.lastMessage ?? '').toLowerCase().includes(q),
   )
 })
 

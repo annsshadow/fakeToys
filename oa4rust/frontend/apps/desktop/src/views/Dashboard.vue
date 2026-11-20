@@ -2,11 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dashboard" data-testid="dashboard-business-view">
+  <div class="dashboard ai-page ai-page-dashboard" data-testid="dashboard-business-view">
     <header class="welcome-bar glass-card ai-panel" data-testid="dashboard-welcome">
       <div class="welcome-text">
-        <span class="greeting">早安，</span>
-        <span class="user-name">{{ user?.name ?? '用户' }}</span>
+        <h1 class="welcome-heading ai-gradient-text" data-testid="dashboard-h1"><span class="greeting">早安，</span><span class="user-name">{{ user?.name ?? '用户' }}</span></h1>
         <span class="welcome-msg">欢迎回来，今天的工作从这里开始</span>
       </div>
       <div class="datetime">
@@ -277,6 +276,7 @@ const api_data_doc_386_data = ref<any[]>([])
   border-radius: var(--ai-cmd-radius);
   transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
 }
+.welcome-heading { display: flex; align-items: baseline; margin: 0; font-size: 20px; }
 .welcome-bar:hover { transform: translateY(-1px); box-shadow: var(--ai-shadow-2); }
 .stat-placeholder { color: var(--text-muted); font-size: 22px; }
 .empty-cta { display: inline-block; margin-top: 8px; color: var(--color-primary); font-size: 12px; text-decoration: none; transition: color var(--ai-motion-fast) var(--ai-ease-spring); }
