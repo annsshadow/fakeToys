@@ -4137,5 +4137,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 
 
 
-
+## 205. R303 BBS 版块筛选列表现役表修复（t40，2026-11-21）
+- 交付（page-work，commit dcaa8ef09，精确 4 文件，91+/3-）：oa4rust/backend/crates/bbs/src/subject.rs（subject::list 改读 x_bbs_topic + deleted_at IS NULL，create_time::text 修复 timestamp 行映射 500，响应键不变）+ tests.rs（56 行 RED→GREEN）+ 脱敏文档 oa4rust/docs/ops/oa4rust-bbs-section-list-fix-r303.md（21 行）+ BBSForum.test.ts（8 行）。cargo test -p bbs -p bbs_assemble_control 10+45 passed；vitest BBSForum.test.ts 10 passed。Linux ELF 原子部署测试服；Playwright Chromium headless 真浏览器登录→新建版块→发帖→刷新→按版块筛选，新帖回显 titleInList=1、接口 200 含标题、0 pageerror；截图+evidence.json 落 gitignored oa4rust/test-results/r303-bbs-section-list/（非物理真机）。
+- 队长独立复核（不采信自述）：git show --stat 精确 4 文件、git show diff 确认 list SELECT x_bbs_topic/create_time::text；独立复跑 cargo test -p bbs -p bbs_assemble_control（CARGO=0）与 vitest BBSForum.test.ts 10 passed（PIPE=0）；实读文档 <YOUR_TEST_DOMAIN> 占位无真值、evidence.json 标注 Playwright Chromium headless、not a physical device 与真实 UI 流程步骤；HEAD=远端追踪=dcaa8ef09。t36 遗留版块筛选缺陷闭环，t40 并入 t39 终审依赖。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
