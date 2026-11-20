@@ -18,6 +18,7 @@ import { parseServerDate } from '@/utils/datetime'
 import { createLatestGate } from '@/utils/latest'
 import { describeLoadError } from '@/utils/loadList'
 import { validateEventTimeRange } from './eventTime'
+import { normalizeCalendarRows } from './calendarEnvelope'
 
 interface EventRow {
   id?: string
@@ -161,7 +162,8 @@ async function load(): Promise<void> {
   try {
     const cals = await calendarApi.myCalendars()
     if (!listGate.isLatest(token)) return
-    calendars.value = (cals.data ?? []) as CalendarRow[]
+    // 真接口 data 是 {myCalendars,unitCalendars} 对象，运行时归一化防 .map 崩溃
+    calendars.value = normalizeCalendarRows(cals.data)
     const all: EventRow[] = []
     // 并行拉取各日历事件（后端 filter 只按 calendarId 过滤），再在客户端做时间窗筛选；
     // allSettled 保持「单个日历失败不影响其余」语义且结果按日历序拼接。
