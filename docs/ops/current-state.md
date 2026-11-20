@@ -4025,8 +4025,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核：git show --stat 精确 6 文件、HEAD=远端追踪=2f95a745b；实读 26 行文档确认真域名/凭据不入库（LEAK_HITS=[]）、截图如实标注；工作树 M/?? 文件系 t6/t7 并行任务在途改动，非 t5 遗留，不混入本提交。非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 185. R300 B3 沟通协作域 AI 风格重构（2026-11-21）
+- 交付（page-comm，commit e341e480c9bff405734da58f1c5683f3697a5203，精确 6 文件）：oa4rust/docs/ops/oa4rust-pc-comm-r300-b3.md（23 行）+ MeetingApp.vue / OrgDirectoryApp.vue / CalendarApp.vue / ProcessWork.vue + Pages.aiStyle.B3.contract.test.ts（77 行）。基于 t1 --ai-* 令牌与 t4 外壳落地会议/通讯录/日程/审批四页，只追加视觉类与空态引导，业务接口/路由/数据不变。契约 4 项先 RED（4/4 失败）后 GREEN（队长独立复跑 4/4 passed，exit 0），typecheck/build/全量桌面测试通过。
+- 测试服真浏览器实测：Playwright Chromium headless 真实登录→四页 DOM 实测→会议新建对话框，通讯录点击『加载名册』0→21 人（真实 UI 补数据），会议创建因楼栋/会议室必填未提交如实记录、未编造数据；9 张截图 + 两份 evidence.json 落盘 gitignored 的 oa4rust/test-results/r300-b3-comm/ 与 r300-b3-flow/（非物理真机）。
+- 队长独立复核：git show --stat 精确 6 文件、HEAD=远端追踪=e341e480c；实读 23 行文档确认真域名/凭据不入库、非物理真机与未提交事项如实标注；工作树 M/?? 系 t7 在途改动，未触碰。非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
-- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
 
