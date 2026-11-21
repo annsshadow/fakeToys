@@ -281,7 +281,8 @@ export const generalApi = {
   dictUpdate: (id: string, data: unknown) => api.post(`/api/general/dict/update/${id}`, data),
   dictDelete: (id: string) => api.post(`/api/general/dict/delete/${id}`),
   dictItemList: (dictId: string) => api.get(`/api/general/dict/item/list/${dictId}`),
-  dictItemCreate: (dictId: string, data: unknown) => api.post(`/api/general/dict/item/${dictId}`, data),
+  /** R315 F3：后端仅 POST /api/general/dict/item/create，dictId 由 body 提供（lib.rs:1078）。 */
+  dictItemCreate: (dictId: string, data: unknown) => api.post('/api/general/dict/item/create', { dictId, ...(data as Record<string, unknown>) }),
   /** @dead 后端未注册 general/file 直传路由（仅 general/file/create 等），暂留原路径。 */
   fileUpload: (formData: FormData) => api.upload('/api/general/file', formData),
   /** 发票列表（后端 GET general/invoice/list，无分页参数）。 */
@@ -352,6 +353,7 @@ export const jpushApi = {
   deviceCreate: (data: unknown) => api.post('/api/jpush/core/entity/device/create', data),
   deviceDelete: (id: string) => api.delete(`/api/jpush/core/entity/device/${id}`),
   templateList: () => api.get('/api/jpush/core/entity/template/list'),
+  /** @dead R315 F3：后端 jpush/jpush_core_entity 仅 GET template/{id}，无 update/save 路由；暂留原路径，调用方勿用。 */
   templateUpdate: (id: string, data: unknown) => api.put(`/api/jpush/core/entity/template/${id}`, data),
   assembleDeviceList: (pushType: string) =>
     api.get(`/api/jpush_assemble_control/device/list/${encodeURIComponent(pushType)}`),
@@ -488,11 +490,13 @@ export const queryViewApi = {
   bundleV2: (view: string) => api.post(`/api/queryview/bundle/v2/${view}`, {}),
   excel: (view: string) => api.get(`/api/queryview/excel/${view}`),
   flag: (viewFlag: string) => api.get(`/api/queryview/flag/${viewFlag}`),
-  importModelList: (query: string, flag: string) => api.get(`/api/queryview/importmodel/list/${query}/${flag}`),
+  /** R315 F3：后端仅 POST /api/queryview/importmodel/list/{query}/{flag}（lib.rs:404）。 */
+  importModelList: (query: string, flag: string) => api.post(`/api/queryview/importmodel/list/${query}/${flag}`, {}),
   importModelExecute: (data: unknown) => api.post('/api/queryview/importmodel/execute', data),
   moreLikeThis: (params: unknown) => api.post('/api/queryview/morelikethis', params),
   neural: (params: unknown) => api.post('/api/queryview/neural', params),
-  search: (keyword: string) => api.get('/api/queryview/search', { params: { keyword } }),
+  /** R315 F3：后端仅 POST /api/queryview/search（u2::search_post，body.key）。 */
+  search: (keyword: string) => api.post('/api/queryview/search', { key: keyword }),
   stat: (params: unknown) => api.post('/api/queryview/stat', params),
   statement: (params: unknown) => api.post('/api/queryview/statement', params),
   tableList: (page: number, size: number) => api.post(`/api/queryview/table/list/paging/${page}/${size}`, {}),
@@ -535,7 +539,8 @@ export const programCenterApi = {
   marketGet: (flag: string) => api.get(`/api/program_center/market/${flag}`),
   // Module 模块
   moduleList: () => api.get('/api/program_center/module/list'),
-  moduleInvoke: (flag: string, data: unknown) => api.post(`/api/program_center/invoke/${flag}`, data),
+  /** R315 F3：/invoke/{flag} 仅 GET/PUT/DELETE；POST 执行在 /invoke/{flag}/execute（routes.rs:632）。 */
+  moduleInvoke: (flag: string, data: unknown) => api.post(`/api/program_center/invoke/${flag}/execute`, data),
   // Schedule 计划任务
   scheduleList: () => api.get('/api/program_center/schedule/list'),
   scheduleCreate: (data: unknown) => api.post('/api/program_center/schedule/create', data),

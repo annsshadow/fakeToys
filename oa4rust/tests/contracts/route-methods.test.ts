@@ -15,9 +15,10 @@ import { BACKEND_ROUTE_METHODS } from './backend-route-methods.fixture'
  *
  * R314 F1：原 SRC_ROOTS 只含 desktop/mobile，packages/apis 的封装漂移（R313 三处）
  * 无人守卫。本轮把 apis 纳入扫描，并用「冻结历史基线」收敛存量：
- * - API_LEGACY_MISMATCHES 是纳入当日已存在的 85 条错方法签名快照，**不是合法例外**；
- *   仅表示「历史存量，另案治理」。其中 F3_KNOWN_PENDING 五处为 t80 审计已坐实的
- *   待修漂移，显式标注而非静默放行。
+ * - API_LEGACY_MISMATCHES 是纳入当日已存在的错方法签名快照，**不是合法例外**；
+ *   仅表示「历史存量，另案治理」。t80 审计 F3 五处漂移中四处已在 R315 真修好并从
+ *   快照移除（用例以 classify()==='ok' 真断言证明，非静默删除）；唯一 jpush 一处后端
+ *   确无 update 方法，标为 F3_KNOWN_PENDING（@dead-known）并保留在快照内。
  * - 任何**新增**错方法签名（不在冻结快照、不在 EXEMPT）都会让守卫红；
  *   修复一条存量后应从快照移除并下调 API_UNREGISTERED_BASELINE，只降不升。
  */
@@ -39,7 +40,6 @@ const API_LEGACY_MISMATCHES = new Set<string>([
   "GET /api/organization/assemble/control/person/list/like",
   "POST /api/organization/assemble/control/export/export/all",
   "DELETE /api/processplatform/assemble/designer/process/{}",
-  "POST /api/general/dict/item/{}",
   "PUT /api/jpush/core/entity/template/{}",
   "POST /api/correlation/core/express/sync",
   "DELETE /api/correlation/service/processing/delete/{}",
@@ -47,11 +47,8 @@ const API_LEGACY_MISMATCHES = new Set<string>([
   "DELETE /api/correlation/service/processing/unlink/{}/{}/{}/{}",
   "POST /api/cache/commonscript/flush",
   "POST /api/cache/config/flush",
-  "GET /api/queryview/importmodel/list/{}/{}",
-  "GET /api/queryview/search",
   "POST /api/program_center/agent/{}/enable",
   "POST /api/program_center/agent/{}/disable",
-  "POST /api/program_center/invoke/{}",
   "GET /api/mind/folder/{}",
   "POST /api/mind/assemble/control/folder/move/{}",
   "GET /api/mind/assemble/control/mind/filter/list/{}/next/{}",
@@ -121,14 +118,20 @@ const API_LEGACY_MISMATCHES = new Set<string>([
   "GET /api/express/role/list",
 ])
 
-// t80 R314 审计 F3 已坐实的 5 处封装方法/路径漂移（本任务不修，另案），
-// 它们也在上面的冻结快照内；这里单独显式标注「已知待修」，不并入 EXEMPT。
+// t80 R314 审计 F3 五处漂移的 R315 修复后状态：
+// - F3_FIXED 四处已按后端真实注册真修好（方法+路径双维度），旧签名从冻结快照移除，
+//   并在下方用例以 classify()==='ok' 真断言证明命中后端注册，不是静默删除。
+// - F3_KNOWN_PENDING 仅剩 jpush 一处：后端 jpush/jpush_core_entity 对
+//   /api/jpush/core/entity/template/{id} 仅 GET，无 update/save 路由；队长裁定补
+//   @dead 标注保留原路径（@dead-known），仍在冻结快照内，不并入 EXEMPT。
+const F3_FIXED = new Set<string>([
+  'POST /api/general/dict/item/create',
+  'POST /api/queryview/search',
+  'POST /api/queryview/importmodel/list/{}/{}',
+  'POST /api/program_center/invoke/{}/execute',
+])
 const F3_KNOWN_PENDING = new Set<string>([
-  'POST /api/general/dict/item/{}',
   'PUT /api/jpush/core/entity/template/{}',
-  'GET /api/queryview/importmodel/list/{}/{}',
-  'GET /api/queryview/search',
-  'POST /api/program_center/invoke/{}',
 ])
 
 // 未注册路径调用基线。legacy 仍是原 860；apis 包纳入新增 167（1027-860），
@@ -217,7 +220,7 @@ describe('前端 HTTP 方法契约', () => {
     ).toBeGreaterThanOrEqual(MIN_REGISTERED_PATHS)
   })
 
-  it('packages/apis 新漂移能被守卫捕获（注入临时错方法封装，验证后移除）', () => {
+  it('packages/apis 新漂移能被守卫捕获，且 R315 F3 四处修复/一处 dead-known 同步反映', () => {
     const probeFile = resolve(API_ROOT, '__r314_guard_probe.ts')
     const probeSig = 'GET /api/document'
     writeFileSync(probeFile, "import { api } from './index'\nexport const probe = () => api.get('/api/document')\n")
@@ -229,8 +232,23 @@ describe('前端 HTTP 方法契约', () => {
       expect(API_LEGACY_MISMATCHES.has(probeSig), '探针签名不得在历史基线内').toBe(false)
       // 对照：冻结基线内条目与 F3 五处的标注口径
       expect(classify({ method: 'POST', path: '/api/ai_assemble_control/index/sync/to/knowledge', file: 'index.ts', source: 'apis' })).toBe('legacy')
-      expect(F3_KNOWN_PENDING.has('GET /api/queryview/search')).toBe(true)
-      expect(EXEMPT.has('GET /api/queryview/search')).toBe(false)
+      // R315 F3：四处已真修好——真断言证明 method+path 命中后端注册（classify=ok），
+      // 且旧漂移签名已从冻结快照移除（非静默删除、非靠 EXEMPT 放行）。
+      for (const sig of F3_FIXED) {
+        const parts = sig.split(' ')
+        const method = parts[0]!
+        const path = parts[1]!
+        expect(BACKEND_ROUTE_METHODS[path], `${sig} 必须在后端 fixture 注册`).toBeDefined()
+        expect(BACKEND_ROUTE_METHODS[path]!, `${sig} 必须命中注册方法`).toContain(method)
+        expect(classify({ method, path, file: 'index.ts', source: 'apis' }), `${sig} 不再是 mismatch/legacy`).toBe('ok')
+        expect(API_LEGACY_MISMATCHES.has(sig), `${sig} 已从冻结快照移除`).toBe(false)
+        expect(EXEMPT.has(sig), `${sig} 不靠豁免放行`).toBe(false)
+      }
+      // 唯一未修一处：后端无 update 方法，@dead-known 保留原路径并仍在冻结快照内。
+      expect(F3_KNOWN_PENDING.has('PUT /api/jpush/core/entity/template/{}')).toBe(true)
+      expect(API_LEGACY_MISMATCHES.has('PUT /api/jpush/core/entity/template/{}')).toBe(true)
+      expect(classify({ method: 'PUT', path: '/api/jpush/core/entity/template/{}', file: 'index.ts', source: 'apis' })).toBe('legacy')
+      expect(BACKEND_ROUTE_METHODS['/api/jpush/core/entity/template/{}']).toEqual(['GET'])
     } finally {
       rmSync(probeFile, { force: true })
     }
