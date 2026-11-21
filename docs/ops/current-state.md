@@ -4458,3 +4458,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R314 收官：深度功能审计发现两 P1（工作流已办恒空、上传 415）+ 契约健康度审计发现 F1 守卫盲区，三条真实缺陷全部闭环；两修复串行部署产物含双方改动、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 260. R315 立项：深度功能审计 + F3 封装漂移修复（2026-11-21）
+- t85（qa-e2e，kind=work）R315 深度功能缺陷审计：真浏览器走 8 业务闭环（CMS 字典、程序中心、全局搜索、BAM、通知已读、回收站、角色权限、附件上传下载），只写唯一文档 docs/ops/oa4rust-r315-deep-functional-audit.md，找真实 bug 不臆造，证据 gitignored 目录标注非物理真机。t86（shell-eng，implementation）F3 五处封装漂移修复：generalApi.dictItemCreate、jpushApi.templateUpdate、queryViewApi.search、queryViewApi.importModelList、programCenterApi.moduleInvoke，按 t80 审计 §F3 建议，vi.mock+toHaveBeenCalledWith 真断言契约 RED→GREEN，同步 route-methods 守卫 F3_KNOWN_PENDING，写域与 t85 不重叠。
+- 部署独占决策：t85 是 R315 唯一被授权部署测试服 web 目录的任务（避免并行替换覆盖取证基线，吸取 t82/t83 串行化教训）；t86 不重新 build/部署，前端包改动不影响 UI 审计，其真浏览器验证改为现有测试服上下文 CDP fetch 直调五后端真实端点（标注封装路径探针非业务 UI），方法/URL 正确性由真断言契约锁定。已向两成员下发。
+- 依据：t80（81cdaa4f5）F3 五处静态坐实漂移、t81（6b95568b5）守卫纳入+冻结快照标注待修，均非臆造；R314（§259）已收官，R315 延续审计与改造分离、写域不重叠加速策略。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
