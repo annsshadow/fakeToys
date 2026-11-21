@@ -4744,5 +4744,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t119（qa-e2e）完成并队长独立复核：commit 1e18768114e3916c383c22f9b4202665c0f2fd5f 精确 1 文档 57 行 oa4rust/docs/ops/oa4rust-r325-h5-process-audit.md；HEAD=TRACK=1e1876811、暂存区与工作树全干净；文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence.json source=NOT physical device。t119 evidence_note 已附。
 - 判定：七段 P1 待办列表 200+7条 / P2 详情三端点 200 / P3 审批驳回真写 POST /api/task/{id}/reject 200+toast+列表刷新 / P4 已办 200 / P5 我发起 POST 200+49条 / P7 加载失败 500 兜底与空态可区分均 PASS，0 pageerror；P6 发起流程 fab 无头点击受 uni-tabbar-border 遮挡（meta viewport 980px）判取证限制+潜在布局风险候选（直连 start 路由 designer/list/all 200+12 流程正常证明实现无损，真机 safe-area 非0 不复现）。0 新增 P0/P1/P2 真缺陷、无产品语义差异，判据三分合规。
 - R325 完整闭环：立项(§309，据实据 process.vue 从未深度审计)→审计 t119 六段真写 PASS + 0 真缺陷→收官(本条)。P6 布局风险候选如实登记供真机复核，非可坐实缺陷、本轮不臆造修复。项目 ≥1000 轮非终态，继续据实立项下一轮。
+
+## 311. R326 立项：PC 会议管理模块深度功能审计（2026-11-21）
+- 据实立项依据：队长纯本地只读侦察——PC MeetingApp.vue 有真实完整实现（楼栋/会议室预订联动、新建会议、我的会议列表、日程），但此前仅 R309 定点修复两个已知缺陷（create HTTP500、applied=false 列表不可见），从未全模块深度审计；R317 H5 审计仅标会议无新建入口。属据实未覆盖对象，非臆造。
+- 派发 t120（page-core，只读深度审计，文档 oa4rust/docs/ops/oa4rust-r326-pc-meeting-audit.md）：PC 1440x900 真 UI 逐条走楼栋联动/新建会议真写/我的会议列表/详情/取消删除/兜底/R309 回归，记录真请求/响应/回显；判定三分（真缺陷需真 UI 可复现+源码定位／取证限制／产品语义差异），禁臆造；文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 非物理真机，精确单提交。
+- R325 已于 §310 正式收官（HEAD=TRACK=3ee6f4fc）；t120 写域为一份新文档，与其他在途任务不重叠。审计回收后据实甄别再决定是否修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
