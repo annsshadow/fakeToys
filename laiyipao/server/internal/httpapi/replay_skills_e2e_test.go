@@ -62,6 +62,21 @@ func TestE2EReplaySkillsMustMatchBuild(t *testing.T) {
 			"这说明服务端重算与客户端算法不一致 —— 会把所有合法玩家锁死", status, body)
 	}
 	// ---- 0) 运营改技能底伤后，重算必须跟着变 ----
+	// ⚠️ 这条用例会改**共用库**的种子技能底伤。此前没有还原，
+	// 每跑一遍全量测试 skills.base_damage 就 +7，累计到 282 时客户端
+	// 按 /config 烘出的 100 被服务端重算判成作弊，合法结算全量 422。
+	// 必须先备份并 t.Cleanup 还原，绝不能让本用例污染后续测试与真实游玩。
+	var mutatedSkillID, originalBase int64
+	if err := e.pool.QueryRow(context.Background(),
+		`SELECT s.id, s.base_damage
+		    FROM user_skill_slots sl JOIN skills s ON s.id = sl.skill_id
+		   WHERE sl.user_id = $1 ORDER BY sl.skill_id LIMIT 1`, uid).
+		Scan(&mutatedSkillID, &originalBase); err != nil {
+		t.Fatalf("备份技能底伤失败：%v", err)
+	}
+	t.Cleanup(func() {
+		e.exec(t, `UPDATE skills SET base_damage = $1 WHERE id = $2`, originalBase, mutatedSkillID)
+	})
 	//
 	// 这一条是**从一次真实翻车里长出来的**，不是预防性测试。
 	//

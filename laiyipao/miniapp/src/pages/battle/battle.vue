@@ -105,11 +105,11 @@
     </view>
 
     <!-- 战场图例（2026-11-17）：解释画布 HUD 的全部视觉语言 -->
-    <view v-if="helpVisible" class="legend-overlay" @click="helpVisible = false">
+    <view v-if="helpVisible" class="legend-overlay" @click="closeHelp">
       <view class="legend-box" @click.stop>
         <view class="legend-head">
           <text class="legend-title">战场图例</text>
-          <view class="legend-close" @click="helpVisible = false"><text>×</text></view>
+          <view class="legend-close" @click="closeHelp"><text>×</text></view>
         </view>
         <scroll-view scroll-y class="legend-scroll">
           <!-- 画布底部：热量条 -->
@@ -179,7 +179,7 @@
               <view class="legend-row"><Icon name="pause" :size="26" style="color: #58a6ff" /><text>暂停 = 战斗时间冻结，切后台会自动暂停</text></view>
             </view>
           </view>
-          <text class="legend-foot">元素 / 反应 / 技能 / 敌人 / 装备 / 宝石 / 皮肤的完整数值见首页「图鉴」入口。</text>
+          <text class="legend-foot">元素 / 反应 / 技能 / 敌人 / 装备 / 宝石 / 皮肤的完整数值见首页「图鉴」入口。打开图例时战斗暂停，关闭后自动继续。</text>
         </scroll-view>
       </view>
     </view>
@@ -227,15 +227,15 @@
 
     <!-- 结算界面 -->
     <view v-if="settleResult" class="sheet">
-      <text class="result-title">{{ settleResult.win ? '通关' : '防线失守' }}</text>
+      <text class="result-title" :style="settleFailed ? { color: 'var(--bad)' } : undefined">{{ settleFailed ? (settleResult.win ? '战绩未入账' : '防线失守 · 战绩未入账') : (settleResult.win ? '通关' : '防线失守') }}</text>
       <!-- G91 战斗评级徽章：一个可追求的综合目标 -->
-      <view v-if="battleGrade" class="grade-badge" :style="{ borderColor: battleGrade.color, color: battleGrade.color }">
+      <view v-if="battleGrade && !settleFailed" class="grade-badge" :style="{ borderColor: battleGrade.color, color: battleGrade.color }">
         <text class="grade-letter">{{ battleGrade.grade }}</text>
         <text class="grade-label">{{ battleGrade.label }}</text>
       </view>
       <!-- G92 下次目标：一句可执行的改进方向 -->
-      <text v-if="nextGoal" class="next-goal">下一步：{{ nextGoal }}</text>
-      <view class="stars-big">
+      <text v-if="nextGoal && !settleFailed" class="next-goal">下一步：{{ nextGoal }}</text>
+      <view v-if="!settleFailed" class="stars-big">
         <text
           v-for="i in 3"
           :key="i"
@@ -243,6 +243,7 @@
           :class="{ off: i > settleResult.stars }"
         >★</text>
       </view>
+      <text v-if="settleFailed" class="settle-local-note">以下为本地战绩（仅供参考，未入账）</text>
       <view class="result-stats">
         <view class="rstat">
           <Icon name="sword" :size="30" style="color: var(--dim)" />
@@ -264,22 +265,26 @@
       <view v-if="settleResult.clamped" class="clamp-note">
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
-      <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
-      <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
+      <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
+      <view v-if="settleFailed" class="settle-error">
+        <text class="settle-error-hint">{{ settleErrorHint }}</text>
+        <text class="settle-error-detail">{{ settleResult.error }}</text>
+      </view>
       <!-- 结算失败时 token 仍未 used_at，服务端仍允许放弃退体力；
            不给出入口，玩家会白白损失开战时已扣的体力（或被迫再来一局再扣一次）。 -->
       <view v-if="settleResult.error" class="btn" @click="abandon">{{ abandoning ? '处理中…' : '放弃并退回体力' }}</view>
-      <view class="reward-row">
+      <view v-if="!settleFailed" class="reward-row">
         <view v-for="(v, k) in settleResult.loot" :key="k" class="reward">
           <Icon :name="currencyIcon(String(k))" :size="28" />
           <text>{{ currencyName(String(k)) }} +{{ v }}</text>
         </view>
       </view>
-      <text class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
+      <text v-if="settleFailed" class="hash-note">本地回放哈希 {{ settleResult.replay_hash }}（未入账，仅供排障）</text>
+      <text v-else class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
            跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
       <view
-        v-if="settleResult.battle_id"
+        v-if="settleResult.battle_id && !settleFailed"
         class="btn"
         style="margin-top: 20rpx"
         @click="goBattleReport"
@@ -288,7 +293,7 @@
       </view>
       <!-- 再来一局（2026-11-01 新一轮第 53 轮）：redirectTo 替换当前页，
            重新进入同一关（重新扣体力/发 token），省去返回选关再点一次的路径。 -->
-      <view class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
+      <view v-if="!settleFailed" class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
     </view>
 
@@ -347,6 +352,20 @@ const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/**
+ * 结算被服务端拒绝（如 replay_skills 与构筑不符）时，这一局**没有入账**。
+ * 此时哪怕引擎跑出了胜利，也不能把它渲染成「通关 + C 评级 + 0 星」——
+ * 那会让玩家以为奖励已到账，直到去背包/战报才发现什么都没有（2026-11-21 实测）。
+ */
+const settleFailed = computed(() => Boolean(settleResult.value?.error))
+const settleErrorHint = computed(() => {
+  const raw = String(settleResult.value?.error ?? '')
+  if (raw.includes('replay_skills') || raw.includes('构筑不符')) {
+    return '本地构筑与服务端记录不一致，这一局未计入战绩。可放弃退回体力，或返回关卡重新挑战。'
+  }
+  return '战绩上报失败，这一局未计入战绩。可放弃退回体力，或稍后重试。'
+})
 
 /** G91 战斗评级：基于星级/漏怪/反应的综合评价，给玩家一个可追求的目标（纯客户端派生）。 */
 const battleGrade = computed(() => {
@@ -482,12 +501,31 @@ function kindLabel(k: string): string {
 const helpVisible = ref(false)
 /** 第六批 R70：是否读过图例（本机记忆）。 */
 const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
+/** R3：图例遮罩挡住整个战场，读说明时由页面代为暂停；关掉时只恢复这类暂停。 */
+let helpPausedByPage = false
 
 function openHelp() {
-  helpVisible.value = !helpVisible.value
-  if (helpVisible.value && !helpSeen.value) {
+  if (helpVisible.value) {
+    closeHelp()
+    return
+  }
+  helpVisible.value = true
+  // 手动暂停中就别代劳：玩家自己暂停的状态不能被「看图例」顺手改掉。
+  if (!paused.value && !settled.value) {
+    doPause()
+    helpPausedByPage = true
+  }
+  if (!helpSeen.value) {
     helpSeen.value = true
     uni.setStorageSync('battle_help_seen', '1')
+  }
+}
+
+function closeHelp() {
+  helpVisible.value = false
+  if (helpPausedByPage) {
+    helpPausedByPage = false
+    doResume()
   }
 }
 
@@ -1751,6 +1789,38 @@ onShareAppMessage(() =>
   padding: 12rpx 16rpx;
   border-radius: 8rpx;
   margin-bottom: 16rpx;
+}
+
+.settle-local-note {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--warn);
+  margin-bottom: 10rpx;
+}
+
+.settle-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  background: rgba(255, 123, 114, 0.1);
+  border-left: 6rpx solid var(--bad);
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.settle-error-hint {
+  font-size: 24rpx;
+  color: var(--bad);
+  line-height: 1.5;
+}
+
+.settle-error-detail {
+  font-size: 20rpx;
+  color: var(--dim);
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .reward-row {

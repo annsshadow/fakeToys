@@ -457,6 +457,35 @@ describe('battle.vue 战斗页', () => {
     await new Promise((resolve) => setTimeout(resolve, 850))
   })
 
+  it('结算被服务端拒绝 → 结果卡不冒充通关，也不展示虚构的星级/奖励/战报入口', async () => {
+    // 真实实测（2026-11-21，第 1 关通关）：服务端重算 replay_skills 拒绝后，
+    // 页面仍显示「通关」+ 0 星 + C 评级 + 原始报错串，玩家完全不知道战绩没入账。
+    mockApi.settleBattle.mockRejectedValue(
+      new Error('replay_skills 与构筑不符\n上报 0:1:100:1:20\n重算 0:1:282:1:20'),
+    )
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('战绩未入账')
+    expect(text, '结算被拒时绝不能冒充通关').not.toContain('通关')
+    expect(text).toContain('本地战绩')
+    expect(text).toContain('构筑')
+    expect(wrapper.find('.grade-badge').exists(), '失败时不该展示 C 评级').toBe(false)
+    expect(wrapper.find('.stars-big').exists(), '失败时不该展示 0 星').toBe(false)
+    expect(wrapper.find('.reward-row').exists(), '失败时不该展示奖励').toBe(false)
+    expect(text, '没有 battle_id 时不该有战报入口').not.toContain('查看本局战报')
+    expect(text, '原始错误串仍要保留，便于排障').toContain('0:1:282:1:20')
+    expect(
+      wrapper.findAll('.btn').some((b: any) => b.text().includes('放弃并退回体力')),
+      '仍必须能退体力',
+    ).toBe(true)
+  })
+
   it('R151 令牌行丢失：结算 404 → 重取一次凭证并重报，奖励只发一次', async () => {
     mockApi.settleBattle
       .mockRejectedValueOnce(
@@ -799,6 +828,42 @@ describe('battle.vue 战场图例（2026-11-17）', () => {
     expect(wrapper.find('.legend-overlay').exists()).toBe(true)
     await wrapper.find('.help-chip').trigger('click')
     expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+  })
+
+  it('R3 打开图例会暂停战斗，关闭后自动继续；手动暂停不被图例误恢复', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    const renderer = FakeRenderer.instances[0]!
+    eng.winAtStep = Infinity
+    renderer.loop!(TICK)
+    const before = eng.stepCount
+    expect(before).toBeGreaterThan(0)
+    expect(renderer.paused).toBe(false)
+
+    // 玩家在战斗中途打开图例读说明：整块遮罩挡住画布，战斗时间不该继续流逝。
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(true)
+    renderer.loop!(TICK)
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before)
+
+    // 关掉图例就该回到战斗，不该再让玩家多点一次「继续战斗」。
+    await wrapper.find('.legend-close').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before + 1)
+
+    // 手动暂停时打开图例：关闭后仍保持暂停，不能替玩家擅自恢复。
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    await wrapper.find('.legend-close').trigger('click')
+    expect(renderer.paused).toBe(true)
   })
 })
 
