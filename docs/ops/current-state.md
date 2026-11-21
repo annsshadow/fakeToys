@@ -4434,3 +4434,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=81cdaa4f5、工作树干净、文档 0 真值；源码坐实 F1（SRC_ROOTS 确无 packages/apis/src）与 F3 三处后端注册（jpush template/{id} 仅 GET lib.rs:274、queryview/search 为 POST lib.rs:617、general dict/item/create 为 POST lib.rs:1078），与审计一致。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 256. R314 深度审计两真缺陷与守卫盲区修复复核（2026-11-21）
+- t79（qa-e2e，真浏览器深度审计）commit 451a83b20 精确 1 文档 54 行 docs/ops/oa4rust-r314-deep-functional-audit.md：真 UI 走 9 闭环，PASS 6 / 取证限制 2（I2 群聊无会话、A2 打卡仅 prompt 调试残留）/ 真实缺陷 2。文档 0 真值、全程 0 pageerror。
+- 【D1 真实 P1】工作流审批通过后已办列表恒空：task/complete HTTP 200（含 end_time）但已办 tab 与 taskcompleted/list/my/paging 恒 0（0/3/6s 轮询）。队长源码坐实：processplatform_service_processing/src/lib.rs:3795 task_complete 只写 x_task/x_record/x_work，全局 grep backend 中 INSERT INTO PP_C_TASKCOMPLETED 命中 0 处；已办列表 processplatform_assemble_surface/src/lib.rs:19010 读该表 → 数据链路断裂。
+- 【D2 真实 P1】文件上传 415：FileManager.vue:1373-1379 FormData+XHR multipart，后端 file_assemble_control/src/lib.rs:415 upload_file 用 axum::extract::Json 仅收 application/json → 415；契约 fixture:899 仅校方法未校 Content-Type 故绿。队长源码坐实，且同 crate 已有多处 axum::extract::Multipart 实现可复用（lib.rs:1129/1962/3402 等）。
+- t81（page-core，F1 守卫盲区修复）commit 6b95568b5 精确 2 文件（route-methods.test.ts 219 行 + 文档 36 行）：packages/apis/src 纳入守卫 SRC_ROOTS；85 条历史错方法冻结为快照（非 EXEMPT）、F3 五处显式标注待修；未注册基线 legacy 860/apis 187 分源只降不升；注入错方法探针验证新增漂移被判 mismatch 后移除。队长独立复核全绿：全量 vitest 259 files/2115 passed exit 0、文档 0 真值、diff 确认冻结快照方案不掩盖新增漂移。纯静态本地未碰测试服（避免干扰 t79 取证）。
+- 派发两修复（写域不重叠）：t82（page-work，D2 上传 415，后端 upload_file 改 multipart 保住真实字节上传语义）、t83（page-core，D1 已办同步，先核对 DDL 字段映射再定方向）。两者均需部署测试服，已下发串行化：t82 先部署复验提交，t83 完成本地工作后暂缓部署、待 t82 完成信号再 build+部署（其产物含双方前端改动）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
