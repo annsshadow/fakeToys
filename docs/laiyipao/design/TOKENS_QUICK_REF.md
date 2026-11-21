@@ -6,6 +6,7 @@
 > `common.css` / `main.css` 仅 `@import` 并保留跨页样式与组件映射。
 > 新增令牌必须双端登记（主规范 §8.1）。
 > R3 追加（t20）：包标记 `--lyp-r3-version: lyp-tokens-v3-r3` 双端同值；旧 `lyp-tokens-v1` 为兼容锚点。
+> R4 追加（t34）：十页 H5 + 四视图 admin 的组件映射见主规范 §1C；**不新增令牌**，v1/v3 双锚点保持。
 
 ---
 
@@ -152,4 +153,14 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 
 **test-first**（§1B.5）：先补双端令牌对齐 + 16 页结构扫描 + 禁止裸空态/禁止 `--accent` 叠 soft 的契约，跑到 RED 再改页面到 GREEN。
 截图门禁：专精 / 商城 / 宝石图鉴 / 公告 4 张 390×844 真浏览器截图（标注「非物理真机」）。
+
+---
+
+## 7B. R4 剩余页面映射速查（主规范 §1C）
+
+- 十页 H5：announcements / bag / battles / enemies / login / me / rank / signin / skins / verify；四视图 admin：ContentView / Economy / Defenses / Equipment。
+- 组件仍用 §7A 六件套；AI 仍需「可见汉字「AI」+ 真实数据结论 + 依据 + CTA」。
+- 登录页：主按钮后一行 `role="note"`，≤56rpx，不新增输入、不弹窗、不打断登录；无本地战绩时写「AI 等待数据」，不编造。
+- 验真页：仅在 `replayInfo` 到位后显示一行复核说明，不伪造「思考中」，不阻塞三步流程。
+- 低透明度 .022 网格 / .06 光斑不算 AI；令牌零新增，v1/v3 双锚点不动。契约：`admin/tests/r4Mapping.contract.test.ts`、`miniapp/src/styles/r4Mapping.contract.test.ts`。
 

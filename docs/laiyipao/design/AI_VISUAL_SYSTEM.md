@@ -17,6 +17,8 @@
 >
 > **R3 追加**：§1B 定义 16 个次级页面的六组件模式与肉眼可辨 AI 感规则；
 > 令牌包标记 `lyp-tokens-v3-r3`（`--lyp-r3-version`），旧 `lyp-tokens-v1` 仍为兼容锚点。
+>
+> **R4 追加**：§1C 完成 H5 十页与 admin 四视图的组件映射与轻量 AI 规则；不新增令牌，v1/v3 双锚点保持。
 
 ---
 
@@ -280,6 +282,70 @@ ProgressTree 必须同时出现 `--progress-track` 与数字标签模板；Empty
 
 ---
 
+## 1C. R4 剩余页面设计规范与组件映射
+
+> 依据：R3（§1B）已覆盖专精/商城/宝石图鉴等 16 个次级页的结构性升级；R4 聚焦此前仍未升级的 H5 十页与 admin 四视图。
+> 本节不另起视觉语言：组件模式沿用 §1B 的 SectionKicker / KpiStrip / EmptyState / DataGrid / FilterBar / ProgressTree，
+> AI 判据沿用 §1B.4 四条——可见汉字「AI」+ 真实数据结论 + 依据 + 可行动 CTA。
+> R1 教训继续生效：`.page-root:before` 的 rgba(255,255,255,.022) 网格与 rgba(...,.06) 辉光肉眼不可辨，
+> 低透明度网格/光斑/渐变一律**不算** AI 感，也不得当作改造成果。本节不新增令牌，双端 `lyp-tokens-v1` / `lyp-tokens-v3-r3` 双锚点保持不变。
+
+### 1C.1 H5 十页组件映射
+
+展示顺序 = 组件模式顺序；每页至少一处满足 AI 四判据的线索，空数据走 §1A.4 智能空态。
+真实数据源均来自各页现有 store / 接口 / 配置，不得编造、不得写死结论。
+
+| 页面 | 组件模式（按顺序） | AI 线索（数据源 → 结论 → 依据） | CTA |
+|---|---|---|---|
+| `pages/announcements/announcements.vue` | SectionKicker → KpiStrip → FilterBar → DataGrid → EmptyState | 取 `items.length` 与最新一条标题，给「当前共 N 条公告，最新一条是 X」；加载失败走独立空态，不把失败说成空数据 | 查看最新一条 |
+| `pages/bag/bag.vue` | KpiStrip → FilterBar → DataGrid → EmptyState | 取 4 个出战槽 `selected` 的元素种类数：<2 时提示「当前只带 1 种元素，多数反应链需要 2 种以上」（依据为页内既有说明） | 去技能槽 |
+| `pages/battles/battles.vue` | KpiStrip → FilterBar → DataGrid → EmptyState | 取 `battleTotals.kills/leaked/avgScore` 与 `streak`，计算漏杀比并用文字分级，给一条改进结论；不宣称模型预测 | 看战报详情 |
+| `pages/enemies/enemies.vue` | SectionKicker → FilterBar → DataGrid → EmptyState | 取服务端 /config 的克制排行与当前构筑元素，指出「该元素下最易伤的敌人类别」并列出抗性数值 | 切换对应元素 |
+| `pages/login/login.vue` | SectionKicker → EmptyState（轻量 AI，见 §1C.3） | 读本机已缓存的最近战绩或空态提示，不读服务端、不新增账号步骤 | 复用已有登录按钮 |
+| `pages/me/me.vue` | SectionKicker → KpiStrip → DataGrid → EmptyState | 取 `store.nickname`、当前关卡与构筑评分，给「优先补强哪一项」的结论与依据 | 去专精 / 商城 |
+| `pages/rank/rank.vue` | KpiStrip → FilterBar → DataGrid → EmptyState | 取 `scoreDistribution` / `scoreBuckets` 与本人分数，算出与上一名的分差并文字说明 | 去冲榜关卡 |
+| `pages/signin/signin.vue` | SectionKicker → KpiStrip → ProgressTree → DataGrid → EmptyState | 取 `claimedCount`、`cycleDays`、下一档奖励与 `offlineReward`，提示「下一档值得等几天 / 今天可先领什么」 | 领取今日奖励 |
+| `pages/skins/skins.vue` | KpiStrip → FilterBar → DataGrid → EmptyState | 取 `rarityDonut`、`passiveElementMap` 与当前构筑元素，推荐一款被动流派并说明匹配理由 | 切换皮肤 |
+| `pages/verify/verify.vue` | SectionKicker → DataGrid（轻量 AI，见 §1C.3） | 仅在 `replayInfo` 到位后给出三要素齐备检查与哈希口径说明；未到位不显示 AI 文案 | 复用本地重放按钮 |
+
+### 1C.2 admin 四视图组件映射
+
+admin 沿用 `.section-title` / `.kpi-*` / `.toolbar` / 真 `<table>` / `.glass-surface`，窄屏 ≤900px 折行，不引入第二套样式体系。
+
+| 视图 | 组件模式（按顺序） | AI 线索（数据源 → 结论 → 依据） | CTA |
+|---|---|---|---|
+| `views/ContentView.vue` | SectionKicker → KpiStrip → FilterBar → DataGrid → EmptyState | 取 `annTotal/codeTotal/logTotal` 与审计操作类型计数，提示「近期发放/回收笔数异常」并列出计数；空表写明为什么空，不用裸「暂无记录」 | 切到审计 tab |
+| `views/EconomyView.vue` | SectionKicker → KpiStrip → FilterBar → DataGrid → EmptyState | 取流水 `delta`（净流入）与订单筛选结果，净流入为正时提示「回收压力上升」并给出数值与口径；readonly 角色只给结论不显写入口 | 切到订单筛选 |
+| `views/DefensesView.vue` | SectionKicker → KpiStrip → FilterBar → DataGrid → EmptyState | 取防线总数与挑战记录胜率/被窃取数，指出「最需要巡检的防线」并给出挑战次数 | 查看挑战记录 / 用户详情 |
+| `views/EquipmentView.vue` | SectionKicker → KpiStrip → FilterBar → DataGrid → EmptyState | 取 equipment/gems/skins 三个目录的款数与 `ELEMENT_LABEL`/`SLOT_LABEL`，指出元素或部位覆盖缺口及具体款数 | 切到对应 tab |
+
+### 1C.3 登录页与验真页的轻量 AI（不打断流程）
+
+- `pages/login/login.vue`：轻量 AI = 登录卡片底部一行 `role="note"` 语义的确定性提示（role=note），高度 ≤56rpx，排在主按钮之后；不打断登录流程。
+  - 有本机最近战绩缓存：「AI 提示：本机上次停在第 X 关 / 得分 Y，登录后到战报可复核。」
+  - 无缓存：「AI 等待数据：登录后首页会按你的构筑给建议。」——不编造、不伪装成已分析。
+  - 硬约束：不新增输入框、不弹窗、不遮罩、不改提交顺序、不插入验证码或二次确认；`aria-live="off"`，无循环思考动画；登录按钮仍是唯一主操作。
+- `pages/verify/verify.vue`：轻量 AI = 仅在 `replayInfo` 到位后，结果卡下方单行 `role="note"`，不打断三步验真流程。
+  - 文案：「AI 复核：关卡 / 种子 / 构筑三要素齐备；本地哈希与服务端一致才可作为证伪依据。」缺项时逐项列出缺什么。
+  - 硬约束：未取到信息时不渲染 AI 文案；不伪造「思考中」或置信度；不插入步骤、不阻塞输入与「本地重放」按钮；CTA 复用已有按钮。
+- 两页共同下限：徽章文字用 `--ai-ink`、边框用 `--ai-accent`（admin 用 `--lyp-ai-*`），正文仍用文本四阶；AI 行不得用 `--ai-halo` 单独承载信息。
+
+### 1C.4 与 §1B 的复用边界与反模式
+
+- 六组件只加 modifier，不新建平行样式体系；§1B.2 的尺寸、焦点环、数字伴随文本规则在本节全部生效。
+- 反模式（一律不算改造成果）：把 rgba(255,255,255,.022) 网格、rgba(...,.06) 辉光、渐变光斑调亮；纯图标或英文 AI；只有结论没有数据源；写死文案；用低透明度底纹替代组件结构。
+- 令牌：本节**不新增**变量。复用 `--ai-accent/--ai-ink/--ai-halo/--ai-glow`、`--accent-soft`、`--progress-track`（admin 加 `--lyp-` 前缀）；双端 `--lyp-token-version: lyp-tokens-v1` 与 `--lyp-r3-version: lyp-tokens-v3-r3` 必须同时保留。
+
+### 1C.5 test-first 契约与验收
+
+- 规范映射由两端契约测试钉住：`laiyipao/admin/tests/r4Mapping.contract.test.ts`（十四项映射全覆盖 + 双端令牌锚点）与 `laiyipao/miniapp/src/styles/r4Mapping.contract.test.ts`（十页映射 + 登录/验真轻量规则 + H5 锚点）。先 RED 再随本节落盘转 GREEN。
+- 断言范围：§1C 五个子条款存在；十页 H5 与四视图 admin 均出现；六组件与 AI 四判据齐全；login/verify 轻量与不打断；低透明度反模式被明文禁止；v1/v3 双锚点存在且无 v4 误升。
+- **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts` 的任何判据；新契约只增不减。
+- 页面实现归属：h5-ui / admin-ui 在各自写域补页面级 class 与数据断言；本节契约只守规范映射，不替页面实现背书。
+- 截图门禁：登录页与验真页各交 1 张 390×844、ContentView 与 EconomyView 各交 1 张 1440×900 真浏览器截图（标注「非物理真机」），由 design-reviewer 按 §1B.4 肉眼复核 AI 是否可见、是否打断流程。
+
+---
+
 ## 2. 色彩系统
 
 ### 2.1 深色科幻底（表面分层）
@@ -496,7 +562,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 | R3 筛选活动态（§1B.2.5） | `--accent-soft` | `--lyp-accent-soft` | 同值 rgba(255,107,53,.18)；文字必须 `--accent-ink` |
 | R3 进度轨道（§1B.2.6） | `--progress-track` | `--lyp-progress-track` | 同值 `#39465a`；状态必须配数字文本 |
 
-> 兼容说明：旧 `--lyp-token-version: lyp-tokens-v1` 由现有守卫钉住，本轮不提升；R3 以独立标记登记。
+> 兼容说明：旧 `--lyp-token-version: lyp-tokens-v1` 由现有守卫钉住，本轮不提升；R3 以独立标记登记。R4 无新增令牌，v1/v3 双锚点继续有效。
 
 ### 8.2 落地顺序（t4 已完成 1–4；5–6 由下游继续）
 
@@ -515,6 +581,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 - 双端：禁止模式扫描——元素 soft 背景不得与 panel-3 同规则块共现；玻璃层不得叠 panel-3 承载 muted/dim（同上测试）。
 - admin 原有守卫：`tests/textContrast.test.ts`（改读 tokens.css）、`tests/focusVisible.contract.test.ts`。
 - R3 待补守卫（h5-ui / qa-e2e 在各自写域新增，断言见 §1B.5）：16 页组件标记与 AI 文案扫描、双端 R3 令牌对齐、禁止裸「暂无数据」、禁止 `--accent` 文字叠 `--accent-soft`。
+- R4 已补守卫：`admin/tests/r4Mapping.contract.test.ts`、`miniapp/src/styles/r4Mapping.contract.test.ts`（断言见 §1C.5），只钉规范映射与令牌锚点。
 
 ---
 
@@ -564,6 +631,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 - [ ] 相关守卫测试通过（admin 现有 3 项 + §8.3 待补项）。
 - [ ] 若涉及 H5 次级页：按 §1B.1 映射表六组件齐全，AI 线索肉眼可辨且非低透明度底纹。
 - [ ] R3 令牌双端齐全：`--lyp-r3-version: lyp-tokens-v3-r3`、`--accent-soft`、`--progress-track`。
+- [ ] 若涉及 R4 页面：按 §1C 映射齐全，登录/验真的轻量 AI 不打断流程；低透明度网格/光斑不计入 AI 感。
 - [ ] 空态未出现裸「暂无数据」/「加载失败」；筛选活动态未用 `--accent` 文字叠 soft。
 
 ---
