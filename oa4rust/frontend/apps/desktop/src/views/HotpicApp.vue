@@ -12,30 +12,37 @@
         </div>
       </div>
       <AdminToolbar v-model="keyword" search-placeholder="搜索热帖..." @search="doSearch" @refresh="doSearch">
-        <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
-        <button class="btn-primary" @click="doSearch">搜索</button>
-        <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
-        <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
-        <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
-        <button class="btn-primary" @click="loadHotpicTwin">孪生端点</button>
-        <button class="btn-primary" @click="hotpicWrite('create')">建热图</button>
-        <button class="btn-primary" @click="hotpicWrite('changeTitle')">改标题</button>
-        <button class="btn-primary" @click="hotpicWrite('config')">存配置</button>
-        <button class="btn-primary" @click="hotpicWrite('userCreate')">建用户热图</button>
-        <button class="btn-primary" @click="hotpicWrite('userDelete')">删用户热图</button>
-        <button class="btn-primary" @click="hotpicWrite('cipherBbs')">清BBS密文</button>
-        <button class="btn-primary" @click="hotpicWrite('cipherCms')">清CMS密文</button>
-        <button class="btn-primary" @click="hotpicWrite('coreCreate')">建实体热图</button>
-        <button class="btn-primary" @click="hotpicWrite('coreDelete')">删实体热图</button>
-        <button class="btn-primary" @click="hotpicMore('existsCheck')">存在校验</button>
-        <button class="btn-primary" @click="hotpicMore('byApp')">按应用热图</button>
-        <button class="btn-primary" @click="hotpicMore('byId')">按ID热图</button>
-        <button class="btn-primary" @click="hotpicMore('cipherList')">密文热图列表</button>
-        <button class="btn-primary" @click="hotpicMore('userList')">用户热图列表</button>
-        <button class="btn-primary" @click="hotpicMore('userDelete2')">删用户热图2</button>
+        <template #filters>
+          <input v-model="keyword" placeholder="搜索热帖..." class="search-input" @keyup.enter="doSearch" />
+          <button class="btn-primary" @click="doSearch">搜索</button>
+        </template>
+        <template #actions>
+          <button class="btn-primary" @click="loadHotpicMeta">热图/面板</button>
+          <button class="btn-primary" @click="loadHotpicMeta2">热图2/面板2/应用2</button>
+          <button class="btn-primary" @click="loadHotpicDeep">深度读</button>
+          <button class="btn-primary" @click="loadHotpicTwin">孪生端点</button>
+          <button class="btn-primary" @click="hotpicWrite('create')">建热图</button>
+          <button class="btn-primary" @click="hotpicWrite('changeTitle')">改标题</button>
+          <button class="btn-primary" @click="hotpicWrite('config')">存配置</button>
+          <button class="btn-primary" @click="hotpicWrite('userCreate')">建用户热图</button>
+          <button class="btn-primary" @click="hotpicWrite('userDelete')">删用户热图</button>
+          <button class="btn-primary" @click="hotpicWrite('cipherBbs')">清BBS密文</button>
+          <button class="btn-primary" @click="hotpicWrite('cipherCms')">清CMS密文</button>
+          <button class="btn-primary" @click="hotpicWrite('coreCreate')">建实体热图</button>
+          <button class="btn-primary" @click="hotpicWrite('coreDelete')">删实体热图</button>
+          <button class="btn-primary" @click="hotpicMore('existsCheck')">存在校验</button>
+          <button class="btn-primary" @click="hotpicMore('byApp')">按应用热图</button>
+          <button class="btn-primary" @click="hotpicMore('byId')">按ID热图</button>
+          <button class="btn-primary" @click="hotpicMore('cipherList')">密文热图列表</button>
+          <button class="btn-primary" @click="hotpicMore('userList')">用户热图列表</button>
+          <button class="btn-primary" @click="hotpicMore('userDelete2')">删用户热图2</button>
+        </template>
       </AdminToolbar>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <AdminTable :columns="hotpicColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="doSearch">
+        <template #cell-actions="{ row: item }">
+          <button class="btn-del" @click.stop="onDelete(item)">删除</button>
+        </template>
       <div class="list-panel">
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
