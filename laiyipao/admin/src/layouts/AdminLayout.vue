@@ -19,6 +19,7 @@ import {
 import { adminLogout, adminMe } from '@/api'
 import { setToken, invalidateTokenVerification } from '@/api/client'
 import { ADMIN_ROLE_KEY } from '@/utils/adminRole'
+import { maskApiBase } from '@/utils/apiLabel'
 
 /**
  * 窄屏标记（2026-10-21 P6-11）。
@@ -173,7 +174,8 @@ async function loadIdentity() {
   }
 }
 const currentTitle = computed(() => (route.meta.title as string) || '来一炮')
-const apiLabel = import.meta.env.VITE_API_BASE || '127.0.0.1:8080'
+// t33：真域名不得进 DOM；仅回环或显式调试开关显示完整值
+const apiLabel = maskApiBase(import.meta.env.VITE_API_BASE, import.meta.env.VITE_SHOW_API_HOST === '1')
 
 /**
  * 命令面板（AI_VISUAL_SYSTEM.md §5，PC 专属）。
@@ -387,7 +389,7 @@ onMounted(loadIdentity)
         </button>
         <div class="topbar-right">
           <el-tag v-if="adminName" type="info" size="small" effect="plain">{{ adminName }}</el-tag>
-          <el-tag type="info" size="small" effect="dark" class="api-tag">API {{ apiLabel }}</el-tag>
+          <el-tag type="info" size="small" effect="dark" class="api-tag">{{ apiLabel }}</el-tag>
           <el-button
             size="small"
             :loading="loggingOut"
