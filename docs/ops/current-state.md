@@ -4665,5 +4665,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 立项依据（据实非臆造）：R321 PC 审计 §4 如实标注两处取证限制——①论坛回复闭环当时 bbs-topic-{id} 主题帖 0 条无法进详情；②通知已读 instant/list 仅 1 条且 unread=0 无入口。R318/R320 已建立 BBS 版块桥接、t104 H5 已验证回帖 0→1 持久，条件已具备。队长只读侦察确认 PC BBSForum.vue 有真实 reply/create(:624)/reply/list/sub(:743)、IMChat.vue 有 markAllRead(:535-541) 入口。
 - 派发 t108（page-core，PC 补测，文档 oa4rust/docs/ops/oa4rust-r322-pc-forum-notice-supplement.md）：真 UI 发帖→进详情→回帖→刷新持久；通知已读 markAllRead 后徽标/unread 归零持久。t109（qa-e2e，H5 补测，文档 oa4rust/docs/ops/oa4rust-r322-h5-forum-notice-supplement.md）：H5 回帖闭环+通知已读，picker 受限如实标注。
 - 两任务写域为两份不同文档互不重叠、均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位 0 真值、证据 gitignored 非物理真机，真缺陷/取证限制/产品语义三分，精确单提交；回收后据实甄别再决定修复。
+
+## 296. R322 H5 补测收官（t109）（2026-11-21）
+- t109（qa-e2e）完成并队长独立复核：commit de16829a9f5abb6738bd1e4584ee9ddf64b09703 精确 1 文档 65 行 oa4rust/docs/ops/oa4rust-r322-h5-forum-notice-supplement.md；HEAD=TRACK 且为祖先、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机。evidence.json（gitignored r322-h5-supplement/）source 非物理真机、loops pass=4/limit=1/errors=0。
+- 判定：H5 论坛回帖闭环真 UI PASS（reply/list/sub 计数 1→2、刷新后仍 2、foundReload=true）；通知已读流转 PASS（进入会话自动 POST im/conversation/{id}/read 200 + DB 只读 x_message_conversation read_status=read/read_time 坐实持久化、非仅 HTTP200）；N1 通知公告 ann/list count=0 如实标取证限制非缺陷。0 新增 P0/P1，源码定位与 t104/R317 审计一致未重复。
+- t109 evidence_note 已附。t108（page-core PC 补测）仍在途，待其完成后据实甄别；R322 需在 t108 回收后综合收官。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
