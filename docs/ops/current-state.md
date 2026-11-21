@@ -4442,3 +4442,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发两修复（写域不重叠）：t82（page-work，D2 上传 415，后端 upload_file 改 multipart 保住真实字节上传语义）、t83（page-core，D1 已办同步，先核对 DDL 字段映射再定方向）。两者均需部署测试服，已下发串行化：t82 先部署复验提交，t83 完成本地工作后暂缓部署、待 t82 完成信号再 build+部署（其产物含双方前端改动）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 257. R314 D2 文件上传 415 修复复核（2026-11-21）
+- t82（page-work）commit b3ce29e5a 精确 4 文件（file_assemble_control/src/lib.rs 34 + security_gate_tests_r6.rs 15（改签名后连带修直调用例）+ 文档 50 行 + FileUpload.R314.contract.test.ts 42 行，109+/32-）。两个独立真缺陷 test-first RED→GREEN：①Content-Type 冲突 415——upload_file 由 axum::extract::Json 改 Multipart，复用 u2_read_multipart_file/u2_persist_verified 落盘真实字节写 x_file，契约 RED 1→GREEN 2/2；②上传后列表不可见——原写 folder_id 空串而前端根目录用 folderId||'root'，改 folder_id='root' 后列表可见/刷新持久，契约 RED→GREEN。cargo test -p file_assemble_control 98 passed、typecheck 全绿、route-methods 冻结契约 2/2 无基线漂移。
+- 队长独立复核（不采信自述）：stat 精确 4 文件、HEAD=TRACK=b3ce29e5a、工作树仅剩 t83 在途文件（写域不重叠、未触碰）；diff 实读确认 Multipart 替换 Json + u2_persist_verified 落盘 + folder_id=root；定点复跑 FileUpload.R314 契约 2/2 exit 0；文档 50 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored r314-upload-415-fix/）标注非物理真机、uploadStatus=200（非 415）/fileNameInList=true/fileNameAfterReload=true/0 错误/0 API失败。t82 完成 build+原子部署+复验+提交全链路，已按串行化放行 t83 部署。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
