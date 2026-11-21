@@ -4686,5 +4686,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 立项依据：§298 登记的独立候选（非已确认缺陷）——t110 修复中 page-core 诚实更正『时间全空』，队长核实后端 u2_reply_filter_list（u2.rs:1208/1227）SQL 未 SELECT create_time、映射亦不产出；与 D1 信封解包根因不同。按纪律审计前置，禁臆造。
 - 派发 t112（qa-e2e，work，只读甄别，outOfScope 禁改源码/契约/禁部署/禁修复）：源码确认 reply/filter/list 与 GET reply/{id} 是否均不含 create_time、GET reply/list/sub 是否返回（端点口径一致性）+ 真浏览器确认回复卡片时间为空，结论 A 产品口径无需时间／B 真缺陷（给后端补字段建议仅建议不执行，评估影响面严重度）／C 取证受限；产出唯一脱敏文档 oa4rust/docs/ops/oa4rust-r323-reply-time-triage.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
 - 写域：t112 仅一份新文档，与 t111 只读终审（reviewedTaskId=t110）写域不重叠，可并行。t110 evidence_note 已附（合同修订 revision 1 后 9 项验收全 passed）。
+
+## 300. R322 收官（2026-11-21）
+- t111（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings=[]，只读未改码未提交；HEAD=TRACK=092a65d32 稳定、暂存区与工作树全干净。逐条确认 t108 判 D1 P2（net-cap.json 双层信封 + DOM bbs-reply-undefined，BBSForum.vue:558 根因）、t109 H5 双 PASS、t110 修复（2014fd679 精确 3 文件，双层信封归一 + enabled 响应式 getter + creator→author 兼容映射，后端零改），全量 vitest 265 files/2139 passed、真浏览器 evidence 7 断言全 true、R315/R318/R320/R321 四修复提交全 HEAD 祖先。
+- 回复时间缺失经合同修订（revision 1）剥离为 R323 候选（§298/§299），如实标注边界不立 finding，属 fail-loud 正确裁决。t111 evidence_note 已附。
+- R322 完整闭环：立项(§295)→双补测(§296 t109 H5 PASS / t108 PC 判 D1)→D1 修复(§298 t110 + amend_task 合同修订)→终审 pass(本条)。R322 收官；R323 回复时间甄别（t112）进行中，据其结论据实处理。项目 ≥1000 轮非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
