@@ -4729,5 +4729,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t117（page-core）完成并队长独立复核：commit e5c22cc25bbf7093e320390fbe44668e12c8e0c3 精确 3 文件（AttendanceApp.vue 18+ + 契约 146+ + 文档 60+，221+/3-）；diff 确认 D1 :362-363 数组 data/{list,total} 双形态归一、D2 toggleAttType error 信封 toast.error+return、R1 createAttDetail/deleteDetail 各加 loadData()；后端/SDK/H5/端点未改；HEAD=TRACK=e5c22cc25、暂存区与工作树全干净。
 - 队长独立复跑 `pnpm exec vitest run`：266 files/2147 tests 0 failed（EXIT=0）；文档 60 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（oa4rust/test-results/r324-attendance-fix/，gitignored）source 非物理真机、8 断言全 true——建明细列表 1→2/统计 1→2 即时、刷新持久 2 行、删除回退 1、不存在 code 红色『setting not found』错误 toast、真实 code 成功 toast、0 pageerror/0 API失败。
 - t118 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R324。t117 evidence_note 已附。GitHub 默认分支漏洞提示（dependabot/229）属仓库依赖审计范畴，非本任务范围，供参考。
+
+## 308. R324 收官（2026-11-21）
+- t118（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings=0、只读未改码未提交；HEAD=TRACK=dfd82bb5 稳定、工作树干净。逐条核对 D1 双形态解包、D2 error/success 双分支可区分（error toast『✗ setting not found』与 success toast『✓ 已更新』）、R1 建删刷新；契约 8/8、全量 vitest 266 files/2147 tests 0 failed；evidence 八断言全 true、0 pageerror/0 API失败、非物理真机；三文档 <YOUR_TEST_DOMAIN> 占位 0 真值；R318-R323 既有修复无回归。非阻塞观察（04-success 截图两条 toast 时序残留）经队长核实反而佐证双分支可区分，非缺陷。t118 evidence_note 已附。
+- R324 完整闭环：立项(§304)→双端考勤审计（t116 H5 0 真缺陷 §305 / t115 PC 判 D1[P1]+D2[P2]+R1 §306）→队长源码级复核三处→合并修复 t117(§307)→终审 t118 pass(本权)。PC 考勤明细列表恒空、error 误报成功、建删不刷新三处前端缺陷闭环；H5 打卡写受账号态取证限制如实标注未伪造；项目 ≥1000 轮非终态，继续据实立项下一轮。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
