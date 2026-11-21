@@ -4594,5 +4594,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 更关键候选：t98 桥接 section_create 成功后同 id 写 x_bbs_forum，但 section_delete 只删 section、不删桥接 forum → 删除后 H5 picker（forum/view-all 查 x_bbs_forum WHERE deleted_at IS NULL）可能残留孤儿 forum；与 t100『历史版块迁移』是不同的独立一致性问题，写域不重叠。
 - 纪律：仅登记候选证据，不臆造为已确认缺陷、不立即派发；待 t100 甄别结论后统一规划 R320（如需立项，审计前置真浏览器确认孤儿 forum 可见性后再 test-first 修复）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 283. R319 历史遗留版块甄别收官（判定 A，不迁移）（2026-11-21）
+- t100（qa-e2e）完成并队长独立复核通过：commit a52833c52b32a3814829f11537f88d1744165d19 精确 1 文档 67 行 oa4rust/docs/ops/oa4rust-r319-legacy-section-triage.md；HEAD=TRACK=a52833c52 且为祖先、暂存区与工作树全干净；文档 <YOUR_TEST_DOMAIN> 占位 0 真值、非物理真机 3 处标注。
+- 判定 A（全测试残留、无需迁移且明确建议不迁移）成立：真浏览器 PC section/list 15 / H5 forum/view-all 6 / 差集 13，13/13 带 R300~R318 测试标记 + 关联主题=0 + epoch 落历史 E2E 时段，candidateBusiness=0；证据边界（section/list 仅返回 id/name/enabled、create_time 由名称 epoch 推导）如实标注；evidence.json source 非物理真机、0 API 失败/0 pageerror。未改源码/契约、未执行回填。
+- 理由：13 个均为历史 E2E 测试残留，迁移会注入 H5 发帖 picker 污染真实用户选择列表（当前 picker 已含 6 个专测版块）；R319 收官，据实结论为不迁移。
+- 后续：§282 登记的 R320 候选（section 删除不删桥接 forum 的孤儿一致性）待下一轮审计前置甄别据实处理；项目持续迭代 ≥1000 轮非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
