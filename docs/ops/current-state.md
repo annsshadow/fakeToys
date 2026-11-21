@@ -4572,3 +4572,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 时序：t97 完成提交后 t98（BBS 跨端桥接修复）自动解锁 in_progress@page-work；后端单工作树+单二进制串行约束满足。t99 终审待 t98 完成后解锁。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 279. R318 t98 BBS 跨端桥接收官与终审解锁（2026-11-21）
+- t98（page-work）完成并队长独立复核通过：commit 93818d00c7b2f07f3d0e435bcec53ecd0cd5251c 精确 3 文件（lib.rs 34+ + tests_generated.rs 71+ + 文档 45+，150 insertions）；diff 确认 section_create 成功后同 id INSERT x_bbs_forum、失败补偿硬删 section fail loud，admin 门/creator/PC section/list 读取链/伪桥接 x_bbs_section 均未改、无重复 forum；HEAD=TRACK=93818d00c，暂存区与工作树全干净。
+- 队长从正确根 oa4rust/backend 独立复跑 `cargo test -p bbs_assemble_control --lib`：47 passed/0 failed（基线 45 + 新增 2），既有 section/forum 用例不回退（EXIT=0）。
+- 文档 oa4rust/docs/ops/oa4rust-r318-bbs-section-bridge-fix.md 45 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence.json（gitignored）source 非物理真机、verdict=BRIDGE_VERIFIED、pcSection.found=true、pcNameInH5 false→true、forumId 与新建 section id 一致(896eaf44...)、H5 发帖 PC 可见、apiFailures=0/errors=0。历史遗留版块未迁移如实标注为已知边界（另派回填）。
+- t99 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R318；R318 三产出（t96 甄别 B、t97 M1 修复、t98 跨端桥接）修复链完整。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
