@@ -365,7 +365,27 @@ pub async fn section_delete(
     if !is_admin(&pool, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let deleted = shared::crud_delete(&pool, &section_create_spec(), &id).await?;
+    // R320 对称删除：section 与 t98 桥接写入的 x_bbs_forum 同 id，必须在同一
+    // 事务内一起删除，杜绝「section 删了、forum 还在 H5 picker 可见」半状态。
+    // crud_delete 内部自取连接无法并入事务，这里用同口径白名单静态 SQL + $1 占位。
+    let mut client = shared::db::acquire(&pool).await?;
+    let tx = client.transaction().await?;
+    let deleted_rows = tx
+        .execute("DELETE FROM x_bbs_assemble_control_section WHERE id = $1", &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    // 同 id 软删桥接 forum；历史无桥接 forum 的 section 此处 affected=0 属正常，不误判。
+    let _forum_rows = tx
+        .execute(
+            "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    tx.commit()
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let deleted = deleted_rows > 0;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

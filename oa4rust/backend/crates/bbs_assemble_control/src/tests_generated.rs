@@ -334,4 +334,95 @@ mod tests {
         assert!(func.contains("DELETE FROM x_bbs_assemble_control_section WHERE id = $1"), "must compensate section on bridge failure (no half-state)");
         assert!(func.contains("bridge_result.is_err()"), "must fail loud on bridge error");
     }
+
+    /// R320 t102 对称删除契约：section_delete 成功硬删 section 后，
+    /// t98 桥接写入的同 id x_bbs_forum 必须被软删（forum/view-all 不再可见）。
+    /// live-gated：DB 不可达显式跳过；修复前 forum 仍可见 → 本测试 RED。
+    #[tokio::test]
+    async fn test_section_delete_symmetric_bridged_forum_cleanup() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping test_section_delete_symmetric_bridged_forum_cleanup: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let marker = format!("r320-delete-{}", uuid::Uuid::new_v4());
+        {
+            let c = pool.get().await.unwrap();
+            c.execute("DELETE FROM auth_person WHERE unique_id = 'r320-delete-admin' AND id <> 'r320-delete-admin'", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) VALUES ('r320-delete-admin', 'r320-delete-admin', 'probe', '', '', NOW(), NOW()) ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_role (id, name, created_at, updated_at) SELECT 'r320-delete-admin-role', 'admin', NOW(), NOW() WHERE NOT EXISTS (SELECT 1 FROM auth_role WHERE name = 'admin')", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_person_role (person_id, role_id, unit_id, created_at) SELECT 'r320-delete-admin', r.id, '', NOW() FROM auth_role r WHERE r.name = 'admin' ON CONFLICT DO NOTHING", &[]).await.unwrap();
+        }
+        let now = chrono::Utc::now().naive_utc();
+        let sess = shared::session::Session {
+            token: "r320-delete-token".to_string(),
+            person_unique: "r320-delete-admin".to_string(),
+            created_at: now,
+            expires_at: now + chrono::Duration::hours(2),
+        };
+        let app = crate::router(pool.clone()).layer(axum::extract::Extension(sess));
+        let created = app.clone().oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/bbs/assemble/control/section/create")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({ "name": marker }).to_string()))
+                .unwrap(),
+        ).await.unwrap();
+        assert_eq!(created.status(), StatusCode::OK, "section/create must be 200 with admin session");
+        let cbytes = axum::body::to_bytes(created.into_body(), usize::MAX).await.unwrap();
+        let cbody: serde_json::Value = serde_json::from_slice(&cbytes).unwrap();
+        let id = cbody["data"]["id"].as_str().unwrap().to_string();
+        // 前置：t98 桥接有效，forum 对该 id 可见
+        let before_resp = crate::router(pool.clone()).oneshot(
+            Request::builder().method("GET")
+                .uri("/api/bbs/assemble/control/forum/view/all")
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_eq!(before_resp.status(), StatusCode::OK, "forum/view/all must be 200");
+        let bb = axum::body::to_bytes(before_resp.into_body(), usize::MAX).await.unwrap();
+        let bv: serde_json::Value = serde_json::from_slice(&bb).unwrap();
+        let before = bv["data"].as_array().expect("forum data must be array");
+        assert!(before.iter().any(|f| f["id"].as_str() == Some(id.as_str())), "precondition: bridged forum must be visible before delete; id={}", id);
+        // 动作：删除 section
+        let deleted = app.clone().oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/api/bbs/assemble/control/section/delete/{}", id))
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_eq!(deleted.status(), StatusCode::OK, "section/delete must be 200 with admin session");
+        // 后置：同 id forum 必须不再可见
+        let after_resp = crate::router(pool.clone()).oneshot(
+            Request::builder().method("GET")
+                .uri("/api/bbs/assemble/control/forum/view/all")
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_eq!(after_resp.status(), StatusCode::OK);
+        let ab = axum::body::to_bytes(after_resp.into_body(), usize::MAX).await.unwrap();
+        let av: serde_json::Value = serde_json::from_slice(&ab).unwrap();
+        let after = av["data"].as_array().expect("forum data must be array");
+        assert!(after.iter().all(|f| f["id"].as_str() != Some(id.as_str())), "RED: section/delete must soft-delete bridged x_bbs_forum with SAME id; id={} still visible in forum/view/all", id);
+        // 数据库回读：deleted_at 非空
+        let c = pool.get().await.unwrap();
+        let soft: Option<String> = c.query_opt("SELECT deleted_at::text FROM x_bbs_forum WHERE id = $1", &[&id])
+            .await.unwrap().and_then(|r| r.get::<_, Option<String>>(0));
+        assert!(soft.is_some(), "bridged forum must have deleted_at set after section/delete");
+        c.execute("DELETE FROM x_bbs_forum WHERE id = $1", &[&id]).await.unwrap();
+        c.execute("DELETE FROM x_bbs_assemble_control_section WHERE id = $1", &[&id]).await.unwrap();
+    }
+
+    /// R320 t102 实现不变量：section_delete 必须 (a) 用同 id 软删 x_bbs_forum
+    /// deleted_at=NOW()；(b) DB 错误 fail loud；(c) affected=0 不误判。
+    #[test]
+    fn test_section_delete_bridge_cleanup_invariants() {
+        let src = include_str!("lib.rs");
+        let start = src.find("pub async fn section_delete").expect("section_delete");
+        let end = src[start..].find("\npub async fn ").map(|i| start + i).unwrap_or(src.len());
+        let func = &src[start..end];
+        assert!(func.contains("UPDATE x_bbs_forum SET deleted_at = NOW()"), "must soft-delete bridged forum");
+        assert!(func.contains("&[&id]"), "must reuse section id (no wrong forum)");
+        assert!(func.contains("map_err(|e| AppError::internal_with_source"), "must fail loud on DB error");
+    }
 }
