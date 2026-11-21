@@ -4649,3 +4649,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 时序：t106 前端写域独立、t107 只读终审待其完成后自动解锁，符合写域不重叠纪律。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 293. R321 t106 D1 修复收官与终审解锁（2026-11-21）
+- t106（page-core）完成并队长独立复核：commit 2fcaed42ec11e56e6e165de6470c22433797e144 精确 3 文件（doc 54+/contract 64+/FileManager.vue 1+，119 insertions）；diff 确认 deleteFile mutate onSuccess 仅新增 loadRecycleBin() 一行、未改后端/表族/新建逻辑；HEAD=TRACK=2fcaed42e，暂存区与工作树全干净。
+- 队长定点复跑 `pnpm exec vitest run FileManager.recycleRefresh.contract.test.ts`：4/4 passed（契约 it2/it3 锁定 loadRecycleBin 直接调用、非注释、顺序在 toast 前）；文档 54 行 <YOUR_TEST_DOMAIN> 占位 0 真值。
+- 证据 oa4rust/test-results/r321-file-recycle-fix/evidence.json（gitignored）source 非物理真机、7 断言全 true（recycleHasSameName/recycleListCalledAfterDelete/resumeOk/resumeGoneFromRecycle/noPageErrors/noApiFailures）、0 pageerror/0 API失败；PC build index-zrKXNNVT.js + 测试服原子部署 grep 新哈希通过。t106 evidence_note 已附。
+- t107（design-reviewer）终审已解锁 in_progress：待 verdict=pass/findings=[] 关闭 R321。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
