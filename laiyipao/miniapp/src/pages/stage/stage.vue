@@ -1,6 +1,40 @@
-﻿<template>
+<template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- t13 / F-10-1：首屏作战简报 hero —— 让"在哪、打哪关、还差多少"先被看见 -->
+      <view v-if="!store.configLoading && chapterLevels.length" class="stage-hero" aria-label="章节作战简报">
+        <view class="stage-hero-head">
+          <text class="stage-hero-eyebrow">作战简报 · ACTIVE FRONT</text>
+          <text class="stage-hero-chapter">{{ (chapters.find(c => c.id === curChapter) || {}).name || '当前章节' }}</text>
+        </view>
+        <view class="stage-hero-body">
+          <view class="stage-hero-level">
+            <text class="stage-hero-num mono">{{ activeLevelId }}</text>
+            <text class="stage-hero-cap">当前关卡</text>
+          </view>
+          <view class="stage-hero-meter">
+            <view class="stage-hero-meter-head">
+              <text class="muted">章节推进</text>
+              <text class="mono">{{ chapterStars }}★ / {{ chapterTotal }}★</text>
+            </view>
+            <view class="stage-hero-track">
+              <view
+                class="stage-hero-meter-fill"
+                :style="{ width: chapterTotal ? (chapterStars / chapterTotal * 100) + '%' : '0%' }"
+              />
+            </view>
+            <view class="stage-hero-rail" aria-label="五元素战线">
+              <text class="sh-fire">火</text>
+              <text class="sh-ice">冰</text>
+              <text class="sh-lightning">雷</text>
+              <text class="sh-corrosion">蚀</text>
+              <text class="sh-kinetic">动</text>
+            </view>
+          </view>
+        </view>
+        <view class="stage-hero-cta" @click="enter(activeLevelId)">继续挑战 · 第 {{ activeLevelId }} 关 →</view>
+      </view>
+
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -586,13 +620,24 @@ onMounted(() => {
   background: linear-gradient(180deg, var(--bg) 82%, rgba(7, 10, 16, 0));
 }
 
+/* 基线 h5-03：章节 chip 超出 560rpx 视口后被直接裁掉（「母巢核…」不可点）。
+   改为横向滚动条：所有章节仍一屏可见入口，滚动即可触达最后的 chip。 */
 .chapter-row {
   display: flex;
   flex-direction: row;
   gap: 12rpx;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 6rpx;
+}
+
+.chapter-row::-webkit-scrollbar {
+  display: none;
 }
 
 .chapter-chip {
+  flex: 0 0 auto;
   padding: 12rpx 26rpx;
   border-radius: 999rpx;
   background: var(--panel);
@@ -841,7 +886,7 @@ onMounted(() => {
 .terrain-note-descr {
   flex: 1;
   font-size: 24rpx;
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -858,7 +903,7 @@ onMounted(() => {
   font-size: 24rpx;
 }
 .wave-spawn {
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
 }
 
 /* 通关掉落预览（2026-11-01 新一轮第 39 轮） */
@@ -895,5 +940,172 @@ onMounted(() => {
   line-height: 1.7;
   display: block;
   margin-top: 6rpx;
+}
+
+/* t13 / F-10-1：选关首屏作战简报 —— 用明度差与元素光代替又一层细描边 */
+.stage-hero {
+  position: relative;
+  margin-bottom: 20rpx;
+  padding: 22rpx 24rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid var(--border-soft);
+  background: linear-gradient(116deg, rgba(255, 107, 53, 0.10), var(--panel) 44%, rgba(88, 166, 255, 0.08));
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.32), inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  animation: stage-hero-in var(--motion-base) var(--motion-ease) both;
+}
+
+.stage-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx);
+  background-size: 48rpx 48rpx;
+  pointer-events: none;
+}
+
+.stage-hero-head,
+.stage-hero-body,
+.stage-hero-cta {
+  position: relative;
+}
+
+.stage-hero-head {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.stage-hero-eyebrow {
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+  color: var(--muted);
+}
+
+.stage-hero-chapter {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stage-hero-body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24rpx;
+  margin-top: 14rpx;
+}
+
+.stage-hero-level {
+  flex: 0 0 150rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage-hero-num {
+  font-size: 72rpx;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--fire);
+  text-shadow: 0 0 18rpx rgba(255, 107, 53, 0.35);
+}
+
+.stage-hero-cap {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--text-2);
+}
+
+.stage-hero-meter {
+  flex: 1;
+  min-width: 0;
+}
+
+.stage-hero-meter-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 22rpx;
+}
+
+.stage-hero-track {
+  height: 14rpx;
+  margin-top: 10rpx;
+  border-radius: 999rpx;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+
+.stage-hero-meter-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, var(--fire), var(--ice), var(--lightning), var(--corrosion), var(--kinetic));
+  box-shadow: 0 0 12rpx rgba(255, 107, 53, 0.35);
+  transition: width var(--motion-slow) ease-out;
+}
+
+.stage-hero-rail {
+  display: flex;
+  flex-direction: row;
+  gap: 14rpx;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+}
+
+.sh-fire { color: var(--fire); }
+.sh-ice { color: var(--ice); }
+.sh-lightning { color: var(--lightning); }
+.sh-corrosion { color: var(--corrosion); }
+.sh-kinetic { color: var(--kinetic); }
+
+.stage-hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 16rpx;
+  border-radius: 12rpx;
+  background: var(--accent-grad);
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 五元素分色只做小面积描边/色条，编号仍是主要辨识线索 */
+.grid .level-cell:nth-child(5n+1) { --cell-accent: var(--fire); }
+.grid .level-cell:nth-child(5n+2) { --cell-accent: var(--ice); }
+.grid .level-cell:nth-child(5n+3) { --cell-accent: var(--lightning); }
+.grid .level-cell:nth-child(5n+4) { --cell-accent: var(--corrosion); }
+.grid .level-cell:nth-child(5n+5) { --cell-accent: var(--kinetic); }
+
+.grid .level-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5rpx;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--cell-accent, var(--border));
+  opacity: 0.8;
+}
+
+.grid .level-cell.current {
+  border-color: var(--cell-accent, var(--fire));
+}
+
+@keyframes stage-hero-in {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-hero { animation: none; }
+  .level-cell.current,
+  .play-glyph { animation: none; }
 }
 </style>

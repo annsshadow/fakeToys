@@ -557,7 +557,7 @@ onMounted(async () => {
 }
 .task-progress-fill {
   height: 100%;
-  background: var(--ok, #3fb950);
+  background: var(--ok);
   border-radius: 6rpx;
   transition: width 0.3s ease;
 }

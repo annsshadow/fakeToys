@@ -221,7 +221,7 @@ onMounted(async () => {
 .ann-body {
   font-size: 24rpx;
   line-height: 1.7;
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
   white-space: pre-wrap;
 }
 </style>

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="page-root battle-page" @click="unlockSfx()">
     <!-- 画布：整个战斗画面 -->
     <canvas
@@ -81,6 +81,16 @@
           <Icon name="pause" :size="26" />
         </view>
       </view>
+
+      <!-- t13 / F-10-1：五元素连锁 HUD —— 带汉字标签，颜色不是唯一线索 -->
+      <view class="battle-sigil-rail" aria-label="五元素连锁">
+        <view class="sigil sig-fire"><text>火</text></view>
+        <view class="sigil sig-ice"><text>冰</text></view>
+        <view class="sigil sig-lightning"><text>雷</text></view>
+        <view class="sigil sig-corrosion"><text>蚀</text></view>
+        <view class="sigil sig-kinetic"><text>动</text></view>
+        <text class="sigil-caption">元素连锁 · 命中挂层触发反应</text>
+      </view>
     </view>
 
     <!-- 暂停遮罩：挡住画布点击，避免「看起来暂停了其实还能点」 -->
@@ -124,7 +134,7 @@
             </view>
             <view class="legend-rows">
               <view class="legend-row"><view class="dot dot-ring" style="border-color: #ffd33d" /><text>右上角数字 = 热量费用（每次释放消耗多少热量）</text></view>
-              <view class="legend-row"><view class="dot dot-ring" style="border-color: #8b949e" /><text>格内变暗 + 剩余秒数 = 冷却中；描边亮起 = 就绪</text></view>
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: var(--dim)" /><text>格内变暗 + 剩余秒数 = 冷却中；描边亮起 = 就绪</text></view>
               <view class="legend-row"><view class="dot dot-ring" style="border-color: #58a6ff" /><text>格子数量 = 你携带的元素种类，「元素层数 N 技能」即来源于此</text></view>
             </view>
           </view>
@@ -163,8 +173,8 @@
             <text class="legend-sec-title">顶部信息与控制</text>
             <view class="legend-rows">
               <view class="legend-row"><Icon name="shield" :size="26" style="color: #58a6ff" /><text>防线 = 你的血量，漏怪会扣，扣光即失败</text></view>
-              <view class="legend-row"><Icon name="scroll" :size="26" style="color: #8b949e" /><text>波次 = 本关共几波敌人；击杀 = 已消灭数</text></view>
-              <view class="legend-row"><Icon name="volume-on" :size="26" style="color: #8b949e" /><text>音效开关；倍速档只压缩等待，不影响战斗结果与回放</text></view>
+              <view class="legend-row"><Icon name="scroll" :size="26" style="color: var(--dim)" /><text>波次 = 本关共几波敌人；击杀 = 已消灭数</text></view>
+              <view class="legend-row"><Icon name="volume-on" :size="26" style="color: var(--dim)" /><text>音效开关；倍速档只压缩等待，不影响战斗结果与回放</text></view>
               <view class="legend-row"><Icon name="flag" :size="26" style="color: #ff7b72" /><text>放弃 = 作废本局并退还体力（无战报无奖励）</text></view>
               <view class="legend-row"><Icon name="pause" :size="26" style="color: #58a6ff" /><text>暂停 = 战斗时间冻结，切后台会自动暂停</text></view>
             </view>
@@ -235,7 +245,7 @@
       </view>
       <view class="result-stats">
         <view class="rstat">
-          <Icon name="sword" :size="30" style="color: #8b949e" />
+          <Icon name="sword" :size="30" style="color: var(--dim)" />
           <text class="muted">击杀</text><text class="mono">{{ settleResult.kills }}</text>
         </view>
         <view class="rstat">
@@ -1182,7 +1192,9 @@ onShareAppMessage(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 17, 23, 0.86);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .legend-box {
@@ -1190,8 +1202,10 @@ onShareAppMessage(() =>
   max-height: 82vh;
   padding: 28rpx 28rpx 20rpx;
   border-radius: 20rpx;
-  background: var(--panel);
-  border: 1rpx solid var(--border);
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-2);
@@ -1378,15 +1392,17 @@ onShareAppMessage(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 17, 23, 0.78);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .pause-box {
   width: 70%;
   padding: 40rpx 32rpx;
   border-radius: 20rpx;
-  background: var(--panel);
-  border: 1rpx solid var(--border);
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1479,23 +1495,29 @@ onShareAppMessage(() =>
   flex: 1;
 }
 
-/* 波次 / 击杀胶囊 */
+/* 波次 / 击杀胶囊：真浮层才用玻璃，画布上方的 HUD 允许 */
 .hud-pill {
   display: inline-flex;
   align-items: center;
   height: 56rpx;
   padding: 0 20rpx;
   border-radius: 999rpx;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1rpx solid var(--border-soft);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
 }
 
 .hp-box {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1rpx solid var(--border-soft);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
   border-radius: 16rpx;
   padding: 12rpx 20rpx;
   min-width: 240rpx;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.06), 0 6rpx 20rpx rgba(0, 0, 0, 0.30);
 }
 
 .hp-line {
@@ -1526,7 +1548,9 @@ onShareAppMessage(() =>
 
 .hp-fill {
   height: 100%;
-  background: var(--ok);
+  background: linear-gradient(90deg, var(--corrosion), var(--ok));
+  box-shadow: 0 0 12rpx rgba(126, 231, 135, 0.45);
+  transition: width 0.18s ease-out;
 }
 
 /* 第六批 R5 当前关卡名 */
@@ -1752,5 +1776,48 @@ onShareAppMessage(() =>
   font-size: 22rpx;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
+}
+
+/* t13 / F-10-1：战斗首屏五元素连锁仪表 */
+.battle-sigil-rail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
+  pointer-events: none;
+}
+
+.sigil {
+  width: 40rpx;
+  height: 40rpx;
+  flex: 0 0 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1rpx solid currentColor;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.sig-fire { color: var(--fire); }
+.sig-ice { color: var(--ice); }
+.sig-lightning { color: var(--lightning); }
+.sig-corrosion { color: var(--corrosion); }
+.sig-kinetic { color: var(--kinetic); }
+
+.sigil-caption {
+  margin-left: 4rpx;
+  font-size: 19rpx;
+  color: var(--text-2);
+  white-space: nowrap;
 }
 </style>
