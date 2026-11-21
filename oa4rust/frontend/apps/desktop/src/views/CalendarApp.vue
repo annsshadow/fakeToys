@@ -42,6 +42,33 @@
           @click="selectCalendar(c)"
         >{{ c.name }}</button>
       </div>
+      <div class="cal-create-wrap">
+        <button
+          type="button"
+          class="cal-create-entry today-btn"
+          data-testid="calendar-create-entry"
+          :aria-expanded="calCreateOpen"
+          aria-label="新建日历"
+          @click="calCreateOpen = !calCreateOpen"
+        >+ 新建日历</button>
+        <form
+          v-if="calCreateOpen"
+          class="cal-create-form ai-panel"
+          data-testid="calendar-create-form"
+          @submit.prevent="calWriteCE('calCreate')"
+        >
+          <label class="cal-create-label">
+            <span>日历名称</span>
+            <input v-model="calCreateForm.name" class="cal-create-input" placeholder="请输入日历名称" aria-label="日历名称" required />
+          </label>
+          <label class="cal-create-label">
+            <span>颜色（可选）</span>
+            <input v-model="calCreateForm.color" class="cal-create-color" type="color" aria-label="日历颜色" />
+          </label>
+          <button type="submit" class="today-btn" :disabled="creatingCal">{{ creatingCal ? '创建中…' : '创建日历' }}</button>
+          <button type="button" class="cal-create-cancel" @click="calCreateOpen = false">取消</button>
+        </form>
+      </div>
     </div>
 
     <div class="calendar-grid glass-card" data-testid="calendar-month-grid">
@@ -247,13 +274,43 @@ async function calMore(op: string) {
     toast.error(`日历操作失败: ${err?.message ?? ''}`)
   }
 }
+// R311：新建日历入口表单状态（替代 prompt，可见可访问）
+const calCreateOpen = ref(false)
+const creatingCal = ref(false)
+const calCreateForm = ref({ name: '', color: '#1462be' })
+
 // rev388：日历 core/entity 日历建/改 + 事件建/改/删 + 日历删(calendar/calendar/remove 轨) 真实写路由（3 轨镜像择一轨接线，字段已核 CreateCalendarRequest/CreateEventRequest 等；规避守卫禁的 core/entity/calendar/remove，删日历改走 /calendar/calendar/remove）
 async function calWriteCE(op: string) {
   try {
     if (op === 'calCreate') {
-      const name = prompt('日历名称:', '') || ''
-      if (!name) return
-      await api.post('/api/calendar/core/entity/calendar/create', { name, type: 'person' })
+      const name = calCreateForm.value.name.trim()
+      if (!name) {
+        toast.error('请输入日历名称')
+        return
+      }
+      if (creatingCal.value) return
+      creatingCal.value = true
+      try {
+        // POST calendar/create —— 与「我的日历」列表同轨，避免 core/entity 创建在 legacy 列表不可见
+        const r: any = await api.post('/api/calendar/calendar/create', {
+          name,
+          type: 'person',
+          color: calCreateForm.value.color || '#1462be',
+        })
+        const created: any = (r?.data?.data ?? r?.data ?? {}) as any
+        const newId = created?.id != null ? String(created.id) : ''
+        calCreateForm.value = { name: '', color: '#1462be' }
+        calCreateOpen.value = false
+        toast.success('日历已创建')
+        await loadCalendars('my')
+        if (newId) {
+          const fresh = myCals.value.find(c => String(c.id) === newId)
+          await selectCalendar(fresh ?? { id: newId, name: created?.name || name, color: created?.color || '#1462be' })
+        }
+        return
+      } finally {
+        creatingCal.value = false
+      }
     } else if (op === 'calUpdate') {
       const id = prompt('日历 ID:', '') || ''
       if (!id) return
@@ -313,7 +370,19 @@ async function loadCalendars(scope: 'my' | 'public') {
       scope === 'my'
         ? await api.get('/api/calendar/calendar/list/my')
         : await api.get('/api/calendar/calendar/list/public')
-    const list = (r.data?.list ?? r.data ?? []) as CalItem[]
+    // 后端信封：my 返回 {data:{my_calendars:[],unit_calendars:[],follow_calendars:[]}}，public 返回 {data:[]}
+    const raw = (r?.data?.data ?? r?.data ?? []) as any
+    const list = (
+      Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.my_calendars)
+          ? raw.my_calendars
+          : Array.isArray(raw?.list)
+            ? raw.list
+            : Array.isArray(raw?.unit_calendars)
+              ? raw.unit_calendars
+              : []
+    ) as CalItem[]
     if (scope === 'my') myCals.value = list
     else pubCals.value = list
   } catch (e) {
@@ -347,7 +416,7 @@ async function selectCalendar(c: CalItem): Promise<void> {
   calEvents.value = []
   calEventsError.value = ''
   try {
-    // GET calendar/{id} —— 日历详情
+    // GET calendar/{id} —— 与创建/列表同轨（legacy Pool 轨），跨 core 轨会 404
     const d: any = await api.get(`/api/calendar/calendar/${c.id}`)
     activeCalDetail.value = (d?.data ?? null) as CalDetail | null
   } catch {
@@ -386,7 +455,7 @@ async function loadCalEvents(): Promise<void> {
   if (!activeCal.value) return
   calEventsError.value = ''
   try {
-    // GET event/list/{calendarId} —— 按日历取事件
+    // GET event/list/{calendarId} —— 与创建/列表同轨（legacy Pool 轨）
     const r: any = await api.get(`/api/calendar/event/list/${activeCal.value.id}`)
     calEvents.value = (r?.data ?? []) as CalendarEvent[]
   } catch (e) {
@@ -403,7 +472,7 @@ async function createEvent(): Promise<void> {
     return
   }
   try {
-    // POST event/create —— 新建事件
+    // POST event/create —— 与日历创建/列表同轨（legacy Pool 轨）
     await api.post('/api/calendar/event/create', {
       calendarId: activeCal.value.id,
       title: f.title,
@@ -740,4 +809,12 @@ async function loadCalTwin() {
 .ai-page .event-mgr { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); }
 .ai-page .cll-tab.on,
 .ai-page .today-btn { background: var(--ai-gradient-brand); color: #fff; border-color: transparent; }
+.ai-page .cal-create-wrap { margin-top: var(--ai-grid-2); display: flex; flex-wrap: wrap; align-items: center; gap: var(--ai-grid-2); }
+.ai-page .cal-create-entry { transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .cal-create-entry:hover { transform: translateY(-1px); box-shadow: var(--ai-shadow-1); }
+.ai-page .cal-create-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--ai-grid-2); padding: var(--ai-grid-2); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); }
+.ai-page .cal-create-label { display: flex; flex-direction: column; gap: var(--ai-grid-1); font-size: 12px; color: var(--ai-text-secondary); }
+.ai-page .cal-create-input,
+.ai-page .cal-create-color { border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); padding: 6px 10px; background: var(--ai-glass-bg); color: var(--ai-text-primary); }
+.ai-page .cal-create-cancel { border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); padding: 7px 12px; background: transparent; color: var(--ai-text-secondary); }
 </style>
