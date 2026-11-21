@@ -163,4 +163,14 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 - 登录页：主按钮后一行 `role="note"`，≤56rpx，不新增输入、不弹窗、不打断登录；无本地战绩时写「AI 等待数据」，不编造。
 - 验真页：仅在 `replayInfo` 到位后显示一行复核说明，不伪造「思考中」，不阻塞三步流程。
 - 低透明度 .022 网格 / .06 光斑不算 AI；令牌零新增，v1/v3 双锚点不动。契约：`admin/tests/r4Mapping.contract.test.ts`、`miniapp/src/styles/r4Mapping.contract.test.ts`。
+---
+
+## 7C. R6 真实数据驱动推荐速查（主规范 §1E）
+
+- 包标记：`--lyp-r6-version: lyp-tokens-r6`（双端同值）；`lyp-tokens-v1` / `lyp-tokens-v3-r3` 保留，禁止 `lyp-tokens-v4`。**不新增视觉令牌**，仍用 `--ai-accent` / `--ai-ink` / `--ai-halo` / `--ai-glow`（admin `--lyp-ai-*`）。
+- 审计：H5 18/19 有结构标记（battle.vue 为实时战斗例外），login / verify / reactions / skills / equipment 为浅升级；admin 7/12 有 AI 结论卡，ContentView / DefensesView / EquipmentView / LoginView / WikiView 无 AI 卡。
+- 推荐接口（本轮只规范不实现）：`GET /api/v1/me/recommendations?context=<...>` 与 `GET /api/v1/admin/recommendations/<scope>`；输入必须来自用户画像 + 战斗历史 + 配置版本。响应写 `schema_version` / `generated_at` / `context` / `evidence[]` / `model` / `confidence` / `cta` / `empty_reason`；`confidence` 只写 `null` / `rule_based` / `statistical`，禁止假数字与 GPT 宣称；缺数据用 `NO_HISTORY` 等诚实空态。
+- 玩法三类：元素反应链构筑、装备/宝石搭配、关卡难度与 BOSS 机制引导；每条结论必须带真实字段依据与可点击 CTA。
+- 推荐卡四区：AI 徽章 + 一句结论 → 数据条 → 「为什么推荐」 → 主 CTA；加载/空态/错误态等高，错误态标注「本地规则引擎」。契约：`admin/tests/r6PersonalizedRec.contract.test.ts`、`miniapp/src/styles/r6PersonalizedRec.contract.test.ts`。
+
 

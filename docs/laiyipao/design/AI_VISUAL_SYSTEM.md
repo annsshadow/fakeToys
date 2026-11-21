@@ -411,6 +411,128 @@ admin 沿用 `.section-title` / `.kpi-*` / `.toolbar` / 真 `<table>` / `.glass-
 - **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts`、`r4Mapping.contract.test.ts` 的任何判据；新契约只增不减。
 - 验收门禁：双端全量测试绿；H5 五页各交 1 张 390×844、admin 四视图各交 1 张 1440×900 真浏览器截图，文件标注「非物理真机」，由 design-reviewer 按 §1A.7 / §1B.4 肉眼复核 AI 徽章是否可辨、CTA 是否可达、是否有数据依据。
 
+## 1E. R6 剩余页面精修与真实数据驱动推荐
+
+本章是 §1A / §1B / §1C / §1D 的增量下限，不替代任何既有判据。R6 的目标是把「有结构、有 AI 徽章」升级为「有真实数据依据、有可执行结论」：推荐结论必须来自用户画像 + 战斗历史 + 配置版本，而不是页面常量或当前视图数据拼装出的规则文案。以下七条由设计负责人拍板，h5-ui / admin-ui / 后端任务按各自写域落地；本章只给规范与接口契约，不实现后端，不改业务视图源码。
+
+### 1E.1 独立审计：31 个界面逐一结论
+
+审计口径：`docs/laiyipao/audits/` 下 round4-* / round5-* 真浏览器截图（全部标注「非物理真机」）+ 当前源码 DOM 标记计数。状态定义：**已达标** = 首屏肉眼可辨汉字「AI」+ 真实数据结论 + 依据 + CTA 四判据齐全；**浅升级** = 有眉题/KPI 或单条 AI 提示，但结论来自本地规则引擎，或仅有 1–2 个结构标记；**无 AI** = 没有可辨 AI 结论卡（实时战斗页按例外处理，但必须给 BOSS 机制引导）。实测结论：H5 18/19 页有结构标记但 `battle.vue` 为 0，login / verify / reactions / skills / equipment 为浅升级；admin 7/12 有可辨 AI 结论，ContentView / DefensesView / EquipmentView / LoginView / WikiView 无 AI 卡。
+
+H5 / miniapp（19 页）：
+
+| 页面 | 现状证据（标记数 / 截图） | 状态 | R6 动作 |
+| --- | --- | --- | --- |
+| announcements.vue | 4 标记 + round5 截图 | 已达标 | 公告排序改读个性化接口，保留 AI 徽章 |
+| bag.vue | 3 标记 | 已达标 | 背包建议接入装备/宝石搭配接口 |
+| battle.vue | 0 标记（实时战斗） | 无 AI（例外） | 新增非阻塞 BOSS 机制提示层，不遮挡操作 |
+| battles.vue | 3 标记 | 已达标 | 战斗复盘结论改读历史字段 |
+| enemies.vue | 3 标记 | 已达标 | 敌人克制建议接入反应链接口 |
+| equipment.vue | 3 标记但仅本地 config/store | 浅升级 | 按 §1E.2/§1E.3 换成数据驱动搭配结论 |
+| gems.vue | 4 标记 | 已达标 | 宝石收益对比带 config_version |
+| index.vue | 5 标记 + round5 截图 | 已达标 | 首页洞察卡消费 `/api/v1/me/recommendations?context=home` |
+| login.vue | 1 标记 | 浅升级 | 登录页只保留轻量 AI 欢迎语，不伪造推荐；无历史时走 §1A.4 空态 |
+| mastery.vue | 3 标记 | 已达标 | 熟练度结论带依据时间戳 |
+| me.vue | 3 标记 | 已达标 | 个人页展示用户画像摘要（hash 化，不露 PII） |
+| rank.vue | 3 标记 | 已达标 | 排名变化给出真实数据来源 |
+| reactions.vue | 2 标记 | 浅升级 | 元素反应链改读触发率/伤害占比，给可行动 CTA |
+| shop.vue | 3 标记 | 已达标 | 商品建议接入搭配缺口结论 |
+| signin.vue | 4 标记 | 已达标 | 签到收益提示保留，禁止写死文案 |
+| skills.vue | 2 标记 | 浅升级 | 技能热度改读战斗历史，不与 reactions 重复 |
+| skins.vue | 3 标记 | 已达标 | 皮肤推荐带拥有状态依据 |
+| stage.vue | 4 标记 + round5 截图 | 已达标 | 关卡难度与 BOSS 引导接入推荐接口 |
+| verify.vue | 1 标记 | 浅升级 | 验真轻量 AI 提示，不伪装个性化推荐 |
+
+admin / PC（12 视图）：
+
+| 视图 | 现状证据 | 状态 | R6 动作 |
+| --- | --- | --- | --- |
+| BattlesView.vue | AiInsightCard 4 处 + round5 截图 | 已达标 | 接 `/api/v1/admin/recommendations/battles` |
+| ContentView.vue | kicker/kpi，无 AI 卡 | 无 AI | 补 AI 结论卡：内容消费缺口 + CTA |
+| DashboardView.vue | AiInsightCard 2 处 | 已达标 | 首页洞察改读个性化管理建议 |
+| DefensesView.vue | kicker/kpi，无 AI 卡 | 无 AI | 补防线薄弱点结论 + 依据指标 |
+| EconomyView.vue | 自定义 AI 诊断 7 处 | 已达标 | 保留视觉，数据切到聚合接口 |
+| EquipmentView.vue | kicker/kpi，无 AI 卡 | 无 AI | 补装备配置建议 + 版本依据 |
+| LevelsView.vue | 自定义 AI 洞察 7 处 | 已达标 | 难度曲线与 BOSS 通过率改读聚合字段 |
+| LoginView.vue | 无结构标记 | 无 AI | 只加轻量 AI 提示，不伪造洞察；空态诚实 |
+| RecomputesView.vue | AiInsightCard 4 处 | 已达标 | 重算收益结论带任务耗时依据 |
+| SkillsView.vue | AiInsightCard 4 处 | 已达标 | 技能平衡结论带使用率字段 |
+| UsersView.vue | AiInsightCard 4 处 | 已达标 | 用户分层建议脱敏、只给聚合 |
+| WikiView.vue | 无 AI 卡 | 无 AI | 补「知识缺口」建议 + 跳转 CTA |
+
+### 1E.2 真实数据驱动推荐接口契约（只规范，不实现）
+
+现状缺口：admin 的 `buildAdminAiInsight(view, data)` 与 H5 的 `r3-ai-*` 卡只消费当前页 props / 本地 config/store，属于规则引擎，不能称为个性化推荐。R6 定义两个只读接口，后端任务另行实现；本轮**不实现**，只冻结字段与诚实标注。
+
+- 用户侧：`GET /api/v1/me/recommendations?context=<home|equipment|reactions|skills|stage|bag|gems|shop>`，沿用现有用户登录态。
+- 管理侧：`GET /api/v1/admin/recommendations/<battles|dashboard|levels|economy|skills|users|recomputes|content|defenses|equipment|wiki>`，沿用现有 admin 权限。
+- 输入来源必须可追溯：**用户画像**（等级/战力/装备/宝石/技能，来自 `/api/v1/me`）、**战斗历史**（胜负/波次/星级/元素触发与伤害占比，来自 `/api/v1/me/battles`）、**配置版本**（`config_version`，来自 `/api/v1/config`）与聚合漏斗（`/api/v1/admin/dashboard`）。响应中的 `input_snapshot.battle_count` 与 `window_days` 必须写实际值。
+
+响应体（两类接口共用形状，`insights` 可为空数组）：
+
+```json
+{
+  "schema_version": "rec-v1",
+  "generated_at": "<ISO8601>",
+  "context": "equipment",
+  "subject": { "user_key": "<hash>", "level": 0, "power": 0 },
+  "input_snapshot": { "battle_count": 0, "window_days": 7, "config_version": "<sha>" },
+  "evidence": [
+    { "metric": "近 7 场冰系反应触发率", "value": 0, "unit": "%", "source": "battles", "window": "7d" }
+  ],
+  "insights": [
+    {
+      "id": "equip-gem-slot-2",
+      "headline": "替换 2 号宝石，提高冰系触发率",
+      "basis": ["近 7 场冰系触发率低于同战力分位", "当前宝石等级落后 config_version"],
+      "cta": { "label": "查看搭配", "route": "/pages/gems/index", "params": { "slot": 2 } },
+      "confidence": "rule_based",
+      "model": { "name": "rules", "version": "rec-v1" }
+    }
+  ],
+  "empty_reason": null,
+  "model": { "name": "rules", "version": "rec-v1", "kind": "rule_based" }
+}
+```
+
+- `confidence` 只能是 `null` / `"rule_based"` / `"statistical"` 文字标记，**禁止编造 0.93 一类假置信度**；`model.name` 写 `rules` / `stats` 与版本号，不宣称 GPT / LLM。未来接入真实模型必须先补模型卡与 §1A 判据复核。
+- 数据不足时 `insights: []` 且 `empty_reason.code` 取 `NO_HISTORY` / `NOT_ENOUGH_DATA` / `CONFIG_MISSING`，`message` 按 §1A.4 写「缺什么 + 下一步」，前端渲染诚实空态，禁止回退写死推荐文案。
+- 用户标识仅输出 hash 后的 `user_key`，不得返回姓名、联系方式或真实服务端地址；错误码沿用 401/403/429/5xx；建议 5 分钟 TTL 缓存 + stale-while-revalidate；接口失败时客户端可回退本地规则引擎，但卡上必须标注「本地规则引擎」。
+
+### 1E.3 玩法策略深度：三类可行动建议
+
+- **元素反应链构筑**：用战斗历史里的元素触发率、反应伤害占比与失败波次，给出「主反应 + 副反应 + 触发顺序 + 期望收益」四段式结论；依据必须带 `window_days` 与字段来源，CTA 指向 `reactions.vue` 或 `stage.vue`，禁止泛泛写「试试冰系」。
+- **装备/宝石搭配**：对比当前 loadout 与 `config_version` 下的推荐组合，展示属性差值、缺口字段和替换代价；CTA 区分 `equipment.vue` / `gems.vue` / `shop.vue`，避免三页重复同一句文案。
+- **关卡难度与 BOSS 机制**：用关卡通过率、平均失败波次、BOSS 机制命中次数给出难度曲线判断与克制建议；`stage.vue` 展示前置引导，`battle.vue` 在非阻塞浮层显示 BOSS 机制提示，尊重 `prefers-reduced-motion`，不得遮挡塔位与技能按钮。
+- 三类建议都必须落到 `evidence[]` 真实字段与 `cta.route`；同一用户的首页、装备页、关卡页不得给自相矛盾的结论（后端需共享同一 `schema_version` 与 `config_version`）。
+
+### 1E.4 视觉对标、AI 判据与反模式
+
+- 对标方向：命令面板的键盘优先与密度（Linear / Raycast）、数据卡的结论先行与证据分层（Stripe Dashboard）、H5 一屏可读的模块化卡片（iOS Widget）；只取结构语言，不复制品牌资产。admin 表单与卡片必须重绘为 `--lyp-*` 体系，**杜绝 Element Plus 默认观感**（默认阴影、默认蓝、默认圆角、无证据的 el-card）。
+- 推荐卡只允许 `panel-2` / `glass-surface` 作底与 `--ai-ink` / `--lyp-ai-ink` 作强调；禁止把元素 18% soft 叠 `panel-3`（实测 fire 3.89 / ice 4.04 不达标），禁止玻璃底再放 muted/dim（实测 4.37 / 4.13 不达标）。正文走文本四阶，焦点环与骨架屏沿用既有令牌。
+- 低透明度装饰一律不算改造成果：`rgba(255,255,255,.022)` 网格、`rgba(...,.06)` 辉光、只换色不加结构、只有英文 AI 或纯图标、只有结论没有依据、写死文案、空态写「暂无数据」。
+- AI 四判据继续作为**硬下限**：可见汉字「AI」+ 真实数据结论 + 依据 + CTA；不宣称 GPT；四项缺一不算改造完成。缺数据时严格走 §1A.4 诚实空态，空态卡高度与正常态一致。
+
+### 1E.5 推荐卡组件契约（H5 与 admin 共用信息架构）
+
+- 结构固定四区：① 徽章 + 一句结论（汉字「AI」必须可见）；② 数据条（1–3 个 `evidence[]` 指标，带来源与窗口）；③ 可展开「为什么推荐」（列出 `basis[]` 与 `model.name/version`）；④ 主 CTA（路由与 `params` 来自接口，不许前端写死）。
+- H5 卡宽 100%、限宽 560rpx 等价容器，主 CTA 拇指可达；390×844 截图须一屏看到徽章、结论与 CTA；不得用横向滚动藏依据；加载态用 skeleton-row/bar，错误态标注「本地规则引擎」。
+- admin 卡放在看板 / 视图洞察槽，1440×900 下与 KPI 区分层；用 `.glass-surface` + `--lyp-*` 阴影/边框，不用 Element Plus `el-card` 默认样式；「为什么推荐」用轻量 popover，键盘可达且 `:focus-visible` 有 2px 令牌描边。
+- 空态 / 加载态 / 错误态与成功态等高切换，避免布局跳动；`prefers-reduced-motion` 下关闭 shimmer 与位移动画。
+
+### 1E.6 令牌与兼容性
+
+- 本轮**不新增视觉令牌**，只新增非视觉规范包标记 `--lyp-r6-version: lyp-tokens-r6`（双端 tokens.css 头部），用于契约识别 R6 规则集；不改任何颜色、间距、动效变量。
+- `--lyp-token-version: lyp-tokens-v1` 与 `--lyp-r3-version: lyp-tokens-v3-r3` 必须原样保留，禁止误升 `lyp-tokens-v4`；`--ai-accent` / `--ai-ink` / `--ai-halo` / `--ai-glow`（admin `--lyp-ai-*`）继续作为 AI 感的唯一强调来源。
+- 任何对比度调整必须回到 §8.3 守卫与 sRGB 实算，不得为了「更亮」破坏 text-2 > muted > dim 递减。
+
+### 1E.7 test-first 契约与验收
+
+- 先 RED 后 GREEN：`laiyipao/admin/tests/r6PersonalizedRec.contract.test.ts` 与 `laiyipao/miniapp/src/styles/r6PersonalizedRec.contract.test.ts` 在 §1E 与 r6 标记落盘前必须失败，落盘后转 GREEN。
+- 断言范围：七个子条款存在；19 页 H5 与 12 视图 admin 均出现并区分已达标/浅升级/无 AI；接口路径与 `schema_version`/`generated_at`/`context`/`evidence`/`model`/`confidence`/`cta`/`empty_reason`/`NO_HISTORY` 齐全且写明本轮不实现；玩法三类策略齐全；AI 四判据与反模式写死为下限；双端 v1/v3/r6 锚点存在且无 v4 误升。
+- **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts`、`r4Mapping.contract.test.ts`、`r5Mapping.contract.test.ts` 的任何判据；新契约只增不减。
+- 验收门禁：双端全量测试绿；H5 重点 5 页（login/verify/reactions/skills/equipment）各交 1 张 390×844、admin 重点 5 视图（ContentView/DefensesView/EquipmentView/LoginView/WikiView）各交 1 张 1440×900 真浏览器截图，文件标注「非物理真机」，由 design-reviewer 按 §1A.7 / §1B.4 肉眼复核四判据、CTA 可达与依据真实。
+
 ---
 
 ## 2. 色彩系统
