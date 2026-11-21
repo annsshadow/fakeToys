@@ -100,6 +100,16 @@ describe('mobile services surface', () => {
     expect(typeof services.apis).toBe('object')
   })
 
+  it('calendarApi.create 打 assemble_control/calendar 并提交 name/type（与 list/my 同源）', async () => {
+    const calls = installRequestCapture()
+    await services.calendarApi.create('我的新日历')
+    expect(calls[0]).toEqual({
+      method: 'POST',
+      url: '/api/calendar_assemble_control/calendar',
+      data: { name: '我的新日历', type: 'person' },
+    })
+  })
+
   // 穷举 130+ 端点，默认 5s 不够；这条用例本身就是「全表扫一遍」的量级。
   it('every exported endpoint issues exactly one /api/ request and never throws', { timeout: 60000 }, async () => {
     const failures: string[] = []
