@@ -145,7 +145,7 @@ async function loadRoles() {
 
 function editRole(r: Role) {
   editingRole.value = r
-  form.value = { name: r.name || '', flag: r.flag || '', desc: r.desc || '' }
+  form.value = { name: r.name || '', flag: r.flag || r.id || '', desc: r.desc || '' }
   showCreate.value = true
 }
 
