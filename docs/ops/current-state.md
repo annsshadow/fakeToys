@@ -4588,5 +4588,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 281. R319 立项：历史遗留版块迁移必要性甄别（2026-11-21）
 - 立项依据：R318/t98 收官如实标注的已知边界（§279/§280）——t98 桥接仅覆盖新建版块，历史遗留 PC 版块仍不在 H5 picker。按纪律不臆造『必须迁移』，审计前置。
 - 派发 t100（qa-e2e，work，只读甄别，outOfScope 禁改源码/契约/禁部署/禁实际回填）：真浏览器比对 section/list 与 forum/view/all 差集，按测试标记/create_time/关联主题判据分类，结论 A 全测试残留无需迁移／B 存在真实业务版块需回填（列最小清单+id 一致性风险，仅给建议不执行）／C 取证受限；产出唯一脱敏文档 oa4rust/docs/ops/oa4rust-r319-legacy-section-triage.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
+
+## 282. R320 候选证据登记：section 删除与桥接 forum 一致性（2026-11-21，纯只读侦察）
+- 队长纯本地只读源码侦察（未连测试服、未改任何文件、零干扰 t100）：migrations/037_add_deleted_at.sql:26 已给 x_bbs_assemble_control_section 加 deleted_at 列，但 t98 补偿硬删与 section_delete（bbs_assemble_control/src/lib.rs:359-375 shared::crud_delete，section_create_spec soft_delete=false :251）仍走硬删——注释『无 deleted_at 列→硬删』（lib.rs:245）与 DDL 漂移。
+- 更关键候选：t98 桥接 section_create 成功后同 id 写 x_bbs_forum，但 section_delete 只删 section、不删桥接 forum → 删除后 H5 picker（forum/view-all 查 x_bbs_forum WHERE deleted_at IS NULL）可能残留孤儿 forum；与 t100『历史版块迁移』是不同的独立一致性问题，写域不重叠。
+- 纪律：仅登记候选证据，不臆造为已确认缺陷、不立即派发；待 t100 甄别结论后统一规划 R320（如需立项，审计前置真浏览器确认孤儿 forum 可见性后再 test-first 修复）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
