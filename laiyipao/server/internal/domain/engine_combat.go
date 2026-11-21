@@ -40,6 +40,52 @@ const (
 //	不改任何速度或伤害公式。
 const ProjectileSubSteps = 2
 
+// ReactionSplashResult 是反应溅射纯函数的结算结果。
+type ReactionSplashResult struct {
+	// Damage 是经过护甲后的基准溅射伤害（护盾吸收不减这个数，供 hit 事件/得分用）。
+	Damage       int64
+	ShieldBroken bool
+	Killed       bool
+}
+
+// ApplyReactionSplash 结算 reactionDamage >> 2 的二次伤害（t41）。
+//
+// 输入 splash 已经是 25%，这里**只**做护甲 → 护盾 → 扣血；
+// 与 TS 侧 applyReactionSplash 逐行等价，绝对值由
+// server/testdata/formula_vectors.json 的 reaction_splash.cases 锁定。
+//
+// ⚠️ 绝不能图省事把 splash 塞回 ResolveHit 的 SkillDamage：
+// direct 段会再乘 DirectWeightPermille=400‰，25% 实收只剩 10%。
+// 这里也不掷骰、不暴击、不写层数、不触发反应。
+func ApplyReactionSplash(def *Defender, splash int64) ReactionSplashResult {
+	var res ReactionSplashResult
+	if splash <= 0 {
+		return res
+	}
+	remaining := applyArmor(splash, def.ArmorPermille)
+	if remaining <= 0 {
+		return res
+	}
+	res.Damage = remaining
+
+	if def.Shield > 0 {
+		absorbed := minInt64(def.Shield, remaining)
+		def.Shield -= absorbed
+		remaining -= absorbed
+		if def.Shield == 0 {
+			res.ShieldBroken = true
+		}
+	}
+	if remaining > 0 {
+		def.HP -= remaining
+		if def.HP <= 0 {
+			def.HP = 0
+			res.Killed = true
+		}
+	}
+	return res
+}
+
 // UpdateAutoFire 自动索敌开火。
 //
 // 玩家只做微调，不做逐发操作。
@@ -558,7 +604,8 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 	//   - 溅射只造成伤害：不施元素层数、不写状态（overheat 的眩晕只作用
 	//     主目标，与 steam_burst 的驱散护盾同口径）
 	//   - 半径 = 反应表 AoeRadius（像素，×1000 转定点）
-	//   - 邻居伤害走 resolveHit 复用护甲/护盾/抗性，但**不再触发反应**
+	//   - 邻居伤害走纯函数 ApplyReactionSplash：护甲 → 护盾 → 扣血，
+	//     不掷骰、不暴击、不施层、**不触发反应**
 	//     —— 否则反应会在溅射目标上**再次**爆开，形成指数级连锁。
 	//
 	// ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 AoeRadius > 0」——
@@ -647,9 +694,12 @@ func (e *BattleEngine) applyAoe(p *Projectile, origin *Enemy, radius int64) {
 //   - 把技能元素再次施加到邻居身上（触发第二次 steam_burst / overheat）
 //   - 消耗 `e.Rng.Roll()`（RNG 顺序偏移 -> 整局事件流改动 -> 哈希变化）
 //
-// 所以这里只复用 `resolveHit` 的**装配 + 结算**部分（护甲/护盾/抗性），
-// 不施加元素、不掷骰、不触发反应 ——
-// 二次伤害纯粹是「命中减去护甲/护盾」。
+// 所以这里调用纯函数 ApplyReactionSplash：只做护甲 → 护盾 → 扣血，
+// 不掷骰、不暴击、不施加元素层数、不触发反应。
+//
+// ⚠️ t41：曾把 splash 塞进 ResolveHit 的 SkillDamage，那条路径会再乘
+// DirectWeightPermille=400‰，「25%」实收只有 10%（默认 Attack=100 时 11%），
+// 与卡面文案不符。现在 reactionDamage >> 2 就是最终基准伤害。
 func (e *BattleEngine) triggerReactionAoe(origin *Enemy, key ReactionKey, reactionDmg int64, att Attacker) {
 	rr := ToFixed(float64(reactionAoeRadius(key)))
 	splash := reactionDmg >> 2
@@ -669,34 +719,19 @@ func (e *BattleEngine) triggerReactionAoe(origin *Enemy, key ReactionKey, reacti
 			effArmor = en.ArmorPermille - en.ArmorShredPermille
 		}
 		def := NewDefender(en.HP, en.Shield, effArmor)
-		for _, el := range AllElements() {
-			def.ResistPermille[el] = en.Resist[el]
-			def.ElementStacks[el] = en.Stacks[el]
-		}
 
-		// 二次伤害：复用 direct+damage 结算，不触发反应
-		//（SkillElement 为空 → 不会配对出新反应）。
-		//
-		// ⚠️ Roll 固定 9999：暴击作用于 direct+element 两段，
-		//   而溅射本身只有 direct 段，所以这个值不影响伤害；
-		//   固定它是**为了不消耗 RNG** —— 若这里掷一次骰子，
-		//   后续所有 `e.Rng.Roll()` 的取值都会偏移一格。
-		res := ResolveHit(att, &def, HitInput{
-			SkillDamage:  splash,
-			SkillElement: "",
-			Roll:         9999,
-		})
+		// t41：25% 是最终基准，不再过 ResolveHit 的 0.4 权重与暴击。
+		splashRes := ApplyReactionSplash(&def, splash)
 		en.HP = def.HP
 		en.Shield = def.Shield
-		en.Stacks = def.ElementStacks
 
-		if res.TotalDamage > 0 {
-			dmgScore := DamageScore(e.Cfg.ScoreRules, res.TotalDamage)
+		if splashRes.Damage > 0 {
+			dmgScore := DamageScore(e.Cfg.ScoreRules, splashRes.Damage)
 			e.Score += dmgScore
-			e.emit(BattleEvent{Type: EventHit, X: en.X, Y: en.Y, Damage: res.TotalDamage})
+			e.emit(BattleEvent{Type: EventHit, X: en.X, Y: en.Y, Damage: splashRes.Damage})
 			e.record(e.Tick, ReplayHit, en.UID, dmgScore, 0)
 		}
-		if res.Killed {
+		if splashRes.Killed {
 			e.killEnemy(en)
 			// 蓄能塔充能：满则给全场敌人上该敌人身上的主元素。
 			//

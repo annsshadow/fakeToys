@@ -69,13 +69,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "96fadb14c686777a",
+      "expected_hash": "3f2e50e4548a102c",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 19679,
+        "score": 19716,
         "waves": 5,
-        "durationMs": 64750
+        "durationMs": 75850
       }
     },
     {
@@ -151,13 +151,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "5f60b705c154be41",
+      "expected_hash": "78abf6b492a2e4ca",
       "expected_stats": {
         "kills": 40,
         "leaked": 0,
-        "score": 20781,
+        "score": 20763,
         "waves": 6,
-        "durationMs": 58850
+        "durationMs": 63550
       }
     },
     {
@@ -235,13 +235,13 @@
           "mechanic_permille": 200
         }
       },
-      "expected_hash": "39bd0c5aacc63377",
+      "expected_hash": "0a90728a16e569cf",
       "expected_stats": {
         "kills": 49,
         "leaked": 0,
-        "score": 25615,
+        "score": 25734,
         "waves": 8,
-        "durationMs": 75950
+        "durationMs": 106750
       }
     },
     {
@@ -321,13 +321,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "a40059bf21f27a97",
+      "expected_hash": "e992a6ce3c97e72f",
       "expected_stats": {
         "kills": 61,
         "leaked": 0,
-        "score": 32330,
+        "score": 32234,
         "waves": 10,
-        "durationMs": 78650
+        "durationMs": 93650
       }
     },
     {
@@ -409,13 +409,13 @@
           "mechanic_permille": 400
         }
       },
-      "expected_hash": "d5dfb9fdcb994285",
+      "expected_hash": "20c855d42d05e8f2",
       "expected_stats": {
         "kills": 84,
         "leaked": 0,
-        "score": 54160,
+        "score": 53328,
         "waves": 12,
-        "durationMs": 124100
+        "durationMs": 138350
       }
     },
     {
@@ -490,11 +490,11 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "0b67a540249ee460",
+      "expected_hash": "a9ad2f06909d9106",
       "expected_stats": {
         "kills": 30,
         "leaked": 2,
-        "score": 15327,
+        "score": 15320,
         "waves": 5,
         "durationMs": 119500
       }
@@ -819,13 +819,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "91b1dbea250bb931",
+      "expected_hash": "b837b93cd49e6fd1",
       "expected_stats": {
         "kills": 49,
         "leaked": 0,
-        "score": 25313,
+        "score": 25335,
         "waves": 7,
-        "durationMs": 37100
+        "durationMs": 47400
       }
     },
     {
@@ -911,13 +911,13 @@
           "mechanic_permille": 500
         }
       },
-      "expected_hash": "5c4abeb43522184b",
+      "expected_hash": "f5352a0ce8d428e7",
       "expected_stats": {
         "kills": 43,
         "leaked": 0,
-        "score": 22257,
+        "score": 22245,
         "waves": 6,
-        "durationMs": 73950
+        "durationMs": 88350
       }
     },
     {
@@ -1013,11 +1013,11 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "78ddea01fce71f23",
+      "expected_hash": "008b59fb59cfd75b",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 20138,
+        "score": 20132,
         "waves": 6,
         "durationMs": 59500
       }

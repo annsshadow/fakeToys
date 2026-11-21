@@ -86,6 +86,47 @@ export function replaySkillsSegmentOf(
     .join(',')
 }
 
+export interface ReactionSplashResult {
+  /** 经过护甲后的基准溅射伤害（用于 hit 事件与得分；护盾吸收不减这个数） */
+  damage: bigint
+  shieldBroken: boolean
+  killed: boolean
+}
+
+/**
+ * 反应溅射的纯落血函数（t41）。
+ *
+ * 输入 splash 已经是 reactionDamage >> 2（25%），这里**只**做
+ * 护甲 → 护盾 → 扣血。绝不调用 resolveHit：那条路的 direct 段会再乘
+ * DIRECT_WEIGHT(400‰)，25% 就变成 10%（默认 Attack=100 是 11%）。
+ * 也不掷骰、不暴击、不写元素层数、不触发反应 —— 固定性由「无随机」保证。
+ *
+ * 与 Go 侧 domain.ApplyReactionSplash 逐行等价，绝对值由
+ * server/testdata/formula_vectors.json 的 reaction_splash.cases 锁定。
+ */
+export function applyReactionSplash(def: Defender, splash: bigint): ReactionSplashResult {
+  const res: ReactionSplashResult = { damage: 0n, shieldBroken: false, killed: false }
+  if (splash <= 0n) return res
+  let remaining = applyArmor(splash, def.armorPermille)
+  if (remaining <= 0n) return res
+  res.damage = remaining
+
+  if (def.shield > 0n) {
+    const absorbed = minBig(def.shield, remaining)
+    def.shield -= absorbed
+    remaining -= absorbed
+    if (def.shield === 0n) res.shieldBroken = true
+  }
+  if (remaining > 0n) {
+    def.hp -= remaining
+    if (def.hp <= 0n) {
+      def.hp = 0n
+      res.killed = true
+    }
+  }
+  return res
+}
+
 export const TICK_HZ = 20
 
 /**
@@ -1706,7 +1747,8 @@ export class BattleEngine {
     // - 溅射只造成伤害：不施元素层数、不写状态（overheat 的眩晕只作用
     //   主目标，与 steam_burst 的驱散护盾同口径）。
     // - 半径 = 反应表 `aoeRadius`（像素，×1000 转定点）。
-    // - 邻居伤害走 `resolveHit` 复用护甲/护盾/抗性，但**不再触发反应**
+    // - 邻居伤害走纯函数 `applyReactionSplash`：护甲 → 护盾 → 扣血，
+    //   不掷骰、不暴击、不施层、**不触发反应**
     //   （forceReaction 为空且邻居身上挂的已有元素 + 技能元素不再配对生成
     //   新反应 —— 否则反应就会在溅射目标上**再次**爆开，
     //   形成指数级连锁。`res.reaction == ''` 守住这一点）。
@@ -1769,8 +1811,12 @@ export class BattleEngine {
    *   - 把技能元素再次施加到邻居身上（触发第二次 steam_burst / overheat）；
    *   - 消耗 `this.rng.roll`（rng 顺序偏移 → 整局事件流改动 → 哈希变化）。
    *
-   * 所以这里只复用 `resolveHit` 的**装配 + 结算**部分（护甲/护盾/抗性)，
-   * 不施加元素、不掷骰、不触发反应 —— 二次伤害纯粹是「命中减去护甲/护盾」。
+   * 所以这里调用纯函数 `applyReactionSplash`：只做护甲 → 护盾 → 扣血，
+   * 不掷骰、不暴击、不施加元素层数、不触发反应。
+   *
+   * ⚠️ t41：曾把 splash 塞进 resolveHit 的 SkillDamage，那条路径会再乘
+   * DIRECT_WEIGHT(400‰)，「25%」实收只有 10%（默认 Attack=100 时 11%），
+   * 与卡面文案不符。现在 reactionDamage >> 2 就是最终基准伤害。
    * 两端公式一致（formula_vectors.json），I-6 不受影响。
    *
    * # 确定性
@@ -1790,7 +1836,7 @@ export class BattleEngine {
     // 半径各自取自触发反应自己的表项（`REACTIONS[key]`）。
     // 引擎 `hitEnemy` 在反应触发后、以命中敌人为圆心、半径
     // aoeRadius 搜索邻居，造成 reactionDmg >> 2（25%）的二次伤害。
-    // I-6 安全：溅射伤害来自 resolveHit（formula_vectors.json 锁定），
+    // I-6 安全：溅射伤害来自 applyReactionSplash（formula_vectors.json 锁定），
     // 不进入 replay_skills 段，因而不影响 I-6 的 S-段校验。
     const splash = reactionDmg >> 2n
     if (splash <= 0n) return
@@ -1801,25 +1847,18 @@ export class BattleEngine {
       const def = new Defender(e.hp, e.shield, e.armorShredMs > 0
         ? (e.armorPermille > e.armorShredPermille ? e.armorPermille - e.armorShredPermille : 0n)
         : e.armorPermille)
-      for (const [el, v] of e.resist) def.resist.set(el, v)
-      for (const [el, v] of e.stacks) def.stacks.set(el, v)
 
-      // 二次伤害：复用 direct+damage 结算，不触发反应（input.skillElement=''）。
-      const res = resolveHit(att, def, {
-        skillDamage: splash,
-        skillElement: '',
-        roll: 9999, // 不暴击（crit 作用于 direct+element，不影响 splash 本身），固定滚点防范
-      })
+      // t41：25% 是最终基准，不再过 resolveHit 的 0.4 权重与暴击。
+      const splashRes = applyReactionSplash(def, splash)
       e.hp = def.hp
       e.shield = def.shield
-      e.stacks = def.stacks
 
-      if (res.totalDamage > 0n) {
-        this.score += Number(damageScore(this.scoreRules, res.totalDamage))
-        this.emit({ type: 'hit', x: e.x, y: e.y, damage: res.totalDamage, crit: false })
-        this.record(this.tick, 'hit', e.uid, Number(damageScore(this.scoreRules, res.totalDamage)), 0)
+      if (splashRes.damage > 0n) {
+        this.score += Number(damageScore(this.scoreRules, splashRes.damage))
+        this.emit({ type: 'hit', x: e.x, y: e.y, damage: splashRes.damage, crit: false })
+        this.record(this.tick, 'hit', e.uid, Number(damageScore(this.scoreRules, splashRes.damage)), 0)
       }
-      if (res.killed) {
+      if (splashRes.killed) {
         e.dead = true
         this.kills++
         this.score += Number(killScore(this.scoreRules, e.isBoss))

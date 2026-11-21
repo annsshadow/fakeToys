@@ -159,6 +159,24 @@ type ConsistencyVectors struct {
 			Expected int64  `json:"expected"`
 		} `json:"cases"`
 	} `json:"apply_armor"`
+	// ReactionSplash 是 t41 引入的反应溅射纯函数绝对值用例。
+	// 与 ApplyArmor 同分工：同一份 JSON，两端各自跑一遍自己的实现。
+	ReactionSplash struct {
+		Cases []struct {
+			Name          string `json:"name"`
+			Splash        int64  `json:"splash"`
+			HP            int64  `json:"hp"`
+			Shield        int64  `json:"shield"`
+			ArmorPermille int64  `json:"armor_permille"`
+			Expected      struct {
+				Damage       int64 `json:"damage"`
+				HP           int64 `json:"hp"`
+				Shield       int64 `json:"shield"`
+				ShieldBroken bool  `json:"shield_broken"`
+				Killed       bool  `json:"killed"`
+			} `json:"expected"`
+		} `json:"cases"`
+	} `json:"reaction_splash"`
 	Levelgen struct {
 		Levels          int `json:"levels"`
 		TerrainLevelMin int `json:"terrain_level_min"`

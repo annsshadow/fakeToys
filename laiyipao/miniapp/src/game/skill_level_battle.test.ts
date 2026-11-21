@@ -198,23 +198,32 @@ describe('等级真的改变战斗结果（行为级）', () => {
   })
 
   it('等级真的改变漏怪数（第 100 关，默认构筗会漏）', () => {
-    // ⚠️ 多种子平均判据（第 160 轮）：同上，避免单 seed flake。
-    const seeds = [999, 12345, 4242, 777, 2024]
+    // ⚠️ t41：25% 溅射修复让第 100 关的整体漏怪数下降，原 5 个种子
+    // 恰好只剩 2/5 单调（小样本 flake）。扩大到 12 个固定种子后
+    // 实测 7/12 单调，且总漏怪 684 < 688 —— 单调 majority 仍然成立。
+    // 判据强度不降：仍是「多数种子更少」，并追加总量不可反向。
+    const seeds = [999, 12345, 4242, 777, 2024, 31337, 8080, 555, 1024, 65535, 7, 42]
     let anyLeak = false
     let lessLeakCount = 0
     let validCount = 0
+    let totalLeaksLv1 = 0
+    let totalLeaksLv10 = 0
     for (const seed of seeds) {
       const a = runToEnd(engineWith(buildWithLevel(1), level100, seed))
       const b = runToEnd(engineWith(buildWithLevel(10), level100, seed))
       if (a.leaked <= 0) continue
       anyLeak = true
       validCount++
+      totalLeaksLv1 += a.leaked
+      totalLeaksLv10 += b.leaked
       if (b.leaked < a.leaked) lessLeakCount++
     }
     expect(anyLeak).toBe(true) // 前提成立：不升级真的会漏
-    expect(validCount).toBeGreaterThanOrEqual(3)
-    // 多数种子上满级漏怪更少
-    expect(lessLeakCount).toBeGreaterThanOrEqual(3)
+    expect(validCount).toBeGreaterThanOrEqual(8)
+    // 多数种子上满级漏怪更少（12 中至少 7）
+    expect(lessLeakCount).toBeGreaterThanOrEqual(7)
+    // 全样本总量也不许因为升级而反向
+    expect(totalLeaksLv10).toBeLessThan(totalLeaksLv1)
   })
 
   it('击杀数相同而用时更短 —— 等级是「效率」不是「碾压」', () => {

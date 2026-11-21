@@ -457,6 +457,31 @@ describe('battle.vue 战斗页', () => {
     await new Promise((resolve) => setTimeout(resolve, 850))
   })
 
+  it('反应偏少时的下一步建议不得谎称反应伤害完全不吃攻击力', async () => {
+    // 2026-11-21 R4 真浏览器实测：结算建议写「反应伤害不吃攻击力加成」，
+    // 但 damage.ts 的反应伤害里攻击侧贡献最高 300‰（战斗图例自己也写「关系不大」）。
+    // 这句谎话会让玩家把攻击词条全洗掉，是能直接误导养成的 UX 缺陷。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 1,
+      score: 100,
+      loot: {},
+      new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 1, leaked: 0, reactions: 1, replay_hash: 'lowrx' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('多凑一种元素触发反应链')
+    expect(wrapper.text(), '不能把「关系不大」说成「完全不吃」，否则玩家会误洗攻击词条').not.toContain('不吃攻击力加成')
+    expect(wrapper.text()).toContain('关系不大')
+  })
+
   it('结算被服务端拒绝 → 结果卡不冒充通关，也不展示虚构的星级/奖励/战报入口', async () => {
     // 真实实测（2026-11-21，第 1 关通关）：服务端重算 replay_skills 拒绝后，
     // 页面仍显示「通关」+ 0 星 + C 评级 + 原始报错串，玩家完全不知道战绩没入账。

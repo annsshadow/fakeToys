@@ -120,8 +120,17 @@ describe('攻方·防线护甲（armorPermille）', () => {
     expect(armored.leaked).toBe(bare.leaked)
 
     // 护甲 600‰ ⇒ 漏怪伤害降到 40%
-    const ratio = Number(armored.hpLeft) / Number(bare.hpLeft)
-    expect(ratio).toBeGreaterThan(1.2)
+    // 用「承伤量」而不是「剩余血量比值」：第 97 关基础血量 11000，
+    // 25% 溅射修复后同一漏怪数下血量只涨 11.9%（9341→10454），
+    // 但承伤量 1659→546（32.9%）才是护甲减伤的直接证据。
+    // 护甲 600‰ ⇒ 每次漏怪伤害降到 40%；逐次整除最多多扣 1 点/只，
+    // 所以上界取 40% + 每只漏怪 1 点，比旧的 1.2 倍比值更精确也更强。
+    const baseHp = BigInt(leakyLevel.base_hp)
+    const bareTaken = baseHp - bare.hpLeft
+    const armoredTaken = baseHp - armored.hpLeft
+    expect(bareTaken).toBeGreaterThan(0)
+    expect(armoredTaken).toBeGreaterThan(0)
+    expect(armoredTaken).toBeLessThanOrEqual((bareTaken * 4n) / 10n + BigInt(bare.leaked))
   })
 
   it('零护甲时行为与「字段不存在」完全一致', () => {
