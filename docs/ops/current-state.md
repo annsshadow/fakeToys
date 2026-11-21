@@ -4681,5 +4681,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - fail-loud 更正：page-core 先误将『真实作者/正文/时间』整项标 passed，后主动更正为未通过（时间全空）并请求裁决。队长独立核实：后端 bbs_assemble_control/src/u2.rs:1208/1227 SQL `SELECT id, topic_id, content, creator FROM x_bbs_reply` 未 SELECT create_time、映射(1243-1263)亦不产出该字段，GET reply/{id} 详情同样无时间——前端 inScope 内无法诚实满足。时间缺失与 D1 信封解包根因不同，是独立后端字段缺失问题。
 - 裁决(c)拆分：已用 agent_teams_amend_task 修订 t110 objective/acceptance（revision 1）——剥离时间项并标注为独立候选缺陷另案甄别，不阻塞 D1 前端闭环、不扩大本任务 scope 到后端（最小改动+后端单工作树串行）。page-core 收裁决后按修订验收重新完成。
 - 纪律：『回复时间不显示』仅登记为 R323 候选证据，未证伪/未派发；若另案立项须审计前置甄别（产品口径是否需要回复时间、影响面）再 test-first 修复，禁臆造。t111 终审待 t110 完成后解锁。
+
+## 299. R323 立项：论坛回复时间字段缺失甄别（2026-11-21）
+- 立项依据：§298 登记的独立候选（非已确认缺陷）——t110 修复中 page-core 诚实更正『时间全空』，队长核实后端 u2_reply_filter_list（u2.rs:1208/1227）SQL 未 SELECT create_time、映射亦不产出；与 D1 信封解包根因不同。按纪律审计前置，禁臆造。
+- 派发 t112（qa-e2e，work，只读甄别，outOfScope 禁改源码/契约/禁部署/禁修复）：源码确认 reply/filter/list 与 GET reply/{id} 是否均不含 create_time、GET reply/list/sub 是否返回（端点口径一致性）+ 真浏览器确认回复卡片时间为空，结论 A 产品口径无需时间／B 真缺陷（给后端补字段建议仅建议不执行，评估影响面严重度）／C 取证受限；产出唯一脱敏文档 oa4rust/docs/ops/oa4rust-r323-reply-time-triage.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
+- 写域：t112 仅一份新文档，与 t111 只读终审（reviewedTaskId=t110）写域不重叠，可并行。t110 evidence_note 已附（合同修订 revision 1 后 9 项验收全 passed）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
