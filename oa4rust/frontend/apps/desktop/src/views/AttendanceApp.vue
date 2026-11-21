@@ -359,8 +359,13 @@ useQuery({
         `/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`,
       )
       .then((r: any) => {
-        records.value = r.data?.list ?? []
-        totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
+        // R324 D1：后端 legacy_success 返回 data 为数组、count 在信封顶层；
+        // 兼容历史 {list,total} 形态，统一归一为数组 + 安全页数。
+        const d = r?.data
+        const list = Array.isArray(d) ? d : (d?.list ?? [])
+        const total = Array.isArray(d) ? (r?.count ?? list.length) : (d?.total ?? 0)
+        records.value = list
+        totalPages.value = Math.max(1, Math.ceil(total / 20))
         // 切换月份/删除记录后结果集可能缩小，页码越过末页会显示空列表+「第N/1页」；
         // 夹取到合法范围。clampPage 幂等，最多触发一次自纠正重取。
         const safePage = clampPage(page.value, totalPages.value)
@@ -457,7 +462,12 @@ async function toggleAttType() {
   const enabled = await confirmMsg(`「${code}」确定=启用，取消=禁用`)
   try {
     // POST attendancesetting/enable/type → UPDATE {code, enabled}
-    await api.post('/api/attendance/assemble/control/attendancesetting/enable/type', { code, enabled })
+    const r: any = await api.post('/api/attendance/assemble/control/attendancesetting/enable/type', { code, enabled })
+    // R324 D2：HTTP 200 也可能带业务错误信封 type:error，必须显式判分支，不能一律弹成功。
+    if (r?.type === 'error') {
+      toast.error(r?.message ?? '更新失败')
+      return
+    }
     toast.success('已更新考勤类型启用状态')
   } catch (e: any) {
     toast.error(`更新类型失败: ${e?.message ?? ''}`)
@@ -1007,6 +1017,7 @@ async function createAttDetail() {
   try {
     await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
     toast.success('考勤明细已创建')
+    loadData() // R324 R1：建后刷新列表与统计，保持与删除/申诉写后刷新同口径
   } catch (e: any) {
     toast.error(`创建失败: ${e?.message ?? ''}`)
   }
@@ -1752,6 +1763,7 @@ async function deleteDetail(r: R) {
     await api.delete(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
     toast.success('已删除')
     records.value = records.value.filter((x) => x.id !== r.id)
+    loadData() // R324 R1：删后重取，统计卡与分页 total 与真实明细即时一致
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
   }
