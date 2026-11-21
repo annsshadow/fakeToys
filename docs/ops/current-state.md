@@ -4790,3 +4790,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t126（qa-e2e，只读深度审计，无源码写域）：测试服 1440x900 真浏览器走列表空态/新建回显/删除刷新/发布撤发布/密文端点（破坏性写未授权标取证限制）/500兜底空态可区分/占位探针语义/关键契约回归与 0 pageerror；每条三分判定（真缺陷/取证限制/产品语义差异）附源码定位与 DOM 证据，禁臆造。唯一入库物 oa4rust/docs/ops/oa4rust-r329-pc-document-audit.md（占位 0 真值、非物理真机）；evidence 落 gitignored oa4rust/test-results/r329-pc-document-audit/；精确单文件提交。写域与 t124(Personal.vue/personal_extend)/t125(只读终审) 不重叠，可并行。（task t126 已创建，assigned@qa-e2e）
 - 边界：本轮只审计甄别不夹带修复；据实三分后再定是否另案修复。项目 ≥1000 轮非终态，据实立项下一轮。
 
+## 319. R329 审计收官 + R330 立项：DocumentApp 默认插槽致业务入口全缺失（2026-11-22）
+- R329 收官：t126（qa-e2e，只读审计）完成，commit 6545b6e39 精确单文档 82 行 oa4rust/docs/ops/oa4rust-r329-pc-document-audit.md，HEAD=TRACK；判定 1 项 P1 真缺陷——文档中心全部业务写入口（新建/删除/发布/撤发/密文/通知/推荐/置顶 + 每行 15 操作按钮）未渲染，根因为 DocumentApp.vue:12-23/:24-61 把按钮写入 AdminToolbar/AdminTable 默认插槽而两组件（AdminToolbar.vue:16-25、AdminTable.vue:34-39）只渲染具名插槽，Vue 静默丢弃、pageerror=0。队长独立复核通过：git stat 单文档、源码三点确证（含 AdminToolbar 无默认 slot 且未传 createLabel、AdminTable 仅 cell-* fallback）、文档脱敏 0 真值、evidence 非物理真机；500 兜底 PASS、密文破坏性写标取证限制、data/document 探针 s() 吞错判产品语义差异。密文写与新建/删除等破坏性操作未授权未伪造。
+- 据实立项 R330 修复 P1：队长裁决方案 A（只改 DocumentApp.vue 用具名插槽 #actions/#cell-*，不动被 14 页复用的 R298 组件，外科手术式最小面），fail-loud 写入修复文档 §2；禁顺手改 loadDocTwin3 探针语义。
+- 派发 t127（page-work，implementation，deps t126+t124+t23）：inScope 3 文件 = oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue + DocumentApp.slots.contract.test.ts + oa4rust/docs/ops/oa4rust-r330-document-slots-fix.md；outOfScope = AdminToolbar.vue/AdminTable.vue/SDK/后端/Personal.vue。test-first RED→GREEN（渲染级契约测试，无依赖则用模板静态断言禁新增依赖）；verify: cd oa4rust && pnpm exec vitest run。【硬时序】测试服单 web 目录，必须等 t124 完成部署提交后才 build+原子替换，不得并发；真浏览器 1440x900 断言 btnCreate>=1/每行 btnAct>=15/btnDel>=1/新建发布删除闭环/pageerror=0/500兜底 PASS，evidence 非物理真机，精确 3 文件单提交 push。（task t127 已创建，pending@page-work）
+- 预建 t128（design-reviewer，review round 1，reviewedTaskId=t127，deps t126+t127+t23）：终审 P1 闭环、test-first、vitest 全绿、未越界 R298/SDK/后端/探针、文档脱敏非物理真机、精确单提交 HEAD=TRACK；verdict=pass 方可关闭 R330。（task t128 已创建，pending@design-reviewer）
+- 边界：R330 部署与 t124 测试服串行；本轮不夹带其他页面默认插槽排查（作延伸建议非本轮范围）。项目 ≥1000 轮非终态，据实立项下一轮。
+
