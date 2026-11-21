@@ -4819,3 +4819,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 结论：R328（PC 个人中心 D1 改密吞错误 + D2 签名写读错配，含 D3/D4 两处次生）完整闭环并关闭。t127（R330 修复）与 t128（R330 终审）在途，继续 ≥1000 轮。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 323. R330 裁决 + R331 立项：删除闭环被后端 manager 列表过滤缺陷剥离（2026-11-22）
+- t127（page-work，R330 前端修复）真浏览器复验请示：入口修复已坐实（btnCreate=1、行 btnAct=14+btnDel=1、工具栏/行操作列齐全、0 pageerror/0 API失败，R329 P1『写入口全缺失』已修复），新建→列表回显→发布 PUT 200 走通；但点删除→DELETE /api/document/{id} 200、后端已置 deleted_at，刷新后行仍在。按铁律回报不静默改向，请示方案 A（接受修复达标、删除残留另派）或 B（扩 scope 改后端）。
+- 队长独立源码确证后端独立真缺陷（非 t127 前端问题）：document_u2_delete（cms_assemble_control/src/lib.rs:8772-8795）走 soft_delete_by_id 软删置 deleted_at，DELETE 200 正确；manager 列表 document_filter_paging_manager_u3（lib.rs:11606-11618，route routes.rs:645 POST /api/document/filter/list/{page}/size/{size}/manager）的 list_from_table_filtered_legacy 过滤条件仅 'ORDER BY create_time DESC LIMIT 200'，缺 deleted_at IS NULL，而同文件 document_filter_next_u3(:11570)/prev_u3(:11584)/paging_u3(:11598) 三变体均带——软删文档仍显示，缺陷坐实。
+- 裁决（方案 A，fail-loud）：t127 修复目标（R329 P1 写入口缺失）完全达成、前端职责（含 DELETE 调用成功）正常；删除后列表不消失是后端独立缺陷，剥离为已知边界另立 R331，不算 t127 阻塞、不扩 t127 scope 越界改后端/SDK。已下发 page-work：精确 3 文件单提交 push、文档 §2/边界如实记录已知边界、保留诊断证据作 R331 依据、全量 vitest 268/2165 保持绿。
+- 据实立项 R331（后端 P2）：派 t129（page-comm，implementation，deps t127+t23）test-first 修 document_filter_paging_manager_u3 过滤条件补 deleted_at IS NULL（仅此一处、不动其他三变体/路由/soft_delete/create/publish），RED→GREEN；verify: cd oa4rust/backend && cargo test -p cms_assemble_control --lib；Linux ELF 原子部署+真浏览器新建→删除→刷新后消失闭环复验、evidence 非物理真机；【硬时序】后端单工作树串行、等 t127 前端提交部署后再编译部署；精确单提交、文档 oa4rust/docs/ops/oa4rust-r331-document-manager-filter-fix.md 脱敏 0 真值。（task t129 已创建，pending@page-comm）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R330 待 t127 提交后 t128 终审关闭，R331 在途。
+
