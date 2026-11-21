@@ -4317,3 +4317,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 根因闭环：t58 审计的『数据真空』经产品自身真实 UI 新建流程补数解决，组织树/部门树从 data:[] 变为非空且持久；qa-e2e t60 复查已放行（待独立验证）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 235. R307 组织树改造后真浏览器独立复查（2026-11-21）
+- t60（qa-e2e，只读复查）commit 6898e2ca 精确 1 文档 50 行 docs/ops/oa4rust-r307-org-after.md。在 t59（d828a8b04）原子部署、新产物 admin-CpsrAJgl.js/OrgViewer-BKtyqMaC.css 上线后，真登录 Playwright Chromium 1440×900 抓 /app/org 与 /app/directory，与 t58 基线（data:[]）量化对照：组织组树 group/list/like HTTP200 dataArrayLen 0→8、DOM 节点 0→8；部门树 departments/tree HTTP200 dataArrayLen 0→1、DOM 节点 0→1；部门筛选 5 chip / 人员 21 条保持不变；pageerror=0/API失败=0/中文错误条=0。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、父提交 a05554f7e（t59+§234 之后）正确；HEAD=TRACK=6898e2ca、暂存区干净；实读 50 行文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位、真域名 0 命中（唯一『口令』命中为第 6 行『凭据运行时读取仅存内存不入库』描述性文字、合规）；evidence.json group/list/like dataArrayLen=8、departments/tree dataArrayLen=1、orgTreeNodes=8、deptTreeNodes=1、deptFilterChips=5、personMeta=共21人、errors=[]/apiFailures=[]/pass=true、source=NOT physical device；截图 org-after.png/directory-after.png 齐全。
+- 根因闭环确认：t58『数据真空』→ t59 新建入口+INT4 绑定修复 → t60 独立复查，组织组树与部门树从 data:[] 变非空且持久，无回归；t61 终审依赖 t59/t60/t23 已齐备。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
