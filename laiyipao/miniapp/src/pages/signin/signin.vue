@@ -1,6 +1,37 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R5：签到作战台眉题 + 本周期指标 + 规则引擎领取建议 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">每日签到</text>
+        <text class="section-kicker-en">DAILY OPS · RULE ENGINE</text>
+        <text class="r3-ai-badge">AI</text>
+      </view>
+      <view v-if="!loading" class="r3-kpi r5-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ claimedCount }}/{{ calendarDayCount }}</text>
+          <text class="r3-kpi-label">本周期已签天数</text>
+          <text class="r3-kpi-sub">离线补偿 {{ offlineReward?.coin ?? 0 }} 金 · 上限 {{ offlineReward?.cap_hours ?? 0 }} 小时</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ r5SigninPct }}%</text>
+          <text class="r3-kpi-label">周期进度</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ tasks.filter(t => t.done && !t.claimed).length }}</text>
+          <text class="r3-kpi-label">可领任务</text>
+        </view>
+      </view>
+      <view v-if="r5AiSignin.visible && !loading" class="r3-ai r5-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 领取提醒</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r5AiSignin.conclusion }}</text>
+        <text class="r3-ai-basis">依据：签到记录 · 本周期 · 更新于本次进入</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoTask()">{{ r5AiSignin.ctaText }}</text>
+      </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
@@ -92,7 +123,7 @@
         </view>
       </view>
 
-      <view class="card">
+      <view id="r5-task-card" class="card r3-data-grid">
         <!--
           ⚠️ 第 94 轮：加周期切换。
 
@@ -158,6 +189,12 @@
           </view>
         </view>
         <view v-if="tasks.length === 0" class="muted">暂无任务</view>
+        <view v-if="tasks.length === 0 && !loading" class="r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">今日任务已领完，明天再来</text>
+          <text class="r3-empty-reason">当前筛选周期内没有待办任务；离线收益仍可能待领取。</text>
+          <text class="r3-empty-action" role="button" @click="r5GoTask()">去看首页建议 →</text>
+        </view>
       </view>
 
       <view class="card">
@@ -440,6 +477,33 @@ async function doRedeem() {
   } finally {
     redeeming.value = false
   }
+}
+
+/** R5：签到推进建议，全部由本页真实字段确定性推出。 */
+const r5SigninPct = computed(() => Math.min(100, Math.round((claimedCount.value / Math.max(1, calendarDayCount.value)) * 100)))
+const r5AiSignin = computed(() => {
+  const left = Math.max(0, calendarDayCount.value - claimedCount.value)
+  const claimable = tasks.value.filter((t) => t.done && !t.claimed)
+  const nextTask = tasks.value.find((t) => !t.done && !t.claimed) ?? claimable[0]
+  const coin = offlineReward.value?.coin ?? 0
+  let conclusion: string
+  if (claimable.length) conclusion = `有 ${claimable.length} 项任务奖励可领，先领取再推进签到。`
+  else if (coin > 0) conclusion = `本周期还差 ${left} 天满签；先领 ${coin} 金离线补偿。`
+  else if (left > 0) conclusion = `本周期还差 ${left} 天满签，先完成今日任务再领取。`
+  else conclusion = '本周期已签满，暂无待领任务与离线补偿。'
+  return {
+    visible: true,
+    conclusion,
+    ctaText: nextTask ? '去看任务 →' : '去首页看补强建议 →',
+    hasTask: !!nextTask,
+  }
+})
+function r5GoTask(): void {
+  if (!r5AiSignin.value.hasTask) {
+    uni.navigateTo({ url: '/pages/index/index' })
+    return
+  }
+  uni.pageScrollTo({ selector: '#r5-task-card', duration: 240 })
 }
 
 onMounted(async () => {

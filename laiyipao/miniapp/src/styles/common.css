@@ -1369,3 +1369,40 @@ page {
   .r4-enter { animation: none !important; }
 }
 
+/* ==========================================================================
+   LYP-R5-H5-V1：剩余五页轻量 AI 线索层。
+   结构组件继续复用 §1B 的 r3-* 六件套；这里只补 login/verify 的 role="note"
+   单行卡片，避免为两页再造一套平行卡片体系。零新增令牌。
+   ========================================================================== */
+.r5-section { scroll-margin-top: 120rpx; }
+.r5-ai-note {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin: 14rpx 0 18rpx;
+  padding: 18rpx 20rpx;
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: linear-gradient(90deg, var(--ai-halo), rgba(18, 24, 38, 0));
+  box-shadow: var(--ai-glow);
+}
+.r5-ai-note .r3-ai-badge { flex-shrink: 0; }
+.r5-note-body { flex: 1; min-width: 0; }
+.r5-note-title { font-size: 26rpx; font-weight: 600; color: var(--ai-ink); }
+.r5-note-text { display: block; margin-top: 6rpx; font-size: 24rpx; line-height: 1.5; color: var(--text); }
+.r5-note-basis { display: block; margin-top: 6rpx; font-size: 20rpx; color: var(--muted); }
+.r5-note-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56rpx;
+  margin-top: 6rpx;
+  color: var(--ai-ink);
+  font-size: 22rpx;
+  font-weight: 600;
+}
+.r5-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r5-enter, .r5-ai-note { animation: none !important; }
+}
+

@@ -35,6 +35,38 @@
         <view class="stage-hero-cta" @click="enter(activeLevelId)">继续挑战 · 第 {{ activeLevelId }} 关 →</view>
       </view>
 
+      <!-- R5：作战推进眉题 + 当前存档指标 + 规则引擎推进建议 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">作战推进</text>
+        <text class="section-kicker-en">FRONT ANALYSIS · RULE ENGINE</text>
+        <text class="r3-ai-badge">AI</text>
+      </view>
+      <view v-if="!store.configLoading && chapterLevels.length" class="r3-kpi r5-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ chapterStars }}/{{ chapterTotal }}</text>
+          <text class="r3-kpi-label">本章星级</text>
+          <text class="r3-kpi-sub">体力净消耗 {{ energyBudget.net }} · 剩 {{ energyBudget.count }} 关未通关</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ chapterOverview.filter(c => c.pct > 0).length }}</text>
+          <text class="r3-kpi-label">已推进章节</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ bossLevels.length }}</text>
+          <text class="r3-kpi-label">本章首领关</text>
+        </view>
+      </view>
+      <view v-if="r5AiStage.visible && !store.configLoading" class="r3-ai r5-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 推进建议</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r5AiStage.conclusion }}</text>
+        <text class="r3-ai-basis">依据：关卡曲线/地形/星数 · 当前存档 · 更新于本次进入</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoLevel()">{{ r5AiStage.ctaText }}</text>
+      </view>
+
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -43,6 +75,12 @@
         <text class="empty-glyph">🗺️</text>
         <text class="muted">本章节还没有关卡</text>
         <text class="dim">换一个章节看看，或从下方选择其它章节。</text>
+        <view class="r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">章节数据同步中</text>
+          <text class="r3-empty-reason">没有关卡曲线与星数就无法计算推进建议，请稍后重试。</text>
+          <text class="r3-empty-action" role="button" @click="r5GoLevel()">去看已解锁关卡 →</text>
+        </view>
       </view>
       <!-- 章节选择 -->
       <scroll-view scroll-x class="chapter-scroll" :show-scrollbar="false">
@@ -119,7 +157,7 @@
       </view>
 
       <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
-      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
+      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card r3-data-grid">
         <view class="card-title">
           <text>全局进度</text>
           <text class="mono">{{ allStars }} / {{ allStarCap }} ★</text>
@@ -400,6 +438,36 @@ const selected = computed<LevelSummary | null>(() => {
  * 「最新」仍然由 store.unlockedLevel 单独表达，两者不再混淆。
  */
 const activeLevelId = computed(() => selected.value?.id ?? store.unlockedLevel)
+
+/** R5：按章内难度最大爬升点给出推进建议，输入全部来自当前存档。 */
+const r5AiStage = computed(() => {
+  const pts = difficultyCurve.value.pts
+  let target = activeLevelId.value
+  let jump = 0
+  for (let i = 1; i < pts.length; i++) {
+    const d = pts[i].diff - pts[i - 1].diff
+    if (d > jump) { jump = d; target = pts[i].id }
+  }
+  const terrain = terrainIndex.value.find((t) => t.ids.includes(target))
+  const terrainName = terrain ? terrain.name : '常规'
+  const unlocked = target <= store.unlockedLevel
+  return {
+    visible: pts.length > 0,
+    target,
+    jump,
+    conclusion: `第 ${target} 关难度爬升最大（地形 ${terrainName}、本章 ${chapterStars.value}/${chapterTotal.value}★），优先补该关。`,
+    ctaText: unlocked ? `直达第 ${target} 关 →` : '先去装备页补强 →',
+    unlocked,
+  }
+})
+function r5GoLevel(): void {
+  const r = r5AiStage.value
+  if (!r.unlocked) {
+    uni.navigateTo({ url: '/pages/equipment/equipment' })
+    return
+  }
+  enter(r.target)
+}
 
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
 
