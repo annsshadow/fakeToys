@@ -288,7 +288,41 @@ pub async fn section_create(
             Value::String(sess.person_unique.clone()),
         );
     }
+    // R318 跨端桥接：PC 版块须对 H5 发帖 picker（读 x_bbs_forum）可见。
+    // forum id 与 section id 保持一致，topic 按 forum_id 归档才不会错归属。
+    // crud_create 内部自取连接，无法并入同一事务；forum 写入失败时补偿硬删 section，
+    // 避免『section 建成但 forum 缺失』半状态，且 id 固定不产生重复 forum。
+    let bridged_name = obj
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let bridged_creator = obj
+        .get("creator")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
+    let bridge_result = async {
+        let client = shared::db::acquire(&pool).await?;
+        client
+            .execute(
+                "INSERT INTO x_bbs_forum (id, name, description, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+                &[&id, &bridged_name, &String::new(), &bridged_creator],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        Ok::<(), AppError>(())
+    }
+    .await;
+    if bridge_result.is_err() {
+        if let Ok(client) = shared::db::acquire(&pool).await {
+            let _ = client
+                .execute("DELETE FROM x_bbs_assemble_control_section WHERE id = $1", &[&id])
+                .await;
+        }
+        return bridge_result.map(|_| unreachable!());
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

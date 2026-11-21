@@ -263,4 +263,75 @@ mod tests {
     // SKIPPED: u2_statgrade not accessible
     // SKIPPED: u2_subject_search_page not accessible
     // SKIPPED: u2_subject_listsubjectinfo_page not accessible
+
+    /// R318 t98 桥接契约：section/create 后 H5 picker 数据源 forum/view/all 必须
+    /// 可见同名记录且 forum id 与 section id 一致（topic 按 forum_id 归档）。
+    /// live-gated：DB 不可达显式跳过；修复前 forum 无该记录 → 本测试 RED。
+    #[tokio::test]
+    async fn test_section_create_bridges_to_forum() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping test_section_create_bridges_to_forum: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let marker = format!("r318-bridge-{}", uuid::Uuid::new_v4());
+        {
+            let c = pool.get().await.unwrap();
+            c.execute("DELETE FROM auth_person WHERE unique_id = 'r318-bridge-admin' AND id <> 'r318-bridge-admin'", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) VALUES ('r318-bridge-admin', 'r318-bridge-admin', 'probe', '', '', NOW(), NOW()) ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_role (id, name, created_at, updated_at) SELECT 'r318-bridge-admin-role', 'admin', NOW(), NOW() WHERE NOT EXISTS (SELECT 1 FROM auth_role WHERE name = 'admin')", &[]).await.unwrap();
+            c.execute("INSERT INTO auth_person_role (person_id, role_id, unit_id, created_at) SELECT 'r318-bridge-admin', r.id, '', NOW() FROM auth_role r WHERE r.name = 'admin' ON CONFLICT DO NOTHING", &[]).await.unwrap();
+        }
+        let now = chrono::Utc::now().naive_utc();
+        let sess = shared::session::Session {
+            token: "r318-bridge-token".to_string(),
+            person_unique: "r318-bridge-admin".to_string(),
+            created_at: now,
+            expires_at: now + chrono::Duration::hours(2),
+        };
+        let app = crate::router(pool.clone()).layer(axum::extract::Extension(sess));
+        let created = app.clone().oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/bbs/assemble/control/section/create")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({ "name": marker }).to_string()))
+                .unwrap(),
+        ).await.unwrap();
+        assert_eq!(created.status(), StatusCode::OK, "section/create must be 200 with admin session");
+        let cbytes = axum::body::to_bytes(created.into_body(), usize::MAX).await.unwrap();
+        let cbody: serde_json::Value = serde_json::from_slice(&cbytes).unwrap();
+        let id = cbody["data"]["id"].as_str().unwrap().to_string();
+        let listed = crate::router(pool.clone()).oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/bbs/assemble/control/forum/view/all")
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_eq!(listed.status(), StatusCode::OK, "forum/view/all must be 200");
+        let lbytes = axum::body::to_bytes(listed.into_body(), usize::MAX).await.unwrap();
+        let lbody: serde_json::Value = serde_json::from_slice(&lbytes).unwrap();
+        let arr = lbody["data"].as_array().expect("forum data must be array");
+        let found = arr.iter().find(|f| f["id"].as_str() == Some(id.as_str()));
+        assert!(found.is_some(), "RED: section/create must bridge to x_bbs_forum with SAME id; id={} not in forum/view/all (count={})", id, arr.len());
+        assert_eq!(found.unwrap()["name"].as_str(), Some(marker.as_str()), "bridged forum name must equal section name");
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_bbs_forum WHERE id = $1", &[&id]).await.unwrap();
+        c.execute("DELETE FROM x_bbs_assemble_control_section WHERE id = $1", &[&id]).await.unwrap();
+    }
+
+    /// R318 t98 实现不变量（防回归）：桥接必须 (a) 复用 section id 写 x_bbs_forum
+    /// 避免重复 forum；(b) 写失败时补偿硬删 section，杜绝半状态。
+    #[test]
+    fn test_section_forum_bridge_invariants() {
+        let src = include_str!("lib.rs");
+        let start = src.find("pub async fn section_create").expect("section_create");
+        let end = src[start..].find("\npub async fn ").map(|i| start + i).unwrap_or(src.len());
+        let func = &src[start..end];
+        assert!(func.contains("INSERT INTO x_bbs_forum"), "must bridge to x_bbs_forum");
+        assert!(func.contains("&[&id, &bridged_name"), "forum id must reuse section id (no duplicate forum)");
+        assert!(func.contains("DELETE FROM x_bbs_assemble_control_section WHERE id = $1"), "must compensate section on bridge failure (no half-state)");
+        assert!(func.contains("bridge_result.is_err()"), "must fail loud on bridge error");
+    }
 }
