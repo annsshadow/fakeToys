@@ -4329,3 +4329,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R307 收官：t58 审计（后端数据真空）→ t59 新建入口+INT4 绑定修复 → t60 独立复查 → t61 终审 pass，组织域数据真实性缺陷闭环，无遗留 P0/P1。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 237. R308 全页基线再审计与两项真实问题派发（2026-11-21）
+- t62（qa-e2e，只读审计）commit d60121e08 精确 1 文档 186 行 docs/ops/oa4rust-r308-baseline-reaudit.md。当前 HEAD 全页真浏览器基线（PC 74/74 + H5 19/19 真登录截图、0 pageerror/API失败/错误文案）：PC DOM aiPage gt0 45→70/74、双未消费页 20→0；H5 branded gt0 2→16/19。核心：修正 loading 探针假阳性——旧文本正则命中 PC 2 页（19-admin-hotpic/21-admin-appinfo）系统计卡标签『加载中』误匹配；新骨架屏口径命中 1 页（57-admin-portal-script-designer）系无条件渲染静态装饰条；真实加载中页=0，坐实历史『loading 2 页』为假阳性。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=d60121e08、工作树干净；实读 186 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence.json（gitignored，git check-ignore EXIT=0）标注非物理真机、PC aiPage 70/74、双未消费 0；源码坐实两项问题：HotpicApp.vue:100/AppInfoApp.vue:105 stats 含 `{label:'加载中',value:loading?1:0}` 恒显误导标签，PortalScriptDesignerApp.vue:11 `<div class="script-loading ai-skeleton-line" aria-hidden="true">` 无条件渲染。
+- 据两项真实问题（非臆造）派发：t63（page-work，统计卡误导标签修正，test-first，写域 HotpicApp/AppInfoApp+契约+文档）、t64（shell-eng，静态骨架条条件化/移除，test-first，写域 PortalScriptDesignerApp+契约+文档），两任务 inScope 不重叠、均 claimed。改造后待真浏览器复验与终审。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
