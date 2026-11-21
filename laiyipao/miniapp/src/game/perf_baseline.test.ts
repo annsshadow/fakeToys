@@ -135,6 +135,37 @@ function play(lv: GeneratedLevel) {
   return { ms, ticks: e.tick, won: e.phase === 'won', phase: e.phase }
 }
 
+/**
+ * 每 tick 成本的**数量级异常**判定。
+ *
+ * 诊断性观察只在 6 个关卡上取样，任何一次 GC / JIT 去优化都会让某个样本瞬时
+ * 抬到其余样本的 5~6 倍；用 `min` 作基线会让这类合法抖动误报。基线改用中位数
+ * （单个抖动点拉不动它），阈值放宽到 10 倍（只抓真正的数量级异常）。
+ * 判据抽成纯函数，才能被确定性单测驱动。
+ */
+function assertNoPerTickOutlier(samples: ReadonlyArray<{ usPerTick: number }>): {
+  min: number
+  baseline: number
+  max: number
+  limit: number
+} {
+  const values = samples.map((s) => s.usPerTick)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = sorted.length >> 1
+  const median = sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+
+  if (values.length === 0) throw new Error('无采样，绊线会恒真')
+  if (!(min > 0)) throw new Error('usPerTick 全为 0（tick 数为 0 或计时器坏），绊线会恒真')
+  const baseline = median // 中位数：单个抖动点拉不动
+  const limit = baseline * 10
+  if (max > limit) {
+    throw new Error(`某关卡每 tick 成本数量级异常：max ${max.toFixed(2)} µs > 基线 ${baseline.toFixed(2)} µs × 10`)
+  }
+  return { min, baseline, max, limit }
+}
+
 describe('引擎性能绊线', () => {
   it('100 关全扫不超过 60 秒（gross regression 报警器，实测 2.3~3.7 秒）', () => {
     const rows = levels.map(play)
@@ -166,22 +197,42 @@ describe('引擎性能绊线', () => {
     console.log(rows.join('\n'))
 
     expect(samples.length).toBeGreaterThan(1)
-    const min = Math.min(...samples.map((s) => s.usPerTick))
-    const max = Math.max(...samples.map((s) => s.usPerTick))
 
-    // 前提守卫：`usPerTick` 全为 0（tick 数为 0 / 计时器坏）会让下面那条
-    // 变成 `0 <= 0`，**恒真**。而「断言恒真」正是本项目反复栽的形状：
-    // 它看上去在保护什么，实际什么都不保护。
-    expect(min).toBeGreaterThan(0)
-
-    // 极宽松：只抓「某个关卡的每 tick 成本是最低者的 5 倍以上」这种明显异常。
+    // 数量级异常报警：以**中位数**为基线，最高者超过 10 倍才报警。
+    //
+    // 为什么不再用 `min` 作基线：6 个样本里只要有一个被 GC / JIT 去优化抬高，
+    // 其余样本仍正常；并发下最低者又可能恰好落在没被抖动的那一关，
+    // 于是 `max <= min * 5` 会把合法抖动判成引擎回归（2026-11-21 实测误报：
+    // 隔离 max/min≈1.8~2.0，并发时同一份代码 1 failed | 1547 passed）。
+    // 中位数不受单点抖动影响；10 倍阈值只抓「差一个数量级」的异常，
+    // 且仍有断言能失败（见下方确定性抖动样本回归）。
     //
     // ⚠️ 阈值故意**不**用来判定 O(n²)：
     // 敌人数只差 2.15 倍，O(n²) 的信号是 4.6 倍，而这两者之间没有足够
-    // 区分度 —— 5 倍的阈值会同时放过 O(n) 和 O(n²)。
+    // 区分度 —— 数量级阈值会同时放过 O(n) 和 O(n²)。
     // 真正判定复杂度需要「固定其它变量只扫敌人数」，那是另一份工作。
-    //
-    // 所以这条断言的**唯一**作用是：某个关卡的单 tick 成本出现数量级异常时报警。
-    expect(max).toBeLessThanOrEqual(min * 5)
+    const guard = assertNoPerTickOutlier(samples)
+    console.log(`  每 tick 基线(中位数) ${guard.baseline.toFixed(2)} µs，最高 ${guard.max.toFixed(2)} µs，阈值 ${guard.limit.toFixed(2)} µs`)
+  }, 900_000)
+})
+
+describe('每 tick 成本绊线的误报回归（test-first）', () => {
+  // 2026-11-21 并发全量测试复现：隔离 max/min≈1.8~2.0，并发下某关卡瞬时抬到
+  // 最低者的 5 倍以上。这组样本复刻该形状，不依赖任何真实计时。
+  const jitter = [2.0, 2.1, 2.2, 2.3, 2.4, 12.0].map((usPerTick) => ({ usPerTick }))
+
+  // 本文件被 test_timeouts 守卫判为「重活」，所有 it 都必须显式带预算。
+  // 这三条本身是纯计算、毫秒级；预算沿用文件统一值，仅为满足文件级策略。
+  it('合法并发抖动（单点 6x 抬升）不得误报', () => {
+    expect(() => assertNoPerTickOutlier(jitter)).not.toThrow()
+  }, 900_000)
+
+  it('真正的数量级异常仍要报警（不得退化成永真）', () => {
+    const outlier = [2.0, 2.1, 2.2, 2.3, 2.4, 24.0].map((usPerTick) => ({ usPerTick }))
+    expect(() => assertNoPerTickOutlier(outlier)).toThrow(/数量级异常/)
+  }, 900_000)
+
+  it('全零样本必须报警，不能让 0 <= 0 恒真', () => {
+    expect(() => assertNoPerTickOutlier([{ usPerTick: 0 }, { usPerTick: 0 }])).toThrow(/恒真/)
   }, 900_000)
 })
