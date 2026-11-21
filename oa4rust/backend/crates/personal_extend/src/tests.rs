@@ -197,6 +197,114 @@ fn test_session_manager_integration() {
     });
 }
 
+/// R328 D2 真 DB 回归：save_signature 写 x_person_signature 同时桥接 x_custom。
+#[tokio::test]
+async fn r328_save_signature_writes_both_tables() {
+    use axum::extract::Extension;
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping r328_save_signature_writes_both_tables: DATABASE_URL not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    const PERSON: &str = "r328-signature-bridge";
+    const TOKEN: &str = "r328-signature-token";
+    let mgr = SessionManager::new();
+    mgr.create_session(PERSON.to_string(), TOKEN.to_string())
+        .await
+        .unwrap();
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        axum::http::header::AUTHORIZATION,
+        axum::http::HeaderValue::from_str("Bearer r328-signature-token").unwrap(),
+    );
+    let marker = "R328_SIGNATURE_BRIDGE_VALUE";
+
+    let res = personal_mod::save_signature(
+        Extension(pool.clone()),
+        Extension(mgr.clone()),
+        headers.clone(),
+        axum::Json(serde_json::json!({"signature": marker, "mimeType": "image/png"})),
+    )
+    .await
+    .expect("save_signature 应成功");
+    assert_eq!(res.0.r#type.as_deref(), Some("success"));
+
+    let c = pool.get().await.unwrap();
+    let n_sig: i64 = c
+        .query_one(
+            "SELECT COUNT(*) FROM x_person_signature WHERE person_id=$1 AND signature=$2",
+            &[&PERSON.to_string(), &marker.to_string()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(n_sig, 1, "x_person_signature 写链必须保留");
+    let n_custom: i64 = c
+        .query_one(
+            "SELECT COUNT(*) FROM x_custom WHERE person=$1 AND value=$2 AND deleted_at IS NULL",
+            &[&PERSON.to_string(), &marker.to_string()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(n_custom, 1, "save_signature 必须桥接写 x_custom 供 list 读取");
+
+    // 再存一次：UPDATE 路径也要维护 x_custom，且 x_custom 不得重复膨胀。
+    // 先把已有行 created_at 调旧 1 小时，确保能区分 UPDATE 是否刷新排序时间。
+    c.execute(
+        "UPDATE x_custom SET created_at = NOW() - INTERVAL '1 hour' WHERE person=$1",
+        &[&PERSON.to_string()],
+    )
+    .await
+    .unwrap();
+    let marker2 = "R328_SIGNATURE_BRIDGE_VALUE_2";
+    let res2 = personal_mod::save_signature(
+        Extension(pool.clone()),
+        Extension(mgr),
+        headers,
+        axum::Json(serde_json::json!({"signature": marker2, "mimeType": "image/png"})),
+    )
+    .await
+    .expect("save_signature 二次保存应成功");
+    assert_eq!(res2.0.r#type.as_deref(), Some("success"));
+    let n_custom2: i64 = c
+        .query_one(
+            "SELECT COUNT(*) FROM x_custom WHERE person=$1 AND deleted_at IS NULL",
+            &[&PERSON.to_string()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(n_custom2, 1, "同人同签名桥接行应更新而非新增（SIGNATURE_ 命名稳定）");
+
+    // R328 D2 次生：list 按 created_at DESC 取首条，UPDATE 必须刷新 created_at，
+    // 否则新保存的文本签名永远排在旧图片签名之后，textarea 回显旧值。
+    let created: chrono::NaiveDateTime = c
+        .query_one(
+            "SELECT created_at FROM x_custom WHERE person=$1 AND deleted_at IS NULL",
+            &[&PERSON.to_string()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    let age = chrono::Utc::now().naive_utc() - created;
+    assert!(
+        age < chrono::Duration::minutes(1),
+        "重写后桥接行 created_at 必须刷新为当前时间（list 按 created_at DESC 取首条）"
+    );
+
+    c.execute(
+        "DELETE FROM x_person_signature WHERE person_id=$1",
+        &[&PERSON.to_string()],
+    )
+    .await
+    .unwrap();
+    c.execute("DELETE FROM x_custom WHERE person=$1", &[&PERSON.to_string()])
+        .await
+        .unwrap();
+}
+
+
 // 回归（四轮审计 A3-N9 · crud 归属版）：x_person_face 人脸行的 save/delete 此前只按 id
 // 落笔、无归属门 ⇒ 改 crud_save_owned/crud_delete_owned（person_id 属主或 admin）。
 #[tokio::test]

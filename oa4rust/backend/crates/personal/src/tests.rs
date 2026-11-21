@@ -245,6 +245,72 @@ mod tests {
         assert_eq!(json["data"]["signatures"][1]["id"], "sig-2");
     }
 
+    /// R328 D3 回归：signature/list 必须能解码 x_custom.created_at 的 TIMESTAMP 列。
+    /// 原实现用 Option<String> 读 TIMESTAMP，有行即 FromSql 失败→500；空表不触发。
+    #[tokio::test]
+    async fn r328_signature_list_decodes_timestamp_created_at() {
+        use axum::extract::Extension;
+        use auth::SessionManager;
+
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping r328_signature_list_decodes_timestamp_created_at: DATABASE_URL not reachable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        const PERSON: &str = "r328-signature-timestamp";
+        const TOKEN: &str = "r328-signature-timestamp-token";
+        let mgr = SessionManager::new();
+        mgr.create_session(PERSON.to_string(), TOKEN.to_string())
+            .await
+            .unwrap();
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(
+            axum::http::header::AUTHORIZATION,
+            axum::http::HeaderValue::from_static("Bearer r328-signature-timestamp-token"),
+        );
+        let marker = "R328_TIMESTAMP_SIGNATURE_VALUE";
+        let c = pool.get().await.unwrap();
+        // 清理历史残留后插入真实 TIMESTAMP 行（created_at 列类型 TIMESTAMP，非 TEXT）。
+        c.execute(
+            "DELETE FROM x_custom WHERE person=$1",
+            &[&PERSON.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO x_custom (id, name, person, value, created_at, updated_at) \
+             VALUES ($1, $2, $3, $4, NOW(), NOW())",
+            &[
+                &"r328-timestamp-row".to_string(),
+                &"SIGNATURE_r328-timestamp-row".to_string(),
+                &PERSON.to_string(),
+                &marker.to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+
+        let res = crate::signature::list(
+            Extension(pool.clone()),
+            Extension(mgr),
+            headers,
+        )
+        .await
+        .expect("signature/list 不应因 TIMESTAMP 解码失败而 500");
+        assert_eq!(res.0.r#type.as_deref(), Some("success"));
+        let sigs = res.0.data.as_ref().unwrap()["signatures"]
+            .as_array()
+            .unwrap();
+        assert_eq!(sigs.len(), 1, "应返回刚插入的真实签名行");
+        assert_eq!(sigs[0]["value"], marker);
+        let created = sigs[0]["created_at"].as_str().unwrap_or("");
+        assert!(!created.is_empty(), "created_at 应非空且格式正确");
+
+        c.execute("DELETE FROM x_custom WHERE person=$1", &[&PERSON.to_string()])
+            .await
+            .unwrap();
+    }
+
     #[test]
     fn test_icon_get_result_serialization_with_icon() {
         use serde_json::json;

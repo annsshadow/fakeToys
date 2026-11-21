@@ -207,7 +207,7 @@ pub async fn save_signature(
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    if let Some(row) = existing {
+    let final_id = if let Some(row) = existing {
         let eid: String = row.get("id");
         client
             .execute(
@@ -216,12 +216,7 @@ pub async fn save_signature(
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-        Ok(Json(ActionResult::success(serde_json::Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), serde_json::Value::String(eid)),
-                ("saved".to_string(), serde_json::Value::Bool(true)),
-            ]),
-        ))))
+        eid
     } else {
         let id = uuid::Uuid::new_v4().to_string();
         client
@@ -232,13 +227,42 @@ pub async fn save_signature(
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-        Ok(Json(ActionResult::success(serde_json::Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), serde_json::Value::String(id)),
-                ("saved".to_string(), serde_json::Value::Bool(true)),
-            ]),
-        ))))
+        id
+    };
+
+    // R328 D2: 桥接 x_custom —— signature/list 与 signature/upload 均读写此表（value 列）。
+    // 归属 session.person_unique 与 personal::resolve_current_person_unique 同源；
+    // 命名 SIGNATURE_{final_id} 与 upload 的 SIGNATURE_{uuid} 同族且重复保存稳定，UPDATE 不膨胀。
+    let bridge_name = format!("SIGNATURE_{}", final_id);
+    let bridge_exists = client
+        .query_opt("SELECT id FROM x_custom WHERE id = $1", &[&bridge_name])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .is_some();
+    if bridge_exists {
+        client
+            .execute(
+                "UPDATE x_custom SET value = $1, person = $2, deleted_at = NULL, created_at = NOW(), updated_at = NOW() WHERE id = $3",
+                &[&signature, &session.person_unique, &bridge_name],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    } else {
+        client
+            .execute(
+                "INSERT INTO x_custom (id, name, person, value, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+                &[&bridge_name, &bridge_name, &session.person_unique, &signature],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
+
+    Ok(Json(ActionResult::success(serde_json::Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), serde_json::Value::String(final_id)),
+            ("saved".to_string(), serde_json::Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// GET /api/personal/face/list —— 当前登录用户的人脸特征列表（x_person_face）。

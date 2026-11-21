@@ -127,12 +127,11 @@ pub async fn list(
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
                 "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
-                "created_at": row.get::<_, Option<String>>("created_at").map(|s| {
-                    chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
-                        .ok()
-                        .map(|dt| dt.to_string())
-                        .unwrap_or(s)
-                }),
+                // R328 D3: created_at 是 TIMESTAMP 列，必须按 NaiveDateTime 解码；
+                // 原 Option<String> 在有行时 FromSql 失败导致 list 500（空表不触发）。
+                "created_at": row
+                    .get::<_, Option<chrono::NaiveDateTime>>("created_at")
+                    .map(|dt| dt.to_string()),
             })
         })
         .collect();

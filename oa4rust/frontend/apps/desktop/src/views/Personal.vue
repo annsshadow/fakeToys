@@ -103,7 +103,7 @@
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery } from '@tanstack/vue-query'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -124,16 +124,24 @@ const { data: sigData } = useQuery({
   queryKey: ['personal', 'signature'],
   queryFn: async () => {
     const resp = await api.get('/api/person/signature/list')
-    const sigs = ((resp as any)?.data ?? []) as Array<{ content: string }>
-    return sigs[0]?.content ?? ''
+    // R328 D2: list 返回 {data:{signatures:[{value}]}}，旧代码只解一层且取错字段
+    const sigs = ((resp as any)?.data?.signatures ?? []) as Array<{ value: string }>
+    return sigs[0]?.value ?? ''
   },
 })
-signature.value = sigData.value ?? ''
+// R328 D2: query 异步返回后必须响应式同步，setup 期一次性赋值会永远拿到 undefined 导致 textarea 回空
+watch(sigData, (v) => { signature.value = v ?? '' }, { immediate: true })
 
 // 修改密码
 const pwdMutation = useMutation({
   mutationFn: (data: { oldPassword: string; newPassword: string }) => api.put('/api/person/password', data),
-  onSuccess: () => {
+  onSuccess: (resp: any) => {
+    // R328 D1: HTTP 200 仍可能携带业务错误信封（type:error），不得进入成功分支
+    if (resp?.type === 'error') {
+      pwdError.value = resp?.message ?? '密码修改失败'
+      toast.error(pwdError.value)
+      return
+    }
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
     pwdError.value = ''
   },
@@ -158,7 +166,13 @@ function savePassword(): void {
       onSettled: () => {
         pwdSaving.value = false
       },
-      onSuccess: () => {
+      onSuccess: (resp: any) => {
+        // R328 D1: 业务错误信封不得弹成功提示、不得清空表单
+        if (resp?.type === 'error') {
+          pwdError.value = resp?.message ?? '密码修改失败'
+          toast.error(pwdError.value)
+          return
+        }
         toast.success('密码修改成功')
         pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
       },
