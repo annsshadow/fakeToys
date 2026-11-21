@@ -82,6 +82,34 @@ const netFlow = computed(() => {
   return out
 })
 
+
+/** R4 §1C.2：净流入 AI 洞察——基于当前流水的确定性结论，无数据则诚实空态。 */
+const aiEconomyInsight = computed(() => {
+  const entries = Object.entries(netFlow.value).filter(([, v]) => v !== 0)
+  if (entries.length === 0) {
+    return { empty: true, headline: '数据不足：暂无货币流水，无法判断回收压力', evidence: '净流入基于货币流水 delta 汇总；当前无可用记录。' }
+  }
+  const [cur, net] = entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0]
+  const label = CURRENCY_LABEL[cur] ?? cur
+  if (net > 0) {
+    return {
+      empty: false,
+      headline: label + '净流入 +' + net.toLocaleString() + '，回收压力上升，建议关注回收渠道',
+      evidence: '当前页货币流水的 delta 汇总（总量列）；净流入为正意味着该货币在增发。',
+    }
+  }
+  return {
+    empty: false,
+    headline: label + '净流入 ' + net.toLocaleString() + '，处于回收状态',
+    evidence: '当前页货币流水的 delta 汇总（总量列）；净流入为负意味着货币在净回收。',
+  }
+})
+
+/** AI 卡 CTA：readonly 只给结论不显写按钮，读操作切到订单筛选即可。 */
+function focusOrderFilter() {
+  document.querySelector('.order-filter-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 function flowTone(net: number): 'success' | 'info' | 'warning' {
   if (net > 0) return 'warning'
   if (net === 0) return 'info'
@@ -401,24 +429,36 @@ loadOrders()
       </div>
     </div>
 
-    <el-row :gutter="12" class="mb-2">
-      <el-col v-for="cur in Object.keys(CURRENCY_LABEL)" :key="cur" :span="6">
-        <el-card shadow="never">
-          <div class="kpi-label">{{ CURRENCY_LABEL[cur] }}净流入</div>
-          <div class="kpi-value">
-            <el-tag :type="flowTone(netFlow[cur] ?? 0)" size="large">
-              {{ (netFlow[cur] ?? 0) > 0 ? '+' : '' }}{{ netFlow[cur] ?? 0 }}
-            </el-tag>
-          </div>
-          <div class="kpi-sub">
-            {{ netFlow[cur] && netFlow[cur]! > 0 ? '在贬值，考虑回收' : '健康' }}
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+
+    <section class="section-kicker" aria-label="经济监控概览">
+      <span class="section-kicker-cn">经济监控概览</span>
+      <span class="section-kicker-en">Economy Monitor</span>
+    </section>
+    <div class="ai-insight" role="status" aria-label="AI 运营洞察">
+      <span class="ai-badge">AI</span>
+      <div class="ai-insight-body">
+        <div class="ai-insight-title">AI 回收压力诊断 · 规则引擎</div>
+        <div class="ai-insight-headline">{{ aiEconomyInsight.headline }}</div>
+        <div class="ai-insight-evidence">依据：{{ aiEconomyInsight.evidence }}</div>
+      </div>
+      <el-button v-if="!aiEconomyInsight.empty" class="ai-insight-cta" size="small" @click="focusOrderFilter">查看订单筛选</el-button>
+    </div>
+    <div class="kpi-strip">
+      <div v-for="cur in Object.keys(CURRENCY_LABEL).slice(0, 4)" :key="cur" class="kpi-main">
+        <div class="kpi-label">{{ CURRENCY_LABEL[cur] }}净流入</div>
+        <div class="kpi-value">{{ (netFlow[cur] ?? 0) > 0 ? '+' : '' }}{{ netFlow[cur] ?? 0 }}</div>
+        <el-tag :type="flowTone(netFlow[cur] ?? 0)" size="small">
+          {{ netFlow[cur] && netFlow[cur]! > 0 ? '在贬值，考虑回收' : '健康' }}
+        </el-tag>
+      </div>
+      <div class="kpi-sub-card"><div class="kpi-label">流水笔数</div><div class="kpi-value">{{ flows.length }}</div></div>
+    </div>
+    <div class="filter-bar">
+      <span class="result-count" aria-live="polite" role="status">{{ flows.length }} 条流水 · {{ orders.length }} 笔订单</span>
+    </div>
 
     <el-card shadow="never" header="货币流水" >
-      <el-table :data="flows" size="small" stripe>
+      <el-table :data="flows" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
         <el-table-column label="货币" width="90">
           <template #default="{ row }">
             {{ CURRENCY_LABEL[row.currency] ?? row.currency }}
@@ -441,13 +481,18 @@ loadOrders()
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选条件下没有货币流水；净流入 KPI 与 AI 诊断同样基于该数据。</p>
+            <el-button class="empty-state-action" size="small" @click="load">刷新流水</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
 
     <!-- 订单明细（2026-10-31 实质优化第 33 轮） -->
-    <el-card shadow="never" header="支付订单" class="mt-2">
+    <el-card shadow="never" header="支付订单" class="mt-2 order-filter-anchor">
       <div class="toolbar" style="margin-bottom: 8px">
         <!-- 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 日期范围 -->
         <el-select v-model="orderStatus" placeholder="全部状态" clearable style="width: 130px" @change="applyOrderFilter">

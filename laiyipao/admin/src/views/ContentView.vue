@@ -809,6 +809,21 @@ loadAll()
       </div>
     </div>
 
+
+    <section class="section-kicker" aria-label="内容运营概览">
+      <span class="section-kicker-cn">内容运营概览</span>
+      <span class="section-kicker-en">Content Operations</span>
+    </section>
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">公告</div><div class="kpi-value">{{ annTotal }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">兑换码</div><div class="kpi-value">{{ codeTotal }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">审计记录</div><div class="kpi-value">{{ logTotal }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">当前面板</div><div class="kpi-value">{{ activeTab === 'announcements' ? '公告' : activeTab === 'codes' ? '兑换码' : '审计' }}</div></div>
+    </div>
+    <div class="filter-bar">
+      <span class="result-count" aria-live="polite" role="status">共 {{ annTotal + codeTotal + logTotal }} 条内容/审计记录</span>
+    </div>
+
     <el-tabs v-model="activeTab">
       <!-- 公告 -->
       <el-tab-pane label="公告" name="announcements">
@@ -856,7 +871,7 @@ loadAll()
                 <span class="muted" style="margin-right: 8px">共 {{ annTotal }} 条</span>
                 <el-button size="small" @click="onExportAnnouncements">导出 CSV</el-button>
               </div>
-              <el-table :data="announcements" size="small" stripe>
+              <el-table :data="announcements" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
                 <el-table-column prop="id" label="ID" width="55" />
                 <el-table-column prop="title" label="标题" min-width="140" />
                 <!--
@@ -900,7 +915,12 @@ loadAll()
                   </template>
                 </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">该面板当前无公告；可用上方表单发布，或切换筛选条件。</p>
+            <el-button class="empty-state-action" size="small" @click="loadAnnouncements">刷新公告</el-button>
+          </div>
         </template>
 </el-table>
               <!--
@@ -1004,7 +1024,7 @@ loadAll()
             <el-button size="small" @click="onExportRedeemCodes">导出 CSV</el-button>
             <el-button size="small" @click="openRedeemUsages">使用记录</el-button>
           </div>
-          <el-table :data="codes" size="small" stripe>
+          <el-table :data="codes" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
             <el-table-column prop="id" label="ID" width="55" />
             <el-table-column prop="code" label="兑换码" min-width="150" />
             <el-table-column label="奖励" min-width="180">
@@ -1039,7 +1059,12 @@ loadAll()
               </template>
             </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">该面板当前无兑换码；可生成新码或切换筛选条件。</p>
+            <el-button class="empty-state-action" size="small" @click="loadCodes">刷新兑换码</el-button>
+          </div>
         </template>
 </el-table>
           <!--
@@ -1181,7 +1206,7 @@ loadAll()
             <el-button size="small" :loading="reconcileBusy" @click="onReconcile">一致性对账</el-button>
             <el-button size="small" @click="onExportAuditLogs">导出 CSV</el-button>
           </div>
-          <el-table :data="logs" size="small" stripe>
+          <el-table :data="logs" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
             <el-table-column prop="id" label="ID" width="55" />
             <el-table-column prop="username" label="管理员" width="110" />
             <el-table-column label="操作" width="150">
@@ -1229,7 +1254,12 @@ loadAll()
               <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
             </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选条件下无审计记录；审计日志只读，操作会实时写入。</p>
+            <el-button class="empty-state-action" size="small" @click="loadLogs">刷新日志</el-button>
+          </div>
         </template>
 </el-table>
           <!--
