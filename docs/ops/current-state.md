@@ -4278,3 +4278,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R305 全链收官：t50 基线（§225，重要口径校正：org/im/file/bbs/bam/note 是源码已注入但 DOM 缺 ai-page 的标记差页，非双未消费）→ t48/t49 PC 七页改造（§226）→ t51 H5 17 页品牌渐变+骨架口径纠正（§227）→ t52 终审 pass。5 任务 0 失败回退，期间坚持『断言不弱化/不制造回归』（骨架 class 不改以护 t17、IMChat UUID 遮蔽不回退、双合法 h1 模式延续）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 229. R306 基线实测与 C 组改造独立复核（2026-11-21）
+- t56 第一阶段（qa-e2e，attempt b9f7a2a4，中间提交、任务仍 in_progress）：commit d17a3151 精确 1 文档 54 行 docs/ops/oa4rust-r306-admin-baseline.md。改造前测试服真浏览器 PC admin 18 页全部捕获（srcVar=0、DOM aiPage=0 双未消费，pageerror/API失败全 0、h1Count 均 1、loading/errorText 全 false），与 R305 基线判定一致；<YOUR_TEST_DOMAIN> 占位、非物理真机、0 真值。队长复核 stat 精确 1 文档、文档与 evidence 合规。第二阶段同口径复查待 t53/t54/t55 改造产物部署后执行。
+- t55（shell-eng）commit 5da60b8fe 精确 8 文件（257+/32-）：C 组 6 设计器（portal-script/widget/service-invoke/find/pdf-viewer/common）从双未消费转令牌深度消费，根 modern-page ai-page + view-header ai-page ai-panel、渐变/玻璃/8px栅格/骨架 shimmer/空态引导，仅改 template class/CSS/空态文案未动 script/接口/路由/h1。AdminR306C 契约 RED 6→GREEN 6（逐选择器 hasAiRule 真断言 + aiVarCount≥5）、相关 7 契约 112 tests、typecheck/build 通过；真浏览器六页 DOM aiPage=2、pageerror=0、6 PNG + evidence.json 落 gitignored r306c-admin-c-visual/（非物理真机）。队长定点复跑 AdminR306C.contract.test.ts 6/6 exit0；文档 27 行合规；HEAD=TRACK=5da60b8fe。
+- 写域纪律：t55 提交时工作树 M/?? 系 t53/t54 A/B 组在途（QueryManager/FormApp/QueryDesigner 等），与 t55 写域不重叠、按 hash 定点复核未依赖 HEAD=@{u}；t55 证据目录实际落 r306c-admin-c-visual/（合约写 r306-admin-c/，命名偏差为 gitignored 目录、无害）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
