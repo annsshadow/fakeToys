@@ -4356,3 +4356,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=1b7526478、工作树干净、暂存区纯净；实读 68 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；源码并行对照坐实 meeting_assemble_control lib.rs:2503 缺 cast vs meeting lib.rs:293 有 cast、routes.rs:54 绑定正确、测试基建 tests_u2.rs 具备。低优先级 D2（笔记删除不进回收站）、D3（通讯录无建人入口）属产品口径未判 bug，如实保留。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 242. R309 会议创建双缺陷修复与队长裁决（2026-11-21）
+- t67（page-work）commit b326d2a06 精确 3 文件（lib.rs 1 行 + tests_u2.rs +119 行 + 文档 56 行，176+/1-）。两个独立真缺陷均 test-first RED→GREEN：①HTTP500——create_meeting INSERT 时间参数 $5/$6 缺 ::text::timestamp cast，真实错误文本 run.log `Error { kind: ToSql(4), cause: WrongType { postgres: Timestamp, rust: "&str" } }` 坐实；修复为 `$5::text::timestamp,$6::text::timestamp` 对照 meeting crate lib.rs:293。②创建成功但列表不可见——x_meeting.applied DDL 默认 false、后端生产代码 0 处设 true，而「我的会议」主列表 meeting/list/apply SQL（lib.rs:1070）强制 `WHERE applied=true AND creator谓词`；INSERT 加 applied 列写 TRUE 修复。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=b326d2a06、工作树干净、暂存区纯净；diff 实读确认 lib.rs INSERT 单行同时补 cast 与 applied TRUE；定点复跑 cargo test -p meeting_assemble_control exit 0；实读文档 56 行 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence.json（gitignored）createStatus=200/applyContains=true/titleInList=true/titleAfterReload=true/0 pageerror/API失败、非物理真机。
+- 【队长裁决 status 偏差】page-work 如实上报：队长批复依据 migration 006 认为 status 默认 'wait'，但真 DB 探针显示 x_meeting.status 为 nullable text 默认 NULL（根因：migrations/038_add_missing_columns.sql:37 后加无 DEFAULT 的 status TEXT 列），applied/wait 列表（lib.rs:1006）额外强制 `status='wait' AND applied=true`，故新会议（status=null）不进 applied/wait。裁决：以实测为准，队长原迁移推断有误；主验收「我的会议」list/apply SQL 只 WHERE applied=true（无 status 条件）已满足；applied/wait 断言降级为 HTTP200 可达、文档如实记录属正确处置；本轮不扩大改 DDL/status——status 在 wait/processing/completed 间转换无生产代码驱动且属产品口径，臆造修复风险高于收益，保留为已知遗留。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
