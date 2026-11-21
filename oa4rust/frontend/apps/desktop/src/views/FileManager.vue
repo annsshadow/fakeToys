@@ -900,6 +900,7 @@ async function deleteFile(f: FileItem): void {
   deleteMutation.mutate(f.id, {
     onSuccess: () => {
       recyclableFiles.value = recyclableFiles.value.filter((x) => x.id !== f.id)
+      loadRecycleBin()
       toast.success('文件已删除')
     },
     onError: () => toast.error('删除失败'),
