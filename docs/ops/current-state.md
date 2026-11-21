@@ -4670,5 +4670,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t109（qa-e2e）完成并队长独立复核：commit de16829a9f5abb6738bd1e4584ee9ddf64b09703 精确 1 文档 65 行 oa4rust/docs/ops/oa4rust-r322-h5-forum-notice-supplement.md；HEAD=TRACK 且为祖先、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机。evidence.json（gitignored r322-h5-supplement/）source 非物理真机、loops pass=4/limit=1/errors=0。
 - 判定：H5 论坛回帖闭环真 UI PASS（reply/list/sub 计数 1→2、刷新后仍 2、foundReload=true）；通知已读流转 PASS（进入会话自动 POST im/conversation/{id}/read 200 + DB 只读 x_message_conversation read_status=read/read_time 坐实持久化、非仅 HTTP200）；N1 通知公告 ann/list count=0 如实标取证限制非缺陷。0 新增 P0/P1，源码定位与 t104/R317 审计一致未重复。
 - t109 evidence_note 已附。t108（page-core PC 补测）仍在途，待其完成后据实甄别；R322 需在 t108 回收后综合收官。
+
+## 297. R322 PC补测收官（D1真缺陷P2）+ 修复派发（2026-11-21）
+- t108（page-core）完成并队长独立复核：commit 2bf93fb1ccd5e8cc8071549f9bd271b0f49d2bc0 精确 1 文档 48 行 oa4rust/docs/ops/oa4rust-r322-pc-forum-notice-supplement.md；HEAD=TRACK 且为祖先、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机。t108 evidence_note 已附。
+- D1 真缺陷 P2 坐实：BBSForum.vue:558 `((resp as any)?.data ?? [])` 只解一层，而 PUT reply/filter/list 真实返回双层信封 {data:{data:[3条],total:3}}（net-cap.json 决定性实证）；DOM bbs-reply-undefined×2、detailText『回复 ()』、assertions replyCountFromZero=false/replyPersistAfterReload=false 而 0 pageerror/0 API失败。根因纯前端信封解包错误，与 R318 跨端不同源根因不同、与 R315 搜索信封同族。L1 通知未读后端 lib.rs:644 不返回 unread 字段经源码坐实，t89 已报不重复计缺陷。
+- 派发 t110（page-core，implementation，纯前端，写域 BBSForum.vue + 契约测试 + 文档）：test-first RED→GREEN 让 replies queryFn 兼容双层/单层信封归一为 Reply[]，不改后端/GET reply-list/POST reply-create/R318/R320 BBS 修复；PC build+原子部署+真浏览器回帖可见且刷新持久、无 bbs-reply-undefined；文档 oa4rust/docs/ops/oa4rust-r322-reply-envelope-fix.md 脱敏、精确单提交。预建 t111（design-reviewer 终审，reviewedTaskId=t110，deps t108+t109+t110）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
