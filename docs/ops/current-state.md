@@ -4698,3 +4698,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 预建 t114（design-reviewer，review，round=1，reviewedTaskId=t113，deps t112+t113+t23）：待 t113 完成后自动解锁终审，确认 PC 时间缺失闭环且 R318/R320/R322 无回归，verdict=pass/findings=[] 才关闭 R323。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 302. R323 t113 后端补字段收官 + 终审解锁（2026-11-21）
+- t113（page-work）完成并队长独立复核：commit 3caf81179f2d0d4274f96a9ac148b888e76da639 精确 3 文件（tests_generated.rs 71+ + u2.rs 18+/3- + 文档 49+，135+/3-）；diff 确认 u2_reply_get(:1162) 与 u2_reply_filter_list 两分支(:1214/:1233) SQL 补 create_time::text + 映射产出 camelCase createTime（Option<String> 缺失回退空串），reply_list_sub_id/前端 PC/H5/admin 门/无关端点未改；HEAD=TRACK=3caf81179，暂存区与工作树全干净。
+- 队长从正确根独立复跑 `cargo test -p bbs_assemble_control --lib`：51 passed/0 failed（基线 49 + 新增 2），既有 reply/section/forum 用例不回退（EXIT=0）。文档 49 行 <YOUR_TEST_DOMAIN> 占位 0 真值。
+- 证据 oa4rust/test-results/r323-reply-verify-fix/（gitignored）source 非物理真机、verdict=REPLY_TIME_VERIFIED、filterListHasCreateTime=true、PC .reply-time 7 条全非空（28分钟前/42分钟前…）、新建回复 7→8 首条『刚刚』、H5 同主题 8 条时间一致、0 pageerror/0 API失败。首轮 NOT_VERIFIED 系复验脚本停在空『全部』tab，切『我的』tab 后通过，脚本层非源码缺陷。
+- t114 终审解锁：待 verdict=pass/findings=[] 关闭 R323。t113 evidence_note 已附。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
