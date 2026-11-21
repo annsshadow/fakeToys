@@ -12,37 +12,26 @@
         </div>
       </div>
       <AdminToolbar v-model="keyword" aria-label="搜索应用" search-placeholder="搜索应用..." @search="doSearch" @refresh="doSearch">
-        <input v-model="keyword" aria-label="搜索应用" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
-        <button class="btn-primary" @click="doSearch">搜索</button>
-        <button class="btn-primary" @click="createApp">+ 新建应用</button>
-        <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
-        <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
-        <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
-        <button class="btn-primary" @click="loadAppExtra2">类型管理/含文档类型/输出</button>
+        <template #filters>
+          <button class="btn-primary" @click="doSearch">搜索</button>
+        </template>
+        <template #actions>
+          <button class="btn-primary" @click="createApp">+ 新建应用</button>
+          <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
+          <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
+          <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
+          <button class="btn-primary" @click="loadAppExtra2">类型管理/含文档类型/输出</button>
+        </template>
       </AdminToolbar>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <AdminTable :columns="appInfoColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="doSearch">
-      <div class="list-panel">
-        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
-        <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
-        <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
-        <div v-else-if="items.length===0" class="empty"><div class="ei">📱</div><p>暂无应用数据</p></div>
-        <div v-else class="item-grid">
-          <div v-for="item in items" :key="item.id" class="item-card glass-card" @click="viewDetail(item)">
-            <div class="ic">{{ item.icon || '📱' }}</div>
-            <div class="ib">
-              <div class="it">{{ item.name || item.title || '未命名' }}</div>
-              <div class="im">{{ item.desc || item.content || item.description || '' }}</div>
-              <div class="meta">ID: {{ item.id }}</div>
-            </div>
-            <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
-            <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
-            <button class="btn-act2" @click.stop="createFile(item)">建文件</button>
-            <button class="btn-act2" @click.stop="loadIcon(item)">图标</button>
-            <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
-          </div>
-        </div>
-      </div>
+        <template #cell-actions="{ row: item }">
+          <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
+          <button class="btn-act2" @click.stop="writePerms(item)">设权限</button>
+          <button class="btn-act2" @click.stop="createFile(item)">建文件</button>
+          <button class="btn-act2" @click.stop="loadIcon(item)">图标</button>
+          <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
+        </template>
       </AdminTable>
     </div>
     <!-- Detail dialog -->
