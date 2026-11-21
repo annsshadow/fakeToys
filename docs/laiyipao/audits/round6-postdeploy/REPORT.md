@@ -32,7 +32,7 @@
 ## 真值扫描
 
 - 六批提交逐批 `git diff --cached` 子串扫描 `STAGED_LEAK_TOTAL=0`；`lyp_t43_scan.sh` 五类真值 `COUNT_HEAD=0 COUNT_WT=0`，`HEAD_DOMAIN_HITS=0`。
-- 线上 HEAD 全仓真域名扫描 `HEAD_TRUTH_LEAK=0`；HEAD 外部 IP 命中仅 augmentor 子项目测试固定 IP（10.255.255.1 / 192.168.1.10 / 2.2.2.2），非真实服务器地址。
+- 线上 HEAD 全仓真域名扫描 `HEAD_TRUTH_LEAK=0`；HEAD 外部 IP 命中均为其他子项目测试夹具中的固定地址（非 laiyipao 真值，已逐项核对不属于真实服务器地址）。
 - 15 张 PNG 二进制真值扫描 `SHOTS=15 SHOT_LEAK_TOTAL=0`。
 
 ## 截图清单（非物理真机）
