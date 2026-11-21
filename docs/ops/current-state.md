@@ -4452,3 +4452,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 6 文件、HEAD=TRACK=3ea2199fe、工作树干净；diff 实读确认补写 20 列 + paging 0 基 + ModernBusinessB 白名单连带同步（合理必要）；定点复跑 TaskCompleted.R314 契约 2/2 exit 0；文档 54 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored r314-taskcompleted-sync/）标注非物理真机、六断言全 true（completedBefore=1→After=2→Reload=2、completeStatus=200、0 pageerror/API失败）。基于含 t82 改动的 HEAD 一次性部署，最终 web 产物含双方前端改动。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 259. R314 终审收官（2026-11-21）
+- t84（design-reviewer，只读终审）verdict=pass / status=completed / findings=[]。t82（D2 上传 415）与 t83（D1 已办同步）两 P1 修复逐条复核闭环：D2 upload_file 改 Multipart 经 u2_read_multipart_file 读真实字节→u2_persist_verified（put+回读校验）→INSERT x_file 六字段 + folder_id='root' 对齐前端根目录；匿名门禁直调族 7→6 合理迁移、路由层 13 条 multipart oneshot 点名、无会话 401 判据未放松；真浏览器 upload 200 非 415、列表持久、0 错误。D1 task_complete 同事务补写 PP_C_TASKCOMPLETED 20 列（032 DDL 逐列核对 20 绑定无错位）、0 基分页 ProcessWork.vue+ModernBusinessB 均 paging/1→paging/0；集成测试 RED→GREEN、真浏览器已办 1→2 刷新持久 0 错误。串行部署 t83 父提交 9175300bf 含 t82、ancestor=YES、写域无重叠。
+- 队长独立复核（不采信自述）：t84 status=completed/verdict=pass/findings=[]；独立全量 vitest 261 files exit 0、typecheck exit 0；t79 审计（§256）→t81 守卫修复（§256）→t82/t83 两 P1 修复（§257/§258）→t84 终审证据链完整、commit 精确、队长逐项定点复核通过。
+- R314 收官：深度功能审计发现两 P1（工作流已办恒空、上传 415）+ 契约健康度审计发现 F1 守卫盲区，三条真实缺陷全部闭环；两修复串行部署产物含双方改动、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
