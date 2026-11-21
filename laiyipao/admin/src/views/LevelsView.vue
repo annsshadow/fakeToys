@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
-import {onMounted, ref, onActivated} from 'vue'
+import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchLevels,
@@ -29,6 +29,35 @@ const chapterOptions = ref<number[]>([])
 /** 全量章节（只有无筛选的拉取才更新它 —— 见 load 里的注释）。 */
 const allChapters = ref<number[]>([])
 const keyword = ref('')
+
+/** R3 §1B.4：可见 AI 洞察——从当前页关卡通关率找最弱一关（规则引擎，非 LLM）。 */
+const aiLevelInsight = computed(() => {
+  const rows = levels.value
+  if (!rows.length) {
+    return {
+      headline: '数据不足：当前页没有关卡数据，AI 洞察需要至少一条通关率记录。',
+      evidence: '规则引擎 · 基于当前页数据',
+      target: null as AdminLevelView | null,
+    }
+  }
+  const worst = rows.reduce((a, b) => (b.clear_rate < a.clear_rate ? b : a))
+  return {
+    headline: worst.name + '通关率 ' + worst.clear_rate.toFixed(1) + '% 为当前页最低，建议优先复核该关波次难度。',
+    evidence: '依据当前页 ' + rows.length + ' 关的通关率分布推算 · 规则引擎 · 基于当前数据',
+    target: worst,
+  }
+})
+
+function aiInsightCta() {
+  const target = aiLevelInsight.value.target
+  if (target) openWaves(target)
+}
+
+function resetFilters() {
+  chapter.value = undefined
+  keyword.value = ''
+  load()
+}
 
 // 波次抽屉
 const waveDrawer = ref(false)
@@ -346,7 +375,30 @@ const asRow = (r: unknown) => r as AdminLevelView
       </div>
     </div>
 
+    <div class="section-kicker">
+      <span class="section-kicker-cn">关卡配置 · 关卡总览</span>
+      <span class="section-kicker-en">LEVEL CONFIGURATION / OVERVIEW</span>
+    </div>
+
+    <section class="ai-insight" aria-label="AI 关卡洞察">
+      <span class="ai-badge">AI</span>
+      <div class="ai-insight-body">
+        <div class="ai-insight-title">AI 关卡洞察 · 规则引擎 · 基于当前数据</div>
+        <div class="ai-insight-headline">{{ aiLevelInsight.headline }}</div>
+        <div class="ai-insight-evidence">{{ aiLevelInsight.evidence }}</div>
+      </div>
+      <el-button v-if="aiLevelInsight.target" class="ai-insight-cta" size="small" type="primary" plain @click="aiInsightCta">查看该关波次</el-button>
+    </section>
+
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">关卡总数</div><div class="kpi-value">{{ total }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">当前页章节</div><div class="kpi-value">{{ chapterOptions.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">筛选结果</div><div class="kpi-value">{{ levels.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">当前章节</div><div class="kpi-value">{{ chapter ?? '全部' }}</div></div>
+    </div>
+
     <el-card shadow="never">
+      <div class="filter-bar">
       <div class="toolbar">
         <el-select v-model="chapter" placeholder="全部章节" clearable style="width: 140px" @change="load">
           <el-option v-for="c in chapterOptions" :key="c" :label="`第 ${c} 章`" :value="c" />
@@ -361,10 +413,11 @@ const asRow = (r: unknown) => r as AdminLevelView
         <el-button @click="load">查询</el-button>
         <el-button type="warning" plain @click="onRegen">重新生成 100 关</el-button>
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ total }} 关</span>
+        <span class="result-count" aria-live="polite">共 {{ total }} 关</span>
+      </div>
       </div>
 
-      <el-table :data="levels" size="small" stripe>
+      <el-table class="data-grid" :data="levels" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="chapter" label="章节" width="64" />
         <el-table-column prop="name" label="名称" min-width="150" />
@@ -410,7 +463,12 @@ const asRow = (r: unknown) => r as AdminLevelView
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选条件下没有匹配的关卡。可清空章节与关键词后再查，或确认关卡已经生成。</p>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
@@ -476,4 +534,5 @@ const asRow = (r: unknown) => r as AdminLevelView
 
 <style scoped>
 /* 页内特有样式；toolbar / muted 已收敛到 styles/main.css */
+.data-grid .el-table__cell { font-variant-numeric: tabular-nums; }
 </style>

@@ -16,6 +16,11 @@ const recipes = ref<SeedRecipe[]>([])
 const activeElement = ref<string>('')
 const activeKind = ref<string>('')
 
+function resetFilters() {
+  activeElement.value = ''
+  activeKind.value = ''
+}
+
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
   ice: '冰',
@@ -208,7 +213,20 @@ const asRow = (r: unknown) => r as AdminSkillView
       </div>
     </div>
 
+    <div class="section-kicker">
+      <span class="section-kicker-cn">技能配置 · 元素与配方</span>
+      <span class="section-kicker-en">SKILLS & RECIPES / ELEMENT BALANCE</span>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">技能总数</div><div class="kpi-value">{{ skills.length }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">合成配方</div><div class="kpi-value">{{ recipes.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">元素种类</div><div class="kpi-value">{{ Object.keys(ELEMENT_LABEL).length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">当前筛选</div><div class="kpi-value">{{ activeElement ? ELEMENT_LABEL[activeElement] : '全部' }}</div></div>
+    </div>
+
     <el-card shadow="never">
+      <div class="filter-bar">
       <div class="toolbar">
         <el-radio-group v-model="activeElement" size="small">
           <el-radio-button value="">全部元素</el-radio-button>
@@ -221,10 +239,11 @@ const asRow = (r: unknown) => r as AdminSkillView
           <el-option label="被动" value="passive" />
         </el-select>
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ skills.length }} 个技能 / {{ recipes.length }} 条配方</span>
+        <span class="result-count" aria-live="polite">共 {{ skills.length }} 个技能 / {{ recipes.length }} 条配方</span>
+      </div>
       </div>
 
-      <el-table
+      <el-table class="data-grid"
         :data="
           skills.filter(
             (s) =>
@@ -266,7 +285,12 @@ const asRow = (r: unknown) => r as AdminSkillView
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前元素 / 类型筛选下没有技能。清空筛选即可查看全部技能与配方。</p>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>

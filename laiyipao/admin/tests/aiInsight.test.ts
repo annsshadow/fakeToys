@@ -90,4 +90,41 @@ describe('buildAiInsight 确定性洞察规则', () => {
     const a = fixture()
     expect(buildAiInsight(a, labelOf)).toEqual(buildAiInsight(a, labelOf))
   })
+
+  // t31：R3 终审 low backlog —— 反应使用记录全为 0 时不得输出「最高频反应（触发 0 次）」误导结论。
+  it('t31: 反应使用记录全为 0 时输出诚实文案，不声称「最高频」不写「触发 0 次」', () => {
+    const r = buildAiInsight(
+      fixture({
+        stage_funnel: [],
+        reaction_usage: [
+          { reaction: 'steam_burst', count: 0 },
+          { reaction: 'overheat', count: 0 },
+        ],
+      }),
+      labelOf,
+    )
+    expect(r.kind).toBe('reaction')
+    expect(r.headline).not.toContain('最高频')
+    expect(r.headline).not.toContain('0 次')
+    expect(r.headline).toContain('无触发记录')
+    expect(r.headline).toMatch(/检查埋点|引导玩家/)
+    expect(r.ctaPath).toBe('/admin/skills')
+  })
+
+  it('t31: 部分反应为 0 但最高频 > 0 时保持原有结论不退化', () => {
+    const r = buildAiInsight(
+      fixture({
+        stage_funnel: [],
+        reaction_usage: [
+          { reaction: 'steam_burst', count: 12 },
+          { reaction: 'overheat', count: 0 },
+        ],
+      }),
+      labelOf,
+    )
+    expect(r.kind).toBe('reaction')
+    expect(r.headline).toContain('蒸汽爆发')
+    expect(r.headline).toContain('最高频元素反应')
+    expect(r.headline).toContain('12 次')
+  })
 })

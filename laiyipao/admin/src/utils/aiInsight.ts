@@ -66,16 +66,29 @@ export function buildAiInsight(
   }
 
   // 规则 2：最高频元素反应。
+  // t31（R3 终审 low）：count 全为 0 时，「最高频」与「触发 0 次」是自相矛盾的误导 ——
+  // 没有任何触发就谈不上「最高频」。此时改说诚实结论：数据没记到反应，去查埋点或引导玩家用反应。
   const usage = data.reaction_usage ?? []
   if (usage.length) {
     const top = usage.reduce((a, b) => (b.count > a.count ? b : a))
     const rows: ChartRow[] = [...usage]
       .sort((a, b) => a.count - b.count)
       .map((x) => ({ label: labelOf(x.reaction), value: x.count }))
+    const evidence = describeDashboardChart({ title: '元素反应使用分布', chartType: 'bar', unit: '种', metric: '触发', rows }).label
+    if (top.count <= 0) {
+      return {
+        kind: 'reaction',
+        headline: '当前无触发记录，建议检查埋点或引导玩家使用反应',
+        evidence,
+        ctaLabel: '查看反应配方',
+        ctaPath: '/admin/skills',
+        asOf,
+      }
+    }
     return {
       kind: 'reaction',
       headline: `「${labelOf(top.reaction)}」是最高频元素反应（触发 ${top.count} 次），建议优先复核其配方平衡`,
-      evidence: describeDashboardChart({ title: '元素反应使用分布', chartType: 'bar', unit: '种', metric: '触发', rows }).label,
+      evidence,
       ctaLabel: '查看反应配方',
       ctaPath: '/admin/skills',
       asOf,

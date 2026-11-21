@@ -442,7 +442,20 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       </div>
     </div>
 
+    <div class="section-kicker">
+      <span class="section-kicker-cn">结算审计 · 重算与不符</span>
+      <span class="section-kicker-en">RECOMPUTE AUDIT / DRIFT & FRAUD</span>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">窗口重算</div><div class="kpi-value">{{ summary?.totals.total ?? '—' }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">不符数</div><div class="kpi-value">{{ summary?.totals.mismatched ?? '—' }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">不符率</div><div class="kpi-value">{{ summary ? pct(summary.totals.rate_permille) : '—' }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">生效档位</div><div class="kpi-value">{{ summary?.mode ?? '—' }}</div></div>
+    </div>
+
     <el-card shadow="never" class="mb">
+      <div class="filter-bar">
       <div class="toolbar">
         <el-pagination
           v-if="total > LEDGER_PAGE_SIZE"
@@ -462,6 +475,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           <el-option :value="720" label="最近 30 天" />
         </el-select>
         <el-button size="small" :loading="statsLoading" @click="loadStats">刷新总账</el-button>
+        <span class="result-count" aria-live="polite">窗口 {{ hours }}h · 共 {{ summary?.totals.total ?? 0 }} 条</span>
+      </div>
       </div>
 
       <div v-loading="statsLoading" class="stat-row">
@@ -557,7 +572,12 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前统计窗口内没有重算记录。可切换更长的窗口重新查看。</p>
+            <el-button class="empty-state-action" size="small" @click="loadStats">刷新总账</el-button>
+          </div>
         </template>
 </el-table>
       <div v-else class="muted" style="padding: 12px 0">窗口内没有重算记录。</div>
@@ -586,7 +606,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <span class="muted">共 {{ total }} 条</span>
       </div>
 
-      <el-table v-loading="loading" :data="rows" size="small" stripe>
+      <el-table class="data-grid" v-loading="loading" :data="rows" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column label="战报" width="70">
           <!--
@@ -694,4 +714,5 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 .stat-note {
   font-size: 11px;
 }
+.data-grid .el-table__cell { font-variant-numeric: tabular-nums; }
 </style>
