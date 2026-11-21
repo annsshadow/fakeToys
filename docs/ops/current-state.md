@@ -4804,3 +4804,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 附加要求已下发 page-core：signature.rs 改动后须重编 Linux ELF（rust:1.98-bullseye，禁 PE32+ 203/EXEC）原子重部署+健康检查 active+真浏览器重验 D2（saved:true→list 200→textarea 回显、0 pageerror）；修复文档 oa4rust/docs/ops/oa4rust-r328-personal-d1d2-fix.md §2 补记第三处修复根因；精确单提交含实改文件、push、HEAD=TRACK。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，D2 闭环后据实入账。
 
+## 321. R328 t124 修复收官复核：D1-D4 四处闭环（2026-11-22）
+- t124（page-core）完成，commit 949098544a0aa0744b090b15d4725a85288ce853 精确 8 文件（466+/27-）；队长独立复核不采信自述：HEAD=TRACK=949098544、工作树干净、暂存区空。
+- 四处修复 diff 核实：D1 改密吞业务错误信封（Personal.vue 两处 onSuccess 检查 resp.type===error→pwdError+toast.error+return，不改 SDK/成功路径）；D2 签名写读错配（personal_extend bridge 写 x_custom 同 id upsert + 前端解 data.signatures[0].value + watch 响应式）；D3 pre-existing TIMESTAMP 解码（signature.rs:130 Option<String>→Option<chrono::NaiveDateTime>，diff 确认仅此单行、ORDER BY/归属谓词/delete 未动）；D4 bridge UPDATE 未刷 created_at 致 list 排序取旧值（personal.rs:245 UPDATE/INSERT 均补 created_at=NOW()，不动 signature.rs）。
+- 队长独立定点复跑全绿：cargo test -p personal --lib 38 passed/0 failed（含 r328_signature_list_decodes_timestamp_created_at）；cargo test -p personal_extend --lib 22 passed/0 failed/1 ignored（含三项 R328 桥接用例）；pnpm exec vitest run Personal.business.contract.test.ts 12/12；全量 vitest 267 files/2159 tests 0 failed、typecheck exit 0。
+- 部署与真浏览器：后端 docker rust:1.98-bullseye 编 Linux ELF（禁 PE32+ 203/EXEC）原子替换+健康检查 active（CREATED_AT_SQL 校验含新 SQL）；PC build 原子替换。evidence.json（oa4rust/test-results/r328-personal-fix/，非物理真机）八断言：错误旧密码 HTTP200 type:error→✗old password mismatch+表单保留；签名 saved:true→list 200→textarea 回显新值 R328_SIGNATURE_1795286136086（created_at 02:35:36 > 旧 iVBORw== 01:48:18）；0 pageerror/0 API 失败。文档 57 行 <YOUR_TEST_DOMAIN> 占位 0 真值、敏感扫描 0 命中。t124 evidence_note 已附。
+- 边界：正确改密成功路径属破坏性写未授权未执行真改，源码级保持原逻辑；D1-D4 四处次生修复链（§320 扩 scope + 两处 inScope 次生）完整闭环。t125（design-reviewer 终审）已随 t124 解锁 in_progress，t127（R330 修复）同步解锁，t128 待 t127 完成。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，t125 verdict=pass 后关闭 R328。
+
