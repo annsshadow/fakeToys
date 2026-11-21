@@ -4323,3 +4323,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 根因闭环确认：t58『数据真空』→ t59 新建入口+INT4 绑定修复 → t60 独立复查，组织组树与部门树从 data:[] 变非空且持久，无回归；t61 终审依赖 t59/t60/t23 已齐备。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 236. R307 组织域数据真空修复终审收官（2026-11-21）
+- t61（design-reviewer，只读终审）verdict=pass / status=completed / findings=[]。三项验收闭环：①t59 新建入口真 UI 创建组织组/部门并刷新持久（组织树 7→8、部门树 0→1、create API 200 且 hasCreated=true）；②t60 真浏览器组织树 8 节点/部门树 1 节点、人员 21 条/5 chip，与 t58 data:[] 基线量化收敛，0 pageerror/API失败/中文错误条、2 张 1440×900 截图目视确认；③t14/t28 withTimeout/onMounted/错误态/重试契约真断言保留，desktop 255 文件/2095 passed、mobile exit0 全绿无回归。t61 本轮只读、无改码无提交。
+- 队长独立复核（不采信自述）：agent_teams_status 读 t61 status=completed、verdict=pass、findings=[]；独立全量复跑 desktop（DESKTOP_EXIT=0，255 workers）与 mobile（MOBILE_EXIT=0，70 workers）交叉验证通过；t59（d828a8b04，6 文件 INT4 i32 绑定修复）、t60（6898e2ca，1 文档非物理真机）队长已逐项定点复核（§234/§235），三段证据链完整；四份 gitignored evidence.json 均标注非物理真机、文档占位域名零真值。
+- R307 收官：t58 审计（后端数据真空）→ t59 新建入口+INT4 绑定修复 → t60 独立复查 → t61 终审 pass，组织域数据真实性缺陷闭环，无遗留 P0/P1。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
