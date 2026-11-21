@@ -4812,3 +4812,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 边界：正确改密成功路径属破坏性写未授权未执行真改，源码级保持原逻辑；D1-D4 四处次生修复链（§320 扩 scope + 两处 inScope 次生）完整闭环。t125（design-reviewer 终审）已随 t124 解锁 in_progress，t127（R330 修复）同步解锁，t128 待 t127 完成。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，t125 verdict=pass 后关闭 R328。
 
+## 322. R328 终审收官：t125 verdict=pass，R328 关闭（2026-11-22）
+- t125（design-reviewer，终审）完成：status=completed/verdict=pass/findings=[]，reviewed t124（commit 949098544 精确 8 文件）。队长独立复核终态：attempt d5446629、HEAD=TRACK=314ffc32f 稳定、工作树干净、只读终审未改码（工作树 DocumentApp 改动归属并行 t127）。
+- 终审结论：D1 两处 onSuccess 均检查 resp.type==='error'→pwdError+toast.error+return，真浏览器错误旧密码红✗+表单保留+无成功 toast，成功路径契约守住；D2 前端解 data.signatures[0].value+watch 响应式、后端 bridge 写 x_custom 与 list 同源且保留 x_person_signature 原写链、bridge 刷 created_at 保证新签名排首；D3 signature.rs:130 改 NaiveDateTime 解码、manager_list 未动。独立复跑 vitest 267/2159、cargo personal 38+personal_extend 22、typecheck 0 全绿；八断言 0 pageerror/0 API 失败；SDK/DDL 零改动、文档脱敏合规、祖先检查 OK。
+- 非阻塞观察：D1 两处 onSuccess 各弹一次 error toast 造成轻微 UX 重复红提示（业务正确，不在本轮范围，记延伸建议非 finding）；evidence sigList 字段为 HTML 导航快照非断言点，关键断言在 listOnReload API JSON。
+- 结论：R328（PC 个人中心 D1 改密吞错误 + D2 签名写读错配，含 D3/D4 两处次生）完整闭环并关闭。t127（R330 修复）与 t128（R330 终审）在途，继续 ≥1000 轮。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
