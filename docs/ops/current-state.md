@@ -4429,3 +4429,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R313 收官：R312 静态审计中价值候选『封装路径漂移』转化为真实潜伏缺陷并修复闭环；三封装从『命中 404』恢复为真实 200 调用，契约由覆盖率驱动升级为真断言路径，堵住漂移复发漏洞。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 255. R314 契约健康度静态审计（2026-11-21）
+- t80（design-reviewer，纯静态审计）commit 81cdaa4f5 精确 1 文档 91 行 oa4rust/docs/ops/oa4rust-r314-contract-health-audit.md。程序化对照 packages/apis/src/index.ts 全部 200 处 api.get/post/put/delete 封装 vs 后端方法 fixture（2618 条）+真实 .route 源码。三条静态坐实缺陷：F1（high 结构性）packages/apis/src 不在 desktop/mobile/route-methods 三个守卫任何扫描根（route-methods.test.ts:22-25 SRC_ROOTS 仅 desktop/src+mobile/src），R313 三漂移正因此只能靠临时专门契约发现；F2（medium）api-coverage-generated 只断言函数存在+吞异常『401/404 也是有效覆盖』无路径真断言；F3（high 静态）5 处无 @dead 封装方法/路径漂移（generalApi.dictItemCreate、jpushApi.templateUpdate、queryViewApi.search、queryViewApi.importModelList、programCenterApi.moduleInvoke），当前无视图消费方、线上 405/404 未证实、保守列待确认。R311 三契约+R313 三封装复核无残留 pass、181 契约假断言 0、文档 0 真值。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=81cdaa4f5、工作树干净、文档 0 真值；源码坐实 F1（SRC_ROOTS 确无 packages/apis/src）与 F3 三处后端注册（jpush template/{id} 仅 GET lib.rs:274、queryview/search 为 POST lib.rs:617、general dict/item/create 为 POST lib.rs:1078），与审计一致。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
