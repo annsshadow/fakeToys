@@ -4518,3 +4518,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 部署放行：t90 已结束，测试服空闲，队长 send_message 放行 t93 做后端 Linux ELF 原子部署 + 真浏览器复验（create 带 consumer→consume/list 可见、unread_count>0）；放行前 t93 只做代码+本地测试+提交。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 270. R317-A4 M2 系统消息写读列同源 + xcreateTime NULL 容错修复收官（2026-11-21）
+- t93（page-work，implementation）commit 18f9d5310 精确 3 文件（backend/crates/message/src/lib.rs +9/-3、tests.rs +87、docs/ops/oa4rust-r317-m2-consumer-column-fix.md 64 行）：两处真 bug 均 test-first RED→GREEN。
+- 缺陷一（批复主线 M2）：custom_create INSERT 只写规范列 consumer 未写读列 xconsumer，consume_list/unread_count 按 xconsumer 过滤致新消息对任何 consumer 不可见；修复 INSERT 补 xconsumer 列并复用 $5（远端 information_schema 确认两列均 text，无 E42P08）。
+- 缺陷二（补写后暴露的潜伏行映射 bug）：补 xconsumer 后 consume/list 从『恒空』变 HTTP500——lib.rs:97 用 Value::String(row.get("xcreateTime")) 非 Option 读 NULL（新消息与历史数据该列全 NULL），run.log 报 error deserializing column 6；改 get::<_,Option<String>>("xcreateTime").unwrap_or_default()，未改 SELECT SQL/admin 门禁/前端。超字面范围但位于 inScope lib.rs 且是达成 consume/list 可见验收的必要前提，如实记录。
+- 队长独立复核：git show --stat 精确 3 文件、HEAD=TRACK=18f9d5310、暂存区与工作树干净；diff 实读确认两处修复；独立复跑 cargo test -p message --lib 16 passed / -p message_assemble_communicate --lib 115 passed 均 exit0；文档 64 行占位域名 0 真值。
+- 新 Linux ELF（BuildID 81e7973c，Docker bullseye 强制重编）原子部署测试服 active；真浏览器 Playwright Chromium headless（非物理真机）复验：admin create 带具体 consumer→consume/list 200 含 marker 行可见、unread_count=1、DB 回读 consumer=xconsumer 同值、0 pageerror；证据 gitignored oa4rust/test-results/r317-m2fix/（evidence.json + 3 PNG）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
