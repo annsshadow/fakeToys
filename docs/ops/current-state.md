@@ -4632,5 +4632,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t104（qa-e2e，只读审计，文档 oa4rust/docs/ops/oa4rust-r321-h5-deep-audit.md）：H5 390x844 真实 UI 逐条走通知公告/收藏/个人中心设置/通讯录组织/文档文件/回收站/论坛回复闭环，甄别 T1 三域两族端点可见性；对照 R317 H5 审计（L1/L2/L4/L5 PASS，L3 无入口、L6 picker 无头限制）避免重复。
 - 派发 t105（page-core，只读审计，文档 oa4rust/docs/ops/oa4rust-r321-pc-deep-audit.md）：PC 1440x900 真实 UI 逐条走通知公告/文件管理上传新建删除闭环/CMS 笔记/论坛回复闭环/通讯录组织查看器/个人中心设置/搜索；对照 R300 A2/A3 与 R307/R309/R311/R314/R315 已修项避免重复。
 - 两任务写域为两份不同文档、互不重叠，可并行；均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 标注非物理真机，真缺陷/取证限制/产品语义三分，精确单提交。审计回收后据实甄别真伪再决定修复任务。
+
+## 290. R321 PC 审计回收：D1 文件删除回收站回显缺陷与派修（2026-11-21）
+- t105（page-core）完成并队长独立复核：commit fb673652dfcdf158306715a356ae96c090697503 精确 1 文档 57 行 oa4rust/docs/ops/oa4rust-r321-pc-deep-audit.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 标注非物理真机；PC 1440x900 真浏览器 8 模块 pageErrors=[]/0 API失败，7 模块通过，论坛回复与通知已读如实标取证限制不臆造。
+- D1（P2）真缺陷经队长源码级甄别并精确化根因：报告称三表族全不同源，队长核实新建写 FILE_FILE（file_core_entity/src/lib.rs:432-445）、删除 u2_file_delete_by_id 亦软删 FILE_FILE（file_assemble_control/routes.rs:286 + lib.rs:5035）、回收站 recycle_list 亦读 FILE_FILE（lib.rs:3997-3999）——三链同表族；真正根因是 FileManager.vue deleteMutation 的 onSuccess（:890-902）从未调用 loadRecycleBin()（:878，GET /api/recycle/list），软删成功但右侧回收站不刷新，与 :81/:85/:222 的『删除后进入回收站』承诺不符。属纯前端回显缺失，非后端 bug、非产品语义差异。
+- 派发 t106（page-core，implementation，deps 无、写域 FileManager.vue + FileManager.recycleRefresh.contract.test.ts + oa4rust/docs/ops/oa4rust-r321-file-recycle-fix.md，与在途 t104 H5 审计写域不重叠）：test-first RED→GREEN 锁定删除成功后刷新回收站并回显同名项，不改后端/表族/新建逻辑；PC build + 测试服原子部署 + 真 Chromium 新建→删除→回收站同名→恢复闭环 0 pageerror；精确 3 文件单提交。t105 evidence_note 已附。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
