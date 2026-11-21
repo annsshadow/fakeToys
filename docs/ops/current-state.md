@@ -4471,3 +4471,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：t85 commit stat 精确 1 文档、LOCAL=TRACK=15e2bca1f、暂存区干净、文档零真值、search-probe.json 坐实 D1；t86 commit stat 精确 4 文件、LOCAL=TRACK=7732f9e86、定点复跑 11 tests exit0、grep 逐处确认封装修复、evidence 标注非物理真机/封装探针。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 263. R315 t87 D1 搜索修复完成 / 终审派发（2026-11-21）
+- t87（page-core）commit c5929f192 精确 3 文件（94+/1-）：SearchApp.vue:90 把 `results.value=(r?.data??[])` 改为适配后端 {designList,viewList} 分组信封——两数组按 Array.isArray 归一化、映射 title=name/type=design|view/desc=category 合并为真正数组；新增 SearchApp.searchEnvelope.R315.contract.test.ts 53 行真断言（解包+映射+合并+保留端点），RED 4 failed/1 passed→GREEN 5/5；SearchApp.business/searchPages/Pages.aiStyle.R305b 三契约 10 tests 不回退；typecheck EXIT=0。
+- 真浏览器复验：测试服原子部署后 Playwright Chromium headless 1440×900（非物理真机）登录 /app/search，关键词 a 渲染 3 条真实结果（S3 查询…）、无匹配词显示『未找到结果』空态、pageErrors=[]/apiFailures=[]；证据 gitignored oa4rust/test-results/r315-search-fix/。文档 oa4rust/docs/ops/oa4rust-r315-search-envelope-fix.md 33 行 <YOUR_TEST_DOMAIN> 占位 0 真值。
+- 队长独立复核（不采信自述）：git stat 精确 3 文件、LOCAL=TRACK=c5929f192、暂存区干净；diff 实读确认为信封解包映射；定点复跑 4 files/15 tests exit 0（新契约 5/5 + 三现有 10/10）；文档零真值、evidence 坐实 3 条+空态+0 错误、非物理真机标注合规。
+- t88（design-reviewer，kind=review，reviewedTaskId=t87，deps t85/t86/t87/t23）R315 只读终审已派发：逐条复核 D1 闭环、t86 F3 处置诚实、其余 9 闭环无回归、全量测试/typecheck 无回归，findings=[] 才 pass。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
