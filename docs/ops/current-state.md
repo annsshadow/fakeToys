@@ -4303,3 +4303,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 至此 R300 设计令牌→R301 框架升级→R302 集成打磨→R303 缺陷闭环→R304 契约债务清零→R305 业务/H5 视觉深化→R306 admin 全域视觉消费，七轮视觉重构链全部收官；全量测试 desktop 254/2089 + mobile 70/452 全绿。下一轮方向待定（用户目标 ≥1000 轮持续迭代非终态）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 233. R307 组织域数据真空根因审计（2026-11-21）
+- t58（qa-e2e，只读审计）commit 6eb459af 精确 1 文档 54 行 docs/ops/oa4rust-r307-org-data-audit.md。根因坐实（真登录测试服 + 接口取证）：后端组织组与部门数据真空——PUT group/list/like 与 GET departments/tree 均 HTTP200/success 但 data:[]，而 POST person/list/filter 返回真实 21 条人员数据，证明组织域非全空、前端信封解析正确。真 UI 补数两轮无效（目录页『加载部门树』后接口仍空；org 空态下 org-tree-retry 按钮 v-if 未渲染、buttonCount=0）。hotpic/appinfo 的 loadingText=true 系探针正则误匹配统计卡标签、目视正常渲染无缺陷。
+- 源码定位：OrgViewer.vue:1422-1439 loadOrgTree→group/list/like、模板:130/:132 空态；OrgDirectoryApp.vue:216-236 loadDeptTree→departments/tree、:237-260 loadPersonFilter→person/list/filter（解析正确）。t28 已修复名册错误态/重试/onMounted，剩余空态不在前端而在后端数据。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、全文根因分级严谨（真空 vs 接口错 vs 卡死明确区分、确定性等级如实）、<YOUR_TEST_DOMAIN> 占位 0 真值、非物理真机；证据 9 文件（6 PNG + probe/refill/retry 3 JSON）齐全；HEAD=TRACK=6eb459afa。审计结论：需后端补组织/部门种子数据，或前端补新建部门入口+配套接口；非前端解析 bug。
+- 修复方向待决策（本轮只审计不修）：后端侦察已发现 departments/tree 有实装（organization_assemble_control/src/u2_org.rs:1252）与 KNOWN_BACKEND_GAPS 回归测试（tests_u2.rs:712），需判断真空是缺种子还是接口逻辑问题后再派修复任务。遵循用户『缺接口评估后补、三端都可改』要求。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
