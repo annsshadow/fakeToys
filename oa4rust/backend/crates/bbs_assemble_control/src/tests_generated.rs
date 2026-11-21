@@ -425,4 +425,75 @@ mod tests {
         assert!(func.contains("&[&id]"), "must reuse section id (no wrong forum)");
         assert!(func.contains("map_err(|e| AppError::internal_with_source"), "must fail loud on DB error");
     }
+    /// R323 t113 静态契约：u2 族三端点 SELECT 必须含 create_time::text，
+    /// 映射必须产出 camelCase createTime（与前端 createTime ?? create_time 兼容）。
+    #[test]
+    fn test_reply_time_fields_static_invariants() {
+        let src = include_str!("u2.rs");
+        let gs = src.find("pub async fn u2_reply_get").expect("u2_reply_get");
+        let ge = src[gs..].find("\npub async fn ").map(|i| gs + i).unwrap_or(src.len());
+        let gf = &src[gs..ge];
+        assert!(gf.contains("create_time::text"), "u2_reply_get SELECT must include create_time::text");
+        assert!(gf.contains("\"createTime\""), "u2_reply_get must map createTime");
+        let ls = src.find("pub async fn u2_reply_filter_list").expect("u2_reply_filter_list");
+        let le = src[ls..].find("\npub async fn ").map(|i| ls + i).unwrap_or(src.len());
+        let lf = &src[ls..le];
+        assert!(lf.matches("create_time::text").count() >= 2, "both reply/filter/list SELECT branches must include create_time::text");
+        assert!(lf.contains("\"createTime\""), "reply/filter/list must map createTime");
+        assert!(lf.contains("unwrap_or"), "createTime mapping must be Option/String tolerant");
+    }
+
+    /// R323 t113 行为契约：u2 族 reply/filter/list 与 reply/{id} 必须返回
+    /// 非空 createTime（PC 回复卡片时间恒空的根因）。
+    /// live-gated：DB 不可达显式跳过；修复前 createTime 缺失 → RED。
+    #[tokio::test]
+    async fn test_reply_time_fields_present() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping test_reply_time_fields_present: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let marker = format!("r323-time-{}", uuid::Uuid::new_v4());
+        let topic_id = format!("{}-topic", marker);
+        let reply_id = format!("{}-reply", marker);
+        let creator = "r323-time-probe";
+        {
+            let c = pool.get().await.unwrap();
+            let author = creator.to_string();
+            let section_id = format!("{}-section", marker);
+            c.execute("INSERT INTO x_bbs_topic (id, title, content, author_id, creator, section_id, create_time) VALUES ($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT (id) DO NOTHING", &[&topic_id, &marker, &marker, &author, &creator, &section_id]).await.unwrap();
+            c.execute("INSERT INTO x_bbs_reply (id, subject_id, topic_id, content, author_id, creator, create_time) VALUES ($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT (id) DO NOTHING", &[&reply_id, &topic_id, &topic_id, &marker, &author, &creator]).await.unwrap();
+        }
+        let list_resp = crate::router(pool.clone()).oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri("/api/bbs/assemble/control/reply/filter/list/page/1/count/100")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({ "topicId": topic_id }).to_string()))
+                .unwrap(),
+        ).await.unwrap();
+        assert_eq!(list_resp.status(), StatusCode::OK, "reply/filter/list must be 200");
+        let lb = axum::body::to_bytes(list_resp.into_body(), usize::MAX).await.unwrap();
+        let lv: serde_json::Value = serde_json::from_slice(&lb).unwrap();
+        let data = lv["data"]["data"].as_array().expect("reply list data.data must be array");
+        let found = data.iter().find(|r| r["id"].as_str() == Some(reply_id.as_str()));
+        assert!(found.is_some(), "reply/filter/list must return created reply");
+        let ct = found.unwrap()["createTime"].as_str().unwrap_or("");
+        assert!(!ct.is_empty(), "RED: reply/filter/list createTime must be non-empty; got={:?}", found.unwrap());
+        let get_resp = crate::router(pool.clone()).oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/bbs/assemble/control/reply/{}", reply_id))
+                .body(Body::empty()).unwrap(),
+        ).await.unwrap();
+        assert_eq!(get_resp.status(), StatusCode::OK, "reply GET endpoint must be 200");
+        let gb = axum::body::to_bytes(get_resp.into_body(), usize::MAX).await.unwrap();
+        let gv: serde_json::Value = serde_json::from_slice(&gb).unwrap();
+        let gct = gv["data"]["createTime"].as_str().unwrap_or("");
+        assert!(!gct.is_empty(), "RED: reply GET createTime must be non-empty; got={:?}", gv["data"]);
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_bbs_reply WHERE id = $1", &[&reply_id]).await.unwrap();
+        c.execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id]).await.unwrap();
+    }
 }

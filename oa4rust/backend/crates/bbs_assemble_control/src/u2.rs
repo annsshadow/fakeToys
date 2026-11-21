@@ -1159,7 +1159,7 @@ pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, topic_id, content, creator, accepted FROM x_bbs_reply \
+            "SELECT id, topic_id, content, creator, accepted, create_time::text FROM x_bbs_reply \
              WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
@@ -1186,6 +1186,12 @@ pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
                     "accepted".to_string(),
                     Value::Bool(r.get::<_, Option<bool>>("accepted").unwrap_or(false)),
                 ),
+                (
+                    "createTime".to_string(),
+                    r.get::<_, Option<String>>("create_time")
+                        .map(Value::String)
+                        .unwrap_or(Value::String(String::new())),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("reply not found"))),
@@ -1205,7 +1211,7 @@ pub async fn u2_reply_filter_list(
         Some(topic_id) => {
             let rows = client
                 .query(
-                    "SELECT id, topic_id, content, creator FROM x_bbs_reply \
+                    "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
                      WHERE deleted_at IS NULL AND topic_id = $1 \
                      ORDER BY create_time DESC LIMIT $2 OFFSET $3",
                     &[&topic_id, &count, &offset],
@@ -1224,7 +1230,7 @@ pub async fn u2_reply_filter_list(
         None => {
             let rows = client
                 .query(
-                    "SELECT id, topic_id, content, creator FROM x_bbs_reply \
+                    "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
                      WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
                     &[&count, &offset],
                 )
@@ -1257,6 +1263,12 @@ pub async fn u2_reply_filter_list(
                     r.get::<_, Option<String>>("creator")
                         .map(Value::String)
                         .unwrap_or(Value::Null),
+                ),
+                (
+                    "createTime".to_string(),
+                    r.get::<_, Option<String>>("create_time")
+                        .map(Value::String)
+                        .unwrap_or(Value::String(String::new())),
                 ),
             ]))
         })
