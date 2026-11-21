@@ -4401,3 +4401,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 系统按质量门自动生成 t75（repair，page-core，修三契约；已 in_progress）+ t76（review，design-reviewer，复核 t75；pending）。队长已向 page-core 下发精确修复口径：只改契约断言、不改业务源码；calWriteCE 移出黑名单但保留其余断言；TDZ 断言改精确顶层判定但保留守护力（顶层调用移回声明前仍须失败）；白名单只补登该一条真实端点；底线 desktop 全量恢复 0 failed、typecheck exit0。t73 needs_revision 不可作下游依赖，R311 收官待 t75/t76。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 250. R311 三过时契约同步修复复核（2026-11-21）
+- t75（page-core，repair-round-2）commit 0c56d5351 精确 3 契约文件（CalendarApp.business.contract.test.ts 10+/3- + CalendarApp.tdz.contract.test.ts 18+/4- + tests/contracts/mobile-endpoints.test.ts 2+，23+/7-），仅同步契约、未改业务源码。三处修复：①business 黑名单移除 calWriteCE（R311 已是新建日历业务入口）+ 改词边界正则消除 calWrite 子串假阳性；②tdz 用花括号栈深度判定『顶层调用』——排除函数体内 depth>0 的 await 调用、取最早顶层调用保留守护力（任一顶层调用移回声明前仍须失败）；③mobile-endpoints 白名单补登真实 POST /api/calendar_assemble_control/calendar。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=0c56d5351、工作树干净；diff 实读确认 TDZ 花括号栈判定保留守护力（非简单放宽）；独立从 oa4rust 根跑全量 vitest 258 files/2110 passed exit 0（从 t73 的 3 failed/2107 passed 恢复、与 t65 基线 2104 相比 +6 为 R311 新增契约，全绿）；三处契约 + R311 契约定点 4 files/17 tests exit 0。t75 自报『200 files/1104 tests』系其命令口径偏差，队长以 oa4rust 根全量复跑为准。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
