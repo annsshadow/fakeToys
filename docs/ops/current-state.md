@@ -4310,3 +4310,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 修复方向待决策（本轮只审计不修）：后端侦察已发现 departments/tree 有实装（organization_assemble_control/src/u2_org.rs:1252）与 KNOWN_BACKEND_GAPS 回归测试（tests_u2.rs:712），需判断真空是缺种子还是接口逻辑问题后再派修复任务。遵循用户『缺接口评估后补、三端都可改』要求。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 234. R307 组织/部门新建入口与 unit_create INT4 绑定修复（2026-11-21）
+- t59（page-comm）commit d828a8b04 精确 6 文件 209+/3-：OrgViewer.vue 补『新建组织组』入口（api.post /control/group）、OrgDirectoryApp.vue 补『新建部门』入口（api.post /control/unit 带 parentId），成功后刷新树、失败中文提示；保留 t14/t28 withTimeout/重试/onMounted。契约 OrgCreateEntry.R307.contract.test.ts 6 项 RED 4→GREEN 6。
+- 后端真 bug test-first 修复：部门新建 POST /control/unit 原返回 HTTP 500，运行日志坐实 `WrongType { postgres: Int4, rust: i64/String }`——unit_create 的 `$4::int` 绑定类型不匹配；三轮实证（String→i64→unit_edit to_string 范式均失败）后确认 i32 是唯一接受 INT4 的 Rust 整数类型，改 `as_i64().map(|v| v as i32).unwrap_or_default()`，tests_u2 新增 RED 测试 RE→GREEN，cargo test -p organization_assemble_control --lib 138 passed。遵循用户授权『三端都可改』，最小改动只动 unit_create sort 绑定。
+- 队长独立复核（不采信自述）：git show --stat 精确 6 文件、diff 实读确认 i32 绑定；定点复跑前端契约 6/6 与后端 138 passed 均 exit0；文档 28 行 <YOUR_TEST_DOMAIN> 占位、真值扫描 0 命中（真域名仅在 gitignored 证据目录）；evidence.json pageErrors=[]/passed=true，部门树 deptRows 0→1、组织树 treeNodes 7→8、刷新保留、POST unit/group 均 200、source=Playwright Chromium headless not a physical device；HEAD=TRACK=d828a8b04、暂存区干净。
+- 根因闭环：t58 审计的『数据真空』经产品自身真实 UI 新建流程补数解决，组织树/部门树从 data:[] 变为非空且持久；qa-e2e t60 复查已放行（待独立验证）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
