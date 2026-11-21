@@ -344,6 +344,73 @@ admin 沿用 `.section-title` / `.kpi-*` / `.toolbar` / 真 `<table>` / `.glass-
 - 页面实现归属：h5-ui / admin-ui 在各自写域补页面级 class 与数据断言；本节契约只守规范映射，不替页面实现背书。
 - 截图门禁：登录页与验真页各交 1 张 390×844、ContentView 与 EconomyView 各交 1 张 1440×900 真浏览器截图（标注「非物理真机」），由 design-reviewer 按 §1B.4 肉眼复核 AI 是否可见、是否打断流程。
 
+## 1D. 剩余页面与「可见 AI 感」补齐规范（R5 · 逐页可执行映射）
+
+> 依据：R2–R4 真浏览器截图归档与 2026-11-22 源码审计（截图统一标注「非物理真机」，不等同物理设备实测）。§1B/§1C 已把 19 页 H5 与四视图 admin 纳入结构规范，但下列页面首屏仍缺「肉眼可辨的 AI 结论」：H5 announcements / login / signin / stage / verify 仍是基线或只有作战简报；index / equipment / reactions 已有 R2/R3 AI 卡。admin Skills / Users / Recomputes / Battles 已有六组件但无 AI 行，Levels 已有 `.ai-insight` 达标。本节只钉住映射与验收下限，不替页面实现背书。
+
+### 1D.1 范围与升级状态（以当前代码为准）
+
+| 端 | 页面 / 视图 | 状态 | 本轮动作 |
+|---|---|---|---|
+| H5 | `announcements.vue` | 待升级 | 补 SectionKicker + AI 公告摘要行 |
+| H5 | `equipment.vue` | 已达标（R3） | 保持，不重复改造 |
+| H5 | `index.vue` | 已达标（R2） | 保持首屏 AI 战术洞察卡 |
+| H5 | `login.vue` | 待升级 | 落地 §1C.3 轻量 AI 行 |
+| H5 | `reactions.vue` | 已达标（R3） | 保持，不重复改造 |
+| H5 | `signin.vue` | 待升级 | 补 KPI + AI 领取提醒 |
+| H5 | `stage.vue` | 待升级 | 在作战简报后补 AI 推进建议 |
+| H5 | `verify.vue` | 待升级 | 落地 §1C.3 轻量 AI 复核行 |
+| admin | `LevelsView.vue` | 已达标 | 保留 `.ai-insight`，仅维持 |
+| admin | `SkillsView.vue` | 待升级 | 补 AI 技能/热量结论 |
+| admin | `UsersView.vue` | 待升级 | 补 AI 异常账号结论 |
+| admin | `RecomputesView.vue` | 待升级 | 补 AI 复算异常结论 |
+| admin | `BattlesView.vue` | 待升级 | 补 AI 战报结论 |
+
+### 1D.2 AI 四判据是硬下限（沿用 §1A.1，缺一不算）
+
+1. **肉眼可辨**：首屏（H5 390×844 / admin 1440×900）不滚动即可看到带**可见汉字「AI」**的文字徽章 + 中文标题；纯图标、英文 AI、光晕或渐变**不算**。
+2. **有据可查**：结论必须是**真实数据结论**，由页面已取到的字段经确定性规则推出，并在同卡显示**依据 + 数据时间/范围**；写死文案冒充智能不算。
+3. **可行动**：每条结论带一个 **CTA**，指向与结论对应的真实页面或真实按钮；没有可跳转目标时宁可不渲染 AI 行。
+4. **诚实标注**：标注「规则引擎 · 基于本地/服务端数据」，**不宣称 GPT**/大模型/实时学习，不编造置信度或数值。
+
+四条缺一不算 AI 感。空数据按 §1A.4 给智能空态（说明缺什么 + 下一步动作），禁止「AI 思考中…」循环动画；R1 教训照旧生效：`rgba(255,255,255,.022)` 网格 + `rgba(...,.06)` 辉光在真截图上肉眼不可辨，**不算**改造，也**不算** AI 感。
+
+### 1D.3 H5 五页待升级逐页映射
+
+以下每行都是可执行映射：眉题 / KPI / FilterBar / DataGrid / EmptyState / AI 结论来源 / CTA 必须一次给全；`已达标` 三页不重复改造，保持 §1A/§1B 对应行。
+
+| 页面 | 眉题（SectionKicker） | KPI（KpiStrip） | FilterBar / DataGrid / EmptyState | AI 结论来源（真实数据，必须显示依据与时间/范围） | CTA 指向 |
+|---|---|---|---|---|---|
+| `announcements.vue` | 「公告与版本」 | `items.length` 条公告 / 近 7 日新增 / 未读（无字段写 0 并注明） | FilterBar 用 `annFilters`（all/7d/30d）；DataGrid 按 `groupedByMonth` 分组；EmptyState「近 30 天没有公告，去看看战报」 | AI 结论：从 `items` 最新一条 + `groupedByMonth` 密度推出「本月更新 N 条，最新：{title}」；依据「公告列表 · 近 30 天」 | CTA：有详情链接则打开该公告；无链接则跳 `battles.vue` 查看变更影响 |
+| `login.vue` | 例外页：SectionKicker「欢迎回来」 | 不编造 KPI（无用户数据） | 不新增 FilterBar/DataGrid；EmptyState 只用于加载失败提示，焦点环保留 | AI 结论（轻量）：沿用 §1C.3 的 `role="note"` 单行；有本机缓存才说「上次停在第 X 关 / 得分 Y」，无缓存说「登录后首页会按构筑给建议」；必须不新增输入、不弹窗、不打断提交；依据「本机缓存 · 上次登录」 | CTA：不新增按钮，登录按钮仍是唯一主操作；登录后由首页 AI 卡承接 |
+| `signin.vue` | 「每日签到」 | `claimedCount` / `cycleDays` 周期 / 离线补偿 `offlineReward.coin` | DataGrid 渲染 `tasks[].progress/target`；EmptyState「今日任务已领完，明天再来」；FilterBar 按 SCOPES | AI 结论：由 `claimedCount`、`calendarDayCount/cycleDays`、`offlineReward.coin/cap_hours` 与 `tasks[]` 缺口推出「还差 N 天满 cycles，先领 X 币离线补偿 / 先做任务 Y」；依据「签到记录 · 本周期」 | CTA：跳到未完成任务或缺席补签按钮；无可领项则指向 `index.vue` |
+| `stage.vue` | 「作战推进」 | `chapterStars/chapterTotal` 星数 / 可挑战章节 / 体力 `energyBudget` | DataGrid 列 `chapterOverview`；EmptyState「章节数据同步中」；FilterBar 按章节 | AI 结论：由 `difficultyCurve`、`terrainIndex`、`bossLevels`、`chapterStars` 与 `activeLevelId` 推出「第 N 关坡度最大（星数 X/Y、地形 Z），优先补该关」；依据「关卡曲线/地形/星数 · 当前存档」 | CTA：直达推荐关卡（`store.unlockedLevel` 已解锁时）或 `equipment.vue` 补强 |
+| `verify.vue` | 「战斗验真」 | `replayInfo` 三要素齐备数 / `verifyHistory` 次数 / 匹配状态 | DataGrid 列 `verifyHistory` 与 `replayInfo`；EmptyState「暂无可复核的复现信息」 | AI 结论（轻量）：仅在 `replayInfo` 到位后显示「关卡/种子/构筑齐备；`result.matched` 与 `expected_hash` 一致才可作为证伪依据」；缺项逐项列出；依据「复现信息 · 本次验真」；不伪造思考或置信度，不插入步骤 | CTA：复用已有「本地重放」按钮，验真完成后跳 `battles.vue` 对照战报 |
+
+### 1D.4 admin 五视图逐页映射（四页待升级，一页已达标）
+
+| 页面 | 眉题（SectionKicker） | KPI（KpiStrip） | FilterBar / DataGrid / EmptyState | AI 结论来源（真实数据，必须显示依据与时间/范围） | CTA 指向 |
+|---|---|---|---|---|---|
+| `LevelsView.vue` | 已达标：现有 SectionKicker | 已达标：kpi-strip | 已达标：toolbar/data-grid/empty-state | AI 结论已存在：`clear_rate` 最弱关；保持 `.ai-insight`，不在本节重复改造 | CTA 保留复核该关卡 |
+| `SkillsView.vue` | 「技能与配方」 | `skills.length` / 可合成配方数 / 平均热量 | FilterBar 按 `ELEMENT_LABEL`；DataGrid 列 `skills` + `recipes`；EmptyState「暂无技能数据」 | AI 结论：由 `dpsPerHeat(s)`（`base_damage*1000/cooldown_ms/heat_cost`）与 `recipes` 缺口推出「{技能} 每热量 DPS 最高但未入配方，优先替换」；依据「技能/配方表 · 当前种子版本」 | CTA：切到该技能详情或配方页 |
+| `UsersView.vue` | 「用户与验真」 | `users.length` / 总量 `total` / 可疑账号数 | FilterBar 按验真三态；DataGrid 列 `users`；EmptyState「暂无用户」 | AI 结论：按 `suspicious(u) = power>5000 && max_stage<=1` 从 `users` 推出「N 个账号战力与关卡不符，优先验真」；依据「用户列表 · 当前筛选」 | CTA：打开对应用户详情抽屉并定位验真三态 |
+| `RecomputesView.vue` | 「复算一致性」 | `summary.totals.total` / `summary.totals.mismatched` / `rate_permille` | Toolbar 按 `engine.status`；DataGrid 列 `summary.levels[].mismatched/max_user_mismatches`；EmptyState「暂无复算批次」 | AI 结论：由 `rate_permille`、`breaker_rate_permille` 与 `summary.levels` 最高不符关卡推出「第 N 关不符率最高，先复核」；依据「复算汇总 · 当前批次」；`shapeHint()` 仅作辅助文案 | CTA：定位该关卡复算明细 |
+| `BattlesView.vue` | 「战报概览」 | `battleSummary.count` / `winRate` / `mismatched` / `suspicious` | FilterBar 按结果/时间；DataGrid 列本页 battles；EmptyState「暂无战斗记录」 | AI 结论：由 `battleSummary` 推出「胜率 {winRate}，异常 {suspicious} 场，先复核最近一场不符」；依据「本页战报 · 当前筛选范围」 | CTA：打开对应战报详情或跳 `RecomputesView.vue` |
+
+### 1D.5 令牌、反模式与空态
+
+- 本节**不新增视觉令牌**：复用 §1A.6 的 `--ai-accent` / `--ai-ink` / `--ai-halo` / `--ai-glow`（admin 为 `--lyp-ai-*`）与 §1B/§1C 的 `--accent-soft`、`--progress-track`。双端 `--lyp-token-version: lyp-tokens-v1` 与 `--lyp-r3-version: lyp-tokens-v3-r3` 必须同时保留，禁止误升 `lyp-tokens-v4`。
+- AI 徽章文字用 `--ai-ink` / `--lyp-ai-ink`，边框用 `--ai-accent` / `--lyp-ai-accent`；`--ai-halo` 只作装饰，不能单独承载文字。正文仍走文本四阶，不把元素 18% soft 叠 panel-3 当卡底（已实测 fire 3.89 / ice 4.04 不达标）。
+- 反模式一律**不算**改造成果：`rgba(255,255,255,.022)` 网格、`rgba(...,.06)` 辉光、只换色不加结构、只有英文 AI 或纯图标、只有结论没有依据、写死文案、空态写「暂无数据」。
+- 空态卡高度与正常态一致；文案结构固定为「缺什么数据 + 下一步动作」，CTA 与结论一一对应。
+
+### 1D.6 test-first 契约与验收
+
+- 先 RED 后 GREEN：`laiyipao/admin/tests/r5Mapping.contract.test.ts` 与 `laiyipao/miniapp/src/styles/r5Mapping.contract.test.ts` 在 §1D 落盘前必须失败，落盘后转 GREEN；页面实现契约由 h5-ui / admin-ui 在各自写域补齐。
+- 断言范围：六个子条款存在；八页 H5 与五视图 admin 均出现且区分已达标/待升级；五页 H5 与四视图 admin 映射行含真实数据字段、AI 结论与 CTA；四判据写死为下限；低透明度反模式被明文禁止；双端 v1/v3 锚点存在且无 v4 误升。
+- **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts`、`r4Mapping.contract.test.ts` 的任何判据；新契约只增不减。
+- 验收门禁：双端全量测试绿；H5 五页各交 1 张 390×844、admin 四视图各交 1 张 1440×900 真浏览器截图，文件标注「非物理真机」，由 design-reviewer 按 §1A.7 / §1B.4 肉眼复核 AI 徽章是否可辨、CTA 是否可达、是否有数据依据。
+
 ---
 
 ## 2. 色彩系统
