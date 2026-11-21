@@ -4608,6 +4608,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 285. R320 甄别收官（判定 B）+ 对称删除修复派发（2026-11-21）
 - t101（qa-e2e）完成并队长独立复核：commit a130e9c1e380356cad89205f5cd1b72f85d460b2 精确 1 文档 74 行 oa4rust/docs/ops/oa4rust-r320-section-delete-orphan-triage.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机；判定 B 真缺陷 P2 成立——真浏览器建版块→桥接 forum 可见→真 UI 删除→sectionAfter.present=false 但 forumAfter.visible=true/pickerHasName=true/orphanTopic=true，31 次 API 0 失败/0 pageerror。t101 evidence_note 已附。
 - 派发 t102（page-work，implementation，deps t101+t23，后端-only 写域不与在途任务重叠）：选方向一对称桥接删除——section_delete 成功删 section 后按同 id 软删 x_bbs_forum（复用 u2.rs:1433 UPDATE ... SET deleted_at=NOW() 口径，forum_view_all 按 deleted_at 过滤自然隐藏），无半状态、历史无桥接 forum 软删 affected=0 不误判失败、真 DB 错误 fail loud；admin 门/creator/section-list 读链/t98 建桥接/伪桥接第三表未改。关联主题不自动删（避免破坏性改动），文档如实标注为已知边界交产品决策。
+
+## 286. R320 终审任务预建（2026-11-21）
+- 预建 t103（design-reviewer，review，round=1，reviewedTaskId=t102，deps t101+t102+t23）：只读终审 t101 甄别 B + t102 对称桥接删除修复，确认孤儿 forum 缺陷闭环且 R318 BBS 桥接（t98）/R319/R300-R317 既有修复无回归；verdict=pass 且 findings=[] 才关闭 R320，需修订按结构化 findings 上报且 needs_revision 标 failed。
+- 时序：t102 为后端单工作树+单二进制串行改动；t103 待 t102 完成后自动解锁，符合『写域不重叠才并行、后端改动串行』纪律。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 - test-first RED→GREEN（cargo test -p bbs_assemble_control --lib 基线 47 + 新增 ≥1）+ 测试服 Linux ELF 原子部署（禁 PE32+）+ 真浏览器删版块后 H5 forum/view-all 与 picker 不再可见/0 API失败；文档 oa4rust/docs/ops/oa4rust-r320-symmetric-delete-fix.md 脱敏、精确单提交。若方向一与产品语义冲突先回报队长勿强行实现。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
