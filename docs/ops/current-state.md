@@ -4380,3 +4380,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R312 快照结论：本轮为静态审计快照、不代表项目完成；封装路径漂移等候选留后续轮次按真浏览器实测决策。与 t70/t71（R311 建日历入口）并行执行、写域不重叠。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 246. R311 PC 建日历入口与三修复复核（2026-11-21）
+- t70（page-core）commit b10f73e5c 精确 3 文件（CalendarApp.vue 91+/7- + CalendarCreateEntry.R311.contract.test.ts 62 行 + 文档 39 行，185+/7-）。除补可见『+ 新建日历』入口（data-testid=calendar-create-entry + 表单替 prompt）外，真浏览器诊断出并 test-first 修复两个额外真 bug：②loadCalendars 原取 r.data.list 无法识别后端 `{data:{my_calendars,unit_calendars,follow_calendars}}` 信封致 chip 不增长，改 my_calendars 优先回退；③后端 calendar legacy(Pool/原始SQL) 与 core_entity(sea_orm) 双轨隔离——原创建走 core/entity 表而列表/事件走 legacy 表致详情 404，统一改走 legacy 同轨（/api/calendar/calendar/create 等）。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=b10f73e5c、暂存区纯净；定点复跑 CalendarCreateEntry.R311 契约 6/6 exit 0；diff 实读坐实三修复；源码确认 legacy 创建端点真实存在（calendar/src/routes.rs:24 + lib.rs:269 handler）；文档 39 行 <YOUR_TEST_DOMAIN> 占位 0 真值、L9 诚实标注任务引用文档查无文件、以源码侦察为准未臆造；H5 对应契约 5/5 亦 GREEN。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
