@@ -8,7 +8,6 @@
       <p class="empty-hint">管理门户脚本，创建后可在脚本版本历史中还原；暂无脚本时从「新建」开始。</p>
     </div>
     <div class="script-workbench ai-panel">
-      <div class="script-loading ai-skeleton-line" aria-hidden="true"></div>
       <ScriptWorkbench title="门户脚本" :adapter="adapter" with-category />
     </div>
   </div>
