@@ -4719,5 +4719,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t116（qa-e2e）完成并队长独立复核：commit e7eb25e28dcba907b89f95d899c6ea1867d6fa5a 精确 1 文档 57 行 oa4rust/docs/ops/oa4rust-r324-h5-attendance-audit.md；HEAD=TRACK=e7eb25e28、暂存区与工作树全干净；文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值非物理真机；evidence.json source=NOT physical device。
 - 判定：六段真浏览器 A0 preCheck 200 / A3 自助请假 POST selfholidaysimple 200 / A4 月度 v2/my/* 三端点 200 / A5 加载失败 500 兜底保留旧态+错误提示均 PASS，0 pageerror；A1/A2 打卡写因测试账号 canCheckIn=false 按钮真实 disabled 属取证限制（禁伪造写）；首轮 A0/A3 两处脚本归因/选择器误报已用 DOM 探查+补测更正。0 新增 P0/P1/P2 真缺陷，产品语义差异无，判据三分合规。t116 evidence_note 已附。
 - t115（page-core PC 考勤审计）仍在途；待其回收后据实甄别，R324 再整体收官。项目 ≥1000 轮非终态。
+
+## 306. R324 PC 考勤审计收官 + 三处前端修复派发（2026-11-21）
+- t115（page-core）完成并队长独立复核：commit a52caf1b5 精确 1 文档 95 行 oa4rust/docs/ops/oa4rust-r324-pc-attendance-audit.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。判 D1[P1]（AttendanceApp.vue:362 `records.value=r.data?.list??[]` 而后端 attendancedetail_filter_list lib.rs:1341-1345 返回 data 为数组，创建 200/count=1 但 rowsAfterRefresh=0）、D2[P2]（toggleAttType :454-465 对 HTTP200 type:error 不检查仍弹成功 toast，与真实 success 无法区分）；R1 建删后不刷新次生风险、L1 无种子取证限制、P1 正常项如实标注。三处源码队长已定点复核。evidence_note 已附。
+- 派发 t117（page-core，implementation，deps t115，写域 AttendanceApp.vue + 契约 + 新文档，与审计文档不重叠）：三处同一文件合并 test-first 修复——D1 双形态解包（数组 data 与 {list,total} 归一）、D2 error 信封走 toast.error 分支并 return、R1 建/删明细后 invalidateQueries/refetch；不改后端返回结构/SDK/H5/端点；PC build + 原子部署 + 真 Chromium 新建→列表即时出现→统计变化→刷新持久→删除→即时一致，error/success toast 可区分，0 pageerror；文档 oa4rust/docs/ops/oa4rust-r324-pc-attendance-fix.md 脱敏、精确单提交三文件。
+- 预建 t118（design-reviewer，review，round=1，reviewedTaskId=t117，deps t115+t116+t117）：只读终审 R324 双审计+D1/D2/R1 修复链，verdict=pass/findings=[] 才关闭 R324。t116（H5 考勤 0 真缺陷）已于 §305 收官。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
