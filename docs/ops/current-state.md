@@ -4733,5 +4733,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 308. R324 收官（2026-11-21）
 - t118（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings=0、只读未改码未提交；HEAD=TRACK=dfd82bb5 稳定、工作树干净。逐条核对 D1 双形态解包、D2 error/success 双分支可区分（error toast『✗ setting not found』与 success toast『✓ 已更新』）、R1 建删刷新；契约 8/8、全量 vitest 266 files/2147 tests 0 failed；evidence 八断言全 true、0 pageerror/0 API失败、非物理真机；三文档 <YOUR_TEST_DOMAIN> 占位 0 真值；R318-R323 既有修复无回归。非阻塞观察（04-success 截图两条 toast 时序残留）经队长核实反而佐证双分支可区分，非缺陷。t118 evidence_note 已附。
 - R324 完整闭环：立项(§304)→双端考勤审计（t116 H5 0 真缺陷 §305 / t115 PC 判 D1[P1]+D2[P2]+R1 §306）→队长源码级复核三处→合并修复 t117(§307)→终审 t118 pass(本权)。PC 考勤明细列表恒空、error 误报成功、建删不刷新三处前端缺陷闭环；H5 打卡写受账号态取证限制如实标注未伪造；项目 ≥1000 轮非终态，继续据实立项下一轮。
+
+## 309. R325 立项：H5 流程/待办页首次深度审计（2026-11-21）
+- 据实立项依据：队长纯本地只读侦察——H5 页 mobile/src/pages/process.vue 有真实实现，但 R316 深度审计仅覆盖 PC 端 ProcessWork.vue 工作流已办，R317 H5 审计（六闭环）与 R321 H5 审计（七模块）均未含 H5 流程/待办页；属从未深度审计的真实模块，非臆造。会议模块已在 R309 修复、R317 H5 标无入口，本轮不重复。
+- 派发 t119（qa-e2e，只读深度审计，文档 oa4rust/docs/ops/oa4rust-r325-h5-process-audit.md）：H5 390x844 真 UI 逐条走 process.vue 待办列表/详情/审批/已办/发起/兜底真实 DOM 入口与真 API，记录真请求/响应/回显；判定三分（真缺陷需真 UI 可复现+源码定位／取证限制／产品语义差异），禁臆造；文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 非物理真机，精确单提交。
+- R324 已于 §308 正式收官（HEAD=TRACK=ee76d81b）；t119 写域为一份新文档，与其他在途任务不重叠。审计回收后据实甄别再决定是否修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
