@@ -26,10 +26,13 @@ describe('Z 批收尾审计守卫', () => {
     expect(css).toContain('::-webkit-scrollbar-thumb')
   })
 
-  it('R73 次级文字对比度', () => {
+  it('R73 次级文字对比度（t4：dim 回到专用令牌）', () => {
     const css = CSS()
     expect(css).toContain('.muted { color: var(--text-2); }')
-    expect(css).toContain('.dim { color: var(--muted); }')
+    // AI_VISUAL_SYSTEM §8.2 步骤 1：--dim 提亮到 #96a0ad（panel-3 上 5.30:1）；
+    // .dim 若继续借用 --muted，新令牌就不生效，四阶文本层级也会失真。
+    expect(css).toContain('.dim { color: var(--dim); }')
+    expect(readFileSync(join(__dirname, '../styles/tokens.css'), 'utf-8')).toMatch(/--dim:\s*#96a0ad/)
   })
 
   it('R74 哈希字距与选中高亮', () => {

@@ -18,13 +18,13 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const cssPath = join(root, "src", "styles", "main.css");
-if (!existsSync(cssPath)) throw new Error("对比度守卫找不到 main.css（文件被改名或挪走了？）");
+const cssPath = join(root, "src", "styles", "tokens.css");
+if (!existsSync(cssPath)) throw new Error("对比度守卫找不到 tokens.css（令牌真源被改名或挪走了？）");
 const css = readFileSync(cssPath, "utf8");
 
 function token(name: string): string {
   const m = css.match(new RegExp("--lyp-" + name + ":\\s*(#[0-9a-fA-F]{6})\\s*;"));
-  if (!m) throw new Error("main.css 缺少 token --lyp-" + name);
+  if (!m) throw new Error("tokens.css 缺少 token --lyp-" + name);
   return m[1];
 }
 

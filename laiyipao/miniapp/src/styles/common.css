@@ -10,75 +10,12 @@
  * scoped 样式天然不跨组件生效，**跨页复用件必须放在这里**。
  */
 
+/* 令牌真源：./tokens.css（版本 lyp-tokens-v1）；本文件只保留跨页复用样式 */
+@import './tokens.css';
+
 page,
 :root {
-  /* v2 表面分层：页面底最深 → 卡片 → 浮起元素。层次靠明度差 + 阴影，不靠描边堆砌 */
-  --bg: #070a10;
-  --panel: #121826;
-  --panel-2: #1a2233;
-  --panel-3: #222c3d;
-  --border: #2a3547;
-  --border-soft: rgba(42, 53, 71, 0.55);
-  --shadow-1: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 14rpx 36rpx rgba(0, 0, 0, 0.5);
-  --text: #e6edf3;
-  --text-2: #c2ccd6;
-  --muted: #8b949e;
-  --dim: #6e7681;
-
-  /* 品牌与语义色。
-     ⚠️ 以前 `--bad` 与主色同为 #ff6b35：同一个橙既表示「主按钮」又表示「错误」，
-     红色警示因此完全不醒目。现在错误/危险统一走 `--bad`（红），主行动走 `--accent`。 */
-  --accent: #ff6b35;
-  --accent-2: #ff3d71;
-  --accent-grad: linear-gradient(135deg, #ff6b35, #ff3d71);
-  --ok: #7ee787;
-  --warn: #ffd33d;
-  --bad: #ff7b72;
-
-  /* 元素主题色 */
-  --fire: #ff6b35;
-  --ice: #58a6ff;
-  --lightning: #ffd33d;
-  --corrosion: #7ee787;
-  --kinetic: #c9a7ff;
-
-  /* 元素色半透明（用于标签背景与 hover 状态） */
-  --fire-soft: rgba(255, 107, 53, 0.18);
-  --ice-soft: rgba(88, 166, 255, 0.18);
-  --lightning-soft: rgba(255, 211, 61, 0.18);
-  --corrosion-soft: rgba(126, 231, 135, 0.18);
-  --kinetic-soft: rgba(201, 167, 255, 0.18);
-  --neutral-soft: rgba(139, 148, 158, 0.16);
-
-  /* 榜单名次色：金银铜不该散落在 rank.vue 里写死 */
-  --rank-gold: #ffd700;
-  --rank-silver: #c9ced6;
-  --rank-bronze: #cd7f32;
-
-  /* 稀有度色（2026-11-17 全物品视觉化）：common 默认中性，不设专用变量 */
-  --rare: #58a6ff;
-  --epic: #c9a7ff;
-  --legendary: #ffd700;
-  --rare-soft: rgba(88, 166, 255, 0.18);
-  --epic-soft: rgba(201, 167, 255, 0.18);
-  --legendary-soft: rgba(255, 215, 0, 0.16);
-
-  /* 字阶与间距：让「正文最小 24rpx」这类约束有名字可引用 */
-  --fs-xs: 22rpx;
-  --fs-sm: 24rpx;
-  --fs-base: 26rpx;
-  --fs-md: 28rpx;
-  --fs-lg: 32rpx;
-  --fs-xl: 38rpx;
-  --sp-1: 8rpx;
-  --sp-2: 12rpx;
-  --sp-3: 16rpx;
-  --sp-4: 24rpx;
-
-  --radius-sm: 10rpx;
-  --radius: 16rpx;
-  --radius-lg: 18rpx;
+  /* 令牌见 ./tokens.css；此处只保留全局渲染属性 */
 
   background-color: var(--bg);
   background-image: radial-gradient(120% 36% at 50% -6%, rgba(255, 107, 53, 0.10) 0%, rgba(255, 107, 53, 0) 60%);
@@ -883,7 +820,7 @@ uni-page-body {
 
 /* R73 次级文字对比度微调（深底上更易读） */
 .muted { color: var(--text-2); }
-.dim { color: var(--muted); }
+.dim { color: var(--dim); }
 
 /* R74 长哈希可读性：字距 + 选中高亮 */
 .hash {
@@ -962,9 +899,13 @@ uni-page-body {
   }
 }
 
-/* R97 键盘焦点可见（无障碍） */
+/* LYP-a11y / R97 键盘焦点可见（WCAG 2.4.7）：与 admin 同判据 */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3rpx solid var(--accent);
+  outline-offset: 2rpx;
+}
 :focus-visible {
-  outline: 3rpx solid var(--fire);
+  outline: 3rpx solid var(--accent);
   outline-offset: 2rpx;
 }
 
@@ -1153,3 +1094,79 @@ html {
     opacity: 1;
   }
 }
+
+/* LYP-a11y：系统「减少动态效果」全局兜底，覆盖所有装饰动画与伪元素 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+ * LYP-VISUAL-V1 · AI 风格视觉层
+ * 依据：docs/laiyipao/audits/baseline-round1/screenshots/h5-01/h5-03/h5-14
+ *       （非物理真机，桌面 Chrome 模拟 H5 视口）：原卡片为扁平深色块，
+ *       t4 落地的玻璃令牌全端零消费，视觉层次弱。
+ * 规范：AI_VISUAL_SYSTEM.md §2.1 静态低透明底纹 / §2.3 实色卡片 /
+ *       §4 玻璃仅浮层 / §9 reduced-motion 可关。
+ * 19 页共享 .page-root / .card / .card-title，此段置于末尾保证生效；
+ * 不改动任何既有测试标记与业务类名。
+ * ============================================================ */
+:root,
+page {
+  --lyp-visual-version: lyp-visual-v1;
+}
+
+/* 页面画布：静态网格 + 双色辉光，透明度均 ≤0.10，不铺满、不动画。 */
+.page-root {
+  position: relative;
+  isolation: isolate;
+}
+
+.page-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    radial-gradient(520rpx 320rpx at 12% 2%, rgba(255, 107, 53, 0.06), transparent 70%),
+    radial-gradient(460rpx 300rpx at 92% 26%, rgba(88, 166, 255, 0.05), transparent 72%);
+  background-size: 48rpx 48rpx, 48rpx 48rpx, 100% 100%, 100% 100%;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #6b7280 45%, transparent 90%);
+  mask-image: linear-gradient(180deg, #000 0%, #6b7280 45%, transparent 90%);
+}
+
+/* 正文卡片保持实色：渐变仅做顶部微高光，玻璃化只允许出现在浮层。 */
+.page-root .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 46%),
+    var(--panel);
+  box-shadow: var(--shadow-1), inset 0 1rpx 0 rgba(255, 255, 255, 0.055);
+}
+
+/* 高优先恢复 .card-hero 的品牌渐变，避免被上一条更高特异性覆盖。 */
+.page-root .card-hero {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(135deg, rgba(255, 107, 53, 0.16), rgba(255, 61, 113, 0.10)),
+    var(--panel);
+  border-color: rgba(255, 107, 53, 0.35);
+}
+
+/* 标题保留橙色竖条（既有守卫标记），叠加一层向右消散的元素色辉光。 */
+.page-root .card-title {
+  padding-left: 14rpx;
+  background-image: linear-gradient(90deg, var(--fire-soft), rgba(255, 107, 53, 0) 68%);
+  background-repeat: no-repeat;
+  border-radius: 4rpx;
+}
+

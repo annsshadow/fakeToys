@@ -11,56 +11,9 @@
  * `html.dark` 时才能稳定生效（同特异性下靠引入顺序，main.css 在 dark 包之后）。
  */
 
-:root {
-  /* 表面 */
-  --lyp-bg: #0b0f14;
-  --lyp-panel: #141a21;
-  --lyp-panel-2: #1a222c;
-  --lyp-panel-3: #212b37;
-  --lyp-border: #2b3540;
-  --lyp-border-soft: #222b35;
+/* 令牌真源：./tokens.css（版本 lyp-tokens-v1）；下方为 Element Plus 映射与共享类 */
+@import './tokens.css';
 
-  /* 文本四阶：主 / 常规 / 弱化 / 更弱 */
-  --lyp-text: #e6edf3;
-  /* WCAG 2.1 AA 1.4.3：弱化/更弱文本承载 kpi-sub / hint / nav-group-title 等正文，
-     对最亮表面 panel-3 也必须 ≥4.5:1；原值 #8b949e/#6b7480 仅 4.66/3.03:1。 */
-  --lyp-text-2: #c2ccd6;
-  --lyp-muted: #9aa5b2;
-  --lyp-dim: #96a0ad;
-
-  /* 品牌与语义色 */
-  --lyp-accent: #ff6b35;
-  --lyp-accent-2: #ff3d71;
-  --lyp-accent-grad: linear-gradient(135deg, #ff6b35, #ff3d71);
-  --lyp-success: #7ee787;
-  --lyp-warning: #ffd33d;
-  --lyp-danger: #ff7b72;
-  --lyp-info: #58a6ff;
-
-  /* 元素主题色 —— 与小程序端保持一致 */
-  --el-fire: #ff6b35;
-  --el-ice: #58a6ff;
-  --el-lightning: #ffd33d;
-  --el-corrosion: #7ee787;
-  --el-kinetic: #c9a7ff;
-
-  /* 几何 */
-  --lyp-radius: 10px;
-  --lyp-radius-sm: 8px;
-  --lyp-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-
-  /* 间距与字阶 */
-  --lyp-gap-1: 6px;
-  --lyp-gap-2: 10px;
-  --lyp-gap-3: 14px;
-  --lyp-gap-4: 20px;
-  --lyp-fs-xs: 11px;
-  --lyp-fs-sm: 12px;
-  --lyp-fs-base: 13px;
-  --lyp-fs-md: 15px;
-  --lyp-fs-lg: 20px;
-  --lyp-fs-xl: 26px;
-}
 
 /*
  * Element Plus 深色变量映射。
@@ -512,4 +465,73 @@ body {
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid var(--lyp-accent) !important;
   outline-offset: 2px;
+}
+
+/* LYP-a11y：系统「减少动态效果」全局兜底（与 H5 端同判据） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ── 玻璃浮层与骨架屏基础类（t4 主题基建，供 t5/t7 直接复用）──────────
+ * 底固定 panel 基色；玻璃上的弱化文字走已提亮的 --lyp-glass-text-*，
+ * 避免「+8% 白叠 panel-3 + muted」的 4.37:1 不达标组合（规范 §2.4）。
+ */
+.glass-surface {
+  background: var(--lyp-glass-bg);
+  backdrop-filter: var(--lyp-glass-blur);
+  -webkit-backdrop-filter: var(--lyp-glass-blur);
+  border: 1px solid var(--lyp-glass-border);
+  box-shadow: var(--lyp-shadow);
+}
+.glass-surface .muted { color: var(--lyp-glass-text-muted); }
+.glass-surface .dim { color: var(--lyp-glass-text-dim); }
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-surface { background: var(--lyp-panel); }
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lyp-gap-2);
+  padding: var(--lyp-gap-2) 0;
+}
+.skeleton-bar {
+  height: 12px;
+  border-radius: var(--lyp-radius-sm);
+  background: linear-gradient(90deg, var(--lyp-panel-2) 25%, var(--lyp-panel-3) 50%, var(--lyp-panel-2) 75%);
+  background-size: 200% 100%;
+  animation: lyp-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes lyp-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+
+/* ── 微交互（AI_VISUAL_SYSTEM.md §4 / P4）：入场 + 按压 ─────────────────
+ * 页面入场 240ms ease-out（规范 200–280ms）；按钮按压 100ms scale(.97)。
+ * 两者均由上方 prefers-reduced-motion 全局兜底关闭。
+ */
+@keyframes lyp-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page {
+  animation: lyp-page-in 240ms ease-out both;
+}
+.el-button:not(.is-disabled):active {
+  transform: scale(0.97);
+  transition: transform 100ms ease-out;
+}
+
+
+/* §6：骨架出现时独占页面——keep-alive 返回时旧 data 仍在，不能与骨架叠加 */
+.page > .page-skeleton ~ * {
+  display: none !important;
 }
