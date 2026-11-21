@@ -4851,3 +4851,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 结论：R330（R329 P1 DocumentApp.vue 默认插槽致写入口全缺失 + F1 typecheck 回归）完整闭环并关闭。全链：t126审计判P1→t127方案A具名插槽修复→t128终审发现F1(typecheck 4×TS7006)→队长补t130空合约→t130补类型标注typecheck归零→t131复审pass。删除残留已剥离 R331（§323）独立在途。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，待 t129（R331 后端软删过滤）闭环后据实立项下一轮。
 
+## 328. R331 关闭 + R332 立项：默认插槽静默丢弃候选页面群甄别（2026-11-22）
+- R331 收官：t129（page-comm）完成，commit 7769a1707690ad785f0851296e45991e31c2aa63 精确 3 文件（lib.rs+tests.rs+文档）已push。队长独立复核（不采信自述）全通过：git diff 确认 lib.rs:11614 manager 过滤条件唯一一行改动（ORDER BY create_time DESC LIMIT 200 → deleted_at IS NULL ORDER BY create_time DESC LIMIT 200），ops_grep 核实其他变体（:11598 paging）本就带该条件未动、:413 为注释；tests.rs 新增 r331_manager_list_excludes_soft_deleted_documents 真库行为测试 RED→GREEN；队长定点复跑 cargo test -p cms_assemble_control --lib 348 passed/0 failed/4 ignored；文档 36行占位0真值、敏感扫描0命中、非物理真机、如实记录 clean target 卷重编译教训（复用缓存卷 ELF strings 含新 SQL 但行为旧逻辑）；evidence.json 真浏览器新建→可见→删除200→刷新消失、其余文档仍在、0 pageerror/API失败。HEAD=TRACK=7769a170、工作树干净。t129 evidence_note 已附（count=1）。
+- 结论：R331（文档管理列表未过滤软删文档 P2）完整闭环并关闭。至此 R318–R331 共 14 轮全部收官。
+- 据实立项 R332（只读甄别）：R329/R330 坐实『默认插槽内容被 Vue 静默丢弃』是复用模式风险；队长等待期静态侦察 24 页用 AdminToolbar/AdminTable，约 9-12 页无具名插槽，其中 AppInfoApp.vue:14-22 疑同类（默认插槽塞5按钮+AdminTable内嵌cell），但 ProcessManagerApp 用 #group-read/#group-write、QueryExplorerApp/QueryQueryApp 似自造表结构——须逐页甄别，属潜在候选群非既定缺陷。派 t132（qa-e2e，只读审计，deps 无）：精确重算差集清单→逐页真浏览器 DOM 甄别→三分判定（真缺陷/取证限制/产品语义差异）→坐实真缺陷给最小修复方向建议但不改源码；唯一文档 oa4rust/docs/ops/oa4rust-r332-default-slot-audit.md 脱敏0真值、evidence 非物理真机、精确单文档提交。（task t132 已创建，pending@qa-e2e）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R332 甄别回收后据实再定是否修复，禁臆造。
+
