@@ -4766,5 +4766,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 复核要点：t120 甄别 D1[P2] 成立、t121 前后端联动修复正确（$4 ILIKE 转义+$5 tone 映射过滤、$3 归属谓词/applied/ORDER/LIMIT 保留、security_gate 仅补空 Query 无放水、前端 URLSearchParams 真携带 key/status）；队长独立复跑 cargo 66 passed、vitest 267 files/2152 tests 0 failed（t121 复核时）；evidence 九断言全 true、source 非物理真机；两文档 <YOUR_TEST_DOMAIN> 占位 0 真值；R318-R324 既有修复标记在位无回归。
 - R326 完整闭环：t120 审计（D1[P2] 搜索筛选不生效，L1 无种子/P1 产品语义三分合规）→ t121 修复（前后端联动 test-first，方案偏差与裁决据实记录于 §313）→ t122 终审 pass。R326 正式收官。
 - 观察（非 finding）：GitHub 默认分支 1 high 漏洞（dependabot/229）不在本分支任务范围，已知悉未处置。项目 ≥1000 轮非终态，据实立项下一轮。
+
+## 315. R327 立项：PC 个人中心（Personal.vue）深度审计（2026-11-22）
+- 据实依据：队长纯本地只读侦察（ops_stat/ops_read_files/ops_grep），oa4rust/frontend/apps/desktop/src/views/Personal.vue 共 794 行、含多组真写端点（PUT /api/person/password 改密码、POST/GET /api/person/signature/* 签名、POST /api/person/signature/upload multipart 上传、avatar /api/person/icon/${unique} 上传、POST /api/person/signature/save）与十余条只读身份/邮件/OAuth 端点；R304-R326 审计文档中 Personal.vue/个人中心均 0 命中，从未深度审计。属真实实现、未覆盖对象，非臆造。
+- 派发 t123（page-core，只读深度审计，文档 oa4rust/docs/ops/oa4rust-r327-pc-personal-audit.md）：1440x900 真浏览器走改密表单/头像上传/签名上传保存/身份邮件 OAuth 信息/加载失败兜底/关键契约回归；三分判定（真缺陷/取证限制/产品语义差异）、禁臆造、精确单提交、文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。审计回收后据实甄别再定修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
