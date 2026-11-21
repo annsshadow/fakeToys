@@ -4833,3 +4833,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - evidence.json（gitignored，source标注本地无头Chromium非物理真机）：8前端断言 btnCreate/btnActPerRow/btnDel/toolbarHasCreate/actionsHasPublish/actionsHasDelete 全true、apiFailures=0/pageerrors=0；真UI新建→列表回显→发布200→刷新仍在列表三步走通。foundAfterDelete=true 及顶层 verdict=NOT_VERIFIED 系删除闭环未过，已按裁决剥离 R331（§323），不属 t127 验收范围。R330 修复目标（R329 P1 写入口全缺失）达成。t127 evidence_note 已附（count=1）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，待 t128 终审关闭 R330、t129 后端修复关闭 R331。
 
+## 325. R330 终审 F1 回归 + t130/t131 派生修复复审（2026-11-22）
+- t128（design-reviewer，review round 1）终审 verdict=needs_revision/status=failed/findings=1：P1 修复本体达标（真浏览器8断言全true、test-first RED坐实、全量vitest 268files/2165tests、3文件精确无越界、文档脱敏合规、HEAD=TRACK），但阻塞项 F1[medium]——本次新增 DocumentApp.slots.contract.test.ts 的 namedSlot(:16)/defaultSlotOf(:27) 四个参数缺类型标注，strict tsconfig 触发 4×TS7006。
+- 队长独立复核 F1 属实（不采信自述）：亲跑 pnpm --filter @oa4rust/desktop typecheck 真退出码=2、四个 TS7006 精确定位 :16/:27 的 template/name/tag；亲读契约源码确认无类型标注。t127 仅跑 vitest（esbuild 不做类型检查）故漏报，属 t127 新引入回归而非既有问题。
+- 系统自动派生质量后续：t130（repair round2，page-work，deps t127）/t131（review round2，design-reviewer，deps t130），队长不重复创建。t130 原合约极薄（仅 subject=repair-round-2，无 objective/acceptance/verify/inScope），队长用 captain 专属 agent_teams_amend_task 补全合约（revision 1）：只给四个参数补 string 标注、重跑 typecheck exit=0 + vitest 全绿、精确单文件提交只含 DocumentApp.slots.contract.test.ts；硬写域隔离——禁碰 t129 在途的 cms_assemble_control/src/tests.rs，禁动 DocumentApp.vue 本体。指令已下发 page-work（delivered=wake）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，F1 修复后 t131 复审 verdict=pass 方可关闭 R330；t129（R331 后端软删过滤）独立在途。
+
