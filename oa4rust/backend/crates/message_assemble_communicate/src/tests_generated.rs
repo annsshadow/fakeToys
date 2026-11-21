@@ -1721,6 +1721,152 @@ mod tests {
         }
     }
 
+    /// R318 M1 行为回归：非 admin 会话人创建不带 sender 的消息后，本人分页列表必须可见。
+    /// 写读同源：缺省 sender 应落会话人 person_unique；修复前落 "system" 不匹配读谓词。
+    #[tokio::test]
+    async fn r318_m1_custom_create_default_sender_is_self_visible() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping r318_m1_custom_create_default_sender_is_self_visible: DB not reachable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_message (id TEXT, conversation_id TEXT, content TEXT, sender TEXT, type TEXT, create_time TEXT)",
+            &[],
+        ).await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_message_conversation (id TEXT, name TEXT, type TEXT, create_time TEXT)",
+            &[],
+        ).await.unwrap();
+        c.execute(
+            "ALTER TABLE x_message_conversation ADD COLUMN IF NOT EXISTS last_message_time TEXT",
+            &[],
+        ).await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_message_conversation_member (id TEXT, conversation_id TEXT, person_id TEXT, join_time TEXT, create_time TEXT)",
+            &[],
+        ).await.unwrap();
+
+        let conv_id = "r318-m1-sender-conv-001";
+        let actor = "r318-m1-sender-dave";
+        let marker = "r318-m1-default-sender-marker";
+        c.execute("DELETE FROM x_message WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation WHERE id = $1", &[&conv_id]).await.unwrap();
+        c.execute(
+            "INSERT INTO x_message_conversation (id, name, type) VALUES ($1, 'conv', 'single')",
+            &[&conv_id],
+        ).await.unwrap();
+        c.execute(
+            "INSERT INTO x_message_conversation_member (id, conversation_id, person_id) VALUES ($1, $2, $3)",
+            &[&"r318-m1-member-001".to_string(), &conv_id.to_string(), &actor.to_string()],
+        ).await.unwrap();
+
+        let app = crate::router(pool.clone())
+            .layer(axum::extract::Extension(shared::testing::test_session(actor)));
+        let create_resp = app.clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/message/custom/create")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&serde_json::json!({
+                        "conversationId": conv_id,
+                        "content": marker
+                    })).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(create_resp.status(), StatusCode::OK, "custom/create 应成功");
+        let create_bytes = axum::body::to_bytes(create_resp.into_body(), 65536).await.unwrap();
+        let create_json: serde_json::Value = serde_json::from_slice(&create_bytes).unwrap();
+        assert_eq!(create_json["type"], "success", "创建响应应为成功信封: {create_json}");
+
+        let list_resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/message/list/paging/1/size/50")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(list_resp.status(), StatusCode::OK);
+        let list_bytes = axum::body::to_bytes(list_resp.into_body(), 65536).await.unwrap();
+        let list_json: serde_json::Value = serde_json::from_slice(&list_bytes).unwrap();
+        let visible = list_json["data"].as_array()
+            .map(|a| a.iter().any(|m| m["content"].as_str() == Some(marker)))
+            .unwrap_or(false);
+        assert!(
+            visible,
+            "缺省 sender 消息应被创建人本人列表可见（修复前落 system 不匹配读谓词）: {list_json}"
+        );
+
+        c.execute("DELETE FROM x_message WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation WHERE id = $1", &[&conv_id]).await.unwrap();
+    }
+
+    /// R318 M1 行为回归：显式 sender 覆盖仍保留原值（缺省策略不得吞掉调用方意图）。
+    #[tokio::test]
+    async fn r318_m1_custom_create_explicit_sender_is_preserved() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping r318_m1_custom_create_explicit_sender_is_preserved: DB not reachable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_message_conversation_member (id TEXT, conversation_id TEXT, person_id TEXT, join_time TEXT, create_time TEXT)",
+            &[],
+        ).await.unwrap();
+        let conv_id = "r318-m1-explicit-conv-001";
+        let actor = "r318-m1-sender-dave";
+        let explicit_sender = "r318-m1-explicit-other";
+        c.execute("DELETE FROM x_message WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation WHERE id = $1", &[&conv_id]).await.unwrap();
+        c.execute(
+            "INSERT INTO x_message_conversation (id, name, type) VALUES ($1, 'conv', 'single')",
+            &[&conv_id],
+        ).await.unwrap();
+        c.execute(
+            "INSERT INTO x_message_conversation_member (id, conversation_id, person_id) VALUES ($1, $2, $3)",
+            &[&"r318-m1-member-002".to_string(), &conv_id.to_string(), &actor.to_string()],
+        ).await.unwrap();
+
+        let app = crate::router(pool.clone())
+            .layer(axum::extract::Extension(shared::testing::test_session(actor)));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/message/custom/create")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&serde_json::json!({
+                        "conversationId": conv_id,
+                        "content": "r318-m1-explicit-marker",
+                        "sender": explicit_sender
+                    })).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK, "custom/create 显式 sender 应成功");
+        let stored: String = c.query_one(
+            "SELECT sender FROM x_message WHERE conversation_id = $1 AND content = 'r318-m1-explicit-marker' ORDER BY create_time DESC LIMIT 1",
+            &[&conv_id],
+        ).await.unwrap().get("sender");
+        assert_eq!(stored, explicit_sender, "显式 sender 必须保留");
+
+        c.execute("DELETE FROM x_message WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&conv_id]).await.unwrap();
+        c.execute("DELETE FROM x_message_conversation WHERE id = $1", &[&conv_id]).await.unwrap();
+    }
+
     // SKIPPED: mass_id_mockdeletetoget requires Session parameter
     // SKIPPED: im_conversation_id_single_delete_virtual requires Session parameter
     // SKIPPED: instant_currentperson_consumed_put requires Session parameter

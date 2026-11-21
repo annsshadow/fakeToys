@@ -2833,7 +2833,7 @@ pub async fn message_custom_create(
     let sender = req
         .get("sender")
         .and_then(|v| v.as_str())
-        .unwrap_or("system");
+        .unwrap_or(&sess.person_unique);
     let id = Uuid::new_v4().to_string();
 
     let result = client
