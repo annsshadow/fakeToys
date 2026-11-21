@@ -3,6 +3,7 @@
  * 规范：docs/laiyipao/design/AI_VISUAL_SYSTEM.md §8.1 / §8.3。
  * 版本 lyp-tokens-v1：与 admin/src/styles/tokens.css 成对维护；
  * R3 规范包 lyp-tokens-v3-r3（--lyp-r3-version）：次级页面六组件模式见主规范 §1B；
+ * R6 规范包 lyp-tokens-r6（--lyp-r6-version）：真实数据驱动推荐见主规范 §1E，仅标记不新增视觉变量；
  * 旧版 --lyp-token-version 保留 v1 作为兼容锚点，待守卫同步迁移后再提升。
  * 五元素主色 / on-soft ink / 玻璃文本 / 动效令牌必须双端同值。
  * 表面、圆角、字阶按端适配（rpx ↔ px），只要求对比度与视觉量级一致。
@@ -12,6 +13,7 @@ page,
 :root {
   --lyp-token-version: lyp-tokens-v1;
   --lyp-r3-version: lyp-tokens-v3-r3;
+  --lyp-r6-version: lyp-tokens-r6;
 
   /* 表面：页面底最深 → 卡片 → 浮起元素；层次靠明度差 + 阴影 */
   --bg: #070a10;

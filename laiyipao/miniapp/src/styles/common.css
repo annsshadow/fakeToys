@@ -1406,3 +1406,98 @@ page {
   .r5-enter, .r5-ai-note { animation: none !important; }
 }
 
+/* -------------------------------------------------------------------------- */
+/* LYP-R6-PERSONALIZED-V1：真实数据驱动推荐卡（§1E.5 四区信息架构）            */
+/* 只用既有 --panel-2 / --ai-* / --accent-* 令牌；不新增颜色、不铺玻璃底、      */
+/* 不在 panel-3 上叠元素 soft，muted/dim 不放在玻璃层。                        */
+/* -------------------------------------------------------------------------- */
+.r6-rec {
+  position: relative;
+  min-height: 300rpx;
+  margin: 14rpx 0;
+  padding: 18rpx 20rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+  box-shadow: var(--ai-glow);
+}
+.r6-rec-head { display: flex; flex-direction: row; align-items: center; gap: 10rpx; }
+.r6-badge {
+  flex-shrink: 0;
+  min-width: 56rpx;
+  padding: 4rpx 10rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 8rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 22rpx;
+  font-weight: 700;
+  text-align: center;
+}
+.r6-engine {
+  margin-left: auto;
+  font-size: 19rpx;
+  color: var(--text-2);
+  text-align: right;
+}
+.r6-headline {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+.r6-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-top: 12rpx;
+  padding: 10rpx 12rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+}
+.r6-ev { display: flex; flex-direction: row; align-items: baseline; gap: 10rpx; font-size: 22rpx; }
+.r6-ev-metric { flex: 1; min-width: 0; color: var(--text-2); }
+.r6-ev-val { color: var(--ai-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.r6-ev-src { flex-shrink: 0; font-size: 19rpx; color: var(--muted); }
+.r6-why { display: flex; flex-direction: column; gap: 4rpx; margin-top: 10rpx; }
+.r6-why-toggle {
+  min-height: 56rpx;
+  font-size: 22rpx;
+  color: var(--ai-ink);
+  font-weight: 600;
+}
+.r6-why-line { font-size: 20rpx; line-height: 1.45; color: var(--text-2); }
+.r6-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.r6-empty {
+  min-height: 300rpx;
+  background: var(--panel-2);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+}
+.r6-skeleton {
+  min-height: 300rpx;
+  padding: 18rpx 20rpx;
+  background: var(--panel-2);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+}
+.r6-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r6-enter, .r6-skeleton { animation: none !important; }
+}
+

@@ -31,11 +31,44 @@
           {{ ELEMENT_NAME[el] }}
         </text>
       </view>
-      <view v-if="r3AiReaction" class="r3-ai r3-enter">
+      <view v-if="r6Loading" class="r6-skeleton r6-enter" aria-hidden="true">
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 42%" /></view>
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 86%" /></view>
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 58%" /></view>
+      </view>
+      <view v-else-if="r6Rec && r6Rec.status !== 'local'" class="r6-rec r6-enter">
+        <view class="r6-rec-head">
+          <text class="r6-badge">{{ r6Rec.badge }}</text>
+          <text class="r6-engine">{{ r6Rec.engineLabel }}</text>
+        </view>
+        <text class="r6-headline">{{ r6Rec.headline }}</text>
+        <view v-if="r6Rec.evidence.length" class="r6-evidence">
+          <view v-for="(ev, i) in r6Rec.evidence" :key="'e' + i" class="r6-ev">
+            <text class="r6-ev-metric">{{ ev.metric }}</text>
+            <text class="r6-ev-val">{{ ev.value }}{{ ev.unit }}</text>
+            <text class="r6-ev-src">{{ ev.source }} · {{ ev.window }}</text>
+          </view>
+        </view>
+        <view class="r6-why">
+          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
+          <block v-if="r6Open">
+            <text v-for="(line, i) in r6Rec.basis" :key="'b' + i" class="r6-why-line">{{ line }}</text>
+            <text class="r6-why-line">目标：{{ r6Rec.cta.route }}</text>
+          </block>
+        </view>
+        <view v-if="r6Rec.status === 'empty'" class="r6-empty r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">{{ r6Rec.headline }}</text>
+          <text class="r3-empty-reason">{{ r6Rec.basis[0] }} · {{ r6Rec.basis[1] }}</text>
+          <text class="r3-empty-action" role="button" @click="r6Go()">{{ r6Rec.cta.label }}</text>
+        </view>
+        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()">{{ r6Rec.cta.label }} →</text>
+      </view>
+      <view v-if="r6Rec && r6Rec.status === 'local' && r3AiReaction" class="r3-ai r6-local r3-enter">
         <view class="r3-ai-head">
           <text class="r3-ai-badge">AI</text>
           <text class="r3-ai-title">AI 建议 · 下一条反应</text>
-          <text class="r3-ai-engine">规则引擎</text>
+          <text class="r3-ai-engine">本地规则引擎</text>
         </view>
         <text class="r3-ai-conclusion">{{ r3AiReaction.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiReaction.basis }}</text>
@@ -187,6 +220,7 @@ import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, lookupReaction, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
+import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
 
 const store = useGameStore()
 
@@ -355,6 +389,40 @@ const r3AiReaction = computed(() => {
 function r3GoSkills() {
   uni.navigateTo({ url: '/pages/skills/skills' })
 }
+
+/* R6 §1E：反应链结论优先读真实战斗/配置推荐；接口缺席才用本地规则并标注。 */
+const r6Loading = ref(true)
+const r6Rec = ref<R6Card | null>(null)
+const r6Open = ref(false)
+
+async function loadR6Recommendation() {
+  r6Loading.value = true
+  const rec = await fetchRecommendations('reactions')
+  if (rec) {
+    r6Rec.value = rec
+  } else {
+    r6Rec.value = localFallbackCard({
+      context: "reactions",
+      headline: r3AiReaction.value ? r3AiReaction.value.conclusion : '本地规则引擎：反应表尚未到达，暂不写死推荐',
+      basis: ['依据：当前出战元素 + 反应表（' + allReactions.value.length + ' 条）；触发率数据待接口下发'],
+      evidence: [{ metric: '可达反应', value: myReactions.value.length + '/' + allReactions.value.length, unit: '条', source: 'config/store', window: 'now' }],
+      ctaLabel: '去调整出战技能',
+      ctaRoute: '/pages/skills/skills',
+    })
+  }
+  r6Loading.value = false
+}
+
+function r6Go() {
+  const cta = r6Rec.value?.cta
+  if (!cta || !cta.route) return
+  const query = cta.params
+    ? '?' + Object.entries(cta.params).map(([k, v]) => k + '=' + encodeURIComponent(String(v))).join('&')
+    : ''
+  uni.navigateTo({ url: cta.route + query })
+}
+
+void loadR6Recommendation()
 </script>
 
 <style scoped>
