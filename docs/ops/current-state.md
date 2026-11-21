@@ -4691,5 +4691,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t111（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings=[]，只读未改码未提交；HEAD=TRACK=092a65d32 稳定、暂存区与工作树全干净。逐条确认 t108 判 D1 P2（net-cap.json 双层信封 + DOM bbs-reply-undefined，BBSForum.vue:558 根因）、t109 H5 双 PASS、t110 修复（2014fd679 精确 3 文件，双层信封归一 + enabled 响应式 getter + creator→author 兼容映射，后端零改），全量 vitest 265 files/2139 passed、真浏览器 evidence 7 断言全 true、R315/R318/R320/R321 四修复提交全 HEAD 祖先。
 - 回复时间缺失经合同修订（revision 1）剥离为 R323 候选（§298/§299），如实标注边界不立 finding，属 fail-loud 正确裁决。t111 evidence_note 已附。
 - R322 完整闭环：立项(§295)→双补测(§296 t109 H5 PASS / t108 PC 判 D1)→D1 修复(§298 t110 + amend_task 合同修订)→终审 pass(本条)。R322 收官；R323 回复时间甄别（t112）进行中，据其结论据实处理。项目 ≥1000 轮非终态。
+
+## 301. R323 甄别判定 B + 后端补字段修复派发（2026-11-21）
+- t112（qa-e2e）完成并队长独立复核：commit 088d7b7183024d5c6d91490616e70f2333429802 精确 1 文档 65 行 oa4rust/docs/ops/oa4rust-r323-reply-time-triage.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机。判定 B 真缺陷 P2 成立——队长源码四件套确证 u2_reply_get(u2.rs:1162 SQL 无 create_time)、u2_reply_filter_list(:1208/:1227 SQL 无)、reply_list_sub_id(lib.rs:772 SQL 含 create_time::text)；evidence 非物理真机 PC replyTimeEmpty=true / H5 replyMetaTexts 含时间；t112 evidence_note 已附。
+- 派发 t113（page-work，implementation，deps t112+t23，后端-only 写域 u2.rs+tests_generated.rs+文档）：test-first RED→GREEN 给 u2_reply_filter_list 两条 SQL 补 create_time::text + 映射 createTime、u2_reply_get SQL 补 + 映射，三端点字段对齐；reply_list_sub_id 与前端 PC/H5 未改；cargo test -p bbs_assemble_control --lib 全绿；后端 Linux ELF 原子部署 + 真浏览器 PC 时间非空且与 H5 一致；文档 oa4rust/docs/ops/oa4rust-r323-reply-time-fix.md 脱敏、精确单提交。【硬时序】后端单工作树+单二进制，部署前确认无并行后端改动，冲突先回报队长串行。
+- 预建 t114（design-reviewer，review，round=1，reviewedTaskId=t113，deps t112+t113+t23）：待 t113 完成后自动解锁终审，确认 PC 时间缺失闭环且 R318/R320/R322 无回归，verdict=pass/findings=[] 才关闭 R323。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
