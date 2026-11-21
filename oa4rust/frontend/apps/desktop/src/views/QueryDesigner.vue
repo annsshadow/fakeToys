@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="query-designer">
-    <div class="view-header glass-card">
+  <div class="query-designer modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-create" @click="openCreate">+ 新建查询</button>
       <button class="btn-outline" @click="showSqlEditor=true">📝 SQL编辑</button>
     </div>
@@ -826,4 +826,13 @@ async function runQueryEnhanced() {
 <style scoped>
 /* optimized */
 .qd-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:13px;color:var(--text-primary)}
+
+/* R306-B AI 令牌深度消费：玻璃 / 渐变 / 8px 栅格 / 骨架 / 微交互 */
+.query-designer{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);border-radius:var(--radius-lg)}
+.sidebar{background:var(--ai-glass-bg);backdrop-filter:var(--ai-glass-blur);-webkit-backdrop-filter:var(--ai-glass-blur);border:1px solid var(--ai-glass-border)}
+.btn-create{background:var(--ai-gradient-brand);color:#fff;border:none}
+.sk{background:var(--ai-skeleton-base);background-image:linear-gradient(90deg,transparent,var(--ai-skeleton-shine),transparent);background-size:200% 100%;animation:ai-shimmer var(--ai-motion-normal) linear infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-spring{transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 </style>

@@ -5,8 +5,8 @@
     <AdminPageHeader title="查询视图设计器" subtitle="/api/query/assemble/designer/view/* — 可视化过滤、排序、分页（原操作入口完整保留）" />
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
 
-  <div class="designer-shell">
-    <header class="designer-header glass-card"><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
+  <div class="designer-shell modern-page ai-page">
+    <header class="designer-header glass-card ai-page ai-panel"><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
     <div class="query-picker glass-card"><label>Query Flag<input v-model="queryFlag" placeholder="输入后加载视图" @change="loadViews" /></label><button class="btn" :disabled="!queryFlag.trim()" @click="loadViews">加载</button><span>后端只提供按 Query Flag 列表，未提供全量视图列表。</span></div>
     <main class="main-grid"><aside class="list glass-card"><h2>视图</h2><button v-for="item in views" :key="item.id" class="view-item" :class="{active:item.id===activeId}" @click="openView(item.id)"><strong>{{item.name}}</strong><span>{{item.viewFlag}}</span></button><p v-if="!views.length" class="muted">该 Query 下暂无视图</p></aside>
       <section class="editor glass-card"><div class="form-row"><label>名称<input v-model="form.name" /></label><label>视图 Flag<input :value="form.viewFlag||'保存后生成'" disabled /></label></div><label class="sql-label">只读 SQL<textarea v-model="form.definition.sql" rows="5" placeholder="SELECT ..." /></label>
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, provide, ref } from 'vue'
-import { ADMIN_HIDE_PAGE_TITLE } from '../components/admin/'
+import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
 import {
   designerPaths,
   extractList,
@@ -41,8 +41,6 @@ interface ViewSummary {
   viewFlag: string
   queryFlag?: string
 }
-void AdminFormSection
-void AdminPageHeader
 provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
 
 const operators: QueryViewFilter['operator'][] = ['eq', 'ne', 'contains', 'gt', 'gte', 'lt', 'lte']
@@ -156,4 +154,13 @@ async function bundle() {
 </script>
 <style scoped>
 .designer-shell{display:flex;flex-direction:column;gap:14px;height:100%}.designer-header,.query-picker{display:flex;align-items:center;justify-content:space-between;padding:15px 20px}.designer-header h1,.list h2,.editor h2{margin:0;color:var(--color-primary);font-size:17px}.designer-header p{margin:4px 0 0;color:var(--text-muted);font-size:12px}.actions{display:flex;gap:8px}.query-picker{justify-content:flex-start;gap:10px}.query-picker label{display:flex;align-items:center;gap:8px}.query-picker span,.muted,.lookup p{color:var(--text-muted);font-size:11px}.main-grid{display:grid;grid-template-columns:230px 1fr;gap:14px;min-height:0;flex:1}.list,.editor{padding:14px;overflow:auto}.view-item{display:flex;flex-direction:column;gap:4px;width:100%;padding:10px;margin-top:8px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);color:var(--text-primary);text-align:left;cursor:pointer}.view-item.active{border-color:var(--color-primary)}.view-item span{font:10px monospace;color:var(--text-muted)}.form-row,.paging{display:grid;grid-template-columns:1fr 1fr;gap:12px}.editor label{font-size:12px;color:var(--text-muted)}input,select,textarea{box-sizing:border-box;width:100%;padding:8px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-elevated);color:var(--text-primary)}.sql-label{display:block;margin-top:14px}.section-head{display:flex;align-items:center;justify-content:space-between;margin-top:18px}.rule-row{display:grid;grid-template-columns:1fr 130px 1fr auto;gap:8px;margin-top:8px}.sort-row{grid-template-columns:1fr 130px auto}.paging{width:330px;margin-top:18px}.lookup,.result{margin-top:18px;padding-top:12px;border-top:1px solid var(--border-color)}.result pre{max-height:280px;overflow:auto;padding:12px;border-radius:8px;background:#0005}.btn{padding:8px 13px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}.btn.primary{background:var(--color-primary);color:#fff}.btn:disabled{opacity:.45}.remove{border:0;background:transparent;color:var(--color-danger);cursor:pointer}@media(max-width:850px){.main-grid{grid-template-columns:1fr}.rule-row{grid-template-columns:1fr}}
+
+/* R306-B AI 令牌深度消费：玻璃 / 渐变 / 8px 栅格 / 骨架 / 微交互 */
+.designer-shell{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.designer-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);border-radius:var(--radius-lg)}
+.editor{background:var(--ai-glass-bg);backdrop-filter:var(--ai-glass-blur);-webkit-backdrop-filter:var(--ai-glass-blur);border:1px solid var(--ai-glass-border)}
+.btn.primary{background:var(--ai-gradient-brand);color:#fff;border:none}
+.sk{background:var(--ai-skeleton-base);background-image:linear-gradient(90deg,transparent,var(--ai-skeleton-shine),transparent);background-size:200% 100%;animation:ai-shimmer var(--ai-motion-normal) linear infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-spring{transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 </style>

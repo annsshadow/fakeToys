@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
+  <div class="crud-view modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -188,4 +188,13 @@ function loadData() {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* R306-B AI 令牌深度消费：玻璃 / 渐变 / 8px 栅格 / 骨架 / 微交互 */
+.crud-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);border-radius:var(--radius-lg)}
+.content-panel{background:var(--ai-glass-bg);backdrop-filter:var(--ai-glass-blur);-webkit-backdrop-filter:var(--ai-glass-blur);border:1px solid var(--ai-glass-border)}
+.btn-primary{background:var(--ai-gradient-brand);color:#fff;border:none}
+.skel{background:var(--ai-skeleton-base);background-image:linear-gradient(90deg,transparent,var(--ai-skeleton-shine),transparent);background-size:200% 100%;animation:ai-shimmer var(--ai-motion-normal) linear infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-spring{transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 </style>
