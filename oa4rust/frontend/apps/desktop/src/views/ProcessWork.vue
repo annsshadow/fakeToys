@@ -283,7 +283,7 @@ const activeTab = ref<TabKey>('pending')
 const queryClient = useQueryClient()
 const endpoints: Record<TabKey, string> = {
   pending: '/api/processplatform/assemble/surface/task/list/my/paging/1/size/20',
-  completed: '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20',
+  completed: '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/0/size/20',
   started: '/api/processplatform/assemble/surface/work/list/my/paging/1/size/20',
 }
 const query = useQuery({
@@ -296,7 +296,7 @@ const query = useQuery({
       activeTab.value === 'started'
         ? await api.post('/api/processplatform/assemble/surface/work/list/my/paging/1/size/20')
         : activeTab.value === 'completed'
-          ? await api.get('/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20')
+          ? await api.get('/api/processplatform/assemble/surface/taskcompleted/list/my/paging/0/size/20')
           : await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     return (response?.data?.data ?? response?.data ?? []) as TaskItem[]
   },

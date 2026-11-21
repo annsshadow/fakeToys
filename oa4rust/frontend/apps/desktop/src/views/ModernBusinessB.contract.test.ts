@@ -36,7 +36,7 @@ const meetingLabels = [
 const workLabels = ['发起流程', '刷新待办', '刷新我发起的', '刷新已办', '办理', '查看', '关闭', '重试']
 const workEndpoints = [
   '/api/processplatform/assemble/surface/task/list/my/paging/1/size/20',
-  '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20',
+  '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/0/size/20',
   '/api/processplatform/assemble/surface/work/list/my/paging/1/size/20',
 ]
 

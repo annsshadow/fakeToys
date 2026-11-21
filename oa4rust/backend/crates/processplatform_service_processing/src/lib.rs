@@ -3846,6 +3846,80 @@ pub async fn task_complete(
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    // R314 D1：已办列表读端点查 pp_c_taskcompleted（assemble_surface），此前写侧只写
+    // x_task / x_record / x_work，导致审批完成后「已办」仍为空。这里在同一个事务内
+    // 补写一条已办记录，字段映射到该表既有列（032 migration 定义），xperson 存任务负责人，
+    // xcreatorPerson 用会话操作人（真实审批人，与 x_record.creator 同口径）。
+    let completed_id = Uuid::new_v4().to_string();
+    let work_row = tx
+        .query_opt(
+            "SELECT title, process, application, creator, create_time, start_time FROM x_work WHERE id = $1",
+            &[&work_id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let work_title: String = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<String>>("title"))
+        .unwrap_or_default();
+    let work_process: String = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<String>>("process"))
+        .unwrap_or_default();
+    let work_app: String = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<String>>("application"))
+        .unwrap_or_default();
+    let work_creator: String = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<String>>("creator"))
+        .unwrap_or_default();
+    let fmt_ts = |t: chrono::NaiveDateTime| t.to_string();
+    let start_time = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<chrono::NaiveDateTime>>("start_time"))
+        .map(fmt_ts)
+        .unwrap_or_default();
+    let create_time = work_row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<chrono::NaiveDateTime>>("create_time"))
+        .map(fmt_ts)
+        .unwrap_or_default();
+    let completed_time = chrono::Local::now()
+        .naive_local()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    tx.execute(
+        "INSERT INTO pp_c_taskcompleted \
+         (xid, xjob, xtitle, \"xstartTime\", \"xcompletedTime\", \"xcreatorPerson\", \
+          xapplication, \"xapplicationName\", xprocess, \"xprocessName\", xserial, xperson, \
+          \"xactivityUnique\", \"xcreateTime\", \"xupdateTime\", id, create_time, update_time, creator, creator_person) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)",
+        &[
+            &id.clone(),
+            &work_id.to_string(),
+            &work_title,
+            &start_time,
+            &completed_time,
+            &session.person_unique,
+            &work_app.clone(),
+            &work_app,
+            &work_process.clone(),
+            &work_process,
+            &id,
+            &task_person,
+            &activity_token,
+            &create_time,
+            &completed_time,
+            &completed_id,
+            &create_time,
+            &completed_time,
+            &creator,
+            &work_creator,
+        ],
+    )
+    .await
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     // FOR UPDATE 防并发双取：两个审批人同时 complete 时各自事务都认领同一 pending
     // 任务（后写覆盖前写）；加行锁后后者阻塞至前者提交，EvalPlanQual 重估发现
     // task_status 已非 pending → 正确走终点分支。
