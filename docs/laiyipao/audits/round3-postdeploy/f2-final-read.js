@@ -1,0 +1,1 @@
+JSON.stringify({interrupted:window.__F2_DIAG__?window.__F2_DIAG__.interrupted:'no-diag', preventedTrue:window.__F2_DIAG__?window.__F2_DIAG__.preventedTrue:0, preventedFalse:window.__F2_DIAG__?window.__F2_DIAG__.preventedFalse:0, pageErrors:window.__LYP_PROBE__?window.__LYP_PROBE__.pageErrors.length:0, lastErrors:(window.__LYP_PROBE__?.pageErrors||[]).slice(-2)})

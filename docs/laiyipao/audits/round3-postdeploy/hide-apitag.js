@@ -1,0 +1,1 @@
+document.querySelectorAll('.api-tag').forEach(function(e){e.style.display='none';});'hidden '+document.querySelectorAll('.api-tag').length

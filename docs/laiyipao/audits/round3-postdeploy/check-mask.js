@@ -1,0 +1,1 @@
+JSON.stringify({apiTagHidden:[...document.querySelectorAll('.api-tag')].every(function(e){return getComputedStyle(e).display==='none'}),apiTagCount:document.querySelectorAll('.api-tag').length,url:location.href})
