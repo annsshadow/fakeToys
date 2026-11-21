@@ -4368,3 +4368,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R309 收官：t66 深度功能审计（8 闭环 + 跨页一致性）→ 发现 P1 会议创建双缺陷 → t67 test-first 修复 → t68 终审 pass。全程真浏览器取证、精确单提交、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 244. R310 回收站与日程闭环审计收官（2026-11-21）
+- t69（qa-e2e，只读审计）commit f1bdf907e 精确 1 文档 69 行 docs/ops/oa4rust-r310-recycle-calendar-audit.md。对 R309 两项遗留如实定性：①D2 笔记删除不进回收站=**产品口径非缺陷**——回收站后端 file_assemble_control/src/lib.rs:3996-4062 recycle_list 仅查 FILE_FILE 表、笔记软删写 cms_core_entity/src/lib.rs:842 x_cms_note，数据源隔离；真 UI note/delete 200 {deleted:true}、列表残留 0、最终对照 pc-final-contrast.json 同刻 recycle/list 200 含被删文件（filePresent=true）不含被删笔记（noteAbsent=true）。②日程新建=**取证限制**——my_calendars=[]、PC CalendarApp.vue:251 calWriteCE 无 UI 调用点、H5 +新建仅事件表单需 calendarId，不判缺陷。③H5 跨端抽检一致、全程 0 pageerror/API失败。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=f1bdf907e、工作树干净、暂存区纯净；源码并行坐实 recycle_list SQL 仅查 FILE_FILE（lib.rs:4003-4004）与 cms_entity_note_delete 软删 x_cms_note（lib.rs:842）隔离属实；实读 69 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence（gitignored）source 标注 NOT physical device、最终对照 filePresent=true/noteAbsent=true——真域名仅存 gitignored 证据目录、不入库。
+- R310 收官：两项遗留均经真浏览器 + 源码定性为非缺陷（产品口径/取证限制），无需开 bug；若期望统一回收站可另立产品需求。全程只读、无源码改动。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
