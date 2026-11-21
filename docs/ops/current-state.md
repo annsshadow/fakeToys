@@ -4485,3 +4485,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R315 收官：三交付 t85（深度审计 15e2bca1f）/ t86（F3 修复 7732f9e86）/ t87（D1 搜索修复 c5929f192）+ 终审 t88 全绿；队伍 completed +1（t88）、failed 3（t11/t30/t73 已关评审门）、0 active。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 265. R316 5域低覆盖深度功能审计 / 0新增缺陷收官（2026-11-21）
+- t89（qa-e2e 只读审计）commit d2217abfb 精确 1 文档 68 行 oa4rust/docs/ops/oa4rust-r316-deep-functional-audit.md：真浏览器（Playwright Chromium headless 1440x900、非物理真机）主 E2E 5 闭环 + 补测 3 闭环，78 次 API、pageErrors=0。
+- 五闭环结论：L4 日程新建 PASS（event create 200/回显刷新持久）；L5 SearchApp loadSearchTwin 确属死代码（:111-119 无调用点、生产不触发）+ R315 D1 搜索回归确认关键词 a 返回 3 结果；L1 BAM 周期明细初判 FAIL 经补测排除（EndpointFold.vue:6/:55 devToolsEnabled=import.meta.env.DEV 生产整块不渲染，属取证限制非缺陷）；L2 通知已读初判 FAIL 排除（当前账号 unread=0 无可流转，mark_read 后端 routes.rs:44 真实注册）；L3 工作流已办初判 FAIL 排除（补测 count=3 含刚审批 task id，证实 R314 D1 已办同步修复生效，初判系跨时点计数口径误判）。
+- 队长独立复核（不采信自述）：git show --stat d2217abfb=精确 1 文档 68 行、HEAD=TRACK=d2217abfb、暂存区与工作树干净；实读 68 行文档 <YOUR_TEST_DOMAIN> 占位/非物理真机声明/0 真值；evidence.json + supplement-evidence.json source=Playwright Chromium headless local render not physical device；源码级坐实三项排除（EndpointFold DEV gating、mark_read 注册、已办 count=3 含刚审批 id）。0 新增真实缺陷，R316 作为确认轮收官，不派终审。
+- R316 收官：队伍 completed +1（t89）、failed 3（t11/t30/t73 已关评审门）、0 active。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
