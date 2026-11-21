@@ -4626,5 +4626,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t103（design-reviewer）终审完成：终态 status=completed/verdict=pass/findings=[]，只读未改码未提交。逐条复核 t101 甄别（B 真缺陷 P2 坐实）与 t102 对称桥接删除修复（571617706），确认 section_delete 单事务 DELETE section + 同 id UPDATE x_bbs_forum SET deleted_at=NOW()、fail loud 无半状态、admin门/creator/section-list读链/t98建桥接/伪桥接第三表均未改、关联主题不自动删如实标注边界；独立复跑 cargo test -p bbs_assemble_control --lib 49 passed/0 failed。
 - 队长独立复核（不采信自述）：t103 终态 verdict=pass/findings=0；两份 evidence.json（r320-delete-orphan 甄别 B_ORPHAN_FORUM_VISIBLE、r320-bbs-delete-fix 修复 SYMMETRIC_DELETE_VERIFIED）均标注 source 非物理真机、sectionAfter.present=false/forumAfter.visible=false/pickerHasNameAfter=false/0 API失败；两文档 <YOUR_TEST_DOMAIN> 占位 0 真值；t103 evidence_note 已附。观察项（picker-after 截图未展开、硬证据为 DOM 文本捕获）如实记录为非 finding。
 - R320 完整闭环：候选登记(§282)→甄别 t101 判 B 真缺陷 P2(§284)→修复 t102 对称桥接删除(§285-§287)→终审 t103 pass(本权)。R318 BBS 跨端桥接、R319 历史版块甄别、R320 删除孤儿 forum 三轮均收官，关联主题自动删除留产品决策边界。项目 ≥1000 轮非终态，继续据实立项下一轮。
+
+## 289. R321 立项：PC/H5 未覆盖模块深度功能审计（2026-11-21）
+- 立项依据：R317 静态审计 M1/M2 已分别由 t97/t93 修复闭环、T1（日历/组织/文件 assemble/control 与 core/entity 表族）属不同业务语义非同源漂移；不臆造旧候选。改为对尚未深度覆盖的模块做真浏览器深度功能审计，据实发现新缺陷后再 test-first 修复。
+- 派发 t104（qa-e2e，只读审计，文档 oa4rust/docs/ops/oa4rust-r321-h5-deep-audit.md）：H5 390x844 真实 UI 逐条走通知公告/收藏/个人中心设置/通讯录组织/文档文件/回收站/论坛回复闭环，甄别 T1 三域两族端点可见性；对照 R317 H5 审计（L1/L2/L4/L5 PASS，L3 无入口、L6 picker 无头限制）避免重复。
+- 派发 t105（page-core，只读审计，文档 oa4rust/docs/ops/oa4rust-r321-pc-deep-audit.md）：PC 1440x900 真实 UI 逐条走通知公告/文件管理上传新建删除闭环/CMS 笔记/论坛回复闭环/通讯录组织查看器/个人中心设置/搜索；对照 R300 A2/A3 与 R307/R309/R311/R314/R315 已修项避免重复。
+- 两任务写域为两份不同文档、互不重叠，可并行；均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 标注非物理真机，真缺陷/取证限制/产品语义三分，精确单提交。审计回收后据实甄别真伪再决定修复任务。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
