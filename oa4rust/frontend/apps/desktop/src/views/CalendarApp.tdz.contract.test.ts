@@ -130,13 +130,23 @@ function runSetup(): RunResult {
 }
 
 describe('日历编辑加载 TDZ 崩溃回归（t24 P0）', () => {
-  it('源码脚本顺序中 loadCalendars(my) 调用必须晚于 calListError 声明', () => {
+  it('源码脚本顺序中顶层 loadCalendars(my) 调用必须晚于 calListError 声明', () => {
     const script = source.slice(source.indexOf('<script setup'), source.indexOf('</script>'))
-    const call = script.indexOf("loadCalendars('my')")
+    // 花括号栈深度判定"顶层调用"：只有 { } 配平后深度为 0 的调用才算顶层语句。
+    // 函数体内的 await loadCalendars('my') 处于 depth>0，被排除，消除假阳性。
+    // 取最早的顶层调用保持守护力：任一顶层调用被移回声明之前，断言都必须失败。
+    const topLevelCalls = [...script.matchAll(/loadCalendars\('my'\)/g)]
+      .filter(m => {
+        const before = script.slice(0, m.index ?? 0)
+        const depth = (before.match(/{/g) || []).length - (before.match(/}/g) || []).length
+        return depth === 0
+      })
+      .map(m => m.index ?? 0)
+    const call = topLevelCalls.length ? Math.min(...topLevelCalls) : -1
     const decl = script.indexOf('const calListError')
-    expect(call, 'loadCalendars(my) 调用不存在').toBeGreaterThan(-1)
+    expect(call, '顶层 loadCalendars(my) 调用不存在').toBeGreaterThan(-1)
     expect(decl, 'calListError 声明不存在').toBeGreaterThan(-1)
-    expect(call, '调用仍位于 calListError 声明之前，TDZ 未修复').toBeGreaterThan(decl)
+    expect(call, '顶层调用仍位于 calListError 声明之前，TDZ 未修复').toBeGreaterThan(decl)
   })
 
   it('真实编译后的 setup 同步阶段不再抛错，业务绑定完整', () => {

@@ -91,6 +91,8 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/meeting/assemble/control/meeting/{id}/checkin',
   '/api/meeting/assemble/control/meeting/{id}/checkin/code',
   // 日历（calendar_assemble_control/routes.rs）——F3
+  // 建日历 POST（t71 H5 入口同源端点，routes.rs:29-30 真实注册，真浏览器 200）
+  '/api/calendar_assemble_control/calendar',
   '/api/calendar_assemble_control/calendar/list/my',
   '/api/calendar_assemble_control/calendar/list/public',
   '/api/calendar_assemble_control/calendar/{id}',

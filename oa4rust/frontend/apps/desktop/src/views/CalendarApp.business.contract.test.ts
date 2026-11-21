@@ -49,10 +49,14 @@ describe('CalendarApp 业务视图契约', () => {
     expect(template).toMatch(/role="tablist"/)
   })
 
-  it('默认视图不渲染 /api/* 端点调试按钮，副标题不暴露 API 路径', () => {
+  it('默认视图不渲染 /api/* 端点调试按钮，但保留 R311 建日历业务入口', () => {
     expect(template).not.toContain('/api/')
-    for (const handler of ['loadCalSettings', 'calWrite', 'calMore', 'calWriteCE', 'loadCalCoreEntities']) {
-      expect(template, `端点调试 handler 不应出现在模板: ${handler}`).not.toContain(handler)
+    // calWriteCE 已不是端点调试 handler，而是 R311 新建日历业务入口（calendar-create-entry），故移出黑名单。
+    // 用 \b 词边界匹配独立标识符，避免 calWrite 作为 calWriteCE 子串造成假阳性（真正的 calWrite 仍会被抓）。
+    for (const handler of ['loadCalSettings', 'calWrite', 'calMore', 'loadCalCoreEntities']) {
+      expect(template, `端点调试 handler 不应出现在模板: ${handler}`).not.toMatch(new RegExp('\\b' + handler + '\\b'))
     }
+    expect(template, 'R311 建日历入口必须可见').toContain('data-testid="calendar-create-entry"')
+    expect(template, 'R311 建日历表单必须存在').toContain('data-testid="calendar-create-form"')
   })
 })
