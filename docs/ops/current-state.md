@@ -4492,3 +4492,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R316 收官：队伍 completed +1（t89）、failed 3（t11/t30/t73 已关评审门）、0 active。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 266. R317 立项：H5 深度闭环审计 + 静态同源漂移审计（2026-11-21）
+- 背景：R309/R314/R315 各发现 1 个真缺陷并修复，R316 收敛到 0 新增缺陷。为继续找真实问题且避免重复，R317 并行派两个只读审计、写域不重叠、共用现有测试服部署产物（index-yrBKdt7I.js，无需重新 build/部署）。
+- t90（qa-e2e 只读）H5 深度功能闭环审计：真浏览器 390x844 isMobile/hasTouch（非物理真机）走 6 条创建→回显→持久化闭环（登录/日程/会议/消息/工作流/文件论坛笔记），唯一入库物 oa4rust/docs/ops/oa4rust-r317-h5-deep-audit.md，证据 gitignored oa4rust/test-results/r317-h5-deep/。
+- t91（page-work 只读）静态潜伏缺陷审计：8 类实体（BBS/会议/日历/组织/文件/流程/笔记/消息）create→list 同源性与响应字段映射系统核对，找历史同类『写 A 表读 B 表/字段错位』潜伏缺陷，唯一入库物 oa4rust/docs/ops/oa4rust-r317-static-latent-audit.md。
+- 两任务已派发（send_message wake），均 pending→in_progress 待成员 claim；无真实发现须如实写『未复现/未发现同源漂移』并列出核对清单，禁止臆造。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
