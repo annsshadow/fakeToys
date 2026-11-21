@@ -4826,3 +4826,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据实立项 R331（后端 P2）：派 t129（page-comm，implementation，deps t127+t23）test-first 修 document_filter_paging_manager_u3 过滤条件补 deleted_at IS NULL（仅此一处、不动其他三变体/路由/soft_delete/create/publish），RED→GREEN；verify: cd oa4rust/backend && cargo test -p cms_assemble_control --lib；Linux ELF 原子部署+真浏览器新建→删除→刷新后消失闭环复验、evidence 非物理真机；【硬时序】后端单工作树串行、等 t127 前端提交部署后再编译部署；精确单提交、文档 oa4rust/docs/ops/oa4rust-r331-document-manager-filter-fix.md 脱敏 0 真值。（task t129 已创建，pending@page-comm）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R330 待 t127 提交后 t128 终审关闭，R331 在途。
 
+## 324. R330 t127 复核收官：DocumentApp 具名插槽修复达标（2026-11-22）
+- t127（page-work）完成，commit c59b2e5438659e49ae6120bb175340990ef0a6eb 精确3文件（DocumentApp.vue 60+/32- + DocumentApp.slots.contract.test.ts 92+ + oa4rust-r330-document-slots-fix.md 44+，164+/32-）已push。
+- 队长独立复核（不采信自述，在收到完成通知前已独立核验）全通过：HEAD=TRACK=c59b2e54、工作树干净、暂存区空；diff 确认方案A落地——AdminToolbar 默认插槽拆 #filters（搜索按钮）+#actions（7按钮+doc-meta-note）、AdminTable 默认插槽拆 #cell-title/#cell-status/#cell-createdAt/#cell-actions、自造搜索 input 删除改用组件 v-model、cell-actions 保留 14 btn-act+1 btn-del+全部15 @click/:disabled；AdminToolbar/AdminTable（14页复用R298组件）零改动、后端/SDK/Personal.vue 未动。
+- 队长定点复跑：DocumentApp.slots.contract.test.ts 6/6 passed（RED 5失败/1通过→GREEN 6/6 属实）；全量 vitest 268files/2165tests 全绿。文档 44行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位0真值、敏感扫描0命中、明确非物理真机；§2 记录裁决方案A、§6 如实记录删除残留剥离 R331。
+- evidence.json（gitignored，source标注本地无头Chromium非物理真机）：8前端断言 btnCreate/btnActPerRow/btnDel/toolbarHasCreate/actionsHasPublish/actionsHasDelete 全true、apiFailures=0/pageerrors=0；真UI新建→列表回显→发布200→刷新仍在列表三步走通。foundAfterDelete=true 及顶层 verdict=NOT_VERIFIED 系删除闭环未过，已按裁决剥离 R331（§323），不属 t127 验收范围。R330 修复目标（R329 P1 写入口全缺失）达成。t127 evidence_note 已附（count=1）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，待 t128 终审关闭 R330、t129 后端修复关闭 R331。
+
