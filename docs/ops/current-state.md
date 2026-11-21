@@ -4675,5 +4675,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t108（page-core）完成并队长独立复核：commit 2bf93fb1ccd5e8cc8071549f9bd271b0f49d2bc0 精确 1 文档 48 行 oa4rust/docs/ops/oa4rust-r322-pc-forum-notice-supplement.md；HEAD=TRACK 且为祖先、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机。t108 evidence_note 已附。
 - D1 真缺陷 P2 坐实：BBSForum.vue:558 `((resp as any)?.data ?? [])` 只解一层，而 PUT reply/filter/list 真实返回双层信封 {data:{data:[3条],total:3}}（net-cap.json 决定性实证）；DOM bbs-reply-undefined×2、detailText『回复 ()』、assertions replyCountFromZero=false/replyPersistAfterReload=false 而 0 pageerror/0 API失败。根因纯前端信封解包错误，与 R318 跨端不同源根因不同、与 R315 搜索信封同族。L1 通知未读后端 lib.rs:644 不返回 unread 字段经源码坐实，t89 已报不重复计缺陷。
 - 派发 t110（page-core，implementation，纯前端，写域 BBSForum.vue + 契约测试 + 文档）：test-first RED→GREEN 让 replies queryFn 兼容双层/单层信封归一为 Reply[]，不改后端/GET reply-list/POST reply-create/R318/R320 BBS 修复；PC build+原子部署+真浏览器回帖可见且刷新持久、无 bbs-reply-undefined；文档 oa4rust/docs/ops/oa4rust-r322-reply-envelope-fix.md 脱敏、精确单提交。预建 t111（design-reviewer 终审，reviewedTaskId=t110，deps t108+t109+t110）。
+
+## 298. R323 候选登记：论坛回复时间字段缺失 + t110 合同修订（2026-11-21）
+- t110（page-core）代码已提交 commit 2014fd679187fcc4f207285926d39a3c904ec371 精确 3 文件（BBSForum.vue 13+ + 契约 88+ + 文档 84+，182+/3-）：双层信封解包、enabled 静态快照改响应式 getter、creator→author 兼容映射三处同链最小修复。队长独立复核：HEAD=TRACK=2014fd679、工作树干净、文档 84 行 <YOUR_TEST_DOMAIN> 占位 0 真值；独立复跑全量 `pnpm exec vitest run` 265 files/2139 tests 0 failed；evidence（gitignored r322-reply-envelope-fix/）source 非物理真机、5→6 真实卡片、authors=admin、正文正确、undefinedCards=0、replyCountCorrect=true、replyVisibleImmediately=true、replyPersistAfterReload=true、0 pageerror/0 API失败。核心 D1 前端闭环成立。
+- fail-loud 更正：page-core 先误将『真实作者/正文/时间』整项标 passed，后主动更正为未通过（时间全空）并请求裁决。队长独立核实：后端 bbs_assemble_control/src/u2.rs:1208/1227 SQL `SELECT id, topic_id, content, creator FROM x_bbs_reply` 未 SELECT create_time、映射(1243-1263)亦不产出该字段，GET reply/{id} 详情同样无时间——前端 inScope 内无法诚实满足。时间缺失与 D1 信封解包根因不同，是独立后端字段缺失问题。
+- 裁决(c)拆分：已用 agent_teams_amend_task 修订 t110 objective/acceptance（revision 1）——剥离时间项并标注为独立候选缺陷另案甄别，不阻塞 D1 前端闭环、不扩大本任务 scope 到后端（最小改动+后端单工作树串行）。page-core 收裁决后按修订验收重新完成。
+- 纪律：『回复时间不显示』仅登记为 R323 候选证据，未证伪/未派发；若另案立项须审计前置甄别（产品口径是否需要回复时间、影响面）再 test-first 修复，禁臆造。t111 终审待 t110 完成后解锁。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
