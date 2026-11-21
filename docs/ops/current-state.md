@@ -4778,3 +4778,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 结论：R327 审计轮闭环（本轮 0 修复、仅甄别归档）；D1[P1]/D2[P2] 两条真缺陷另案 test-first 修复（D1 业务错误信封识别走 pwdError/toast.error；D2 统一保存/列表存储表与字段并适配 data.signatures/value），不得在审计任务内夹带修复。
 - 边界：不改源码/契约/配置、不伪造破坏性写取证、不扩大到 SDK 全局错误信封改造；文档脱敏 0 真值、evidence 非物理真机。项目 ≥1000 轮非终态，据实立项下一轮。
 
+## 317. R328 立项：PC 个人中心 D1[P1] 改密吞错误 + D2[P2] 签名写读错配修复（2026-11-22）
+- 据实立项依据：R327 t123 审计坐实两条真缺陷（§316），队长独立源码复核通过；D1 与 D2 都改 Personal.vue 写域重叠，合并单任务串行修复。
+- 派发 t124（page-core，implementation，deps t123+t23）：inScope 6 文件 = oa4rust/frontend/apps/desktop/src/views/Personal.vue + Personal.business.contract.test.ts + oa4rust/backend/crates/personal_extend/src/personal.rs + tests.rs + tests_generated.rs + oa4rust/docs/ops/oa4rust-r328-personal-d1d2-fix.md；outOfScope = SDK packages/sdk/src/api.ts、personal/src/password.rs、personal/src/signature.rs、oa4rust/backend/migrations/。verify: cd oa4rust && pnpm exec vitest run；cd oa4rust/backend && cargo test -p personal_extend --lib。（task t124 已创建，pending@page-core）
+- 队长裁决（fail-loud，须写入修复文档 §2）：D1 采前端最小改动——savePassword 两处 onSuccess（:136-143 与 :161-164）检查返回业务信封 type:error 走 pwdError/toast.error 不进成功分支，不改 SDK 全局信封（影响面大非必需）；D2 采保存端补桥接——save_signature 在写 x_person_signature 之外同步写 x_custom(name/person/value，person 用 session.person_unique，与 signature.rs list 的 resolve_current_person_unique 同源须实测核对)，使上传/保存/列表三方 x_custom 同源，保留 x_person_signature 写链不破坏 095 migration 意图；前端签名加载改解析 resp.data.signatures[0].value。任一裁决遇实测冲突先回报队长不静默改向。
+- 预建 t125（design-reviewer，review round 1，reviewedTaskId=t124，deps t124+t23）：终审两缺陷是否闭环、test-first RED→GREEN、vitest/cargo 全绿、部署与真浏览器证据、文档脱敏非物理真机、是否越界 SDK/personal crate/DDL；verdict=pass 方可关闭 R328。（task t125 已创建，pending@design-reviewer）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
