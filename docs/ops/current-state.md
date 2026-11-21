@@ -4622,3 +4622,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t103 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R320。t102 evidence_note 已附。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 288. R320 收官（2026-11-21）
+- t103（design-reviewer）终审完成：终态 status=completed/verdict=pass/findings=[]，只读未改码未提交。逐条复核 t101 甄别（B 真缺陷 P2 坐实）与 t102 对称桥接删除修复（571617706），确认 section_delete 单事务 DELETE section + 同 id UPDATE x_bbs_forum SET deleted_at=NOW()、fail loud 无半状态、admin门/creator/section-list读链/t98建桥接/伪桥接第三表均未改、关联主题不自动删如实标注边界；独立复跑 cargo test -p bbs_assemble_control --lib 49 passed/0 failed。
+- 队长独立复核（不采信自述）：t103 终态 verdict=pass/findings=0；两份 evidence.json（r320-delete-orphan 甄别 B_ORPHAN_FORUM_VISIBLE、r320-bbs-delete-fix 修复 SYMMETRIC_DELETE_VERIFIED）均标注 source 非物理真机、sectionAfter.present=false/forumAfter.visible=false/pickerHasNameAfter=false/0 API失败；两文档 <YOUR_TEST_DOMAIN> 占位 0 真值；t103 evidence_note 已附。观察项（picker-after 截图未展开、硬证据为 DOM 文本捕获）如实记录为非 finding。
+- R320 完整闭环：候选登记(§282)→甄别 t101 判 B 真缺陷 P2(§284)→修复 t102 对称桥接删除(§285-§287)→终审 t103 pass(本权)。R318 BBS 跨端桥接、R319 历史版块甄别、R320 删除孤儿 forum 三轮均收官，关联主题自动删除留产品决策边界。项目 ≥1000 轮非终态，继续据实立项下一轮。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
