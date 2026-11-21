@@ -4749,5 +4749,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据实立项依据：队长纯本地只读侦察——PC MeetingApp.vue 有真实完整实现（楼栋/会议室预订联动、新建会议、我的会议列表、日程），但此前仅 R309 定点修复两个已知缺陷（create HTTP500、applied=false 列表不可见），从未全模块深度审计；R317 H5 审计仅标会议无新建入口。属据实未覆盖对象，非臆造。
 - 派发 t120（page-core，只读深度审计，文档 oa4rust/docs/ops/oa4rust-r326-pc-meeting-audit.md）：PC 1440x900 真 UI 逐条走楼栋联动/新建会议真写/我的会议列表/详情/取消删除/兜底/R309 回归，记录真请求/响应/回显；判定三分（真缺陷需真 UI 可复现+源码定位／取证限制／产品语义差异），禁臆造；文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 非物理真机，精确单提交。
 - R325 已于 §310 正式收官（HEAD=TRACK=3ee6f4fc）；t120 写域为一份新文档，与其他在途任务不重叠。审计回收后据实甄别再决定是否修复。
+
+## 312. R326 t120 审计收官 + D1 派修（2026-11-22）
+- t120（page-core）完成并队长独立复核：commit 1624280e87f5bac531294a3dca28adb1e2eaab09 精确 1 文档 77 行 oa4rust/docs/ops/oa4rust-r326-pc-meeting-audit.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值非物理真机；evidence source 非物理真机。t120 evidence_note 已附。
+- 判定 D1[P2] 真缺陷：『我的会议』搜索/状态筛选 UI 有但不生效。队长源码级再核实（比报告更精）：前端 MeetingApp.vue:208-212 构造 p.key/p.status 却用固定 URL（死变量）；后端 lib.rs:1054-1079 meeting_list_apply_page_size_size 签名仅 Path((page,size))、SQL WHERE applied=true AND(读归属谓词 APPLIED_CREATOR_READ_PREDICATE $3) 无 key/status 过滤（动态 ({}) 是归属谓词非搜索，队长已排除误判）；真浏览器无匹配词列表 3→3 无空态。L1 楼栋无种子、P1 无删除入口（产品语义）、G1 R309 两修复回归正常均三分合规。
+- 派发 t121（page-core，implementation，deps t120+t23，前后端联动，后端单工作树当前空闲符合串行）：后端加 Option Query(key/status)+SQL 过滤（不带参数向后兼容）、前端 loadMeetings 按 p 拼 query string 消除死变量；$3 归属谓词/applied/分页/R309 两修复不变、不加删除取消入口；test-first RED→GREEN（cargo meeting_assemble_control + vitest 全绿）+ 测试服 Linux ELF + PC build 原子部署 + 真浏览器无匹配 0 条空态/状态过滤/清空恢复/0 pageerror；文档 oa4rust/docs/ops/oa4rust-r326-meeting-search-fix.md 脱敏、精确单提交。预建 t122（design-reviewer 终审，reviewedTaskId=t121，deps t120+t121+t23）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
