@@ -4532,3 +4532,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t95（qa-e2e 只读复验）：M1 消息 sender 缺省普通用户可见性——先源码确认 IMChat.vue:821 customCreate 是否真为死代码（无调用点判潜伏无实际影响）；有非 admin 账号则真浏览器复验可见性判真缺陷/预期语义；无账号如实写取证限制。唯一入库文档 oa4rust/docs/ops/oa4rust-r317-m1-visibility-verify.md，证据 gitignored。两任务已 send_message wake 派发。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 272. R317 M2 修复终审通过（2026-11-21）
+- t94（design-reviewer 只读终审，reviewedTaskId=t93）verdict=pass/findings=0/status=completed：缺陷1 M2 补写 xconsumer 复用 $5=consumer、consume_list/unread_count 按 xconsumer 过滤、DB 回读 consumer=xconsumer 同源坐实；缺陷2 xcreateTime 改 Option<String> 容错系补写后新行可见的必要前提（同 lib.rs 同函数、在 inScope），不立 finding；3 新增源码扫描契约可真复现 RED、本轮实测 message 16 passed（含 3 契约）、message_assemble_communicate 115 passed exit0；真浏览器 r317-m2fix source 非物理真机 create200/consumeList200/unread=1/DB 同源/0 error/0 API 失败，文档占位域名 0 真值。
+- 队长独立复核（不采信自述）：task 终态 status=completed/verdict=pass/findings=0；独立全量复跑 oa4rust 根 `pnpm exec vitest run` EXIT=0（263 files）、`pnpm test:mobile` EXIT=0（71 files）、cargo test -p message --lib 16 passed、-p message_assemble_communicate --lib 115 passed 均 exit0，无回归。M2 修复链（t92 坐实→t93 修复→t94 终审）完整闭环。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
