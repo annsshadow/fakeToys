@@ -4724,5 +4724,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t115（page-core）完成并队长独立复核：commit a52caf1b5 精确 1 文档 95 行 oa4rust/docs/ops/oa4rust-r324-pc-attendance-audit.md；HEAD=TRACK、工作树干净、文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。判 D1[P1]（AttendanceApp.vue:362 `records.value=r.data?.list??[]` 而后端 attendancedetail_filter_list lib.rs:1341-1345 返回 data 为数组，创建 200/count=1 但 rowsAfterRefresh=0）、D2[P2]（toggleAttType :454-465 对 HTTP200 type:error 不检查仍弹成功 toast，与真实 success 无法区分）；R1 建删后不刷新次生风险、L1 无种子取证限制、P1 正常项如实标注。三处源码队长已定点复核。evidence_note 已附。
 - 派发 t117（page-core，implementation，deps t115，写域 AttendanceApp.vue + 契约 + 新文档，与审计文档不重叠）：三处同一文件合并 test-first 修复——D1 双形态解包（数组 data 与 {list,total} 归一）、D2 error 信封走 toast.error 分支并 return、R1 建/删明细后 invalidateQueries/refetch；不改后端返回结构/SDK/H5/端点；PC build + 原子部署 + 真 Chromium 新建→列表即时出现→统计变化→刷新持久→删除→即时一致，error/success toast 可区分，0 pageerror；文档 oa4rust/docs/ops/oa4rust-r324-pc-attendance-fix.md 脱敏、精确单提交三文件。
 - 预建 t118（design-reviewer，review，round=1，reviewedTaskId=t117，deps t115+t116+t117）：只读终审 R324 双审计+D1/D2/R1 修复链，verdict=pass/findings=[] 才关闭 R324。t116（H5 考勤 0 真缺陷）已于 §305 收官。
+
+## 307. R324 t117 三处前端修复收官 + 终审解锁（2026-11-21）
+- t117（page-core）完成并队长独立复核：commit e5c22cc25bbf7093e320390fbe44668e12c8e0c3 精确 3 文件（AttendanceApp.vue 18+ + 契约 146+ + 文档 60+，221+/3-）；diff 确认 D1 :362-363 数组 data/{list,total} 双形态归一、D2 toggleAttType error 信封 toast.error+return、R1 createAttDetail/deleteDetail 各加 loadData()；后端/SDK/H5/端点未改；HEAD=TRACK=e5c22cc25、暂存区与工作树全干净。
+- 队长独立复跑 `pnpm exec vitest run`：266 files/2147 tests 0 failed（EXIT=0）；文档 60 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（oa4rust/test-results/r324-attendance-fix/，gitignored）source 非物理真机、8 断言全 true——建明细列表 1→2/统计 1→2 即时、刷新持久 2 行、删除回退 1、不存在 code 红色『setting not found』错误 toast、真实 code 成功 toast、0 pageerror/0 API失败。
+- t118 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R324。t117 evidence_note 已附。GitHub 默认分支漏洞提示（dependabot/229）属仓库依赖审计范畴，非本任务范围，供参考。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
