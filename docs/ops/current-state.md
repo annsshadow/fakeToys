@@ -4660,5 +4660,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t107（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings_open=0、只读未改码未提交；HEAD=TRACK=1d3761c8 稳定、工作树干净；队长独立全量复跑前端 vitest exit0（264 files），定点契约 4/4 已独立跑；三份 R321 文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。t107 evidence_note 已附。
 - 终审非阻塞观察（t105 审计文档 §3『三链不同源』措辞与源码实际不符——新建/删除/回收三链均操作 FILE_FILE，真因仅前端未刷新）队长已采纳并源码级修正该文档措辞（commit 67501c43b），保留证据与 D1 判定不动，不影响收官。
 - R321 完整闭环：双审计（t104 H5 七模块 PASS+T1 归档、t105 PC 八模块 D1 判 P2）→ D1 根因队长源码级精确化（前端 deleteFile onSuccess 未刷新回收站）→ t106 纯前端 1 行修复（契约 RED→GREEN 4/4、真浏览器 7 断言全 true）→ t107 终审 pass。R321 正式收官，项目 ≥1000 轮非终态。
+
+## 295. R322 立项：论坛回复与通知已读取证限制补测（2026-11-21）
+- 立项依据（据实非臆造）：R321 PC 审计 §4 如实标注两处取证限制——①论坛回复闭环当时 bbs-topic-{id} 主题帖 0 条无法进详情；②通知已读 instant/list 仅 1 条且 unread=0 无入口。R318/R320 已建立 BBS 版块桥接、t104 H5 已验证回帖 0→1 持久，条件已具备。队长只读侦察确认 PC BBSForum.vue 有真实 reply/create(:624)/reply/list/sub(:743)、IMChat.vue 有 markAllRead(:535-541) 入口。
+- 派发 t108（page-core，PC 补测，文档 oa4rust/docs/ops/oa4rust-r322-pc-forum-notice-supplement.md）：真 UI 发帖→进详情→回帖→刷新持久；通知已读 markAllRead 后徽标/unread 归零持久。t109（qa-e2e，H5 补测，文档 oa4rust/docs/ops/oa4rust-r322-h5-forum-notice-supplement.md）：H5 回帖闭环+通知已读，picker 受限如实标注。
+- 两任务写域为两份不同文档互不重叠、均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位 0 真值、证据 gitignored 非物理真机，真缺陷/取证限制/产品语义三分，精确单提交；回收后据实甄别再决定修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
