@@ -15,7 +15,7 @@ defineProps<{
 <template>
   <section
     id="ai-insight-card"
-    class="ai-insight-card glass-surface"
+    class="ai-insight ai-insight-card glass-surface"
     :aria-busy="loading ? 'true' : 'false'"
     aria-label="AI 运营洞察"
   >

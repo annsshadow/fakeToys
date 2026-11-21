@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
-import {onMounted, ref, onActivated} from 'vue'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
+import {onMounted, ref, onActivated, computed} from 'vue'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isCancel } from '@/utils/format'
@@ -20,6 +22,9 @@ function resetFilters() {
   activeElement.value = ''
   activeKind.value = ''
 }
+
+/** R5：AI 洞察结论从当前页技能数据确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('skills', { skills: skills.value, recipes: recipes.value }))
 
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
@@ -212,6 +217,8 @@ const asRow = (r: unknown) => r as AdminSkillView
       </p>
       </div>
     </div>
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <div class="section-kicker">
       <span class="section-kicker-cn">技能配置 · 元素与配方</span>

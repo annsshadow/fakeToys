@@ -79,6 +79,13 @@ describe('F-10-3 战报标杆重构契约', () => {
     w.unmount()
   })
 
+  it('R5：速览指标不重复 —— battle-summary 与 kpi-strip 合并为单一指标带', async () => {
+    const w = await mountBattles([battleFixture()])
+    expect(w.find('.kpi-strip[data-test="battle-summary"]').exists(), '指标带应合并到 kpi-strip').toBe(true)
+    expect(w.find('.battle-summary').exists(), '不得保留重复的旧指标带').toBe(false)
+    w.unmount()
+  })
+
   it('关键列强调且不丢列：结果/验真/一致性带 emphasis，表格列与按钮不回退', async () => {
     const w = await mountBattles([battleFixture()])
     expect(SRC).toContain('col-emphasis')

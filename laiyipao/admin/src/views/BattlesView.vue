@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -125,6 +127,20 @@ const battleSummary = computed(() => {
     suspicious,
   }
 })
+
+/** R5：AI 洞察结论从当前页战报数据确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('battles', { battles: battles.value }))
+
+/** R5：智能空态动作 —— 清空筛选并重载。 */
+function resetFilters() {
+  userId.value = undefined
+  levelId.value = undefined
+  result.value = ''
+  onlyMismatched.value = false
+  dateRange.value = null
+  page.value = 1
+  load()
+}
 
 const router = useRouter()
 
@@ -348,23 +364,18 @@ const asRow = (r: unknown) => r as AdminBattleView
       </div>
     </div>
 
-    <div class="battle-summary" data-test="battle-summary">
-      <div class="summary-item">
-        <span class="summary-label">本页记录</span>
-        <span class="summary-value">{{ battleSummary.count }}</span>
-      </div>
-      <div class="summary-item summary-item--accent">
-        <span class="summary-label">本页胜率</span>
-        <span class="summary-value">{{ battleSummary.winRate }}</span>
-      </div>
-      <div class="summary-item summary-item--danger">
-        <span class="summary-label">验真异常</span>
-        <span class="summary-value">{{ battleSummary.mismatched }}</span>
-      </div>
-      <div class="summary-item summary-item--warning">
-        <span class="summary-label">守恒可疑</span>
-        <span class="summary-value">{{ battleSummary.suspicious }}</span>
-      </div>
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
+
+    <div class="section-kicker">
+      <span class="section-kicker-cn">战斗记录 · 验真与守恒审查</span>
+      <span class="section-kicker-en">BATTLE REPLAY / VERIFY REVIEW</span>
+    </div>
+
+    <div class="kpi-strip" data-test="battle-summary">
+      <div class="kpi-main"><div class="kpi-label">本页记录</div><div class="kpi-value tabular-nums">{{ battleSummary.count }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">本页胜率</div><div class="kpi-value tabular-nums">{{ battleSummary.winRate }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">验真异常</div><div class="kpi-value tabular-nums">{{ battleSummary.mismatched }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">守恒可疑</div><div class="kpi-value tabular-nums">{{ battleSummary.suspicious }}</div></div>
     </div>
 
     <el-card shadow="never" class="battle-table-card">
@@ -415,11 +426,11 @@ const asRow = (r: unknown) => r as AdminBattleView
           只看验真不匹配
         </el-checkbox>
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ total }} 条</span>
+        <span class="result-count tabular-nums" aria-live="polite">共 {{ total }} 条</span>
        </div>
       </div>
 
-      <el-table :data="battles" size="small" stripe>
+      <el-table class="data-grid" :data="battles" size="small" stripe>
         <el-table-column label="ID" width="100">
           <!-- 复制战报 ID（2026-11-01 新一轮第 92 轮）：贴工单/外部重放 -->
           <template #default="{ row }">
@@ -483,7 +494,12 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选下没有战报，清空筛选即可查看全部对局。</p>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
@@ -603,27 +619,7 @@ const asRow = (r: unknown) => r as AdminBattleView
 </template>
 
 <style scoped>
-/* F-10-3 标杆重构：本页速览指标带 —— 打开先扫异常，再看表格 */
-.battle-summary {
-  display: grid; gap: 12px; margin-bottom: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-.summary-item {
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 12px 16px; border-radius: 8px;
-  background: var(--lyp-panel); border: 1px solid var(--lyp-border);
-  border-left: 2px solid var(--lyp-border);
-}
-.summary-item--accent { border-left-color: var(--lyp-accent); }
-.summary-item--danger { border-left-color: var(--lyp-danger); }
-.summary-item--warning { border-left-color: var(--lyp-warning); }
-.summary-label {
-  font-size: 11px; letter-spacing: .06em; color: var(--lyp-muted);
-}
-.summary-value {
-  font-size: 24px; font-weight: 650; letter-spacing: -.02em;
-  color: var(--lyp-text); font-variant-numeric: tabular-nums;
-}
+/* R5：本页速览指标已并入共享 .kpi-strip（data-test=battle-summary），不重复渲染 */
 /* 筛选动线拆两行：主筛选（谁/哪关/结果）与范围筛选（日期/验真/计数） */
 .filter-bar { display: flex; flex-direction: column; gap: 8px; }
 .filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -631,7 +627,7 @@ const asRow = (r: unknown) => r as AdminBattleView
 /* 关键列强调：结果/一致性/验真的单元格数字更醒目 */
 :deep(.col-emphasis .cell) { font-weight: 600; }
 @media (max-width: 900px) {
-  .battle-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 /* 验真区：种子 + 粘贴框 + 结果同一行的阅读节奏 */
 .verify-row {

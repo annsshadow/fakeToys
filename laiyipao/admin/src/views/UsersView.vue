@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -130,6 +132,9 @@ function flowReasonLabel(reason: string): string {
 }
 
 const page = computed(() => Math.floor(offset.value / limit.value) + 1)
+
+/** R5：AI 洞察结论从当前页用户数据确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('users', { users: users.value }))
 const pageCount = computed(() => Math.max(1, Math.ceil(cappedTotal(total.value, limit.value) / limit.value)))
 
 /** status: 1=正常 2=封禁（与迁移中的 CHECK 约束一致） */
@@ -529,6 +534,8 @@ const asRow = (r: unknown) => r as AdminUserView
       </p>
       </div>
     </div>
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <div class="section-kicker">
       <span class="section-kicker-cn">用户管理 · 玩家档案</span>

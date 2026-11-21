@@ -16,6 +16,8 @@
  * 而台账数字看起来可能完全正常。不单独指出来的话，
  * 值班的人会以为防护开着。
  */
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {computed, onMounted, ref, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
@@ -53,6 +55,9 @@ const statsLoading = ref(false)
 const rows = ref<RecomputeView[]>([])
 const total = ref(0)
 const summary = ref<RecomputeSummary | null>(null)
+
+/** R5：AI 洞察结论从统计窗口总账确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('recomputes', { summary: summary.value }))
 
 /**
  * 引擎侧静默失效告警。
@@ -441,6 +446,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       </p>
       </div>
     </div>
+
+    <AiInsightCard :insight="aiInsight" :loading="statsLoading" />
 
     <div class="section-kicker">
       <span class="section-kicker-cn">结算审计 · 重算与不符</span>
