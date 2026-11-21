@@ -10,35 +10,32 @@
         <button :class="{active:tab==='draft'}" @click="tab='draft'">草稿</button>
       </div>
       <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="reload">
-        <input v-model="keyword" placeholder="搜索文档..." class="search-input" @keyup.enter="doSearch" />
-        <button class="btn-primary" @click="doSearch">搜索</button>
-        <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
-        <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
-        <button class="btn-primary" @click="loadManagerList">管理视图</button>
-        <button class="btn-primary" @click="loadDocTwin">孪生端点</button>
-        <button class="btn-primary" @click="loadDocTwin2">孪生端点B</button>
-        <button class="btn-primary" @click="loadDocTwin3">数据·文档深度C</button>
-        <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
-        <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
+        <template #filters>
+          <button class="btn-primary" @click="doSearch">搜索</button>
+        </template>
+        <template #actions>
+          <button class="btn-create" @click="showCreate=true">+ 新建文档</button>
+          <button class="btn-primary" @click="loadDocMeta">字段/批量状态</button>
+          <button class="btn-primary" @click="loadManagerList">管理视图</button>
+          <button class="btn-primary" @click="loadDocTwin">孪生端点</button>
+          <button class="btn-primary" @click="loadDocTwin2">孪生端点B</button>
+          <button class="btn-primary" @click="loadDocTwin3">数据·文档深度C</button>
+          <button class="btn-primary" @click="loadCipherList">密文文档列表</button>
+          <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
+        </template>
       </AdminToolbar>
       <AdminTable :columns="documentColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="reload">
-      <div class="list-panel">
-        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
-        <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
-        <ListLoadError v-else-if="items.length===0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
-        <div v-else-if="items.length===0" class="empty"><div class="ei">📄</div><p>暂无文档数据</p></div>
-        <div v-else class="item-table">
-          <div class="table-header">
-            <span class="col-title">标题</span>
-            <span class="col-id">ID</span>
-            <span class="col-status">状态</span>
-            <span class="col-actions">操作</span>
-          </div>
-          <div v-for="item in items" :key="item.id" class="table-row glass-card">
-            <span class="col-title">{{ item.title || item.name || '未命名' }}</span>
-            <span class="col-id font-mono">{{ item.id?.slice(0,8) }}...</span>
-            <span class="col-status" :class="docStatusCls(item.status)">{{ statusLabel(item) }}</span>
-            <span class="col-actions">
+        <template #cell-title="{ row: item }">
+          <span class="col-title">{{ item.title || item.name || '未命名' }}</span>
+        </template>
+        <template #cell-status="{ row: item }">
+          <span class="col-status" :class="docStatusCls(item.status)">{{ statusLabel(item) }}</span>
+        </template>
+        <template #cell-createdAt="{ row: item }">
+          <span class="font-mono">{{ item.createdAt || '—' }}</span>
+        </template>
+        <template #cell-actions="{ row: item }">
+          <span class="col-actions">
               <button class="btn-act" @click="onCommend(item)">推荐</button>
               <button class="btn-act" @click="onUncommend(item)">取消推荐</button>
               <button class="btn-act" @click="onTop(item)">置顶</button>
@@ -53,11 +50,9 @@
               <button class="btn-act" @click="onDocLog(item)">日志</button>
               <button class="btn-act" @click="onCommendList(item)">点赞</button>
               <button class="btn-act" @click="onDetail(item)">详情</button>
-              <button class="btn-del" :disabled="deletingId === item.id" @click="onDelete(item)">删除</button>
-            </span>
-          </div>
-        </div>
-      </div>
+            <button class="btn-del" :disabled="deletingId === item.id" @click="onDelete(item)">删除</button>
+          </span>
+        </template>
       </AdminTable>
     </div>
     <!-- Create modal -->
@@ -131,6 +126,7 @@ void AdminFormSection
 void AdminPageHeader
 void AdminTable
 void AdminToolbar
+void ListLoadError
 
 type Tab = 'published' | 'draft'
 type DocItem = { id: string; title?: string; name?: string; content?: string; status?: string; createdAt?: string }
