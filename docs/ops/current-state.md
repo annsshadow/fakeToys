@@ -4643,5 +4643,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 结论：PC/H5 双审计回收完毕——H5 七模块（通知/收藏/个人中心设置/通讯录组织/文档文件/论坛回帖 0→1 持久/回收站 tap 删除 3→2）真 UI PASS，0 新增 P0/P1；论坛回复/通知已读等取证限制如实标注不臆造。
 - T1 甄别（R317 静态候选）闭环：日历 control event/filter=11 vs core event/list/{id}=3（同 calId）、组织 control person=21 vs core unit=2、文件 control list=0 vs core attachment=13，三域两族定性【非同源、不同业务语义】，按纪律不判 bug，T1 候选正式归档。
 - R321 审计阶段收官：PC D1（纯前端回收站回显缺失）已派 t106 修复在途，H5 无新增缺陷；t104 evidence_note 已附。待 t106 完成后据实终审并关闭 R321。
+
+## 292. R321 终审任务预建（2026-11-21）
+- 预建 t107（design-reviewer，review，round=1，reviewedTaskId=t106，deps t104+t105+t106）：只读终审 t105 PC 审计 D1、t104 H5 审计（七模块 PASS+T1 归档）、t106 D1 回收站回显修复，确认 D1 闭环且 R318-R320/R300-R317 无回归；verdict=pass 且 findings=[] 才关闭 R321，需修订按结构化 findings 上报且 needs_revision 标 failed。
+- 时序：t106 前端写域独立、t107 只读终审待其完成后自动解锁，符合写域不重叠纪律。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
