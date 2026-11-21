@@ -4412,3 +4412,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R311 收官：t70（PC 建日历入口+3 修复）→ t71（H5 建日历入口+同轨端点）→ t72（双端真浏览器复查、R310 取证限制解除）→ t73 终审 needs_revision（业务达标但 CI 三契约过时）→ t75 repair（仅同步 3 契约、保留 TDZ 守护力）→ t76 复核 pass。建日历与事件闭环在 PC/H5 双端打通、跨刷新持久、0 错误，全量测试全绿，无阻断缺陷。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 252. R313 API 封装路径漂移立项（2026-11-21）
+- 来源：t74 R312 静态审计（§245）中价值候选『封装路径漂移』，队长源码级坐实为真实潜伏缺陷（非臆造）：packages/apis/src/index.ts:603 `documentApi.create`→POST /api/document/document（后端 cms_assemble_control/routes.rs:526 仅 POST /api/document，404）；:604 `documentApi.update`→PUT /api/document/document/${id}（后端 routes.rs:527 仅 POST /api/document/{id}/update，路径+方法双重漂移）；:529 `programCenterApi.dictCreate`→POST /api/program_center/dict/create（后端 program_center/routes.rs:566 仅 POST /api/program_center/dict，0 注册）。全后端复核 /api/document/document 仅 .../fields(GET)、/dict/create 0 注册。
+- 潜伏性定性：桌面 UI 均直调正确路径（DocumentApp.vue:250、ProgramCenterApp.vue:999），当前功能不 break；documentApi.create/update 除 api-coverage-generated.test.ts 覆盖率测试外无业务调用方。该测试只 expect(fn).toBeDefined 且注释称『401/404 也是有效覆盖』，不校验路径，故漂移长期潜伏。未来新调用方用封装必 404，属真实缺陷、非产品口径。
+- 派发 t77（page-core，implementation）修复：新建真断言路径契约（非覆盖率驱动）先 RED→GREEN、改三处封装对齐后端、桌面 build + 测试服原子部署 + 真浏览器封装调用非 404/0 pageerror、精确单提交（index.ts+契约+文档 docs/ops/oa4rust-r313-api-wrapper-drift-fix.md）。已 claimed。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
