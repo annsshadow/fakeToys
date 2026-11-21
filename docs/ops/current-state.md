@@ -4542,4 +4542,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 前端 customCreate 死代码坐实：IMChat.vue:794/834/863/878 imMore 系列仅定义无调用、:821 分支不可达，测试服 bundle grep message/custom/create=0，无真实用户触发路径→实际影响 0；修复方向若另派：以 sess.person_unique 为 sender 事实源/新增 creator 列写读同源，契约 RED→GREEN。
 - 队长独立复核（不采信自述）：commit stat 精确 1 文档、HEAD=TRACK=d12a11b2f、工作树干净；文档 <YOUR_TEST_DOMAIN> 占位 0 真值、明确非物理真机；判定与源码定位/t91 静态审计 §3 M1 候选一致。证据 gitignored oa4rust/test-results/r317-m1-verify/ 不入库；全程 0 pageerror。M2 修复链（t92→t93→t94）+ M1 复验（t95）全部收官，R317 完整闭环。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+## 274. R318 立项：BBS 版块跨端表分叉前置甄别（2026-11-21）
+- 立项依据（队长源码级侦察，非定论）：BBS 版块跨端写读落不同表——PC BBSForum.vue:315 section/list 读 x_bbs_assemble_control_section、:374 section/create 写同表（后端 bbs_assemble_control/src/lib.rs:249 section_create_spec、:216 list_control_sections）；H5 发帖 picker mobile/src/pages/bbs/new.vue:83 数据源 bbsApi.forumList()→forum/view/all 读 x_bbs_forum（lib.rs:398 list_forums），u2.rs:1406 u2_user_forum_save 写 x_bbs_forum（补版块后 picker 出选项坐实）。
+- 边界：t91 静态审计 oa4rust/docs/ops/oa4rust-r317-static-latent-audit.md:16 已裁决 PC 端 section create/list 同源、前端消费匹配=是（PC 端排除缺陷）；t90 H5 审计 oa4rust/docs/ops/oa4rust-r317-h5-deep-audit.md:29 把跨表分叉标为『观察，不判本轮缺陷』。故本轮只甄别跨端不同源现象：产品语义差异（section≠forum 两类实体各自自洽）vs 真缺陷（用户合理流程受阻），禁止直接判 bug。
+- 另观察（未立项）：lib.rs:245 注释『x_bbs_assemble_control_section 无 deleted_at 列→硬删』与 migrations/037_add_deleted_at.sql:26 已加 deleted_at 列属注释/DDL 漂移，仅记录。
+- 派发 t96（qa-e2e 只读前置审计，outOfScope 禁改源码/契约/禁部署）：真浏览器走【PC 建版块→H5 发帖 picker 可见性→H5 发帖→PC 可见性】闭环，结论三选一 A 产品语义差异／B 真缺陷（仅给修复建议）／C 取证受限；仅产出脱敏文档 oa4rust/docs/ops/oa4rust-r318-bbs-section-forum-audit.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机）。
+- 开工态复核（队长独立）：team phase=running、8 成员全 idle、0 活动任务、HEAD=TRACK=242b91f42、工作树干净。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
