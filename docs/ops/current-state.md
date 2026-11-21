@@ -4447,3 +4447,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 4 文件、HEAD=TRACK=b3ce29e5a、工作树仅剩 t83 在途文件（写域不重叠、未触碰）；diff 实读确认 Multipart 替换 Json + u2_persist_verified 落盘 + folder_id=root；定点复跑 FileUpload.R314 契约 2/2 exit 0；文档 50 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored r314-upload-415-fix/）标注非物理真机、uploadStatus=200（非 415）/fileNameInList=true/fileNameAfterReload=true/0 错误/0 API失败。t82 完成 build+原子部署+复验+提交全链路，已按串行化放行 t83 部署。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 258. R314 D1 已办不同步修复复核（2026-11-21）
+- t83（page-core）commit 3ea2199fe 精确 6 文件（processplatform lib.rs +74 + taskcompleted_sync.rs 集成测试 133 行 + 文档 54 行 + ModernBusinessB.contract.test.ts 1 行（分页白名单连带同步）+ ProcessWork.vue 2 行 + TaskCompleted.R314 契约 44 行，308+/3-）。两个独立真缺陷 test-first RED→GREEN：①写侧缺失——task_complete 事务内补写 PP_C_TASKCOMPLETED 20 列（按 032 DDL 核对，xperson=负责人/xcreatorPerson=会话审批人），集成测试 RED count=0→GREEN count=1；②已办读端点 0 基分页——前端原请求 paging/1（OFFSET=1 跳过唯一记录），改 paging/0，真浏览器 paging/0 count=1 vs paging/1 count=0 实证。cargo test 101 lib+2 集成 0 failed、全量 vitest 261 files/2119 passed、typecheck exit0。
+- 队长独立复核（不采信自述）：stat 精确 6 文件、HEAD=TRACK=3ea2199fe、工作树干净；diff 实读确认补写 20 列 + paging 0 基 + ModernBusinessB 白名单连带同步（合理必要）；定点复跑 TaskCompleted.R314 契约 2/2 exit 0；文档 54 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored r314-taskcompleted-sync/）标注非物理真机、六断言全 true（completedBefore=1→After=2→Reload=2、completeStatus=200、0 pageerror/API失败）。基于含 t82 改动的 HEAD 一次性部署，最终 web 产物含双方前端改动。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
