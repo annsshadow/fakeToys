@@ -4772,3 +4772,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t123（page-core，只读深度审计，文档 oa4rust/docs/ops/oa4rust-r327-pc-personal-audit.md）：1440x900 真浏览器走改密表单/头像上传/签名上传保存/身份邮件 OAuth 信息/加载失败兜底/关键契约回归；三分判定（真缺陷/取证限制/产品语义差异）、禁臆造、精确单提交、文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。审计回收后据实甄别再定修复。（task t123 已创建，in_progress@pending）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 316. R327 t123 审计收官：PC 个人中心两条真缺陷甄别（2026-11-22）
+- t123（page-core）完成 commit 34f90af33914b7114abf7b8fc46e69f77216ae35：精确单文档 oa4rust/docs/ops/oa4rust-r327-pc-personal-audit.md（44 行），HEAD=TRACK=34f90af33、git push 成功 exit 0、工作树干净、暂存区空；定点契约 5/5、全量 vitest 267 files/2152 tests 0 failed。t123 evidence_note 已附。
+- 队长独立复核（不采信自述）：git show --stat 精确 1 文件 44 insertions；文档全 <YOUR_TEST_DOMAIN> 占位 0 真值、无 URL/IP/私钥、明确截图与 evidence 来源为无头 Chromium 非物理真机；三项源码定点确证：①personal/src/password.rs:76 错误旧密码返回 HTTP200 type:error，Personal.vue:161-164 onSuccess 直 toast.success 并清表单，SDK packages/sdk/src/api.ts:275-296 仅按 resp.ok 判错不查业务信封——D1[P1] 改密吞错误坐实；②personal_extend/src/personal.rs:204/214/229 保存写 x_person_signature，personal/src/signature.rs:113-141 列表读 x_custom 返 {signatures:[{value}]}，Personal.vue:127-128 把 resp.data 当数组取 content——D2[P2] 写读表错配+双层信封未解包坐实；③L1 头像/改密成功属破坏性写未授权不执行、P1 探针刻意不接 UI 符合契约——取证限制/产品语义差异判定成立。
+- 结论：R327 审计轮闭环（本轮 0 修复、仅甄别归档）；D1[P1]/D2[P2] 两条真缺陷另案 test-first 修复（D1 业务错误信封识别走 pwdError/toast.error；D2 统一保存/列表存储表与字段并适配 data.signatures/value），不得在审计任务内夹带修复。
+- 边界：不改源码/契约/配置、不伪造破坏性写取证、不扩大到 SDK 全局错误信封改造；文档脱敏 0 真值、evidence 非物理真机。项目 ≥1000 轮非终态，据实立项下一轮。
+
