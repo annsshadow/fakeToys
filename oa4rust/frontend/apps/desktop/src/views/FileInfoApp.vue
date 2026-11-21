@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
-    <div class="view-header glass-card">
+  <div class="mod-view modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -14,7 +14,7 @@
         <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
         <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles" />
-        <div v-else-if="files.length===0" class="empty"><div class="ei">📎</div><p>暂无文件信息</p></div>
+        <div v-else-if="files.length===0" class="empty ai-empty"><div class="ei">📎</div><p>暂无文件信息</p><p class="ai-empty-hint">点击「刷新」重新加载文件清单</p></div>
         <div v-else class="item-table">
           <div class="table-header">
             <span class="col-name">文件名</span>
@@ -125,13 +125,14 @@ loadFiles()
 </script>
 
 <style scoped>
-.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{padding:16px 24px}
+.mod-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%;padding:var(--ai-grid-3);background:var(--ai-gradient-surface);border-radius:var(--ai-grid-2)}
+.view-header{padding:var(--ai-grid-2) var(--ai-grid-3);background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);border-radius:var(--ai-grid-2)}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
-.content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.content-panel{flex:1;overflow-y:auto;padding:var(--ai-grid-2);display:flex;flex-direction:column;gap:var(--ai-grid-2);background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);box-shadow:var(--ai-glass-shadow);border-radius:var(--ai-grid-2)}
 .toolbar{display:flex;gap:8px}
-.btn-primary{padding:8px 20px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600}
+.btn-primary{padding:8px 20px;background:var(--ai-gradient-brand);color:#fff;border:none;border-radius:var(--radius-md);font-size:13px;cursor:pointer;font-weight:600;box-shadow:var(--ai-shadow-1);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.btn-primary:hover{transform:translateY(-1px)}
 .list-panel{flex:1}
 .item-table{display:flex;flex-direction:column;gap:8px}
 .table-header{display:grid;grid-template-columns:2fr 1.5fr 80px 100px;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);font-weight:600}
@@ -144,7 +145,9 @@ loadFiles()
 .btn-sm:hover{border-color:var(--color-primary);color:var(--color-primary)}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
 .ei{font-size:48px;opacity:0.4}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.sk{height:40px;border-radius:var(--radius-md);background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .font-mono{font-family:'JetBrains Mono',monospace}
+.ai-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ai-grid-1);padding:var(--ai-grid-6);text-align:center;color:var(--text-secondary);background:var(--ai-glass-bg);border:1px dashed var(--ai-glass-border);border-radius:var(--ai-grid-2)}
+.ai-empty-hint{font-size:12px;opacity:.75}
 </style>

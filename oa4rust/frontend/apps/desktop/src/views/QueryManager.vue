@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="query-view">
-    <div class="view-header glass-card">
+  <div class="query-view modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
       <span class="hdr-a">
         <button class="nb ghost" @click="loadQueryMeta">分类/语句</button>
         <button class="nb ghost" @click="loadQueryExtra">模型/导出</button>
@@ -17,7 +17,7 @@
         <div class="sb2"><span class="si2">⌕</span><input v-model="sq" placeholder="搜索查询..." class="si3" /></div>
         <ListLoadError v-if="qs2.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
         <ListLoadError v-if="qs2.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-        <div v-else-if="qs2.length===0" class="es2"><p>暂无查询定义</p></div>
+        <div v-else-if="qs2.length===0" class="es2 ai-empty"><span class="ai-empty-icon">🔎</span><p>暂无查询定义</p><p class="ai-empty-hint">点击顶部「+ 新建查询」创建第一条查询定义</p></div>
         <ul class="ql2">
           <li v-for="q in qs2" :key="q.id" class="qi2" :class="{active:selected?.id===q.id}" @click="selQ(q)">
             <span class="qicon">{{q.icon||'📊'}}</span>
@@ -206,12 +206,13 @@ function fmtT(t?: string) {
 }
 </script>
 <style scoped>
-.query-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
+.query-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%;padding:var(--ai-grid-3);background:var(--ai-gradient-surface);border-radius:var(--ai-grid-2)}
+.view-header{display:flex;align-items:center;justify-content:space-between;padding:var(--ai-grid-2) var(--ai-grid-3);background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);border-radius:var(--ai-grid-2)}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
-.nb{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
+.nb{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--ai-gradient-brand);color:#fff;cursor:pointer;font-weight:600;box-shadow:var(--ai-shadow-1);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.nb:hover{transform:translateY(-1px)}
 .ql{display:flex;flex:1;gap:16px;min-height:0}
-.qs{width:260px;flex-shrink:0;display:flex;flex-direction:column;padding:12px}
+.qs{width:260px;flex-shrink:0;display:flex;flex-direction:column;padding:var(--ai-grid-2);background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);box-shadow:var(--ai-glass-shadow);border-radius:var(--ai-grid-2)}
 .sb2{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-elevated);border-radius:var(--radius-md);margin-bottom:8px}
 .si2{color:var(--text-muted)}
 .si3{flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-size:13px}
@@ -241,7 +242,8 @@ function fmtT(t?: string) {
 .rh2,.rc2{padding:2px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .em2,.es2,.ls2{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .emi2{font-size:48px;opacity:0.4}
-.sk2{height:32px;border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-elevated)}
+.sk2{height:32px;border-radius:var(--radius-sm);margin-bottom:6px;background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .mo{position:fixed;inset:0;background:var(--bg-overlay);z-index:200;display:flex;align-items:center;justify-content:center}
 .modal{width:560px;padding:24px}
 .modal h3{color:var(--color-primary);font-family:'Orbitron',sans-serif;margin:0 0 16px;font-size:16px}
@@ -258,4 +260,7 @@ function fmtT(t?: string) {
 .hdr-a{display:flex;gap:8px;align-items:center}
 .nb.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
 .qmeta{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.ai-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ai-grid-1);padding:var(--ai-grid-6);text-align:center;color:var(--text-secondary);background:var(--ai-glass-bg);border:1px dashed var(--ai-glass-border);border-radius:var(--ai-grid-2)}
+.ai-empty-icon{font-size:36px;line-height:1}
+.ai-empty-hint{font-size:12px;opacity:.75}
 </style>
