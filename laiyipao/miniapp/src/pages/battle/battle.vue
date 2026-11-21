@@ -392,6 +392,21 @@ const nextGoal = computed(() => {
   if (stars >= 3) return '完美三星！试试更少反应或更高难度关卡。'
   if (leaked > 0) return `漏了 ${leaked} 只怪 —— 补点溅射/控场技能守住防线即可拿更高星。`
   if (reactions < 3) return '多凑一种元素触发反应链，反应伤害与面板攻击力关系不大，优先凑齐元素搭配。'
+  // R5 真浏览器实测：0 星 / 11646 分（1★ 门槛 11941）还显示「冲 3 星」，
+  // 玩家连最低门槛都没摸到，这句建议等于没说。门槛由服务端下发在关卡配置里，
+  // 分数用结算返回的权威值（含超时长裁剪），别拿引擎本地分数自说自话。
+  const rawTargets = engine.value?.cfg?.level?.star_targets
+  const targets = Array.isArray(rawTargets)
+    ? rawTargets.map((t: unknown) => Number(t)).filter((t: number) => Number.isFinite(t))
+    : []
+  const nextStar = stars + 1
+  if (targets.length >= nextStar) {
+    const target = targets[nextStar - 1]!
+    const score = Number(r.score ?? 0)
+    if (score < target) {
+      return `还差 ${target - score} 分就能拿 ${nextStar} 星（门槛 ${target} 分）—— 少漏怪、多触发反应就能提分。`
+    }
+  }
   return '再稳一点，冲 3 星拿满钥匙。'
 })
 const hand = ref<Card[]>([])

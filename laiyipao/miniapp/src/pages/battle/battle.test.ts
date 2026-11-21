@@ -68,7 +68,7 @@ class FakeEngine {
   leaked = 2
   reactionsCount = 3
   score = 100
-  cfg = { level: { wave_count: 3 } }
+  cfg: { level: { wave_count: number; star_targets?: number[] } } = { level: { wave_count: 3 } }
   deck = {
     hand: [
       { id: 'c1', name: '燃烧弹', kind: 'skill', rarity: 'rare', descr: 'd1', element: 'fire' },
@@ -455,6 +455,34 @@ describe('battle.vue 战斗页', () => {
     expect(mockApi.abandonBattle).toHaveBeenCalledWith(77)
     expect(refreshWalletSpy).toHaveBeenCalled()
     await new Promise((resolve) => setTimeout(resolve, 850))
+  })
+
+  it('0 星且分数未达 1 星门槛时，下一步应指向 1 星而不是空喊冲 3 星', async () => {
+    // 2026-11-22 R5 真浏览器实测：第 1 关结算 stars=0 / score=11646，
+    // 1★ 门槛 11941，页面却说「再稳一点，冲 3 星拿满钥匙」。
+    // 玩家连 1 星都没拿到就被催 3 星，是拿不到可执行信息的误导文案。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 11646,
+      loot: {},
+      new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'zero-star' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('1 星')
+    expect(text).toContain('11941')
+    expect(text).toContain('295')
+    expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
   })
 
   it('反应偏少时的下一步建议不得谎称反应伤害完全不吃攻击力', async () => {
