@@ -4385,3 +4385,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=b10f73e5c、暂存区纯净；定点复跑 CalendarCreateEntry.R311 契约 6/6 exit 0；diff 实读坐实三修复；源码确认 legacy 创建端点真实存在（calendar/src/routes.rs:24 + lib.rs:269 handler）；文档 39 行 <YOUR_TEST_DOMAIN> 占位 0 真值、L9 诚实标注任务引用文档查无文件、以源码侦察为准未臆造；H5 对应契约 5/5 亦 GREEN。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 247. R311 H5 建日历入口与同轨端点复核（2026-11-21）
+- t71（mobile-eng）commit 9d679c19b 精确 5 文件（calendar.vue 58+/1- + calendarCreate.R311.contract.test.ts 55 行 + services/index.ts 3 行 + index.surface.test.ts 10 行 + 文档 28 行，153+/1-）。补 H5 可见『+新建日历』入口与最小表单，创建后列表+1并自动选中新日历，打通保存事件链路；真浏览器首轮暴露**双表漂移真 bug**（core entity POST /calendar/core/entity/calendar/create 写 x_cal_calendar 而 list/my 读 cal_calendar→建完列表读不到），改用与 list/my 同源的 POST /api/calendar_assemble_control/calendar（routes.rs:29-32→u2.rs:335 原生 SQL INSERT cal_calendar），未改后端。RED 4→2→GREEN 14/14，mobile 全量 71 files/458 passed、typecheck exit0、H5 build 成功。
+- 队长独立复核（不采信自述）：stat 精确 5 文件、HEAD=TRACK=9d679c19b、工作树干净；diff 实读确认同轨端点修复与注释；定点复跑 calendarCreate.R311 契约 5/5 exit 0；源码核实 create/list 同 crate 同写读 cal_calendar 表（u2.rs:335 create/:164 list）无双轨残留；文档 28 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（gitignored）source 非物理真机、create POST 200/日历 3→4/事件下拉自动选中新日历/今日事件可见/0 pageerror/0 API失败/passed=true。t25 normalizeRows、t51 ai-brand-fill 保留不回退。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
