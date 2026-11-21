@@ -4418,3 +4418,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t77（page-core，implementation）修复：新建真断言路径契约（非覆盖率驱动）先 RED→GREEN、改三处封装对齐后端、桌面 build + 测试服原子部署 + 真浏览器封装调用非 404/0 pageerror、精确单提交（index.ts+契约+文档 docs/ops/oa4rust-r313-api-wrapper-drift-fix.md）。已 claimed。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 253. R313 API 封装路径漂移修复复核（2026-11-21）
+- t77（page-core）commit 77603c529 精确 3 文件（index.ts 3 行改 + apiWrapperDrift.R313.contract.test.ts 60 行 + 文档 40 行，103+/3-）。三处修复：documentApi.create→POST /api/document、documentApi.update→POST /api/document/{id}/update（原 PUT 路径+方法双漂移）、programCenterApi.dictCreate→POST /api/program_center/dict，全部对齐后端注册。新契约用 vi.mock 真断言方法与 URL（非覆盖率驱动），RED 3 failed/1 passed→GREEN 4/4；packages/apis 全量 8 files/738 tests 无回归、typecheck exit0。同源核对：apis.general.dictCreate（generalApi，走 /api/general/dict/create）非同源、路径已正确、未改。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=77603c529、工作树干净；diff 实读确认三处封装改动；定点复跑 apiWrapperDrift.R313 契约 4/4 exit 0；文档 40 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored）标注非物理真机、真浏览器 esbuild 封装探针注入已登录工作台执行三封装均 200 JSON（create 返真实 id+draft、update updated:true、dictCreate 返真实 id）、apiCalls 路径正确无 404 HTML、pageErrors=[]。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
