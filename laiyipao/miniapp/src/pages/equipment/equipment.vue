@@ -1,6 +1,52 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">装备锻造台</text>
+        <text class="section-kicker-en">EQUIPMENT FORGE</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r3AiEquip ? r3AiEquip.name : '待配置' }}</text>
+          <text class="r3-kpi-label">AI 推荐 · 优先刷取部位</text>
+          <text class="r3-kpi-sub">{{ r3AiEquip ? r3AiEquip.reason : '装备表尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ ownedCount }}/{{ items.length }}</text>
+          <text class="r3-kpi-label">已拥有 / 装备总数</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ bestPerSlot.length }}</text>
+          <text class="r3-kpi-label">部位天花板</text>
+        </view>
+      </view>
+      <view class="r3-progress-row is-ai r3-enter">
+        <text class="r3-progress-label">收集进度</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3EquipPct + '%' }" /></view>
+        <text class="r3-progress-num">已拥有 {{ ownedCount }}/{{ items.length }}</text>
+      </view>
+      <view class="r3-filter" aria-label="按部位筛选装备">
+        <text class="r3-chip" :class="{ active: r3Slot === '' }" @click="r3Slot = ''">全部 {{ items.length }}</text>
+        <text v-for="b in bestPerSlot" :key="'f' + b.slot" class="r3-chip" :class="{ active: r3Slot === b.slot }" @click="r3Slot = b.slot">
+          {{ b.label }} {{ b.count }}
+        </text>
+      </view>
+      <view v-if="r3AiEquip" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 搭配缺口</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiEquip.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiEquip.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoStage">去关卡看掉落 →</text>
+      </view>
+      <view v-else-if="!store.configLoading && items.length === 0" class="r3-empty" aria-live="polite" role="status">
+        <view class="r3-empty-slot">AI</view>
+        <text class="r3-empty-title">还没有装备表数据</text>
+        <text class="r3-empty-reason">服务端配置尚未下发，无法比较各部位天花板。</text>
+        <text class="r3-empty-action" role="button" @click="r3GoStage()">去关卡看掉落 →</text>
+      </view>
       <!-- 加载中 / 空态（与其它图鉴同款）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -57,8 +103,9 @@
           </view>
         </view>
 
-        <text class="result-count">显示 {{ filteredItems.length }} / 共 {{ items.length }} 条</text>
-        <view v-for="e in filteredItems" :key="e.id" class="rxn equip">
+        <text class="result-count">显示 {{ r3FilteredItems.length }} / 共 {{ items.length }} 条</text>
+        <view class="r3-data-grid">
+        <view v-for="e in r3FilteredItems" :key="e.id" class="rxn equip list-row">
           <view class="rxn-head">
             <!-- 部位图标座：装备的类别锚点（武器/头盔/胸甲…各有专属线性图标） -->
             <view class="icon-badge" style="width: 64rpx; height: 64rpx">
@@ -78,9 +125,10 @@
             <text class="stat">需 Lv.{{ e.unlock_level }}</text>
           </view>
         </view>
+        </view>
         <text v-if="!items.length" class="muted">装备表为空（配置未加载？）</text>
         <!-- R24 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
-        <view v-if="keyword && items.length && filteredItems.length === 0" class="search-empty">
+        <view v-if="keyword && items.length && r3FilteredItems.length === 0" class="search-empty">
           <text class="muted">没有匹配「{{ keyword }}」的装备</text>
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
@@ -90,7 +138,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
@@ -221,6 +270,65 @@ function tierLabel(t: number): string {
 function elementName(e: Element): string {
   return ELEMENT_NAME[e] ?? e
 }
+
+/** R3 FilterBar：按部位筛选，保留原搜索 computed 与配置数据源不动。 */
+const r3Slot = ref('')
+const r3FilteredItems = computed(() => {
+  const base = filteredItems.value
+  if (!r3Slot.value) return base
+  return base.filter((e) => e.slot === r3Slot.value)
+})
+const r3EquipPct = computed(() => items.value.length ? Math.round(ownedCount.value / items.value.length * 100) : 0)
+
+/** R3 AI 线索：从各部位天花板里挑尚未拥有的一件，依据来自 bestPerSlot + 持有数。 */
+const r3AiEquip = computed(() => {
+  const list = bestPerSlot.value
+  if (!list.length) return null
+  const pick = list.find((b) => !b.owned) ?? list[0]
+  return {
+    name: pick.name,
+    reason: pick.label + '天花板 · 护甲 ' + pick.armor + (pick.owned ? ' · 已拥有' : ' · 未拥有'),
+    conclusion: pick.owned
+      ? '「' + pick.name + '」已是' + pick.label + '天花板：继续补其他部位'
+      : '「' + pick.name + '」是' + pick.label + '天花板（护甲 ' + pick.armor + '）且未拥有：优先刷它',
+    basis: '部位天花板 ' + list.length + ' 项 + 已拥有 ' + ownedCount.value + '/' + items.value.length + ' 件',
+  }
+})
+function r3GoStage() {
+  uni.navigateTo({ url: '/pages/stage/stage' })
+}
+/* -------------------------------------------------------------------------- */
+/* R3 冷启动配置加载：深链接/刷新直入时自行拉 /config                             */
+/* -------------------------------------------------------------------------- */
+let pageLoaded = false
+let loadInflight: Promise<void> | null = null
+
+async function doLoadPage(): Promise<void> {
+  if (!store.config) {
+    // 此前本页没有任何加载调用，把「尚未加载」谎报成「装备表为空（配置未加载？）」。
+    if (!store.loggedIn) {
+      const ok = await store.login()
+      if (!ok) return
+    }
+    try {
+      await store.loadConfig()
+    } catch {
+      return
+    }
+  }
+  pageLoaded = true
+}
+
+/** onLoad/onMounted/onShow 可能同时到达；统一走一条幂等加载路径。 */
+function loadPage(): Promise<void> {
+  if (pageLoaded) return Promise.resolve()
+  if (!loadInflight) loadInflight = doLoadPage().finally(() => { loadInflight = null })
+  return loadInflight
+}
+
+onLoad(() => { void loadPage() })
+onMounted(() => { void loadPage() })
+onShow(() => { void loadPage() })
 </script>
 
 <style scoped>

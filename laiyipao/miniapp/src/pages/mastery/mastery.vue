@@ -1,6 +1,46 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">专精作战室</text>
+        <text class="section-kicker-en">MASTERY ROUTER</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r3AiMastery ? r3AiMastery.name : '待配置' }} · {{ points }} 点</text>
+          <text class="r3-kpi-label">AI 推荐投入方向 / 剩余专精点</text>
+          <text class="r3-kpi-sub">{{ r3AiMastery ? r3AiMastery.reason : '专精系数据尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ totalInvested }}/{{ r3MasteryCap }}</text>
+          <text class="r3-kpi-label">已点亮 / 可点亮</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ families.length }}</text>
+          <text class="r3-kpi-label">专精系</text>
+        </view>
+      </view>
+      <view class="r3-progress-row is-ai r3-enter">
+        <text class="r3-progress-label">全系进度</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3MasteryPct + '%' }" /></view>
+        <text class="r3-progress-num">已点亮 {{ totalInvested }}/{{ r3MasteryCap }}</text>
+      </view>
+      <view v-if="r3AiMastery" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 先补哪一系</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiMastery.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiMastery.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3FocusMastery(r3AiMastery.family)">切到该系树 →</text>
+      </view>
+      <view v-else-if="!loading && !families.length" class="r3-empty" aria-live="polite" role="status">
+        <view class="r3-empty-slot">AI</view>
+        <text class="r3-empty-title">还没有专精系数据</text>
+        <text class="r3-empty-reason">服务端配置尚未下发，无法计算推荐投入方向。</text>
+        <text class="r3-empty-action" role="button" @click="load()">重新加载专精</text>
+      </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
@@ -54,17 +94,17 @@
       </scroll-view>
 
       <!-- G71 专精投入总览：跨系柱状图，看清点数倾斜与各系进度 -->
-      <view v-if="familyOverview.length" class="card overview-card">
+      <view v-if="familyOverview.length" class="card overview-card progress-tree">
         <view class="card-title">
           <text>专精投入总览</text>
           <text class="mono">共 {{ totalInvested }} 点</text>
         </view>
         <view v-for="f in familyOverview" :key="f.family" class="fo-row" :class="{ active: f.active }">
           <text class="dim fo-name">{{ f.name }}</text>
-          <view class="fo-track">
-            <view class="fo-fill" :style="{ width: f.pct + '%' }" />
+          <view class="fo-track r3-progress">
+            <view class="fo-fill r3-progress-fill" :style="{ width: f.pct + '%' }" />
           </view>
-          <text class="mono fo-val">{{ f.got }}/{{ f.cap }}</text>
+          <text class="mono fo-val r3-progress-num">已点亮 {{ f.got }}/{{ f.cap }}</text>
         </view>
         <!-- G103 收益汇总：专精点换来了什么 -->
         <view v-if="investedValue.length" class="invested-value">
@@ -75,13 +115,15 @@
       <!-- G128 全系 4选2 结构矩阵 -->
       <view v-if="familyMatrix.length" class="card">
         <view class="card-title">全系结构</view>
-        <view class="fm-row fm-head">
+        <view class="r3-data-grid">
+        <view class="fm-row fm-head list-row">
           <text class="dim fm-name">系</text>
           <text v-for="l in [1,2,3]" :key="l" class="dim fm-cell">第{{ l }}层</text>
         </view>
-        <view v-for="f in familyMatrix" :key="f.family" class="fm-row">
+        <view v-for="f in familyMatrix" :key="f.family" class="fm-row list-row">
           <text class="fm-name">{{ f.name }}</text>
           <text v-for="l in f.layers" :key="l.layer" class="fm-cell" :class="{ on: l.got > 0 }">{{ l.got }}/{{ l.cap }}</text>
+        </view>
         </view>
       </view>
 
@@ -130,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import type { MasteryNode } from '@/game/types'
@@ -355,6 +397,29 @@ onMounted(async () => {
   if (!store.loggedIn) await store.login()
   await Promise.all([load(), store.refreshWallet()])
 })
+
+/** R3 AI 线索：按「已点亮最少且未满」的一系给确定性推荐，依据全部来自现有派生数据。 */
+const r3MasteryCap = computed(() => families.value.reduce((sum, f) => sum + f.nodes.length, 0))
+const r3MasteryPct = computed(() => r3MasteryCap.value ? Math.round(totalInvested.value / r3MasteryCap.value * 100) : 0)
+const r3AiMastery = computed(() => {
+  const overview = familyOverview.value
+  if (!overview.length) return null
+  const target = overview.filter((f) => f.got < f.cap).sort((a, b) => a.got - b.got)[0]
+  if (!target) return null
+  return {
+    family: target.family,
+    name: target.name,
+    reason: '已点亮 ' + target.got + '/' + target.cap + '，剩余 ' + pointPlanner.value.points + ' 点',
+    conclusion: target.name + '仅 ' + target.got + '/' + target.cap + ' 点，剩余 ' + pointPlanner.value.points + ' 点：优先补它',
+    basis: '8 系全量投入 ' + totalInvested.value + '/' + r3MasteryCap.value + ' + 当前系可点亮 ' + pointPlanner.value.available + ' 个',
+  }
+})
+function r3FocusMastery(family: string) {
+  curFamily.value = family
+  void nextTick(() => {
+    uni.pageScrollTo({ selector: '.overview-card', duration: 250 })
+  })
+}
 </script>
 
 <style scoped>

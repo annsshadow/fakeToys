@@ -1,12 +1,46 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
-      <!-- 加载中 / 空态（与其它图鉴同款）-->
-      <view v-if="store.configLoading" class="card">
-        <text class="muted">加载中…</text>
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">宝石收集雷达</text>
+        <text class="section-kicker-en">GEM COVERAGE</text>
+        <text class="r3-ai-badge">AI</text>
       </view>
-      <view v-else-if="gems.length === 0" class="card">
-        <text class="muted">宝石表还没加载出来</text>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ ownedCount }}/{{ gems.length }}</text>
+          <text class="r3-kpi-label">已拥有 / 图鉴种类</text>
+          <text class="r3-kpi-sub">数据来自服务端 /config 与 /me/gems</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ affixCoverage.length }}</text>
+          <text class="r3-kpi-label">已覆盖词条</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ r3GemPct }}%</text>
+          <text class="r3-kpi-label">收集完成度</text>
+        </view>
+      </view>
+      <view class="r3-progress-row is-ai r3-enter">
+        <text class="r3-progress-label">收集进度</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3GemPct + '%' }" /></view>
+        <text class="r3-progress-num">已拥有 {{ ownedCount }}/{{ gems.length }}</text>
+      </view>
+      <view v-if="r3AiGem && gems.length" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 收集缺口</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiGem.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiGem.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoShop">去商城找宝石 →</text>
+      </view>
+      <view v-else-if="!store.configLoading && gems.length === 0" class="r3-empty" aria-live="polite" role="status">
+        <view class="r3-empty-slot">AI</view>
+        <text class="r3-empty-title">还没有宝石图鉴数据</text>
+        <text class="r3-empty-reason">配置尚未到达或网络请求未完成，暂时无法判断收集缺口。</text>
+        <text class="r3-empty-action" role="button" @click="loadPage()">重新加载图鉴</text>
       </view>
 
       <!-- 宝石图鉴（服务端下发的权威表） -->
@@ -62,7 +96,8 @@
         </view>
 
         <text class="result-count">显示 {{ filteredGems.length }} / 共 {{ gems.length }} 条</text>
-        <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
+        <view class="r3-data-grid">
+        <view v-for="g in filteredGems" :key="g.id" class="rxn gem list-row">
           <view class="rxn-head">
             <!-- 宝石切面图标：颜色按属性映射（共享表见 utils/labels.gemAttrBadge） -->
             <view class="icon-badge" :class="gemAttrBadge(g.attr)" style="width: 64rpx; height: 64rpx">
@@ -78,6 +113,7 @@
           </view>
           <text class="rxn-descr">{{ g.descr || '（服务端未提供说明）' }}</text>
         </view>
+        </view>
         <text v-if="!gems.length" class="muted">宝石表为空（配置未加载？）</text>
         <!-- R27 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
         <view v-if="keyword && gems.length && filteredGems.length === 0" class="search-empty">
@@ -90,8 +126,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { computed, onMounted, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
 import { gemAttrBadge, affixName, qualityName as labelQualityName } from '@/utils/labels'
@@ -218,16 +254,70 @@ function attrLabel(a: string): string {
   return affixName(a)
 }
 
-onShow(() => {
+async function refreshOwned(): Promise<void> {
+  try {
+    const res = await fetchGems()
+    ownedGems.value = res.gems ?? []
+  } catch {
+    // 图鉴的拥有状态是辅助信息，请求出错不打扰主流程
+  }
+}
+
+let pageLoaded = false
+let loadInflight: Promise<void> | null = null
+
+async function doLoadPage(): Promise<void> {
+  if (!store.config) {
+    // 深链接/刷新直入本页时没有任何调用方拉过 /config：
+    // 不做这一步，页面会把「尚未加载」误报成「宝石表为空（配置未加载？）」。
+    if (!store.loggedIn) {
+      const ok = await store.login()
+      if (!ok) return
+    }
+    try {
+      await store.loadConfig()
+    } catch {
+      return
+    }
+  }
   if (!store.loggedIn) return
-  fetchGems()
-    .then((res) => {
-      ownedGems.value = res.gems ?? []
-    })
-    .catch(() => {
-      // 图鉴的拥有状态是辅助信息，加载失败不打扰主流程
-    })
+  await refreshOwned()
+  pageLoaded = true
+}
+
+/** onLoad/onMounted/onShow 可能同时到达；统一走一条幂等加载路径。 */
+function loadPage(): Promise<void> {
+  if (pageLoaded) return Promise.resolve()
+  if (!loadInflight) loadInflight = doLoadPage().finally(() => { loadInflight = null })
+  return loadInflight
+}
+
+onLoad(() => { void loadPage() })
+onMounted(() => { void loadPage() })
+onShow(() => {
+  // 首次展示由 onLoad/onMounted 统一加载；从背包返回时只刷新持有量。
+  if (pageLoaded) void refreshOwned()
+  else void loadPage()
 })
+
+/** R3 AI 线索：以已拥有数 + 最缺宝石给一条确定性收集建议，不编造概率。 */
+const r3GemPct = computed(() => {
+  const total = gems.value.length
+  return total ? Math.round(ownedCount.value / total * 100) : 0
+})
+const r3AiGem = computed(() => {
+  const list = gems.value
+  if (!list.length) return null
+  const missing = list.filter((g) => ownedCountOf(g.id) === 0)
+  const pick = missing[0] ?? list[0]
+  return {
+    conclusion: '「' + pick.name + '」还没拥有（' + attrLabel(pick.attr) + '）：当前 ' + ownedCount.value + '/' + list.length + '，优先补它',
+    basis: '图鉴 ' + list.length + ' 种 × 已拥有 ' + ownedCount.value + ' 颗，缺口 ' + missing.length + ' 种',
+  }
+})
+function r3GoShop() {
+  uni.navigateTo({ url: '/pages/shop/shop' })
+}
 </script>
 
 <style scoped>

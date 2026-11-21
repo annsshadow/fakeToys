@@ -1,6 +1,46 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">反应作战台</text>
+        <text class="section-kicker-en">REACTION MATRIX</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ myReactions.length }}/{{ allReactions.length }}</text>
+          <text class="r3-kpi-label">当前构筑可达反应</text>
+          <text class="r3-kpi-sub">{{ r3AiReaction ? r3AiReaction.reason : '元素构筑数据尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ store.equippedElements.length }}</text>
+          <text class="r3-kpi-label">出战元素</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ r3FilteredReactions.length }}</text>
+          <text class="r3-kpi-label">当前筛选结果</text>
+        </view>
+      </view>
+      <view class="r3-progress-row is-ai r3-enter">
+        <text class="r3-progress-label">反应覆盖</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3ReactionPct + '%' }" /></view>
+        <text class="r3-progress-num">已达成 {{ myReactions.length }}/{{ allReactions.length }}</text>
+      </view>
+      <view class="r3-filter" aria-label="按元素筛选反应">
+        <text class="r3-chip" :class="{ active: r3Element === '' }" @click="r3Element = ''">全部 {{ allReactions.length }}</text>
+        <text v-for="el in ELEMENT_ORDER" :key="'f' + el" class="r3-chip" :class="{ active: r3Element === el }" @click="r3Element = el">
+          {{ ELEMENT_NAME[el] }}
+        </text>
+      </view>
+      <view v-if="r3AiReaction" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 下一条反应</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiReaction.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiReaction.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoSkills">去调整出战技能 →</text>
+      </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -90,8 +130,9 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
         </text>
-        <text class="result-count">显示 {{ filteredReactions.length }} / 共 {{ allReactions.length }} 条</text>
-        <view v-for="r in filteredReactions" :key="r.key" class="rxn">
+        <text class="result-count">显示 {{ r3FilteredReactions.length }} / 共 {{ allReactions.length }} 条</text>
+        <view class="r3-data-grid">
+        <view v-for="r in r3FilteredReactions" :key="r.key" class="rxn list-row">
           <view class="rxn-head">
             <!-- 反应图标：双环交叠（两个元素圈相碰的隐喻） -->
             <view class="icon-badge" style="width: 64rpx; height: 64rpx">
@@ -127,9 +168,10 @@
             <text v-if="r.knockback > 0" class="stat">击退 {{ r.knockback / 1000 }}</text>
           </view>
         </view>
+        </view>
         <text v-if="!allReactions.length" class="muted">反应表为空（配置未加载？）</text>
         <!-- R28 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
-        <view v-if="keyword && allReactions.length && filteredReactions.length === 0" class="search-empty">
+        <view v-if="keyword && allReactions.length && r3FilteredReactions.length === 0" class="search-empty">
           <text class="muted">没有匹配「{{ keyword }}」的反应</text>
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
@@ -281,6 +323,38 @@ onMounted(() => {
   // onLoad 在 H5 上可能早于组件挂载，这里补一次（loadPage 本身幂等）。
   void loadPage()
 })
+
+/** R3 FilterBar：在既有搜索结果上按元素二次筛选，不改动原搜索 computed。 */
+const r3Element = ref<Element | ''>('')
+const r3FilteredReactions = computed(() => {
+  const base = filteredReactions.value
+  if (!r3Element.value) return base
+  return base.filter((r) => reactionPairs(r.key).some((pair) => pair.includes(r3Element.value as Element)))
+})
+const r3ReactionPct = computed(() => {
+  const total = allReactions.value.length
+  return total ? Math.round(myReactions.value.length / total * 100) : 0
+})
+
+/** R3 AI 线索：取第一条不可达反应 + 其元素对，依据来自 reachable / 反应表。 */
+const r3AiReaction = computed(() => {
+  const list = allReactions.value
+  if (!list.length) return null
+  const miss = list.filter((r) => !reachable.value.has(r.key as ReactionKey))
+  const pick = miss[0] ?? list[0]
+  const pair = reactionPairs(pick.key)[0]
+  const pairText = pair ? ELEMENT_NAME[pair[0]] + ' + ' + ELEMENT_NAME[pair[1]] : '对应元素对'
+  return {
+    reason: miss.length ? '还差 ' + miss.length + ' 条反应未可达' : '全部反应已可达',
+    conclusion: miss.length
+      ? '还差 ' + miss.length + ' 条反应未可达：先凑「' + pick.name + '」的 ' + pairText
+      : '已覆盖全部 ' + list.length + ' 条反应：保持当前元素搭配',
+    basis: '当前出战 ' + store.equippedElements.length + ' 种元素 + ' + allReactions.value.length + ' 条反应表',
+  }
+})
+function r3GoSkills() {
+  uni.navigateTo({ url: '/pages/skills/skills' })
+}
 </script>
 
 <style scoped>

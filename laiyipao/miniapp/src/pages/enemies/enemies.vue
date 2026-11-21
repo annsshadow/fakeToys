@@ -145,7 +145,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
@@ -272,6 +273,38 @@ const resistLabels = resistDirs.map((d, i) => ({
   y: RADAR_CY + d.dy * (RADAR_R + 14) + 4,
   text: ELEMENT_NAME[ELEMENT_ORDER[i]!] ?? '',
 }))
+/* -------------------------------------------------------------------------- */
+/* R3 冷启动配置加载：深链接/刷新直入时自行拉 /config                             */
+/* -------------------------------------------------------------------------- */
+let pageLoaded = false
+let loadInflight: Promise<void> | null = null
+
+async function doLoadPage(): Promise<void> {
+  if (!store.config) {
+    // 此前本页没有任何加载调用，把「尚未加载」谎报成「敌人表为空（配置未加载？）」。
+    if (!store.loggedIn) {
+      const ok = await store.login()
+      if (!ok) return
+    }
+    try {
+      await store.loadConfig()
+    } catch {
+      return
+    }
+  }
+  pageLoaded = true
+}
+
+/** onLoad/onMounted/onShow 可能同时到达；统一走一条幂等加载路径。 */
+function loadPage(): Promise<void> {
+  if (pageLoaded) return Promise.resolve()
+  if (!loadInflight) loadInflight = doLoadPage().finally(() => { loadInflight = null })
+  return loadInflight
+}
+
+onLoad(() => { void loadPage() })
+onMounted(() => { void loadPage() })
+onShow(() => { void loadPage() })
 </script>
 
 <style scoped>

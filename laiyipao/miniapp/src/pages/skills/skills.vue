@@ -1,6 +1,41 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">技能构筑台</text>
+        <text class="section-kicker-en">SKILL LOADOUT</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r3AiSkill ? r3AiSkill.name : '待配置' }}</text>
+          <text class="r3-kpi-label">AI 推荐 · 效率榜首选</text>
+          <text class="r3-kpi-sub">{{ r3AiSkill ? r3AiSkill.reason : '技能表尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ ownedCount }}/{{ skills.length }}</text>
+          <text class="r3-kpi-label">已解锁 / 技能总数</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ compositeSkills.length }}</text>
+          <text class="r3-kpi-label">合成技能</text>
+        </view>
+      </view>
+      <view class="r3-filter" aria-label="按元素筛选技能">
+        <text class="r3-chip" :class="{ active: r3Element === '' }" @click="r3Element = ''">全部 {{ skills.length }}</text>
+        <text v-for="el in ELEMENT_ORDER" :key="'f' + el" class="r3-chip" :class="{ active: r3Element === el }" @click="r3Element = el">
+          {{ ELEMENT_NAME[el] }}
+        </text>
+      </view>
+      <view v-if="r3AiSkill" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 取舍与热量</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiSkill.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiSkill.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoBag">去背包查看解锁 →</text>
+      </view>
       <!-- 加载中 / 空态（与敌人图鉴同款）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -43,8 +78,9 @@
           </view>
         </view>
 
-        <text class="result-count">显示 {{ filteredSkills.length }} / 共 {{ skills.length }} 条</text>
-        <view v-for="s in filteredSkills" :key="s.id" class="rxn skill">
+        <text class="result-count">显示 {{ r3FilteredSkills.length }} / 共 {{ skills.length }} 条</text>
+        <view class="r3-data-grid">
+        <view v-for="s in r3FilteredSkills" :key="s.id" class="rxn skill list-row">
           <view class="rxn-head">
             <view class="icon-badge" :class="'badge-' + s.element" style="width: 64rpx; height: 64rpx">
               <DefIcon :name="'elem:' + s.element" :size="40" />
@@ -73,9 +109,10 @@
             <text class="stat">需 Lv.{{ s.unlock_level }}</text>
           </view>
         </view>
+        </view>
         <text v-if="!skills.length" class="muted">技能表为空（配置未加载？）</text>
         <!-- R25 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
-        <view v-if="keyword && skills.length && filteredSkills.length === 0" class="search-empty">
+        <view v-if="keyword && skills.length && r3FilteredSkills.length === 0" class="search-empty">
           <text class="muted">没有匹配「{{ keyword }}」的技能</text>
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
@@ -116,7 +153,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
@@ -240,6 +278,64 @@ function isOwned(id: number): boolean {
 function elementName(e: Element): string {
   return ELEMENT_NAME[e] ?? e
 }
+
+/** R3 FilterBar：在既有搜索结果上按元素筛选，保留原搜索 computed 与加载入口。 */
+const r3Element = ref<Element | ''>('')
+const r3FilteredSkills = computed(() => {
+  const base = filteredSkills.value
+  if (!r3Element.value) return base
+  return base.filter((s) => s.element === r3Element.value)
+})
+
+/** R3 AI 线索：效率榜第 1 名 + 是否已解锁，结论不写死、依据取现有派生数据。 */
+const r3AiSkill = computed(() => {
+  const rank = efficiencyRank.value.byHeat
+  if (!rank.length) return null
+  const pick = rank.find((r) => !ownedSkillIds.value.has(r.id)) ?? rank[0]
+  const owned = ownedSkillIds.value.has(pick.id)
+  return {
+    id: pick.id,
+    name: pick.name,
+    reason: '每热量 ' + pick.v + ' 伤害，' + (owned ? '已解锁' : '尚未解锁'),
+    conclusion: pick.name + '每热量 ' + pick.v + ' 伤害（效率榜第 1），' + (owned ? '已解锁，优先带上' : '尚未解锁，优先攒它'),
+    basis: '技能效率榜 ' + rank.length + ' 条 + 已解锁 ' + ownedCount.value + '/' + skills.value.length + ' · 热量是硬约束',
+  }
+})
+function r3GoBag() {
+  uni.navigateTo({ url: '/pages/bag/bag' })
+}
+/* -------------------------------------------------------------------------- */
+/* R3 冷启动配置加载：深链接/刷新直入时自行拉 /config                             */
+/* -------------------------------------------------------------------------- */
+let pageLoaded = false
+let loadInflight: Promise<void> | null = null
+
+async function doLoadPage(): Promise<void> {
+  if (!store.config) {
+    // 此前本页没有任何加载调用，把「尚未加载」谎报成「技能表为空（配置未加载？）」。
+    if (!store.loggedIn) {
+      const ok = await store.login()
+      if (!ok) return
+    }
+    try {
+      await store.loadConfig()
+    } catch {
+      return
+    }
+  }
+  pageLoaded = true
+}
+
+/** onLoad/onMounted/onShow 可能同时到达；统一走一条幂等加载路径。 */
+function loadPage(): Promise<void> {
+  if (pageLoaded) return Promise.resolve()
+  if (!loadInflight) loadInflight = doLoadPage().finally(() => { loadInflight = null })
+  return loadInflight
+}
+
+onLoad(() => { void loadPage() })
+onMounted(() => { void loadPage() })
+onShow(() => { void loadPage() })
 </script>
 
 <style scoped>
