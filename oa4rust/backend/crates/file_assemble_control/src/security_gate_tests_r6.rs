@@ -51,16 +51,7 @@ async fn r6_writes_reject_without_session() {
             .await
             .map(|_| ()),
         ),
-        (
-            "upload_file",
-            crate::upload_file(
-                Extension(pool.clone()),
-                None,
-                axum::extract::Json(json!({ "name": "n", "path": "p" })),
-            )
-            .await
-            .map(|_| ()),
-        ),
+        // upload_file 现已收 Multipart，匿名门禁由路由层 oneshot 覆盖（下表 multipart 用例）。
         (
             "create_file_entity",
             crate::create_file_entity(
@@ -114,7 +105,7 @@ async fn r6_writes_reject_without_session() {
             .map(|_| ()),
         ),
     ];
-    assert_eq!(cases.len(), 7, "本批可直调族 7 把必须逐把点名");
+    assert_eq!(cases.len(), 6, "本批可直调族 6 把（upload_file 已改 Multipart，归路由层覆盖）必须逐把点名");
     let leaked: Vec<String> = cases
         .iter()
         .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
@@ -165,7 +156,7 @@ async fn r6_routes_reject_anonymous_writes() {
         ),
         (
             "upload_file",
-            json("/api/file/assemble/control/file/upload", "POST", r#"{"name":"n"}"#),
+            multipart("/api/file/assemble/control/file/upload", "POST"),
         ),
         (
             "u2_file_upload_octet_stream",
