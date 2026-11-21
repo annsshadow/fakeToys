@@ -4526,3 +4526,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 新 Linux ELF（BuildID 81e7973c，Docker bullseye 强制重编）原子部署测试服 active；真浏览器 Playwright Chromium headless（非物理真机）复验：admin create 带具体 consumer→consume/list 200 含 marker 行可见、unread_count=1、DB 回读 consumer=xconsumer 同值、0 pageerror；证据 gitignored oa4rust/test-results/r317-m2fix/（evidence.json + 3 PNG）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 271. R317 收尾双任务立项：M2 终审 + M1 普通用户可见性复验（2026-11-21）
+- R317 余两项待关闭：M2 修复需终审确认闭环、M1 普通用户可见性在 t92 判取证限制未完全关闭。按加速策略并行派两项、写域不重叠（终审只读无文档、M1 复验写独立审计文档），串行创建避免 inScope overlap 误判。
+- t94（design-reviewer 只读终审，reviewedTaskId=t93）：复核 M2 写读列同源 + xcreateTime NULL 容错修复完整闭环、两处 test-first 真实性、真浏览器 evidence、cargo test 全绿、无回归、完整性守卫；超字面范围连带修复判断是否验收必要且在 inScope。无新缺陷 verdict=pass/findings=[]。
+- t95（qa-e2e 只读复验）：M1 消息 sender 缺省普通用户可见性——先源码确认 IMChat.vue:821 customCreate 是否真为死代码（无调用点判潜伏无实际影响）；有非 admin 账号则真浏览器复验可见性判真缺陷/预期语义；无账号如实写取证限制。唯一入库文档 oa4rust/docs/ops/oa4rust-r317-m1-visibility-verify.md，证据 gitignored。两任务已 send_message wake 派发。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
