@@ -4350,3 +4350,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R308 收官：t62 基线再审计（修正 loading 探针假阳性）→ t63 统计卡标签修正 → t64 静态骨架条修正 → t65 终审 pass，两项低优先级真实问题闭环、无阻断性缺陷、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 241. R309 深度功能缺陷审计与 P1 会议创建 500 发现（2026-11-21）
+- t66（qa-e2e，只读审计）commit 1b7526478 精确 1 文档 68 行 docs/ops/oa4rust-r309-deep-functional-audit.md。真 UI 走 8 业务闭环 + 跨页一致性：6 项 PASS（通讯录建部门/工作流发起/笔记新建删除/文件新建回收/论坛建版块发帖/角色新建成员弹窗）、1 项取证受限（日程新建无前置日历 my_calendars=[]）、1 项真实 P1 缺陷。跨页：工作台 5 待审批系 slice(0,5) 截断（全量 11）非矛盾、H5 未读 count=0 与 PC 一致。
+- 【P1 真实缺陷 D1】会议创建稳定 HTTP 500（4 次复现、新建会议完全不可用）：PC /app/meeting 提交 POST /api/meeting/assemble/control/meeting/create 返回 500、无回显；抓包 payload 合法（title+ISO 时间、roomId/creator 空串非根因）。源码定位：路由 meeting_assemble_control/src/routes.rs:54→create_meeting（lib.rs:2467），INSERT 在 lib.rs:2503 时间参数 $5/$6 无 ::text::timestamp cast；对照同表 meeting/src/lib.rs:293 有该 cast——两 crate INSERT 唯一实质差异。t66 只读未取到后端错误日志，队长源码级复核确认 cast 差异属实（高置信推断）。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=1b7526478、工作树干净、暂存区纯净；实读 68 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；源码并行对照坐实 meeting_assemble_control lib.rs:2503 缺 cast vs meeting lib.rs:293 有 cast、routes.rs:54 绑定正确、测试基建 tests_u2.rs 具备。低优先级 D2（笔记删除不进回收站）、D3（通讯录无建人入口）属产品口径未判 bug，如实保留。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
