@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 const src = readFileSync(resolve(import.meta.dirname, "DocumentApp.vue"), "utf8");
 const tpl = src.slice(src.indexOf("<template>"), src.lastIndexOf("</template>"));
 
-function namedSlot(template, name) {
+function namedSlot(template: string, name: string) {
   const marker = "<template #" + name;
   const start = template.indexOf(marker);
   if (start < 0) return "";
@@ -24,7 +24,7 @@ function namedSlot(template, name) {
   return template.slice(bodyStart, end < 0 ? template.length : end);
 }
 
-function defaultSlotOf(template, tag) {
+function defaultSlotOf(template: string, tag: string) {
   const open = template.indexOf("<" + tag);
   if (open < 0) return "";
   const close = template.indexOf("</" + tag + ">", open);
