@@ -4708,5 +4708,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 303. R323 收官（2026-11-21）
 - t114（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings_open=0，只读未改码未提交；HEAD=TRACK=5e45f4c0 稳定、暂存区与工作树全干净。逐条确认 t112 甄别 B P2 与 t113 修复（3caf81179 精确 3 文件，u2 族三端点补 create_time::text + createTime 映射，WHERE/ORDER/分页/admin 门未改，reply/list/sub_id 与前端 PC/H5 零改动）；终审独立复跑 cargo 51 passed 含 R318/R320 桥接用例无回退；evidence r323-reply-verify-fix 非物理真机 REPLY_TIME_VERIFIED、PC/H5 时间一致、0 errors/0 apiFailures；脱敏 0 真值命中。t114 evidence_note 已附。
 - R323 完整闭环：候选登记(§298)→甄别 t112 判 B P2(§299/§301)→修复 t113 后端补字段(§302)→终审 t114 pass(本条)。R318/R319/R320/R321/R322/R323 六轮均收官；PC 回复时间缺失缺陷闭环，R315/R318/R320/R322 既有修复无回归。项目 ≥1000 轮非终态，继续据实立项下一轮。
+
+## 304. R324 立项：考勤管理双端首次深度审计（2026-11-21）
+- 立项依据：R321 PC 审计覆盖通知/文件/笔记/论坛/通讯录/组织/个人中心/设置，但考勤模块从未深度审计；队长源码确认 PC AttendanceApp.vue（h1=考勤管理，新建明细/启用禁类型/考勤记录 CRUD）与 H5 mobile/src/pages/attendance/attendance.vue（preCheck/check/checkFromOut/selfHolidayApply/myStatistic/myDetailList v2/my/*）均有真实实现，属据实未覆盖对象，非臆造。
+- 派发 t115（page-core，只读审计，文档 oa4rust/docs/ops/oa4rust-r324-pc-attendance-audit.md）：PC 1440x900 真实 UI 逐条走考勤页 DOM 入口与真 API（移动端接收/新建明细/启禁类型/考勤明细读/建改记录），记录真状态与回显。
+- 派发 t116（qa-e2e，只读审计，文档 oa4rust/docs/ops/oa4rust-r324-h5-attendance-audit.md）：H5 390x844 真实 UI 逐条走考勤页 DOM 入口与真 API（preCheck/check/checkFromOut/selfHolidayApply/myStatistic/myDetailList），参照既有契约但不以契约代替真浏览器，关注加载竞态与 v2 端点口径。
+- 两任务写域为两份不同文档、互不重叠，可并行；均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 标注非物理真机，真缺陷/取证限制/产品语义三分，精确单提交。审计回收后据实甄别再决定修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
