@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import {onMounted, ref, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -327,7 +328,8 @@ const asRow = (r: unknown) => r as AdminLevelView
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">关卡配置</div>

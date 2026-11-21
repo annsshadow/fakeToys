@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
@@ -388,7 +389,8 @@ loadOrders()
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">经济与商城</div>

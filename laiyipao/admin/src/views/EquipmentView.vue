@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import { onMounted, onActivated, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchEquipment, type AdminEquipmentView } from '@/api'
@@ -75,7 +76,8 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">装备 · 宝石 · 皮肤</div>

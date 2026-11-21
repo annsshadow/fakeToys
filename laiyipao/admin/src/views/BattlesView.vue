@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -102,6 +103,28 @@ const filterParams = computed(() => ({
   // 结果筛选（2026-11-01 新一轮第 44 轮）
   result: result.value || undefined,
 }))
+
+/**
+ * F-10-3 标杆重构：本页速览指标带。
+ * 从当前页 battles 确定性派生（胜率 / 验真异常 / 守恒可疑），不新增接口、不引入随机。
+ * 让运营打开战报第一眼就看到「本页有没有异常」，而不是先扫 16 列等权表格。
+ */
+const battleSummary = computed(() => {
+  const rows = battles.value
+  const n = rows.length
+  const wins = rows.filter((b) => b.result === 'win').length
+  const mismatched = rows.filter((b) => (b.verify_mismatched ?? 0) > 0).length
+  const suspicious = rows.filter((b) => {
+    const tot = Number(b.total_enemies ?? 0)
+    return tot > 0 && b.kills + b.leaked > tot
+  }).length
+  return {
+    count: n,
+    winRate: n === 0 ? '—' : `${((wins / n) * 100).toFixed(1)}%`,
+    mismatched,
+    suspicious,
+  }
+})
 
 const router = useRouter()
 
@@ -312,7 +335,8 @@ const asRow = (r: unknown) => r as AdminBattleView
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">战斗记录与验真</div>
@@ -324,8 +348,28 @@ const asRow = (r: unknown) => r as AdminBattleView
       </div>
     </div>
 
-    <el-card shadow="never">
-      <div class="toolbar">
+    <div class="battle-summary" data-test="battle-summary">
+      <div class="summary-item">
+        <span class="summary-label">本页记录</span>
+        <span class="summary-value">{{ battleSummary.count }}</span>
+      </div>
+      <div class="summary-item summary-item--accent">
+        <span class="summary-label">本页胜率</span>
+        <span class="summary-value">{{ battleSummary.winRate }}</span>
+      </div>
+      <div class="summary-item summary-item--danger">
+        <span class="summary-label">验真异常</span>
+        <span class="summary-value">{{ battleSummary.mismatched }}</span>
+      </div>
+      <div class="summary-item summary-item--warning">
+        <span class="summary-label">守恒可疑</span>
+        <span class="summary-value">{{ battleSummary.suspicious }}</span>
+      </div>
+    </div>
+
+    <el-card shadow="never" class="battle-table-card">
+      <div class="filter-bar">
+       <div class="filter-row">
         <el-pagination
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"
@@ -355,6 +399,8 @@ const asRow = (r: unknown) => r as AdminBattleView
         </el-select>
         <el-button @click="((page = 1), load())">筛选</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
+       </div>
+       <div class="filter-row">
         <!-- 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报 -->
         <el-date-picker
           v-model="dateRange"
@@ -370,6 +416,7 @@ const asRow = (r: unknown) => r as AdminBattleView
         </el-checkbox>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条</span>
+       </div>
       </div>
 
       <el-table :data="battles" size="small" stripe>
@@ -389,7 +436,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
-        <el-table-column label="结果" width="70">
+        <el-table-column label="结果" width="70" class-name="col-emphasis">
           <template #default="{ row }">
             <el-tag :type="row.result === 'win' ? 'success' : 'info'" size="small">
               {{ row.result === 'win' ? '胜' : '负' }}
@@ -402,12 +449,12 @@ const asRow = (r: unknown) => r as AdminBattleView
         <el-table-column prop="score" label="分数" width="100" />
         <el-table-column prop="kills" label="击杀" width="70" />
         <el-table-column prop="leaked" label="漏怪" width="70" />
-        <el-table-column label="一致性" width="94">
+        <el-table-column label="一致性" width="94" class-name="col-emphasis">
           <template #default="{ row }">
             <el-tag :type="consistencyTag(asRow(row)).type" size="small">{{ consistencyTag(asRow(row)).text }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="验真" width="118">
+        <el-table-column label="验真" width="118" class-name="col-emphasis">
           <!--
             三态。`0/0` 是「未验真 = 未知」，不是「一致」——
             与 UsersView 的验真标签说同一套话。
@@ -556,6 +603,36 @@ const asRow = (r: unknown) => r as AdminBattleView
 </template>
 
 <style scoped>
+/* F-10-3 标杆重构：本页速览指标带 —— 打开先扫异常，再看表格 */
+.battle-summary {
+  display: grid; gap: 12px; margin-bottom: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.summary-item {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 16px; border-radius: 8px;
+  background: var(--lyp-panel); border: 1px solid var(--lyp-border);
+  border-left: 2px solid var(--lyp-border);
+}
+.summary-item--accent { border-left-color: var(--lyp-accent); }
+.summary-item--danger { border-left-color: var(--lyp-danger); }
+.summary-item--warning { border-left-color: var(--lyp-warning); }
+.summary-label {
+  font-size: 11px; letter-spacing: .06em; color: var(--lyp-muted);
+}
+.summary-value {
+  font-size: 24px; font-weight: 650; letter-spacing: -.02em;
+  color: var(--lyp-text); font-variant-numeric: tabular-nums;
+}
+/* 筛选动线拆两行：主筛选（谁/哪关/结果）与范围筛选（日期/验真/计数） */
+.filter-bar { display: flex; flex-direction: column; gap: 8px; }
+.filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.filter-row:first-child { border-bottom: 1px solid var(--lyp-border); padding-bottom: 10px; }
+/* 关键列强调：结果/一致性/验真的单元格数字更醒目 */
+:deep(.col-emphasis .cell) { font-weight: 600; }
+@media (max-width: 900px) {
+  .battle-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 /* 验真区：种子 + 粘贴框 + 结果同一行的阅读节奏 */
 .verify-row {
   display: flex;
