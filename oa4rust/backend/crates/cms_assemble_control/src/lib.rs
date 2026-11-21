@@ -11611,7 +11611,7 @@ pub async fn document_filter_paging_manager_u3(
     list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
-        "ORDER BY create_time DESC LIMIT 200",
+        "deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
         &[],
     )
     .await

@@ -729,3 +729,115 @@ async fn cms_keyword_search_treats_underscore_as_literal() {
     .await
     .unwrap();
 }
+
+// R331: document manager 列表必须过滤软删文档（真库行为测试）。
+#[cfg(test)]
+mod r331_manager_softdelete_tests {
+    use axum::extract::Extension;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+
+    const ADMIN: &str = "r331-admin";
+
+    async fn pool() -> Option<deadpool_postgres::Pool> {
+        if !shared::testing::is_db_available().await {
+            return None;
+        }
+        Some(shared::testing::test_pool())
+    }
+
+    async fn exec(p: &deadpool_postgres::Pool, sql: &str, params: Vec<String>) {
+        let client = p.get().await.expect("r331 conn");
+        let refs: Vec<&(dyn ToSql + Sync)> =
+            params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+        client
+            .execute(sql, &refs)
+            .await
+            .expect("r331 fixture sql");
+    }
+
+    async fn seed_admin(p: &deadpool_postgres::Pool) {
+        exec(
+            p,
+            "INSERT INTO auth_role (id, name) VALUES ('r331-admin-role','admin') ON CONFLICT (id) DO NOTHING",
+            vec![],
+        )
+        .await;
+        exec(
+            p,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1,$1,'R331 Admin','r331-fixture-noop') \
+             ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
+            vec![ADMIN.to_string()],
+        )
+        .await;
+        exec(
+            p,
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ($1,'r331-admin-role','r331-unit') ON CONFLICT DO NOTHING",
+            vec![ADMIN.to_string()],
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn r331_manager_list_excludes_soft_deleted_documents() {
+        let Some(p) = pool().await else {
+            eprintln!("skip r331_manager_list_excludes_soft_deleted_documents: DB unreachable");
+            return;
+        };
+        seed_admin(&p).await;
+        let keep = format!("r331-keep-{}", uuid::Uuid::new_v4());
+        let gone = format!("r331-gone-{}", uuid::Uuid::new_v4());
+        exec(
+            &p,
+            "DELETE FROM x_cms_data_document WHERE id IN ($1,$2)",
+            vec![keep.clone(), gone.clone()],
+        )
+        .await;
+        for id in [&keep, &gone] {
+            exec(
+                &p,
+                "INSERT INTO x_cms_data_document (id, title, creator, status) \
+                 VALUES ($1,'r331 doc','r331-user','draft')",
+                vec![id.to_string()],
+            )
+            .await;
+        }
+        exec(
+            &p,
+            "UPDATE x_cms_data_document SET deleted_at = NOW() WHERE id = $1",
+            vec![gone.clone()],
+        )
+        .await;
+
+        let resp = crate::document_filter_paging_manager_u3(
+            Extension(p.clone()),
+            Extension(shared::testing::test_session(ADMIN)),
+        )
+        .await
+        .expect("r331 manager handler must succeed");
+        let v = serde_json::to_value(&resp.0).unwrap();
+        let ids: Vec<String> = v["data"]
+            .as_array()
+            .expect("data must be array")
+            .iter()
+            .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+            .collect();
+
+        assert!(
+            ids.contains(&keep),
+            "未删除文档必须仍在 manager 列表"
+        );
+        assert!(
+            !ids.contains(&gone),
+            "已软删文档不得出现在 manager 列表（修复前会返回该行）"
+        );
+
+        exec(
+            &p,
+            "DELETE FROM x_cms_data_document WHERE id IN ($1,$2)",
+            vec![keep.clone(), gone.clone()],
+        )
+        .await;
+    }
+}
