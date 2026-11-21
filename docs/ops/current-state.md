@@ -4885,3 +4885,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据实立项 R336（只读甄别）：等待期队长静态侦察——①Settings.vue persistConfigs(:145-155) 真实 POST /api/config，R334 已标『刷新回显控件级断言』为取证限制、保存闭环未覆盖；②RecycleApp.vue 写端点丰富（resume:150/179、delete:163/197、清空:214）但 R310/R315/R321 已有部分覆盖须先甄别再定范围。派 t139（qa-e2e，只读审计，deps无）：先甄别回收站既有覆盖清单→Settings 改参数+开关 POST 200→刷新回显（补 R334 取证限制点）→RecycleApp 仅验未覆盖写端点→三分判定，唯一文档 oa4rust/docs/ops/oa4rust-r336-settings-recycle-triage.md 脱敏0真值非物理真机、精确单文档提交。（task t139 已创建，pending@qa-e2e）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R336 甄别回收后据实再定是否修复，禁臆造。
 
+## 333. R336 收官 + R337 立项：Settings/回收站甄别闭环 + 收集/笔记写审计（2026-11-22）
+- R336 收官：t139（qa-e2e，只读甄别）完成，commit e5534c3efcd5a80c9daf642e5d2841a41334ce12 精确单文档 70 行 oa4rust/docs/ops/oa4rust-r336-settings-recycle-triage.md。队长独立复核通过（不采信自述）：文档全占位 0 真值、敏感扫描 0 命中、非物理真机、7 截图+evidence 落 gitignored。覆盖甄别合理（纠正任务书 R315 实为 R316 深审文档、不涉回收站；已覆盖 R301 列表/批量恢复+R321 FileManager侧resume+R304源码级守卫，未覆盖 RecycleApp 页内单条恢复/永久删除/批量删除/清空+孪生探针）。R334 取证限制点（Settings 刷新回显）用精确 id 定位+父级 label 点击补证成功：系统名/邮件通知 POST /api/config 200→刷新回显一致、测试末复位配置未污染测试服。页内单条恢复 POST 200+截图 2→1 条坐实。永久删除/批量删除/清空仅验确认守卫（取消后 0 DELETE）标取证限制未伪造；孪生探针 s() 吞错判产品语义差异（与 R329/R332 同构）。0 pageerror、0 新增真缺陷。t139 evidence_note 已附（count=1）。
+- 结论：R336（甄别与补证轮，0 新增真缺陷、Settings 取证限制点消除）闭环，无需修复。至此 R318–R336 共19轮全部收官（其中审计甄别轮 0 修复亦闭环）。
+- 据实立项 R337（只读深审）：等待期队长静态侦察——①CollectApp.vue 真实写端点 POST /api/program_center/collect/create(:101/:168)、save/:id(:167)、delete/:id(:184)+confirmMsg(:192)，仅在 R312 write-entry-gap-audit 源码级枚举、从未真浏览器验证保存/删除闭环；②NoteApp.vue create(:83)/save/:id(:143)/delete/:id(:160) 在 R309/R310/R311 有部分覆盖，须先甄别避免重复。派 t140（qa-e2e，只读审计，deps无）：先甄别覆盖清单→CollectApp 新建/编辑/删除回显闭环→NoteApp 仅验未覆盖写端点→三分判定，唯一文档 oa4rust/docs/ops/oa4rust-r337-collect-note-audit.md 脱敏0真值非物理真机、精确单文档提交。（task t140 已创建，pending@qa-e2e）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R337 审计回收后据实再定是否修复，禁臆造。
+
