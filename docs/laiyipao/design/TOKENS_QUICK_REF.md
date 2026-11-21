@@ -5,6 +5,7 @@
 > 令牌**代码真源**：`laiyipao/miniapp/src/styles/tokens.css` 与 `laiyipao/admin/src/styles/tokens.css`（t4 起，版本 `lyp-tokens-v1`）；
 > `common.css` / `main.css` 仅 `@import` 并保留跨页样式与组件映射。
 > 新增令牌必须双端登记（主规范 §8.1）。
+> R3 追加（t20）：包标记 `--lyp-r3-version: lyp-tokens-v3-r3` 双端同值；旧 `lyp-tokens-v1` 为兼容锚点。
 
 ---
 
@@ -122,3 +123,33 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 2. 同时写入两端 `styles/tokens.css`（保持现有前缀约定：mini 无前缀 / admin `--lyp-` / 元素 `--el-`）。
 3. 补/更新对比度守卫（主规范 §8.3），确认色值测过 §2.4 的每一种表面。
 4. 在改动说明里写明主规范对应条款号。
+
+---
+
+## 7A. R3 次级页面组件速查（主规范 §1B）
+
+**包标记**：`--lyp-r3-version: lyp-tokens-v3-r3`（双端同值）。旧 `--lyp-token-version: lyp-tokens-v1` 由现有守卫钉住，暂不提升。
+
+| 语义 | miniapp | admin | 值 / 用途 |
+|---|---|---|---|
+| R3 包标记 | `--lyp-r3-version` | `--lyp-r3-version` | `lyp-tokens-v3-r3` |
+| 筛选活动底 | `--accent-soft` | `--lyp-accent-soft` | `rgba(255,107,53,.18)`；文字必须 `--accent-ink`，禁止 `--accent` 主色（4.37/4.40:1 未过线） |
+| 进度轨道 | `--progress-track` | `--lyp-progress-track` | `#39465a`；必须配「n/总数」数字文本，不得只靠颜色传状态 |
+
+**六组件模式**（详细规格见主规范 §1B.2）：
+
+| 模式 | class 锚点（H5 / admin） | 硬约束 |
+|---|---|---|
+| SectionKicker | `.section-kicker` / `.section-title` | AI 变体 `.section-kicker--ai` 必须有汉字「AI」 |
+| KpiStrip | `.kpi-strip` / `.kpi-*` | 主 KPI ≤4；主卡 6rpx/3px 左强调条；加载态骨架同高 |
+| EmptyState | `.empty-state` / `.state-block` | 图形+标题+原因+动作按钮；禁「暂无数据」「加载失败」裸文案 |
+| DataGrid | `.list-row` / `<table>` | H5 卡片行、admin 真表格；数字 `tabular-nums`；空态切换 EmptyState |
+| FilterBar | `.chip-tabs` / `.toolbar` | 活动态 `--accent-soft` + `--accent-ink`；结果数 `aria-live="polite"` |
+| ProgressTree | `.progress-node` / `.progress-grid` | 四态都有文字标签；轨道 `--progress-track` + 数字；节点 ≥88rpx |
+
+**AI 感下限**（§1B.4）：`.022` 网格、`.06` 辉光、渐变光斑、纯图标都不算 AI；必须同时有可见汉字「AI」+ 真实数据结论 + 依据 + CTA。
+徽章文字用 `--ai-ink`（soft+panel-3 上 5.90/6.04:1），正文仍用文本四阶。诚实标注「规则引擎 · 基于当前数据」。
+
+**test-first**（§1B.5）：先补双端令牌对齐 + 16 页结构扫描 + 禁止裸空态/禁止 `--accent` 叠 soft 的契约，跑到 RED 再改页面到 GREEN。
+截图门禁：专精 / 商城 / 宝石图鉴 / 公告 4 张 390×844 真浏览器截图（标注「非物理真机」）。
+

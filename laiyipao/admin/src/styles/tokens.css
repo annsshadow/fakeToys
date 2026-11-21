@@ -2,11 +2,14 @@
  * laiyipao 设计令牌 · PC/admin —— 唯一真源。
  * 规范：docs/laiyipao/design/AI_VISUAL_SYSTEM.md §8.1 / §8.3。
  * 版本 lyp-tokens-v1：与 miniapp/src/styles/tokens.css 成对维护；
+ * R3 规范包 lyp-tokens-v3-r3（--lyp-r3-version）：次级页面六组件模式见主规范 §1B；
+ * 旧版 --lyp-token-version 保留 v1 作为兼容锚点，待守卫同步迁移后再提升。
  * 五元素主色 / on-soft ink / 玻璃文本 / 动效令牌必须双端同值。
  * 本文件在 main.ts 中随 main.css 于 element-plus 深色变量之后引入。
  */
 :root {
   --lyp-token-version: lyp-tokens-v1;
+  --lyp-r3-version: lyp-tokens-v3-r3;
 
   /* 表面：页面底最深 → 卡片 → 浮起元素 */
   --lyp-bg: #0b0f14;
@@ -46,6 +49,9 @@
   --el-corrosion-soft: rgba(126, 231, 135, 0.18);
   --el-kinetic-soft: rgba(201, 167, 255, 0.18);
 
+  /* R3 FilterBar 活动态专用 soft：语义色，不借用元素 fire-soft；文字用 --el-fire-ink */
+  --lyp-accent-soft: rgba(255, 107, 53, 0.18);
+
   /* 元素 ink：文字叠自身 18% soft + panel-3 时替代主色，仍 ≥4.5:1 */
   --el-fire-ink: #ff8659;
   --el-ice-ink: #6fb2ff;
@@ -79,6 +85,9 @@
   --lyp-ai-ink: #d7bfff;
   --lyp-ai-halo: rgba(201, 167, 255, 0.14);
   --lyp-ai-glow: 0 0 24px rgba(201, 167, 255, 0.28);
+
+  /* R3 ProgressTree 轨道：只作底纹，状态必须由相邻数字文本承载 */
+  --lyp-progress-track: #39465a;
 
   /* 动效与层级：双端同值 */
   --lyp-motion-fast: 120ms;

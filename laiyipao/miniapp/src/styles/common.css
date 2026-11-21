@@ -1170,3 +1170,187 @@ page {
   border-radius: 4rpx;
 }
 
+/* ==========================================================================
+   LYP-R3-SECONDARY-V1：次级页结构性组件层。
+   组件本体才是改造点；底纹/辉光只作氛围，不计入 AI 感（§1B.4）。
+   ========================================================================== */
+.section-kicker {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin: 24rpx 0 12rpx;
+  padding-left: 12rpx;
+  border-left: 4rpx solid var(--accent);
+}
+.section-kicker-cn { font-size: 24rpx; font-weight: 600; color: var(--muted); }
+.section-kicker-en { font-size: 20rpx; color: var(--dim); letter-spacing: .12em; }
+.section-kicker--ai .section-kicker-cn { color: var(--ai-ink); }
+.r3-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48rpx;
+  min-height: 34rpx;
+  padding: 0 8rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 8rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.r3-kpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12rpx; margin: 12rpx 0 20rpx; }
+.r3-kpi-main,
+.r3-kpi-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 80rpx;
+  padding: 14rpx 18rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 14rpx;
+  background: var(--panel-2);
+}
+.r3-kpi-main {
+  grid-column: 1 / -1;
+  min-height: 96rpx;
+  border-left: 6rpx solid var(--accent);
+  background:
+    linear-gradient(90deg, rgba(255, 107, 53, .10), rgba(255, 107, 53, 0) 72%),
+    var(--panel-2);
+}
+.r3-kpi-num { font-size: 44rpx; font-weight: 700; line-height: 1.15; color: var(--text); font-variant-numeric: tabular-nums; }
+.r3-kpi-label { font-size: 22rpx; color: var(--muted); }
+.r3-kpi-sub { font-size: 20rpx; color: var(--dim); }
+
+.r3-ai {
+  margin: 12rpx 0 20rpx;
+  padding: 18rpx 18rpx 14rpx;
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+  background:
+    linear-gradient(135deg, var(--ai-halo), rgba(201, 167, 255, 0) 68%),
+    var(--panel-2);
+  box-shadow: var(--ai-glow);
+}
+.r3-ai-head { display: flex; align-items: center; gap: 12rpx; }
+.r3-ai-title { font-size: 28rpx; font-weight: 700; color: var(--text); }
+.r3-ai-engine { font-size: 20rpx; color: var(--ai-ink); }
+.r3-ai-conclusion { display: block; margin: 12rpx 0 8rpx; font-size: 26rpx; font-weight: 600; color: var(--text); line-height: 1.5; }
+.r3-ai-basis { display: block; font-size: 21rpx; color: var(--muted); line-height: 1.5; }
+.r3-ai-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  padding: 0 28rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.r3-data-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10rpx; margin: 8rpx 0 16rpx; }
+.r3-data-grid .list-row,
+.r3-data-grid .r3-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 12rpx 16rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 12rpx;
+  background: var(--panel-2);
+}
+.r3-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.r3-row-label { font-size: 26rpx; font-weight: 600; color: var(--text); }
+.r3-row-meta { font-size: 21rpx; color: var(--muted); }
+.r3-row-value { font-size: 28rpx; font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; text-align: right; }
+
+.r3-filter { display: flex; flex-direction: row; gap: 12rpx; min-height: 88rpx; padding: 6rpx 0 10rpx; overflow-x: auto; white-space: nowrap; }
+.r3-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 999rpx;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 24rpx;
+}
+.r3-filter .r3-chip.active {
+  background: var(--accent-soft);
+  border-color: rgba(255, 107, 53, .42);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.r3-progress { height: 14rpx; border: 1rpx solid var(--border); border-radius: 999rpx; background: var(--progress-track); overflow: hidden; }
+.r3-progress-fill { height: 100%; border-radius: 999rpx; background: var(--accent-grad); }
+.r3-progress-row { display: flex; align-items: center; gap: 12rpx; margin: 10rpx 0; }
+.r3-progress-row .r3-progress-label { width: 150rpx; flex-shrink: 0; font-size: 22rpx; color: var(--text-2); }
+.r3-progress-row .r3-progress { flex: 1; }
+.r3-progress-row .r3-progress-num { width: 120rpx; text-align: right; font-size: 22rpx; color: var(--muted); font-variant-numeric: tabular-nums; }
+.r3-progress-row.is-ai .r3-progress-fill { background: var(--ai-accent); }
+.r3-progress-row.is-ai .r3-progress-num { color: var(--ai-ink); }
+
+.r3-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240rpx;
+  margin: 12rpx 0 20rpx;
+  padding: 24rpx;
+  border: 1rpx dashed var(--border);
+  border-radius: 14rpx;
+  background: var(--panel-2);
+  text-align: center;
+}
+.r3-empty-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  margin-bottom: 12rpx;
+  border: 1px solid var(--ai-accent);
+  border-radius: 50%;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 700;
+}
+.r3-empty-title { font-size: 28rpx; font-weight: 600; color: var(--text); }
+.r3-empty-reason { margin: 8rpx 0 4rpx; font-size: 22rpx; color: var(--muted); line-height: 1.5; }
+.r3-empty-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  padding: 0 32rpx;
+  border-radius: 12rpx;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.r3-enter { animation: r3-enter 240ms ease-out both; }
+@keyframes r3-enter {
+  from { opacity: 0; transform: translateY(10rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r3-enter { animation: none !important; }
+}
+

@@ -14,6 +14,9 @@
 >
 > **保密**：文档中的部署地址一律用 `<YOUR_TEST_DOMAIN>` 占位；真值只从
 > `laiyipao/deploy/.local.keys` 与环境变量读取，不入库。
+>
+> **R3 追加**：§1B 定义 16 个次级页面的六组件模式与肉眼可辨 AI 感规则；
+> 令牌包标记 `lyp-tokens-v3-r3`（`--lyp-r3-version`），旧 `lyp-tokens-v1` 仍为兼容锚点。
 
 ---
 
@@ -133,6 +136,147 @@ admin 是 `#96a0ad`（5.41:1）。t4 已把双端 dim 统一到 `#96a0ad`、mute
 - 动态：光晕最多 1 次入场（`--motion-base`），不循环「思考中」动画；`prefers-reduced-motion: reduce` 下全部静止；骨架屏结束后立即替换为真实结论。
 - 截图门禁（F-10-2 复审硬条件）：H5 首页与 admin 看板各交 1 张真浏览器截图，AI 卡须位于首屏、标识文字在 100% 缩放下可辨；截图文件标注「非物理真机」，并附所用视口尺寸。
 - 回归门禁：双端令牌契约测试与对比度守卫保持全绿；AI 令牌只加一端、图表硬编码旧色回潮、空态写成「暂无数据」均视为不合格。
+
+---
+
+## 1B. 次级页面规范（R3 · 16 页结构性升级唯一依据）
+
+> 依据：R2 终审（docs/laiyipao/reviews/ROUND2_DESIGN_REVIEW.md）确认 H5 仅首页/关卡/战斗三页完成结构性升级，
+> 其余 16 页仍是基线简陋态（专精页纯规则文字+灰条、商城页文本标签堆砌、宝石图鉴近乎空白）；用户诉求原文「H5端也是各个页面都太简陋了，都可以改」。
+> R1 失败教训必须记住：`.page-root:before` 的 rgba(255,255,255,.022) 网格 + rgba(...,.06) 辉光在 390×844 真浏览器截图上肉眼不可辨。
+> **本轮禁止把低透明度底纹、微弱渐变或换色当作改造成果或 AI 感**；改造成效以结构性组件 + RED 契约 + 真浏览器截图为准。
+
+### 1B.1 范围与页面—模式映射
+
+适用 19 页中除 index / stage / battle 外的 16 页。每页至少落地「一个分区眉题或指标带」+「一个数据容器（DataGrid / ProgressTree）」+「一个智能空态或 AI 线索」。
+只改颜色、只加底纹、只调字号不算完成。
+
+| 页面（`miniapp/src/pages/`） | 必备组件模式 | AI 线索（必须取现有数据） |
+|---|---|---|
+| `mastery.vue` 专精 | SectionKicker + KpiStrip + ProgressTree + EmptyState | AI 推荐节点：依据已点亮节点与剩余专精点，给一条「先补哪一系」结论 + 跳转 CTA |
+| `shop.vue` 商城 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 性价比提示：依据持有货币与价格给一条推荐商品 + 购买 CTA |
+| `gems.vue` 宝石图鉴 | SectionKicker + KpiStrip + ProgressTree + EmptyState | AI 收集缺口：依据已拥有/总数指出最缺的一颗 + 获取 CTA |
+| `bag.vue` 背包 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 整理建议：依据道具数量与过期/稀缺状态给一条动作 |
+| `battles.vue` 战报 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 战报诊断：依据近 N 场胜率给一条改进结论 |
+| `equipment.vue` 装备 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 搭配建议：依据已装备部位与契合度给一条动作 |
+| `rank.vue` 排行 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 冲榜建议：依据当前排名与分差给一条动作 |
+| `reactions.vue` 反应图鉴 | SectionKicker + FilterBar + DataGrid | AI 反应推荐：依据当前构筑元素给一条克制建议 |
+| `skills.vue` 技能 | SectionKicker + FilterBar + DataGrid | AI 构筑建议：依据已选技能与热量给一条取舍建议 |
+| `enemies.vue` 敌人图鉴 | SectionKicker + FilterBar + DataGrid | AI 克制提示：依据元素分布给一条上阵建议 |
+| `announcements.vue` 公告 | SectionKicker + DataGrid + EmptyState | AI 摘要：取最新一条公告标题做一句话摘要，不编造内容 |
+| `signin.vue` 签到 | SectionKicker + KpiStrip + DataGrid + EmptyState | AI 提醒：依据连续签到与缺口给一条领取动作 |
+| `skins.vue` 皮肤 | KpiStrip + FilterBar + DataGrid + EmptyState | AI 换装建议：依据已拥有皮肤给一条装备动作 |
+| `verify.vue` 验真 | KpiStrip + DataGrid + EmptyState | AI 异常提示：依据异常/守恒计数给一条复核动作 |
+| `me.vue` 我的 | KpiStrip + DataGrid + EmptyState | AI 成长诊断：依据关卡与构筑评分给一条补强动作 |
+| `login.vue` 登录（例外） | SectionKicker + EmptyState | **不强制 AI**：登录页无用户数据，编造即违反 §1A.1「有据可查」；只要求空态文案与焦点环，登录后落地页必须满足 AI 判据 |
+
+### 1B.2 六个可复用组件模式
+
+命名统一用 BEM 风格 class；H5 在 `.card` / `.chip-tabs` / `.list-row` / `.state-block` 上追加 modifier，
+admin 在 `.section-title` / `.toolbar` / `.kpi-*` / `.glass-surface` 上追加 modifier，不另起平行样式体系。
+
+#### 1B.2.1 SectionKicker（分区眉题）
+
+- 结构：中文眉题 + 可选英文小标 + 可选说明；`.section-kicker--ai` 变体追加文字徽章「AI」。
+- H5：中文 24rpx/600 `--muted`，英文 20rpx `--dim` + `letter-spacing: .12em`；上边距 24rpx、下边距 12rpx；左侧 4rpx `--accent` 竖条。
+- admin：中文 15px/600 `--lyp-muted`，英文 11px `--lyp-dim` + `.12em`；上边距 20px、下边距 8px。
+- 可访问性：中文眉题是主标题文本，英文只作装饰补充；AI 变体的「AI」必须是可朗读汉字，不是纯图标或伪元素。
+
+#### 1B.2.2 KpiStrip（主/次两级指标带）
+
+- 每页**最多 4 张主 KPI**；主卡带 6rpx/3px 左强调条（`--accent`），次卡无强调条。禁止 R1 的「8 张等权卡平铺」。
+- H5：2 列 grid，gap 12rpx；主卡跨 2 列、最小高 96rpx，次卡最小高 80rpx；数值 `--fs-xl` + `font-variant-numeric: tabular-nums`；标签 `--muted`、副文 `--dim`。
+- admin：4 列 grid（≤900px 降为 2 列），主/次各一组，卡高 88px；数值 `--lyp-fs-xl`。
+- 加载态用 `.skeleton-row` 占位且保持同高（`aria-busy="true"`），骨架结束立即换真实数值，避免 CLS。
+
+#### 1B.2.3 EmptyState（空数据态）
+
+- 固定结构：图形槽 + 标题 + 原因 + 下一步动作按钮。H5 最小高 240rpx、admin 180px，与正常态等高。
+- 文案强制套 §1A.4：写清「缺什么数据/为什么空 + 下一步做什么」。通用写法：「还没有 {对象}：{原因}，{动作}」。
+- **禁止**裸「暂无数据」「加载失败」「-」；AI 空态禁止「AI 思考中…」伪装计算。
+- AI 变体：图形槽用 `--ai-halo` 作底 + `--ai-accent` 1px 边框 + 汉字「AI」标签（不得只靠 halo 表示 AI）；按钮复用页面已有路由。
+- 触控按钮 H5 ≥88rpx、admin ≥44px；焦点环走全局 `:focus-visible`。
+
+#### 1B.2.4 DataGrid（表格/列表）
+
+- H5 ≤560px：表格转成卡片行（`.list-row` + 标签/值成对），表头信息用 `aria-label` 保留，不做横向滚动的窄表。
+- admin：真 `<table>`，表头 `--panel-2` + 1px `--border-soft`，行 hover `--panel-3`（muted 文字对该底 5.30:1 仍达标）。
+- 数字列 `tabular-nums`；每行至少一个文字标识（WCAG 1.4.1）；空数据必须切到 EmptyState，不留空表头。
+- 加载态给 3 行 `.skeleton-row`，高度与真实行一致。
+
+#### 1B.2.5 FilterBar（筛选区）
+
+- H5：横向滚动 chip，`min-height: 88rpx`、gap 12rpx；admin：`.toolbar` 最多两行，窄屏自动折行。
+- 活动态：`background: var(--accent-soft)` + `color: var(--accent-ink)`。实算：accent-ink 在 soft+panel-2 为 5.20/5.23:1，soft+panel-3 为 4.63/4.67:1。
+- **禁止** `color: var(--accent)` 叠 `--accent-soft`：实算仅 4.37/4.40:1，未过 4.5 红线（禁止组合扫描要覆盖这一条）。
+- 结果数用 `.result-count` 文本实时更新并加 `aria-live="polite"`；筛选后焦点不得丢失。
+
+#### 1B.2.6 ProgressTree（专精树/收集进度）
+
+- 状态机：`locked / available / selected / ai-recommended`，每态必须带文字标签「未解锁 / 可选 / 已点亮 / AI 推荐」，不得只换颜色。
+- 连接线 `--border`，节点底 `--panel-2`，selected 边框 `--accent`，ai-recommended 边框 `--ai-accent` + 汉字「AI」+ 一行依据文案。
+- 专精遵循 8 系 × 3 层 × 4 节点（每层 4 选 2，GAME_DESIGN §I-3）；H5 按系做纵向手风琴（一次展开一层），admin 4 列网格。
+- 进度条轨道用 `--progress-track` + 1px `--border`，旁边必须有数字文本「已点亮 n/12」；颜色不是唯一信息载体。
+- 节点触控区 H5 ≥88rpx；点击后所给反馈（点亮/不可点原因）用文字而非仅动效。
+
+### 1B.3 PC / H5 双端适配规则
+
+| 规则 | H5（390×844，限宽 560px） | admin（1440×900，≤900px 折行） | 双端硬约束 |
+|---|---|---|---|
+| 信息密度 | 单列卡片，主 KPI 跨 2 列 | 4 列 KPI + 表格 | 同一令牌、同一文案结构 |
+| 交互载体 | chip / 手风琴 / 卡片行 | toolbar / 表格 / 网格 | 不用 hover 承载唯一信息 |
+| 触控/焦点 | 按钮与节点 ≥88rpx；全局 3rpx 焦点环 | 控件 ≥44px；2px 焦点环 | 焦点环都带 offset 且键盘可达 |
+| AI 标识 | 汉字「AI」徽章 ≥22rpx | 汉字「AI」徽章 ≥11px | 文案同源，不写死两套结论 |
+| 动效 | 入场 240ms，reduced-motion 静止 | 同左 | 不循环「思考中」动画 |
+
+### 1B.4 AI 感落地（肉眼可辨，不是低透明度底纹）
+
+1. 每个内容页至少一处满足 §1A.1 四判据的 AI 线索：可见「AI」汉字 + 由当前页已有数据经确定性规则得出的结论 + 依据 + 可点击 CTA；无数据时走 §1A.4 智能空态。
+2. 允许载体：`.section-kicker--ai`、KpiStrip 的结论副行、`.empty-state--ai`、`.progress-node--ai`。只有一个 kicker 时，同页 KpiStrip/EmptyState 必须提供对应 CTA。
+3. 不得计入 AI 感：`.page-root:before` 的 .022 网格、.06 辉光、渐变光斑、纯图标、需要 hover 才出现的提示、只有英文「AI」没有结论、写死文案。
+4. 视觉下限：AI 徽章描边用 `--ai-accent`，徽章文字用 `--ai-ink`（叠 kinetic soft + panel-3 为 5.90/6.04:1）；正文仍用文本四阶，soft 不得叠 panel-3 承载 muted/dim。
+5. 诚实标注：写「规则引擎 · 基于当前数据」；不宣称 GPT/大模型/实时学习，不编造置信度。
+
+### 1B.5 test-first 契约断言方式（RED → GREEN）
+
+本规范不代替测试。页面改造前先由 h5-ui（H5 页面）与 qa-e2e（双端契约）在各自写域新增以下合约并执行到 **RED**；
+页面代码改动后重跑到 **GREEN**。禁止为了让测试变绿而删断言或放宽阈值。
+
+```ts
+// 双端令牌对齐（admin/tests/r3Tokens.contract.test.ts 示意）
+expect(M["--lyp-r3-version"]).toBe("lyp-tokens-v3-r3");
+expect(A["--lyp-r3-version"]).toBe("lyp-tokens-v3-r3");
+expect(M["--accent-soft"]).toBe(A["--lyp-accent-soft"]);
+expect(M["--progress-track"]).toBe(A["--lyp-progress-track"]);
+```
+
+```ts
+// 页面结构（miniapp/src/styles/r3SecondaryPages.contract.test.ts 示意）
+const SECONDARY = ["announcements","bag","battles","enemies","equipment","gems",
+  "login","mastery","me","rank","reactions","shop","signin","skills","skins","verify"];
+for (const page of SECONDARY) {
+  const src = read(join(pagesDir, page + ".vue"));
+  expect(src, page + " 必须有分区眉题或指标带").toMatch(/section-kicker|kpi-strip/);
+  expect(src, page + " 必须有数据容器").toMatch(/data-grid|progress-tree|list-row/);
+  expect(src, page + " 不得裸空态文案").not.toMatch(/暂无数据|加载失败/);
+  if (page !== "login") expect(src, page + " 必须有可见 AI 线索").toMatch(/AI[\s\S]{0,40}(依据|建议|提示|诊断)/);
+}
+```
+
+补充断言：FilterBar 活动态源码不得出现 `color: var(--accent)` 叠 `--accent-soft`（改用 `--accent-ink`）；
+ProgressTree 必须同时出现 `--progress-track` 与数字标签模板；EmptyState 必须含动作按钮与 `aria-live`/`role=status` 之一。
+截图门禁：h5-ui 至少交专精、商城、宝石图鉴、公告 4 张 390×844 真浏览器截图（标注「非物理真机」），由 design-reviewer 按 §1B.4 肉眼复核。
+
+### 1B.6 R3 令牌（唯一真源：双端 tokens.css）
+
+| 语义 | miniapp | admin | 值 / 用途 |
+|---|---|---|---|
+| R3 规范包标记 | `--lyp-r3-version` | `--lyp-r3-version` | 双端同值 `lyp-tokens-v3-r3`；旧 `--lyp-token-version` 仍为 `lyp-tokens-v1` 兼容锚点 |
+| 筛选活动底 | `--accent-soft` | `--lyp-accent-soft` | `rgba(255,107,53,.18)`；仅叠 panel/panel-2，文字必须 `--accent-ink` |
+| 进度轨道 | `--progress-track` | `--lyp-progress-track` | `#39465a`；双端同值，状态必须另配数字文本 |
+
+兼容策略说明：现有双端契约把 `--lyp-token-version` 钉在 `lyp-tokens-v1`，本任务写域不含测试文件，
+因此新增独立 R3 标记而不改旧字段，避免既有守卫误红；待测试 owner 统一迁移后再提升旧字段。
 
 ---
 
@@ -331,7 +475,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 
 ## 8. 令牌体系与落地路径（t4 已落地 v1）
 
-### 8.1 令牌契约（已落地：`lyp-tokens-v1`）
+### 8.1 令牌契约（v1 已落地 · R3 包 `lyp-tokens-v3-r3`）
 
 两端令牌「语义同名、前缀不同」的现状予以保留（避免大范围改名破坏现有测试）。
 唯一真源是 `miniapp/src/styles/tokens.css` 与 `admin/src/styles/tokens.css`，
@@ -348,6 +492,11 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 | 玻璃层 / 玻璃文本 | `--glass-bg/-border/-blur/-text-*` | `--lyp-glass-*` | 文本同值；底限定 panel |
 | 动效 / 层级 | `--motion-* / --z-*` | `--lyp-motion-* / --lyp-z-*` | 同值 |
 | AI 感标识 / 文字 / 光晕（§1A.6） | `--ai-accent / --ai-ink / --ai-halo / --ai-glow` | `--lyp-ai-*` | 色值同值；ink 对 soft+panel-3 ≥4.5:1 |
+| R3 规范包标记（§1B.6） | `--lyp-r3-version` | `--lyp-r3-version` | 同值 `lyp-tokens-v3-r3`；旧 `--lyp-token-version` 保留 v1 |
+| R3 筛选活动态（§1B.2.5） | `--accent-soft` | `--lyp-accent-soft` | 同值 rgba(255,107,53,.18)；文字必须 `--accent-ink` |
+| R3 进度轨道（§1B.2.6） | `--progress-track` | `--lyp-progress-track` | 同值 `#39465a`；状态必须配数字文本 |
+
+> 兼容说明：旧 `--lyp-token-version: lyp-tokens-v1` 由现有守卫钉住，本轮不提升；R3 以独立标记登记。
 
 ### 8.2 落地顺序（t4 已完成 1–4；5–6 由下游继续）
 
@@ -357,6 +506,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 4. ✅ **玻璃/微交互基建**（t4）：双端补齐 reduced-motion 全局兜底与键盘焦点环；`main.css` 新增 `.glass-surface` / `.skeleton-row` / `.skeleton-bar` 基础类，t5/t7 只需在组件层复用。
 5. **命令面板**：按 §5 在 admin 落地，路由源复用 `groups`。
 6. **响应式回归**：两端各跑一轮真实浏览器截图核验（标注「非物理真机」）。
+7. **R3 次级页面**：按 §1B 六组件模式改造 16 页；先 RED 契约再 GREEN，4 张代表页留真浏览器截图（标注「非物理真机」）。
 
 ### 8.3 已补守卫（自动测试，防止规范回退）
 
@@ -364,6 +514,7 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 - 双端：令牌版本 / 五元素色值 / ink / glass / 动效令牌对齐 —— `admin/tests/designTokens.contract.test.ts`。
 - 双端：禁止模式扫描——元素 soft 背景不得与 panel-3 同规则块共现；玻璃层不得叠 panel-3 承载 muted/dim（同上测试）。
 - admin 原有守卫：`tests/textContrast.test.ts`（改读 tokens.css）、`tests/focusVisible.contract.test.ts`。
+- R3 待补守卫（h5-ui / qa-e2e 在各自写域新增，断言见 §1B.5）：16 页组件标记与 AI 文案扫描、双端 R3 令牌对齐、禁止裸「暂无数据」、禁止 `--accent` 文字叠 `--accent-soft`。
 
 ---
 
@@ -393,6 +544,10 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 | 新令牌只加一端 | 双端漂移 | 按 §8.1 映射表双端登记 |
 | 假 AI：写死结论、假聊天框、无数据还显示洞察 | 误导用户，F-10-2 明确指出 | 按 §1A.1 四判据：真实数据 + 规则 + 依据 + CTA |
 | AI 卡用 soft 叠 panel-3 或渐变当正文底 | 对比度崩（§2.4 实测） | panel / panel-2 底 + `--ai-ink` 文字 |
+| 用 `.page-root:before` 的 .022 网格 / .06 辉光充当 AI 感 | R1 截图肉眼不可辨 | §1B.4：可见「AI」汉字 + 真实数据结论 + CTA |
+| 活动筛选芯片用 `--accent` 文字叠 `--accent-soft` | 实算 4.37 / 4.40:1 未过红线 | 改 `--accent-ink`（5.20 / 5.23:1） |
+| 进度条只靠颜色表示完成 | 违反 §9.1 信息不只靠颜色 | `--progress-track` + 数字文本「n/总数」 |
+| 次级页只换色/加底纹就宣布完成 | 用户点名的 16 页仍简陋 | §1B 六组件 + RED 契约 + 真浏览器截图 |
 
 ---
 
@@ -407,6 +562,9 @@ H5 的等价物是现有的搜索入口（图鉴搜索 / 顶栏），保持「�
 - [ ] 未引入任何真实域名/IP/密钥（`<YOUR_TEST_DOMAIN>` 占位）。
 - [ ] 若改动涉及 AI 元素：满足 §1A.1 四判据，H5 首页 / admin 看板各有首屏截图（标注「非物理真机」）。
 - [ ] 相关守卫测试通过（admin 现有 3 项 + §8.3 待补项）。
+- [ ] 若涉及 H5 次级页：按 §1B.1 映射表六组件齐全，AI 线索肉眼可辨且非低透明度底纹。
+- [ ] R3 令牌双端齐全：`--lyp-r3-version: lyp-tokens-v3-r3`、`--accent-soft`、`--progress-track`。
+- [ ] 空态未出现裸「暂无数据」/「加载失败」；筛选活动态未用 `--accent` 文字叠 soft。
 
 ---
 
