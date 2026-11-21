@@ -4362,3 +4362,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 【队长裁决 status 偏差】page-work 如实上报：队长批复依据 migration 006 认为 status 默认 'wait'，但真 DB 探针显示 x_meeting.status 为 nullable text 默认 NULL（根因：migrations/038_add_missing_columns.sql:37 后加无 DEFAULT 的 status TEXT 列），applied/wait 列表（lib.rs:1006）额外强制 `status='wait' AND applied=true`，故新会议（status=null）不进 applied/wait。裁决：以实测为准，队长原迁移推断有误；主验收「我的会议」list/apply SQL 只 WHERE applied=true（无 status 条件）已满足；applied/wait 断言降级为 HTTP200 可达、文档如实记录属正确处置；本轮不扩大改 DDL/status——status 在 wait/processing/completed 间转换无生产代码驱动且属产品口径，臆造修复风险高于收益，保留为已知遗留。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 243. R309 终审收官（2026-11-21）
+- t68（design-reviewer，只读终审 reviewedTaskId=t67）verdict=pass / status=completed / findings=[]。5 项验收全达标：①缺陷 A run.log 真实 WrongType 错误 + lib.rs:2503 补 $5::text::timestamp/$6::text::timestamp（对照 meeting/lib.rs:293）+ 测试 RED→GREEN；②缺陷 B applied=TRUE 写入 + list/apply 回显 + 测试 RED→GREEN + 真浏览器 createStatus=200/titleInList=true/titleAfterReload=true（截图目视确认）；③status 偏差与台账 §242 队长裁决一致（默认 NULL、applied/wait 断言降级 HTTP200、不扩大改 DDL）、如实无隐瞒无越权；④自跑 cargo test 61+1 passed/0 failed exit0、单提交未触及前端/H5/历史缺陷；⑤证据 source 标注非物理真机、文档脱敏 0 命中、单提交 b326d2a06 精确 3 文件。t68 只读、无改码无提交。
+- 队长独立复核（不采信自述）：agent_teams_status 读 t68 status=completed/verdict=pass/findings=[]；t67 修复（§242）已逐项定点复核全绿、t68 终审与队长裁决一致。
+- R309 收官：t66 深度功能审计（8 闭环 + 跨页一致性）→ 发现 P1 会议创建双缺陷 → t67 test-first 修复 → t68 终审 pass。全程真浏览器取证、精确单提交、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
