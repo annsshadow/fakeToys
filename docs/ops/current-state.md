@@ -4839,3 +4839,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 系统自动派生质量后续：t130（repair round2，page-work，deps t127）/t131（review round2，design-reviewer，deps t130），队长不重复创建。t130 原合约极薄（仅 subject=repair-round-2，无 objective/acceptance/verify/inScope），队长用 captain 专属 agent_teams_amend_task 补全合约（revision 1）：只给四个参数补 string 标注、重跑 typecheck exit=0 + vitest 全绿、精确单文件提交只含 DocumentApp.slots.contract.test.ts；硬写域隔离——禁碰 t129 在途的 cms_assemble_control/src/tests.rs，禁动 DocumentApp.vue 本体。指令已下发 page-work（delivered=wake）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，F1 修复后 t131 复审 verdict=pass 方可关闭 R330；t129（R331 后端软删过滤）独立在途。
 
+## 326. R330 F1 修复 t130 复核收官（2026-11-22）
+- t130（page-work，repair round2）完成，commit e8472ea54eccc28d17487c2d11dc811b9e0bc9a2 精确单文件（DocumentApp.slots.contract.test.ts 2+/2-）已push。
+- 队长独立复核（不采信自述）全通过：亲跑 pnpm --filter @oa4rust/desktop typecheck 真退出码=0、4×TS7006 消除；git show 确认 diff 仅 namedSlot(:16)/defaultSlotOf(:27) 两函数签名补 ': string'，断言逻辑与 P1 修复本体零改动；契约测试6/6与全量 vitest 268files/2165tests 全绿；HEAD=TRACK=e8472ea5、暂存区干净。
+- 写域隔离成立：工作树仅剩 t129 在途的 cms_assemble_control/src/lib.rs 与 tests.rs（M 未暂存未提交），t130 全程未碰、未误提交；DocumentApp.vue 本体未改。t130 evidence_note 已附（count=1）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，F1 已闭环，待 t131 复审 verdict=pass 关闭 R330；t129（R331 后端软删过滤）独立在途。
+
