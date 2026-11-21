@@ -4785,3 +4785,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 预建 t125（design-reviewer，review round 1，reviewedTaskId=t124，deps t124+t23）：终审两缺陷是否闭环、test-first RED→GREEN、vitest/cargo 全绿、部署与真浏览器证据、文档脱敏非物理真机、是否越界 SDK/personal crate/DDL；verdict=pass 方可关闭 R328。（task t125 已创建，pending@design-reviewer）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 318. R329 立项：PC 文档中心 DocumentApp.vue 只读深度审计（2026-11-22）
+- 据实立项依据：队长纯本地只读侦察，oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue 含多组真写端点（POST /api/document 新建、DELETE /api/document/{id}、PUT /api/document/publish/{id} 及 /cancel、POST /api/document/{id}/notify、PUT /api/document/cipher/publish/content、POST /api/document/cipher/{id}/persist/view/record、一组 /api/data/document/0/0... 占位探针），且 R300-R328 全部审计文档 docs/ops 下对 DocumentApp/文档发布/密文 0 命中，属真实实现、从未覆盖对象，非臆造。
+- 派发 t126（qa-e2e，只读深度审计，无源码写域）：测试服 1440x900 真浏览器走列表空态/新建回显/删除刷新/发布撤发布/密文端点（破坏性写未授权标取证限制）/500兜底空态可区分/占位探针语义/关键契约回归与 0 pageerror；每条三分判定（真缺陷/取证限制/产品语义差异）附源码定位与 DOM 证据，禁臆造。唯一入库物 oa4rust/docs/ops/oa4rust-r329-pc-document-audit.md（占位 0 真值、非物理真机）；evidence 落 gitignored oa4rust/test-results/r329-pc-document-audit/；精确单文件提交。写域与 t124(Personal.vue/personal_extend)/t125(只读终审) 不重叠，可并行。（task t126 已创建，assigned@qa-e2e）
+- 边界：本轮只审计甄别不夹带修复；据实三分后再定是否另案修复。项目 ≥1000 轮非终态，据实立项下一轮。
+
