@@ -94,7 +94,10 @@ pub async fn consume_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -169,8 +172,8 @@ pub async fn custom_create(
     let created = client
         .execute(
             "INSERT INTO x_msg_message \
-             (id, title, body, type, consumer, is_read, xid, xtitle, xbody, xtype, xconsumed) \
-             VALUES ($1, $2, $3, $4, $5, false, $6, $2, $3, $4, false)",
+             (id, title, body, type, consumer, xconsumer, is_read, xid, xtitle, xbody, xtype, xconsumed) \
+             VALUES ($1, $2, $3, $4, $5, $5, false, $6, $2, $3, $4, false)",
             &[&id, &title, &body, &msg_type, &consumer, &id],
         )
         .await

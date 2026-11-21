@@ -114,4 +114,91 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
+
+
+    // R317 M2: custom_create 的 INSERT 必须写 xconsumer（consume_list/unread_count 的读列），
+    // 且与规范列 consumer 同值绑定；否则新系统消息对任何 consumer 都不可见。
+    #[test]
+    fn test_custom_create_insert_writes_xconsumer_column() {
+        let src = include_str!("lib.rs");
+        let start = src
+            .find("pub async fn custom_create")
+            .expect("custom_create must exist");
+        let end = src[start..]
+            .find("\npub async fn ")
+            .map(|i| start + i)
+            .unwrap_or(src.len());
+        let func = &src[start..end];
+        assert!(
+            func.contains("INSERT INTO x_msg_message"),
+            "custom_create must INSERT into x_msg_message"
+        );
+        let cols_start = func
+            .find("(id, title, body, type, consumer")
+            .expect("INSERT column list must start with canonical columns");
+        let cols_end = func[cols_start..]
+            .find(')')
+            .map(|i| cols_start + i)
+            .unwrap();
+        let cols = &func[cols_start..cols_end];
+        assert!(
+            cols.contains("xconsumer"),
+            "INSERT column list must include xconsumer so consume_list/unread_count (WHERE xconsumer=$1) can see new messages; got: {}",
+            cols
+        );
+    }
+
+    #[test]
+    fn test_custom_create_xconsumer_reuses_consumer_placeholder() {
+        let src = include_str!("lib.rs");
+        let start = src
+            .find("pub async fn custom_create")
+            .expect("custom_create must exist");
+        let end = src[start..]
+            .find("\npub async fn ")
+            .map(|i| start + i)
+            .unwrap_or(src.len());
+        let func = &src[start..end];
+        let cols_start = func
+            .find("(id, title, body, type, consumer")
+            .expect("INSERT column list");
+        let cols_end = func[cols_start..].find(')').map(|i| cols_start + i).unwrap();
+        let cols = func[cols_start..cols_end].trim_matches(|c| c == '(' || c == ')');
+        let values_start = func.find("VALUES (").expect("VALUES clause");
+        let values_end = func[values_start..]
+            .find(')')
+            .map(|i| values_start + i)
+            .unwrap();
+        let values = func[values_start..values_end]
+            .trim_start_matches("VALUES ")
+            .trim_matches(|c| c == '(' || c == ')');
+        let col_names: Vec<&str> = cols.split(',').map(|s| s.trim()).collect();
+        let val_parts: Vec<&str> = values.split(',').map(|s| s.trim()).collect();
+        let ci = col_names.iter().position(|&c| c == "consumer").expect("consumer column");
+        let xi = col_names.iter().position(|&c| c == "xconsumer").expect("xconsumer column");
+        assert_eq!(
+            val_parts[xi], val_parts[ci],
+            "xconsumer must bind the same placeholder as consumer (同值写入); consumer={} xconsumer={}",
+            val_parts[ci], val_parts[xi]
+        );
+    }
+
+    #[test]
+    fn test_consume_list_xcreatetime_null_tolerant() {
+        let src = include_str!("lib.rs");
+        let start = src
+            .find("pub async fn consume_list")
+            .expect("consume_list must exist");
+        let end = src[start..]
+            .find("\npub async fn ")
+            .map(|i| start + i)
+            .unwrap_or(src.len());
+        let func = &src[start..end];
+        assert!(
+            func.contains("get::<_, Option<String>>(\"xcreateTime\")"),
+            "consume_list must read nullable xcreateTime as Option<String> to avoid deserialization panic; got prefix: {}",
+            &func[..func.len().min(240)]
+        );
+    }
 }
+
