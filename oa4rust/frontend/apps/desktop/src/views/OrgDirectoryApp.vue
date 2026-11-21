@@ -68,6 +68,15 @@
             <h3>部门树</h3>
             <button type="button" class="run-btn" data-testid="dept-tree-retry" @click="loadDeptTree">加载部门树</button>
           </div>
+          <div class="org-create-unit" data-testid="org-create-unit-form">
+            <button type="button" class="org-create-toggle" data-testid="org-create-unit-btn" @click="showUnitCreate = !showUnitCreate">{{ showUnitCreate ? '收起' : '新建部门' }}</button>
+            <form v-if="showUnitCreate" @submit.prevent="createUnitFromForm">
+              <input v-model="newDeptName" class="org-create-input" data-testid="org-create-unit-name" placeholder="部门名称" aria-label="部门名称" />
+              <input v-model="newDeptParent" class="org-create-input" data-testid="org-create-unit-parent" placeholder="父级部门 ID / 名称（可选）" aria-label="父级部门" />
+              <button type="submit" class="run-btn" data-testid="org-create-unit-submit" :disabled="unitCreating">{{ unitCreating ? '创建中…' : '提交创建' }}</button>
+            </form>
+            <div v-if="unitCreateError" class="load-error" data-testid="org-create-unit-error">{{ unitCreateError }}</div>
+          </div>
           <div v-if="deptTreeError" class="load-error" data-testid="dept-tree-error">
             <span>{{ deptTreeError }}</span>
             <button type="button" class="run-btn" data-testid="dept-tree-error-retry" @click="loadDeptTree">重试加载</button>
@@ -232,6 +241,37 @@ async function loadDeptTree(): Promise<void> {
     toast.error(deptTreeError.value)
   } finally {
     deptTreeLoading.value = false
+  }
+}
+const showUnitCreate = ref(false)
+const newDeptName = ref('')
+const newDeptParent = ref('')
+const unitCreating = ref(false)
+const unitCreateError = ref('')
+async function createUnitFromForm(): Promise<void> {
+  const name = newDeptName.value.trim()
+  if (!name) { unitCreateError.value = '请输入部门名称'; return }
+  unitCreating.value = true
+  unitCreateError.value = ''
+  try {
+    await withTimeout(
+      api.post(
+        '/api/organization/assemble/control/unit',
+        { name, parentId: newDeptParent.value.trim() },
+      ),
+      DEPT_TREE_TIMEOUT_MS,
+    )
+    newDeptName.value = ''
+    newDeptParent.value = ''
+    showUnitCreate.value = false
+    toast.success(`部门「${name}」已创建`)
+    void loadDeptTree()
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '未知错误'
+    unitCreateError.value = `新建部门失败：${message}。请检查名称或父级是否有效。`
+    toast.error(unitCreateError.value)
+  } finally {
+    unitCreating.value = false
   }
 }
 async function loadPersonFilter(): Promise<void> {
@@ -651,4 +691,9 @@ async function orgAuth(op: string): Promise<void> {
 .ai-page .dept-tree-loading { padding: var(--ai-grid-2); color: var(--text-muted); }
 .ai-page .dept-tree-list { list-style: none; margin: var(--ai-grid-1) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--ai-grid-1); }
 .ai-page .dept-tree-list li { padding: 6px 10px; border: 1px solid var(--ai-glass-border); border-radius: 8px; background: var(--ai-glass-bg); }
+.ai-page .org-create-unit { margin-bottom: var(--ai-grid-2); padding: var(--ai-grid-2); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); }
+.ai-page .org-create-unit form { display: grid; gap: var(--ai-grid-1); margin-top: var(--ai-grid-1); }
+.ai-page .org-create-toggle { padding: 7px 12px; border-radius: var(--radius-md); border: 1px solid var(--ai-indigo); background: var(--ai-glass-bg); color: var(--text-primary); font-size: 12px; cursor: pointer; }
+.ai-page .org-create-input { padding: 7px 10px; border-radius: var(--radius-md); border: 1px solid var(--ai-glass-border); background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; }
+.ai-page .run-btn { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); padding: 7px 12px; cursor: pointer; }
 </style>

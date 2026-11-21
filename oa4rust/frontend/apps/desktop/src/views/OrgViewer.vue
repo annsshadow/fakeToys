@@ -124,12 +124,20 @@
           <span class="si">⌕</span>
           <input v-model="keyword" @input="handleSearch" placeholder="搜索部门或人员" class="si2" />
         </div>
+        <div class="org-create-form" data-testid="org-create-group-form">
+          <button type="button" class="org-create-toggle" data-testid="org-create-group-btn" @click="showGroupCreate = !showGroupCreate">{{ showGroupCreate ? '收起' : '新建组织组' }}</button>
+          <form v-if="showGroupCreate" @submit.prevent="createGroupFromForm">
+            <input v-model="newGroupName" class="org-create-input" data-testid="org-create-group-name" placeholder="输入组织组名称" aria-label="组织组名称" />
+            <button type="submit" class="org-create-submit" data-testid="org-create-group-submit" :disabled="groupCreating">{{ groupCreating ? '创建中…' : '提交创建' }}</button>
+          </form>
+          <div v-if="groupCreateError" class="org-tree-error" data-testid="org-create-group-error">{{ groupCreateError }}</div>
+        </div>
         <div v-if="treeLoading" class="ls"><div class="sk" v-for="i in 6" :key="i"></div></div>
         <div v-else-if="treeError" class="org-tree-error" data-testid="org-tree-error">
           <p>{{ treeError }}</p>
           <button type="button" data-testid="org-tree-retry" @click="loadOrgTree">重试加载</button>
         </div>
-        <div v-else-if="nodes.length===0" class="es" data-testid="org-tree-empty"><p>暂无组织架构数据，请点击「重试加载」</p></div>
+        <div v-else-if="nodes.length===0" class="es" data-testid="org-tree-empty"><p>暂无组织架构数据，请点击「新建组织组」创建第一组，或「重试加载」</p></div>
         <ul v-else class="tree-list">
           <li v-for="n in nodes" :key="n.id" class="tree-node">
             <div class="nr" :class="{active:selected?.id===n.id}" @click="selectNode(n)">
@@ -1438,6 +1446,34 @@ async function loadOrgTree() {
   }
 }
 onMounted(() => { void loadOrgTree() })
+const showGroupCreate = ref(false)
+const newGroupName = ref('')
+const groupCreating = ref(false)
+const groupCreateError = ref('')
+async function createGroupFromForm() {
+  const name = newGroupName.value.trim()
+  if (!name) { groupCreateError.value = '请输入组织组名称'; return }
+  groupCreating.value = true
+  groupCreateError.value = ''
+  try {
+    await withTimeout(
+      api.post(
+        '/api/organization/assemble/control/group',
+        { name: newGroupName.value.trim() },
+      ),
+      ORG_TREE_TIMEOUT_MS,
+    )
+    newGroupName.value = ''
+    showGroupCreate.value = false
+    toast.success(`组织组「${name}」已创建`)
+    void loadOrgTree()
+  } catch (e: any) {
+    groupCreateError.value = `新建组织组失败：${e?.message ?? '未知错误'}。请检查名称是否重复或稍后重试。`
+    toast.error(groupCreateError.value)
+  } finally {
+    groupCreating.value = false
+  }
+}
 function toggleNode(n: N) {
   n._exp = !n._exp
   if (n._exp && !n.children) {
@@ -1598,4 +1634,10 @@ async function handleSearch() {
 .org-tree-error{margin:12px;padding:16px;border-radius:var(--radius-md);border:1px solid var(--ai-glass-border);background:var(--ai-glass-bg);color:var(--text-primary);font-size:13px}
 .org-tree-error p{margin:0 0 12px;color:var(--text-secondary);line-height:1.6}
 .org-tree-error button{padding:7px 14px;border-radius:var(--radius-md);border:1px solid var(--ai-indigo);background:var(--ai-gradient-brand);color:#fff;cursor:pointer;font-size:12px}
+.org-create-form{display:flex;flex-direction:column;gap:8px;margin:0 12px 12px}
+.org-create-toggle{padding:7px 12px;border-radius:var(--radius-md);border:1px solid var(--ai-indigo);background:var(--ai-glass-bg);color:var(--text-primary);font-size:12px;cursor:pointer}
+.org-create-form form{display:flex;gap:6px}
+.org-create-input{flex:1;min-width:0;padding:7px 10px;border-radius:var(--radius-md);border:1px solid var(--ai-glass-border);background:var(--bg-elevated);color:var(--text-primary);font-size:12px}
+.org-create-submit{padding:7px 12px;border-radius:var(--radius-md);border:0;background:var(--ai-gradient-brand);color:#fff;font-size:12px;cursor:pointer}
+.org-create-form .org-tree-error{margin:0}
 </style>
