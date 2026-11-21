@@ -4343,5 +4343,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t64（shell-eng）commit ed47e1080 精确 3 文件（PortalScriptDesignerApp.vue 删 1 行 + SkeletonGate.R308.contract.test.ts 44 行 + oa4rust/docs/ops/oa4rust-r308-skeleton-gate-fix.md 34 行，78+/1-）。根因：该页无真实 loading 引用、ScriptWorkbench 子组件自管加载态，父页面无条件渲染 `<div class="script-loading ai-skeleton-line" aria-hidden="true">` 致数据加载完成后骨架条常驻。方案：直接移除常驻装饰节点，保留 .ai-skeleton-line/@keyframes ai-shimmer 令牌样式（护 R306C 契约）。契约 RED 2 failed → GREEN 3 passed；AdminR306C 6/6、typecheck 通过。
 - 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=ed47e1080、暂存区干净；diff 实读确认仅删该无条件骨架节点；定点复跑 SkeletonGate.R308 3/3 与 AdminR306C 6/6 均 exit 0；文档 <YOUR_TEST_DOMAIN> 占位零真值；evidence（gitignored）标注非物理真机、skeletonBar=0/aiPage=2/workbench=true/pass=true、0 pageerror/API失败。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 240. R308 终审收官（2026-11-21）
+- t65（design-reviewer，只读终审）verdict=pass / status=completed / findings=[]。两项真实问题逐条闭环：①t63 统计卡恒显『加载中』误导标签——HotpicApp.vue:100/AppInfoApp.vue:105 改 loading 条件展开、StatsCardLabel.R308 契约 6/6、r308-stats-label-fix/evidence.json 两页 loadingText=0、截图目视仅三张真实统计卡；②t64 PortalScriptDesignerApp 静态骨架条移除——SkeletonGate.R308 契约 3/3、r308-skeleton-gate/evidence.json skeletonBar=0/aiPage=2/pass=true、ScriptWorkbench 完整。t62 基线 loading 假阳性判定有据（旧文本正则误命中统计卡、新 DOM 探针误命中装饰条），PC 74/74/H5 19/19、0 pageerror/API失败、PC aiPage gt0 45→70/74、双未消费 20→0、H5 branded 2→16/19。
+- 队长独立复核（不采信自述）：t65 status=completed/verdict=pass/findings=[]；独立全量 vitest 257 files/2104 passed exit 0（与 t65 自跑一致）、pnpm run typecheck exit 0；证据均标注非物理真机、docs/ops/*r308*.md 脱敏 0 命中；t62/t63/t64 三段证据链（§237/§238/§239）完整、commit 精确、队长逐项定点复核通过。
+- R308 收官：t62 基线再审计（修正 loading 探针假阳性）→ t63 统计卡标签修正 → t64 静态骨架条修正 → t65 终审 pass，两项低优先级真实问题闭环、无阻断性缺陷、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
