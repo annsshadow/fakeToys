@@ -4284,3 +4284,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 写域纪律：t55 提交时工作树 M/?? 系 t53/t54 A/B 组在途（QueryManager/FormApp/QueryDesigner 等），与 t55 写域不重叠、按 hash 定点复核未依赖 HEAD=@{u}；t55 证据目录实际落 r306c-admin-c-visual/（合约写 r306-admin-c/，命名偏差为 gitignored 目录、无害）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 230. R306 A/B 组改造独立复核（2026-11-21）
+- t54（page-core）commit ea1c40f9 精确 8 文件（205+/20-）：B 组 6 设计器（QueryDesigner/PortalDesigner/QueryExplorerApp/QueryViewDesignerApp/PortalDictDesignerApp/PortalPageDesignerApp）双未消费转令牌深度消费，根 modern-page ai-page + 页头 ai-page ai-panel、玻璃/渐变/8px栅格/骨架/微交互令牌。预存真 bug（test-first RED→GREEN）：QueryExplorerApp/QueryViewDesignerApp 的 AdminPageHeader/AdminFormSection/AdminToolbar 只 void 引用未 import，setup 抛 ReferenceError 被全局 errorHandler 吞成 toast（pageerror 抓不到），补 import 删 void 后 GREEN 5/5。AdminR306B 契约 5/5、typecheck exit0；真浏览器 6/6 页 aiPage=2/aiPanel=1/gradientOnPanel=true/0 pageError；文档 40 行合规、evidence r306-admin-b/ 非物理真机。队长定点复跑 5/5 exit0、import fix diff 实读坐实。
+- t53（page-work）commit 318cace72 精确 9 文件（204+/53-）：A 组 6 管理页（QueryManager/JPushApp/QueryViewApp/FormApp/ViewApp/FileInfoApp）双未消费转令牌深度消费。同类真 bug（test-first RED→GREEN）：QueryViewApp 模板引用 AdminPageHeader/AdminFormSection/AdminToolbar 仅 void 占位未 import 致 ReferenceError 白屏，新增 QueryViewApp.imports.R306.contract.test.ts，RED 2→GREEN 2。AdminR306A 契约 4/4 + import 契约 2/2 = 6/6、typecheck/build exit0；真浏览器六页 aiPage=2/2/5/2/2/2、glass 3-13、errors=[]；文档 22 行合规、evidence r306-admin-a/ 非物理真机。队长定点复跑 6/6 exit0、import fix diff 实读坐实。
+- R306 三组改造（A/B/C 各 6 页，共 18 页）全部完成并按 hash 定点独立复核（提交交错：t55 5da60b8fe→t54 ea1c40f9→t53 318cace72），写域互不重叠、无回退。A/B 组各修复一个预存 ReferenceError 真 bug（被 errorHandler 吞成 toast，pageerror 事件抓不到），均为 test-first RED→GREEN 且新增回归契约断言禁 void 占位。三组自述的全量 desktop 2 failed 系并行中间态（队友在途写域），最终全绿以 t57 终审独立全量复跑为准。t56 第二阶段同口径复查待三组产物部署后执行。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
