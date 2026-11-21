@@ -4845,3 +4845,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 写域隔离成立：工作树仅剩 t129 在途的 cms_assemble_control/src/lib.rs 与 tests.rs（M 未暂存未提交），t130 全程未碰、未误提交；DocumentApp.vue 本体未改。t130 evidence_note 已附（count=1）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，F1 已闭环，待 t131 复审 verdict=pass 关闭 R330；t129（R331 后端软删过滤）独立在途。
 
+## 327. R330 关闭：t131 复审 pass，F1 回归链完整闭环（2026-11-22）
+- t131（design-reviewer，review round2）终审 verdict=pass/findings=0/completed，attempt 1 有效：t130(e8472ea54) 对 t128 F1 finding 修复完整闭环（精确单文件四参数补 ': string' 符合 requiredFix），独立复跑 typecheck exit0 无 TS7006、全量 vitest 268files/2165tests exit0、真浏览器8断言全true/0错误、文档脱敏合规。
+- 队长独立复核：status=completed/verdict=pass/findings=0、HEAD=TRACK=9b3b5f411 稳定、git log -3 无新提交（t131 只读未改码）、工作树仅剩 t129 在途后端文件（属 page-comm 并发）。t131 evidence_note 已附（count=1）。
+- 结论：R330（R329 P1 DocumentApp.vue 默认插槽致写入口全缺失 + F1 typecheck 回归）完整闭环并关闭。全链：t126审计判P1→t127方案A具名插槽修复→t128终审发现F1(typecheck 4×TS7006)→队长补t130空合约→t130补类型标注typecheck归零→t131复审pass。删除残留已剥离 R331（§323）独立在途。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，待 t129（R331 后端软删过滤）闭环后据实立项下一轮。
+
