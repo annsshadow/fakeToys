@@ -4760,5 +4760,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 方案偏差与裁决（fail-loud 据实记录）：①队长初版建议 SQL status=$5 等值匹配错误——前端 select 传 0/1/2、权威值域为英文串/NULL/历史 1/2、R309 新建 status=NULL，等值会漏掉全部会议；page-core 证据预警成立，队长独立核实四组事实后两次裁决（m03527/m03544）改用与 meetingStatus.ts::statusTone 同源的 tone 映射（0=pending 含 NULL/1=active/2=ended，非法值不过滤）。②handler 加 Query 第 4 参后 security_gate_tests.rs:774 唯一 3 参直调会编译失败，该文件原不在 inScope；队长核实后通过 agent_teams_amend_task 扩 inScope 至 6 文件（revision 1），限定只补空 Query 适配签名、禁改任何断言/种子/归属谓词。实测该文件仅 +1 行空 Query，断言零改动无放水。两处偏差已写进修复文档 §2 方案偏差台账。
 - 队长独立复跑：cargo test -p meeting_assemble_control --lib 66 passed/0 failed/30 ignored；pnpm exec vitest run 267 files/2152 tests 0 failed；evidence（r326-search-fix/evidence.json，非物理真机）九断言全 true：无匹配 3→0+空态、关键词命中 1、status=0 筛 3（存量 NULL 归 pending）、清空恢复 3、0 pageerror/0 API失败，独立 API 探针证实后端 SQL 真过滤。status=1/2 无样本为取证限制非缺陷。测试服 Linux ELF + PC build 原子部署（首次并行 build 超时部署旧 ELF，已后台重编重部署修正，strings 确认远端含 status NOT IN）。
 - t122 终审解锁 in_progress@design-reviewer：待 verdict=pass/findings=[] 关闭 R326。GitHub 默认分支 1 high 漏洞（dependabot/229）不在本任务范围，仅知悉。
+
+## 314. R326 收官（2026-11-22）
+- t122（design-reviewer）终审完成：终态 status=completed/verdict=pass/findings=[]，只读未改码未提交；队长独立复核终态与 HEAD=TRACK=3c72f6b47 稳定、暂存区与工作树全干净，t122 evidence_note 已附。
+- 复核要点：t120 甄别 D1[P2] 成立、t121 前后端联动修复正确（$4 ILIKE 转义+$5 tone 映射过滤、$3 归属谓词/applied/ORDER/LIMIT 保留、security_gate 仅补空 Query 无放水、前端 URLSearchParams 真携带 key/status）；队长独立复跑 cargo 66 passed、vitest 267 files/2152 tests 0 failed（t121 复核时）；evidence 九断言全 true、source 非物理真机；两文档 <YOUR_TEST_DOMAIN> 占位 0 真值；R318-R324 既有修复标记在位无回归。
+- R326 完整闭环：t120 审计（D1[P2] 搜索筛选不生效，L1 无种子/P1 产品语义三分合规）→ t121 修复（前后端联动 test-first，方案偏差与裁决据实记录于 §313）→ t122 终审 pass。R326 正式收官。
+- 观察（非 finding）：GitHub 默认分支 1 high 漏洞（dependabot/229）不在本分支任务范围，已知悉未处置。项目 ≥1000 轮非终态，据实立项下一轮。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
