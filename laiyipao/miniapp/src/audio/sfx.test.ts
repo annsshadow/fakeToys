@@ -15,7 +15,7 @@
  * 为什么值得单独写：音效的失效方式是**完全静默的** —— 没有报错、没有视觉变化，
  * 只有「没有声音」。除了这些断言，没有别的东西会发现它。
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { installUniMock } from '../test/uni-mock'
 import {
   initSfx,
@@ -94,6 +94,90 @@ describe('audio/sfx', () => {
     const a = ctxsWithSrc('shot.wav')[0]!
     expect(a.stop).toHaveBeenCalledTimes(2)
     expect(a.play).toHaveBeenCalledTimes(2)
+  })
+
+  // ── F-2：H5 play()/stop() 竞态的异步 rejection（2026-11-21）──────────
+  // 真浏览器实测：真实点击进战斗运行约 12s，捕获 5 条
+  //   unhandledrejection: The play() request was interrupted by a call to pause()
+  // H5 端 uni 的 InnerAudioContext 映射 HTMLAudioElement，play() 返回 Promise；
+  // 高频 stop() 打断上一个尚未 resolve 的 play() → 异步 rejection 逃出 try/catch。
+  // 契约：playSfx / unlockSfx 必须给 play() 的返回值挂 .catch 兜底；
+  // 同时必须兼容小程序端 play() 返回 void（旧 mock 即返回 undefined）。
+
+  /** 造一个可控的「H5 play()」：返回 Promise，并由测试触发 reject。 */
+  function mockRejectingPlay() {
+    let rejectPlay: (reason?: unknown) => void = () => {}
+    const playPromise = new Promise<void>((_resolve, reject) => {
+      rejectPlay = reject
+    })
+    // 测试自身先兜一层，避免 RED 阶段把 vitest 的 unhandledRejection 变成噪声；
+    // spy 在它之后安装，因此只统计产品代码新增的 catch。
+    void playPromise.catch(() => {})
+    const catchSpy = vi.spyOn(playPromise, 'catch')
+    um.mock.createInnerAudioContext.mockImplementation(() => {
+      const a = {
+        src: '',
+        volume: 1,
+        loop: false,
+        play: vi.fn(() => playPromise),
+        stop: vi.fn(),
+        destroy: vi.fn(),
+      }
+      um.audioInstances.push(a)
+      return a
+    })
+    return {
+      interrupt: () => rejectPlay(new Error('The play() request was interrupted by a call to pause()')),
+      catchSpy,
+    }
+  }
+
+  it('F-2: playSfx 每次 play() 都兜住 rejected Promise（连射 stop 打断竞态）', async () => {
+    unlockSfx()
+    const { interrupt, catchSpy } = mockRejectingPlay()
+
+    playSfx('shot')
+    playSfx('shot')
+    interrupt()
+    await Promise.resolve()
+
+    // 两次 playSfx → 两次 play() 都必须挂 catch；漏一次就有一条 unhandledrejection
+    expect(catchSpy.mock.calls.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('F-2: unlockSfx 的手势 prime play() 同样兜住 rejected Promise', async () => {
+    const { interrupt, catchSpy } = mockRejectingPlay()
+
+    unlockSfx()
+    interrupt()
+    await Promise.resolve()
+
+    expect(catchSpy).toHaveBeenCalledTimes(1)
+    // 兜底不能改变原有解锁语义：音量必须在 stop 后恢复，标志必须置上
+    expect(isSfxUnlocked()).toBe(true)
+    expect(ctxsWithSrc('tap.wav')[0]!.volume).toBe(0.6)
+  })
+
+  // 第二轮真浏览器复核（2026-11-21）：uni-h5 的 InnerAudioContext.play() 实际返回
+  // undefined —— 上面给返回值挂 catch 的路径在 H5 上根本走不到。真正的 rejected
+  // Promise 在 uni 内部产生且未被捕获。因此 H5 必须定向 preventDefault 这条噪声，
+  // 同时**不得吞掉任何其它 rejection**（否则战斗逻辑异常会被静默隐藏）。
+  it('F-2: H5 定向抑制 media play AbortError，避免污染 pageerror', () => {
+    initSfx()
+    const ev = new Event('unhandledrejection', { cancelable: true })
+    Object.defineProperty(ev, 'reason', {
+      value: new Error('The play() request was interrupted by a call to pause()'),
+    })
+    window.dispatchEvent(ev)
+    expect(ev.defaultPrevented).toBe(true)
+  })
+
+  it('F-2: 其它 rejection 不被吞掉（不得掩盖真实战斗异常）', () => {
+    initSfx()
+    const ev = new Event('unhandledrejection', { cancelable: true })
+    Object.defineProperty(ev, 'reason', { value: new Error('战斗逻辑异常') })
+    window.dispatchEvent(ev)
+    expect(ev.defaultPrevented).toBe(false)
   })
 
   it('静音 → 不新增任何播放（解锁时那次 prime 不算）', () => {

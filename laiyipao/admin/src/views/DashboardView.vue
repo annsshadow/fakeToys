@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
@@ -14,6 +15,8 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { fetchDashboard, type Dashboard } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 import { describeDashboardChart, type ChartRow } from '@/utils/chartA11y'
+import { buildAiInsight, type AiInsight } from '@/utils/aiInsight'
+import AiInsightCard from '@/components/AiInsightCard.vue'
 
 echarts.use([
   BarChart,
@@ -84,10 +87,22 @@ const dauDesc = computed(() => describeDashboardChart({ title: '近 14 日活跃
 const reactionDesc = computed(() => describeDashboardChart({ title: '元素反应使用分布', chartType: 'bar', unit: '种', metric: '触发', rows: reactionRows.value }))
 const funnelDesc = computed(() => describeDashboardChart({ title: '关卡漏斗', chartType: 'bar', unit: '关', metric: '尝试', rows: funnelRows.value }))
 
+/** F-10-2：AI 洞察卡结论由当前数据确定性推导（规则引擎，非硬编码占位）。 */
+const aiInsight = computed<AiInsight>(() => buildAiInsight(data.value, labelOf))
+
+/**
+ * F-10-4：ECharts 配色只从设计令牌读取，不写死十六进制。
+ * 令牌真源是 styles/tokens.css 的 :root 变量，运行时用 getComputedStyle 取值；
+ * 令牌改色时图表跟着变，不再有第二份会漂移的魔法色。
+ */
+function chartToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 function renderCharts() {
   const d = data.value
   if (!d) return
-  const axis = { axisLine: { lineStyle: { color: '#30363d' } }, axisLabel: { color: '#8b949e' } }
+  const axis = { axisLine: { lineStyle: { color: chartToken('--lyp-border') } }, axisLabel: { color: chartToken('--lyp-dim') } }
 
   if (dauRef.value) {
     dauChart ??= echarts.init(dauRef.value)
@@ -101,8 +116,8 @@ function renderCharts() {
           type: 'line',
           smooth: true,
           data: d.daily_active.map((x) => x.dau),
-          lineStyle: { color: '#ff6b35', width: 2 },
-          areaStyle: { color: 'rgba(255,107,53,0.12)' },
+          lineStyle: { color: chartToken('--el-fire'), width: 2 },
+          areaStyle: { color: chartToken('--el-fire-soft') },
         },
       ],
     })
@@ -110,16 +125,16 @@ function renderCharts() {
 
   if (funnelRef.value) {
     funnelChart ??= echarts.init(funnelRef.value)
-    const items = d.stage_funnel.slice(0, 30)
+    const items = (d.stage_funnel ?? []).slice(0, 30)
     funnelChart.setOption({
       grid: { left: 44, right: 16, top: 24, bottom: 28 },
       tooltip: { trigger: 'axis' },
-      legend: { data: ['尝试', '通关'], textStyle: { color: '#8b949e' } },
+      legend: { data: ['尝试', '通关'], textStyle: { color: chartToken('--lyp-dim') } },
       xAxis: { type: 'category', data: items.map((x) => `第${x.level_id}关`), ...axis },
       yAxis: { type: 'value', ...axis },
       series: [
-        { name: '尝试', type: 'bar', data: items.map((x) => x.attempts), itemStyle: { color: '#30363d' } },
-        { name: '通关', type: 'bar', data: items.map((x) => x.clears), itemStyle: { color: '#7ee787' } },
+        { name: '尝试', type: 'bar', data: items.map((x) => x.attempts), itemStyle: { color: chartToken('--lyp-border') } },
+        { name: '通关', type: 'bar', data: items.map((x) => x.clears), itemStyle: { color: chartToken('--el-corrosion') } },
       ],
     })
   }
@@ -140,8 +155,8 @@ function renderCharts() {
         {
           type: 'bar',
           data: items.map((x) => x.count),
-          itemStyle: { color: '#c9a7ff' },
-          label: { show: true, position: 'right', color: '#8b949e' },
+          itemStyle: { color: chartToken('--el-kinetic') },
+          label: { show: true, position: 'right', color: chartToken('--lyp-dim') },
         },
       ],
     })
@@ -210,7 +225,8 @@ load()
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">数据看板</div>
@@ -229,6 +245,8 @@ load()
       :title="`后端不可达：${loadError}`"
       description="请先启动 server（go run ./cmd/api）并确认已执行数据库迁移。" class="mb-3"
     />
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <template v-if="data">
       <el-row :gutter="12" class="mb-2">

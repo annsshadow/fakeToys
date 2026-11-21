@@ -181,6 +181,27 @@ describe('DashboardView 图表渲染', () => {
     wrapper.unmount()
   })
 
+  it('F-1: stage_funnel 为 null 时漏斗图用空数据出图，不抛错、不误报「后端不可达」', async () => {
+    // 后端在某些版本会下发 stage_funnel: null（无关卡漏斗数据）。
+    // 修前 renderCharts 里 d.stage_funnel.slice(0, 30) 抛 TypeError，
+    // 被 load 的 catch 吞成 loadError → 横幅喊「后端不可达」，
+    // 运营以为服务挂了，其实是正常空态。这里守的是「空态 ≠ 故障」。
+    // 生成物契约保证非 null（后端 NormalizeNilSlices 归一），这里故意注入契约外的 null
+    // 来钉住看板的防御性 ?? [] —— 断言强度不变，只是类型上显式标注越界注入。
+    fetchDashboard.mockResolvedValueOnce(dashboardFixture({ stage_funnel: null as unknown as Dashboard['stage_funnel'] }))
+    const wrapper = await mountDashboard()
+    // 页面正常渲染：KPI 在、故障横幅不在
+    expect(wrapper.find('.kpi-value').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('后端不可达')
+    expect(wrapper.text()).not.toContain('看板数据加载失败')
+    // 三张图照常出图；漏斗图用空数据，而不是崩溃
+    expect(echartsInit).toHaveBeenCalledTimes(3)
+    const opts = chartStub.setOption.mock.calls.map((c) => c[0])
+    expect(opts[1].xAxis.data).toEqual([])
+    expect(opts[1].series.map((s: { data: number[] }) => s.data)).toEqual([[], []])
+    wrapper.unmount()
+  })
+
   it('加载期间离开页面：refs 已置空，renderCharts 判空跳过、不炸不泄漏', async () => {
     let resolveFetch!: (v: Dashboard) => void
     fetchDashboard.mockReturnValueOnce(new Promise<Dashboard>((r) => (resolveFetch = r)))
