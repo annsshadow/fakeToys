@@ -4511,3 +4511,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派 t93（page-work，implementation）M2 test-first 修复：INSERT 补写 xconsumer 复用 $5 与 consumer 同值、不改读端点 SQL/admin 门禁/前端；新增回归测试先 RED 后 GREEN、cargo test -p message --lib 全绿；文档 oa4rust/docs/ops/oa4rust-r317-m2-consumer-column-fix.md。部署门禁：t90（qa-e2e H5 审计）仍用现有测试服产物，t93 未放行前只做代码+本地测试+提交，禁部署/重启测试服后端；待 t90 完成队长放行后再 Linux ELF 原子部署 + 真浏览器复验（create 带 consumer→consume/list 可见、unread_count>0）。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 269. R317-A1 H5 深度闭环审计复核 + t93 部署放行（2026-11-21）
+- t90（qa-e2e 只读）commit 478934207 精确 1 文档 43 行 oa4rust/docs/ops/oa4rust-r317-h5-deep-audit.md：真浏览器 390x844 isMobile/hasTouch（本地无头 Chromium 非物理真机）6 闭环——L1 登录会话持久化/L2 日程新建回显刷新/L4 发消息回显/L5 工作流审批已办 真 UI PASS；L3 会议无新建入口=取证限制；L6 论坛发帖 picker 数据源 forum/view/all 初始 data:[]、补版块后无头浏览器 touch 派发触发组件 undefined.length（UI 取证限制），API 层 topic/create 200 + mobile/view/all 回显 PASS。
+- 队长独立复核：git show --stat 478934207=精确 1 文档 43 行、HEAD=TRACK（其提交后队友并行提交使 HEAD 前移属正常）、暂存区与工作树干净；实读 43 行文档确认 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值、非物理真机声明；交叉核对 supplement-evidence.json 初轮 L5 fail/L6 fail 与文档最终判定一致（补测 L5 API 200+已办含刚审批项、L6 l6-api-proof.json pass=true 含 create/list 200 回显），无隐瞒。
+- 观察（诚实标注、不判缺陷）：PC 建版块走 /api/bbs/assemble/control/section/create 写 x_bbs_assemble_control_section（BBSForum.vue:374），而 H5 picker 数据源 /api/bbs/assemble/control/forum/view/all 读 x_bbs_forum（user/forum 端点才写该表）——跨表口径分叉，供后续甄别，本轮不作为缺陷。
+- 部署放行：t90 已结束，测试服空闲，队长 send_message 放行 t93 做后端 Linux ELF 原子部署 + 真浏览器复验（create 带 consumer→consume/list 可见、unread_count>0）；放行前 t93 只做代码+本地测试+提交。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
