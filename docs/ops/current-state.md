@@ -4536,4 +4536,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t94（design-reviewer 只读终审，reviewedTaskId=t93）verdict=pass/findings=0/status=completed：缺陷1 M2 补写 xconsumer 复用 $5=consumer、consume_list/unread_count 按 xconsumer 过滤、DB 回读 consumer=xconsumer 同源坐实；缺陷2 xcreateTime 改 Option<String> 容错系补写后新行可见的必要前提（同 lib.rs 同函数、在 inScope），不立 finding；3 新增源码扫描契约可真复现 RED、本轮实测 message 16 passed（含 3 契约）、message_assemble_communicate 115 passed exit0；真浏览器 r317-m2fix source 非物理真机 create200/consumeList200/unread=1/DB 同源/0 error/0 API 失败，文档占位域名 0 真值。
 - 队长独立复核（不采信自述）：task 终态 status=completed/verdict=pass/findings=0；独立全量复跑 oa4rust 根 `pnpm exec vitest run` EXIT=0（263 files）、`pnpm test:mobile` EXIT=0（71 files）、cargo test -p message --lib 16 passed、-p message_assemble_communicate --lib 115 passed 均 exit0，无回归。M2 修复链（t92 坐实→t93 修复→t94 终审）完整闭环。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+## 273. R317 M1 普通用户可见性复验收官（2026-11-21）
+- t95（qa-e2e 只读复验）commit d12a11b2f 精确 1 文档 49 行 oa4rust/docs/ops/oa4rust-r317-m1-visibility-verify.md：t92 遗留 M1 取证限制解除，判定潜伏缺陷 P2（真实但无实际影响）。
+- 后端谓词缺口坐实：非 admin 账号（roleList=[]/isAdmin=false）缺省 sender=system 消息落库 created=true，但本人 message/list/paging allRows=1 仅含 SELF 行、selfVisible=true/defaultVisible=false，verdict=CONFIRMED_PREDICATE_GAP；源码定位 message_assemble_communicate/src/lib.rs:2812/2833-2836/2861-2866/2869/2882 + routes.rs:138。
+- 前端 customCreate 死代码坐实：IMChat.vue:794/834/863/878 imMore 系列仅定义无调用、:821 分支不可达，测试服 bundle grep message/custom/create=0，无真实用户触发路径→实际影响 0；修复方向若另派：以 sess.person_unique 为 sender 事实源/新增 creator 列写读同源，契约 RED→GREEN。
+- 队长独立复核（不采信自述）：commit stat 精确 1 文档、HEAD=TRACK=d12a11b2f、工作树干净；文档 <YOUR_TEST_DOMAIN> 占位 0 真值、明确非物理真机；判定与源码定位/t91 静态审计 §3 M1 候选一致。证据 gitignored oa4rust/test-results/r317-m1-verify/ 不入库；全程 0 pageerror。M2 修复链（t92→t93→t94）+ M1 复验（t95）全部收官，R317 完整闭环。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
