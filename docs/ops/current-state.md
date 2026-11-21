@@ -4560,3 +4560,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t98（page-work，implementation，deps t97+t23，后端-only 写域不与 t97 message crate 重叠）：选 t96 方向二『补桥接』——section/create 成功后同步 INSERT x_bbs_forum 且 forum id 与 section id 一致（保 topic forum_id 归档正确），test-first RED→GREEN、两写同事务无半状态/无重复、admin 门与 creator=会话人保留、不改 PC section/list 读链、不迁移历史数据；cargo test -p bbs_assemble_control 全绿；等 t97 部署完成后才可编译/部署（后端单工作树+单二进制，硬时序依赖防互相覆盖）；真浏览器 pcNameInH5 false→true/0 pageerror；文档 oa4rust/docs/ops/oa4rust-r318-bbs-section-bridge-fix.md 脱敏、精确单提交。若方向二与产品语义冲突先回报队长勿强行实现。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 277. R318 终审任务预建（2026-11-21）
+- 预建 t99（design-reviewer，review，round=1，reviewedTaskId=t98，deps t97+t98+t23）：只读终审 t97 M1 sender 修复、t98 BBS 跨端桥接修复、t96 甄别结论三产出，确认缺陷闭环且 R300-R317 既有修复无回归；verdict=pass 且 findings=[] 才关闭 R318，需修订按结构化 findings 上报且 needs_revision 标 failed。
+- 时序：t97/t98 为后端单工作树+单二进制，串行推进；t99 待两修复完成后自动解锁，符合『写域不重叠才并行、后端改动串行』纪律。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
