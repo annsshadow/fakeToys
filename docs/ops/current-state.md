@@ -4335,3 +4335,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据两项真实问题（非臆造）派发：t63（page-work，统计卡误导标签修正，test-first，写域 HotpicApp/AppInfoApp+契约+文档）、t64（shell-eng，静态骨架条条件化/移除，test-first，写域 PortalScriptDesignerApp+契约+文档），两任务 inScope 不重叠、均 claimed。改造后待真浏览器复验与终审。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 238. R308 统计卡误导标签修正复核（2026-11-21）
+- t63（page-work）commit aff8c281f 精确 4 文件（HotpicApp.vue/AppInfoApp.vue 各 1 行 + StatsCardLabel.R308.contract.test.ts 47 行 + oa4rust/docs/ops/oa4rust-r308-stats-label-fix.md 32 行，81+/2-）。两页 stats computed 由无条件 `{label:'加载中',value:loading?1:0}` 改为 `...(loading.value?[{label:'加载中',value:1,...}]:[])`：加载中保留真实提示、加载完成不再含该项。契约 RED 2→GREEN 6/6。
+- 队长独立复核（不采信自述）：stat 精确 4 文件、HEAD=TRACK=aff8c281f、暂存区干净；diff 实读确认两处展开式修改；定点复跑契约 6/6 exit 0；文档 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（gitignored）标注非物理真机、hotpic/appinfo 两页 loadingText=0/statCards=3/errors=0/apiFailures=0。工作树 M PortalScriptDesignerApp.vue + ?? SkeletonGate 契约系 t64 在途，非 t63 遗留、未触碰。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
