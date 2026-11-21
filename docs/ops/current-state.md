@@ -4290,3 +4290,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R306 三组改造（A/B/C 各 6 页，共 18 页）全部完成并按 hash 定点独立复核（提交交错：t55 5da60b8fe→t54 ea1c40f9→t53 318cace72），写域互不重叠、无回退。A/B 组各修复一个预存 ReferenceError 真 bug（被 errorHandler 吞成 toast，pageerror 事件抓不到），均为 test-first RED→GREEN 且新增回归契约断言禁 void 占位。三组自述的全量 desktop 2 failed 系并行中间态（队友在途写域），最终全绿以 t57 终审独立全量复跑为准。t56 第二阶段同口径复查待三组产物部署后执行。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 231. R306 改造后同口径复查对照（2026-11-21）
+- t56 第二阶段（qa-e2e）commit 7c47db7a 精确 1 文档 56 行 docs/ops/oa4rust-r306-admin-after.md。三组改造产物切到 index-BiyhjNmp.js 后，用同脚本/同 18 路由/同视口 1440×900 复查：18 页 DOM aiPage 全部 0→2~5（18/18 >0）、源码 srcVar 0→13~30（18/18 >0），完成标记 R306_AFTER_PC_DONE {total:18,captured:18,errors:0,apiFailures:0}。功能不退化：pageerror=0/apiFailures=0/loading=true 0 页/errorText=true 0 页/h1Count 全为 1/无重定向上登录；目视确认 query(queryview) 渐变卡片与按钮生效、功能入口完整。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、文档 <YOUR_TEST_DOMAIN> 占位、非物理真机、0 真值；evidence.json（448 行）source 非物理真机、aiPage=2、urlHost 占位；两阶段基线 d17a3151 与对照 7c47db7a 按 hash 定点复核、同口径脚本 r306-after-pc.cjs 与基线一致；HEAD=TRACK=7c47db7aa。
+- R306 量化闭环：改造前 18/18 双未消费（§229）→ 三组改造（§229 C / §230 A/B，含 2 个预存 ReferenceError 真 bug test-first 修复）→ 改造后 18/18 达标（本节）。t57 终审已自动 claimed，待其独立全量复跑（重点确认三组并行中间态 2 failed 归零）后收官。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
