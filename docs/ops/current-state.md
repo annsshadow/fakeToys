@@ -4423,3 +4423,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=77603c529、工作树干净；diff 实读确认三处封装改动；定点复跑 apiWrapperDrift.R313 契约 4/4 exit 0；文档 40 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored）标注非物理真机、真浏览器 esbuild 封装探针注入已登录工作台执行三封装均 200 JSON（create 返真实 id+draft、update updated:true、dictCreate 返真实 id）、apiCalls 路径正确无 404 HTML、pageErrors=[]。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 254. R313 API 封装漂移修复终审收官（2026-11-21）
+- t78（design-reviewer，只读终审 reviewedTaskId=t77）verdict=pass / status=completed / findings=[]。逐行复核三封装 create→POST /api/document、update→POST /api/document/{id}/update、dictCreate→POST /api/program_center/dict 与 cms routes.rs:526-527、program_center routes.rs:566 真实注册一致；契约 4 it 真断言方法+URL 非覆盖率驱动 GREEN 4/4；apis.general.dictCreate 非同源属实未改（general lib.rs:1073）；evidence 非物理真机、三调用 200 JSON、hasDrift=false/nginx404=false/pageErrors=[]；文档脱敏 0 真值；抽查无新增同类漂移。
+- 队长独立复核（不采信自述）：t78 status=completed/verdict=pass/findings=[]；独立全量 vitest 259 files/2114 passed exit 0（与自报一致）、typecheck exit 0；t74 审计（§245）→t77 修复（§253）→t78 终审三段证据链完整、commit 精确、队长逐项定点复核通过。
+- R313 收官：R312 静态审计中价值候选『封装路径漂移』转化为真实潜伏缺陷并修复闭环；三封装从『命中 404』恢复为真实 200 调用，契约由覆盖率驱动升级为真断言路径，堵住漂移复发漏洞。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
