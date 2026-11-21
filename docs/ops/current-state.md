@@ -4505,3 +4505,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派 t92（page-work 只读真浏览器复验）：M1/M2 静态证据链最完整但未经真浏览器确认，用现有测试服产物真浏览器坐实或排除（真缺陷/预期语义/取证限制三分类），不改源码、单文件文档 oa4rust/docs/ops/oa4rust-r317-message-candidate-verify.md、证据 gitignored oa4rust/test-results/r317-message-verify/、精确单提交；与 t90（qa-e2e H5 审计）写域不重叠并行。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 268. R317-A3 消息候选复验复核 / M2 真缺陷坐实 / M2 修复立项（2026-11-21）
+- t92（page-work 真浏览器复验）commit 51aa40c84 精确 1 文档 86 行 oa4rust/docs/ops/oa4rust-r317-message-candidate-verify.md：真登录页面内 fetch（IMChat 三入口为前端死代码）+ DB 只读回读坐实——M1 部分坐实（缺省 sender=system 落库、admin 可见；普通用户不可见判取证限制，需非 admin 账号另派）；M2 确凿真缺陷。
+- M2 根因（队长源码级复核）：message/src/lib.rs:171-174 custom_create INSERT 列含 (id,title,body,type,consumer,is_read,xid,xtitle,xbody,xtype,xconsumed) 却唯独漏写读列 xconsumer；consume_list :58 与 unread_count :228 均 WHERE xconsumer=$1 AND xconsumed=false，DB 回读 xconsumer=NULL → 任何 consumer 经 consume/list / unread_count 恒不可见。注释 :165-168 声称规范列与遗留列同值写入，属实现与注释漂移。
+- 派 t93（page-work，implementation）M2 test-first 修复：INSERT 补写 xconsumer 复用 $5 与 consumer 同值、不改读端点 SQL/admin 门禁/前端；新增回归测试先 RED 后 GREEN、cargo test -p message --lib 全绿；文档 oa4rust/docs/ops/oa4rust-r317-m2-consumer-column-fix.md。部署门禁：t90（qa-e2e H5 审计）仍用现有测试服产物，t93 未放行前只做代码+本地测试+提交，禁部署/重启测试服后端；待 t90 完成队长放行后再 Linux ELF 原子部署 + 真浏览器复验（create 带 consumer→consume/list 可见、unread_count>0）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
