@@ -4797,3 +4797,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 预建 t128（design-reviewer，review round 1，reviewedTaskId=t127，deps t126+t127+t23）：终审 P1 闭环、test-first、vitest 全绿、未越界 R298/SDK/后端/探针、文档脱敏非物理真机、精确单提交 HEAD=TRACK；verdict=pass 方可关闭 R330。（task t128 已创建，pending@design-reviewer）
 - 边界：R330 部署与 t124 测试服串行；本轮不夹带其他页面默认插槽排查（作延伸建议非本轮范围）。项目 ≥1000 轮非终态，据实立项下一轮。
 
+## 320. R328 t124 合约修订：D2 复验触发 pre-existing TIMESTAMP 解码缺陷扩 scope（2026-11-22）
+- 触发：t124（page-core）报 D1 已 3/3 绿、全量 vitest 2158/前端契约 11/后端 personal_extend 22/typecheck 均绿、PC 前端已部署、后端 ELF 已含桥接；D2 真浏览器复验桥接保存签名 HTTP200 saved:true，但随后 /api/person/signature/list 返回 500、textarea 仍空。
+- 队长独立源码确证（非桥接回归）：独立探针用 upload 端点单独写一行 x_custom（未走 t124 桥接）后 list 同样 500、空表时 list=200；根因 oa4rust/backend/crates/personal/src/signature.rs:130 row.get::<_,Option<String>>("created_at") 用 String 解码 x_custom.created_at TIMESTAMP 列（migrations/015_create_x_custom.sql:9），token-postgres 解码失败→500；t123 审计时 x_custom 空表故未暴露。属 pre-existing 潜伏缺陷。
+- 裁决（fail-loud）：signature.rs 在 t124 原 outOfScope，但不修则 D2 无法 GREEN。按 R326 同类先例用 agent_teams_amend_task 把 t124 inScope 扩至 personal/src/signature.rs + personal/src/tests.rs（revision 1），严格限定只改 :130 单行解码（→ row.get::<_,Option<chrono::NaiveDateTime>>("created_at").map(|dt| dt.to_string())，chrono 已是 personal crate 依赖 Cargo.toml:19、:131 已用）+ 配套 list 解码行 RED→GREEN 测试；禁改归属谓词 resolve_current_person_unique/delete 分支/其他 get 字段。
+- 附加要求已下发 page-core：signature.rs 改动后须重编 Linux ELF（rust:1.98-bullseye，禁 PE32+ 203/EXEC）原子重部署+健康检查 active+真浏览器重验 D2（saved:true→list 200→textarea 回显、0 pageerror）；修复文档 oa4rust/docs/ops/oa4rust-r328-personal-d1d2-fix.md §2 补记第三处修复根因；精确单提交含实改文件、push、HEAD=TRACK。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，D2 闭环后据实入账。
+
