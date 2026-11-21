@@ -33,9 +33,9 @@
 - 源码定位：
   - 承诺文案 oa4rust/frontend/apps/desktop/src/views/FileManager.vue:85 title=删除（进入回收站），:210-211 新建成功 toast「文件已创建，可删除进入回收站」。
   - 删除实现 FileManager.vue:896-909 的 deleteFile()：deleteMutation 仅 api.delete(/api/file/assemble/control/file/{id})（:891），onSuccess 仅 recyclableFiles.value.filter 本地移除 + toast 成功（:900-902），从未调用 loadRecycleBin()（定义于 :878，GET /api/recycle/list）。
-  - 后端软删存在：oa4rust/backend/crates/file_assemble_control/src/lib.rs:532 UPDATE x_file SET deleted_at = NOW() WHERE id = $1；回收站列表读 FILE_FILE WHERE deleted_at IS NOT NULL（同文件 recycle_list 约 :3995）。但新建走 /api/file/core/entity/file（file_core_entity 表族），删除走 /api/file/assemble/control/file/{id}（x_file 表族），回收站读的又是 FILE_FILE，因此即使后端软删成功也不会在该新建文件的回收站出现。
+  - 后端软删与回收站同源（队长源码级复核修正）：新建走 /api/file/core/entity/file 写 FILE_FILE（file_core_entity/src/lib.rs:432-445）；删除 u2_file_delete_by_id 对 FILE_FILE 执行软删（file_assemble_control/routes.rs:286 + lib.rs:5035，非 :532 的 x_file）；回收站 recycle_list 读同一 FILE_FILE WHERE deleted_at IS NOT NULL（lib.rs 约 :3997-3999）。三链实为同表族，原『三链不同源』分析有误；真缺陷根因是前端删除成功后未调用 loadRecycleBin() 刷新回显（见下）。
 - 性质判定：真缺陷（页面明确承诺「删除后进入回收站」，真 UI 可复现，API 200 但回显与承诺不符）；不是接口失败，也不是 R314 已办 / R315 搜索 / R318 论坛版块桥接已闭环项。
-- 修复方向（不在本只读任务内实施）：统一新建—删除—回收站三者的表族与记录 id（选定唯一文件实体表），删除成功后主动刷新回收站并按真实软删结果回显；若产品语义是不入回收站，则同步改页面文案与 title，消除误导。验证方式：新建后删除 → 回收站列表出现同名项 → 恢复后回到可清理列表 → 0 pageerror / 0 API 失败，并加契约锁定三链同源。
+- 修复方向（本只读任务未实施，后由 t106 完成）：三链本已同源，无需统一表族；最小修复是在 deleteFile 的 deleteMutation onSuccess 中调用 loadRecycleBin()（GET /api/recycle/list）刷新回收站并按真实软删结果回显同名项。验证方式：新建后删除 → 回收站列表出现同名项 → 恢复后回到可清理列表 → 0 pageerror / 0 API 失败，并加契约锁定删除后刷新（t106 已实现：FileManager.recycleRefresh.contract.test.ts，RED→GREEN 4/4）。
 
 ## §4 取证限制与产品语义差异（不计缺陷）
 
