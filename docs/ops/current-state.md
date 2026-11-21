@@ -4614,5 +4614,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 时序：t102 为后端单工作树+单二进制串行改动；t103 待 t102 完成后自动解锁，符合『写域不重叠才并行、后端改动串行』纪律。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 - test-first RED→GREEN（cargo test -p bbs_assemble_control --lib 基线 47 + 新增 ≥1）+ 测试服 Linux ELF 原子部署（禁 PE32+）+ 真浏览器删版块后 H5 forum/view-all 与 picker 不再可见/0 API失败；文档 oa4rust/docs/ops/oa4rust-r320-symmetric-delete-fix.md 脱敏、精确单提交。若方向一与产品语义冲突先回报队长勿强行实现。
+
+## 287. R320 t102 对称删除修复收官与终审解锁（2026-11-21）
+- t102（page-work）完成并队长独立复核：commit 5716177065a479da305434b662b29b87c80c81bb 精确 3 文件（lib.rs 22+ + tests_generated.rs 91+ + 文档 54+，166+/1-）；diff 确认 section_delete 单事务 DELETE section + 同 id UPDATE x_bbs_forum SET deleted_at=NOW()（复用 u2.rs:1433 口径），真 DB 错误 fail loud、无半状态、affected=0 不误判；admin 门/creator/section-list 读链/t98 建桥接/伪桥接第三表均未改；HEAD=TRACK=5716177065，暂存区与工作树全干净。
+- 队长从正确根独立复跑 `cargo test -p bbs_assemble_control --lib`：49 passed/0 failed（基线 47 + 新增 2），t98 桥接与既有 section/forum 用例不回退（EXIT=0）。文档 54 行 <YOUR_TEST_DOMAIN> 占位 0 真值。
+- 证据 oa4rust/test-results/r320-bbs-delete-fix/（gitignored）source 非物理真机、verdict=SYMMETRIC_DELETE_VERIFIED、sectionAfter.present=false、forumAfter.visible=false、pickerHasNameAfter=false、0 API失败/0 pageerror。首轮 NOT_VERIFIED 根因为相同 hash goto 不重走 uni-app onLoad（mobile/src/pages/bbs/new.vue:69-75），改 h5.reload() 硬重载后通过，属脚本层非源码缺陷。关联主题不自动删如实标注为已知边界。
+- t103 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R320。t102 evidence_note 已附。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
