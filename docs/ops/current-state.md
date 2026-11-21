@@ -4579,3 +4579,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t99 终审解锁 claimed@design-reviewer：待 verdict=pass/findings=[] 关闭 R318；R318 三产出（t96 甄别 B、t97 M1 修复、t98 跨端桥接）修复链完整。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 280. R318 终审通过正式收官（2026-11-21）
+- t99（design-reviewer）终审完成并队长独立复核：verdict=pass/findings_open=0/status=completed，只读评审 HEAD=TRACK=0868dc06d 稳定、暂存区与工作树全干净（未改码未提交）。
+- 队长独立复跑前端全量 263 files/2129 passed exit0；后端 message_assemble_communicate 117 passed、bbs_assemble_control 47 passed 全 0 failed（t97/t98 复核时已独立跑）。三文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。
+- R318 三产出闭环：t96 甄别 B 真缺陷 P2（pcNameInH5=false）→ t97 M1 sender 写读同源修复（defaultVisible=true）→ t98 BBS 跨端桥接（pcNameInH5 false→true、forum id=section id）→ t99 终审 pass。R318 正式收官。
+- 已知边界：历史遗留 PC 版块按纪律未迁移，留 R319 据实甄别必要性（勿臆造，多为测试残留）；项目持续迭代 ≥1000 轮非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
