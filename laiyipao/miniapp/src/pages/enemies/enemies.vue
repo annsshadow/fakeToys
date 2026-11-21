@@ -1,12 +1,30 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R4：眉题 → 克制筛选 → 数据格 → 智能空态 -->
+      <view class="section-kicker section-kicker--ai r4-section r4-enter">
+        <text class="section-kicker-cn">敌人情报台</text>
+        <text class="section-kicker-en">ENEMY INTEL / R4</text>
+      </view>
+      <view v-if="r4AiEnemy" class="r3-ai r4-ai r4-enter" aria-label="AI 克制诊断">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 克制诊断</text>
+          <text class="r3-ai-engine">规则引擎 · 基于 /config 抗性</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiEnemy.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiEnemy.basis }}</text>
+        <view class="r3-ai-cta" @click="r4FocusEnemy()">切换对应元素 →</view>
+      </view>
       <!-- 加载中 / 空态（与反应图鉴同款，2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
       </view>
-      <view v-else-if="enemies.length === 0" class="card">
-        <text class="muted">敌人表还没加载出来</text>
+      <view v-else-if="enemies.length === 0" class="r3-empty r4-empty" aria-live="polite" role="status">
+        <text class="r3-empty-slot">AI</text>
+        <text class="r3-empty-title">敌人表还没加载出来</text>
+        <text class="r3-empty-reason">抗性数据来自服务端 /config；配置未到位时不会伪造克制结论。</text>
+        <view class="r3-empty-action" @click="loadPage()">重新加载配置</view>
       </view>
 
       <!-- 敌人图鉴（服务端下发的权威表） -->
@@ -24,12 +42,12 @@
           抗性为千分比：正值减伤、负值易伤。
         </text>
         <!-- 第六批 R52：类别快速筛选 chip，不必在搜索框里输中文 -->
-        <view class="chip-row" style="margin-bottom: 12rpx">
+        <view class="chip-row r3-filter r4-filter" style="margin-bottom: 12rpx">
           <text
             v-for="c in CATEGORY_FILTERS"
             :key="c.key"
-            class="chip tap"
-            :class="{ hit: categoryFilter === c.key }"
+            class="chip r3-chip tap"
+            :class="{ hit: categoryFilter === c.key, active: categoryFilter === c.key }"
             @click="categoryFilter = c.key"
           >{{ c.label }}</text>
         </view>
@@ -69,7 +87,8 @@
         </view>
 
         <text class="result-count">显示 {{ filteredEnemies.length }} / 共 {{ enemies.length }} 条</text>
-        <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
+        <view class="r3-data-grid r4-grid">
+        <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy list-row">
           <view class="rxn-head">
             <!-- 敌型图标座：形状与战斗画布里的敌型一一对应（圆/菱/三角/六边/八边+冠） -->
             <view class="icon-badge" :class="en.is_boss ? 'badge-fire' : ''" style="width: 64rpx; height: 64rpx">
@@ -132,6 +151,7 @@
             </svg>
             <text class="dim">外圈=减伤（抗性高）· 内缩=易伤（抗性负）</text>
           </view>
+        </view>
         </view>
         <text v-if="!enemies.length" class="muted">敌人表为空（配置未加载？）</text>
         <!-- R23 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
@@ -231,6 +251,27 @@ const hpDistribution = computed(() => {
   const maxCount = Math.max(1, ...buckets.map((b) => b.count))
   return buckets.map((b) => ({ ...b, pct: Math.round(b.count / maxCount * 100) }))
 })
+
+/** R4：从当前构筑元素与 /config 抗性推出一句可执行克制建议。 */
+const r4AiEnemy = computed(() => {
+  if (!counterRanking.value.length) return null
+  const equipped = store.equippedElements ?? []
+  const el = equipped.find((e) => ELEMENT_ORDER.includes(e)) ?? counterElement.value
+  const top = enemies.value
+    .map((en) => ({ name: en.name, resist: Number(en.resist?.[el] ?? 0) }))
+    .sort((a, b) => a.resist - b.resist)[0]
+  if (!top) return null
+  return {
+    target: el,
+    conclusion: `按${ELEMENT_NAME[el]}构筑，最易伤的是「${top.name}」，抗性 ${(top.resist / 10).toFixed(1)}%`,
+    basis: '依据：/config 抗性排行 / 当前出战元素 · 更新于本次进入',
+  }
+})
+
+function r4FocusEnemy() {
+  if (r4AiEnemy.value) counterElement.value = r4AiEnemy.value.target
+  uni.pageScrollTo({ selector: '.counter-box', duration: 200 })
+}
 
 /** G104 元素克制排行：选一个元素，按该元素抗性升序排（越负越易伤），配装时快速找靶子。 */
 const counterElement = ref<Element>(ELEMENT_ORDER[0]!)

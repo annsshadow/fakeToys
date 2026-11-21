@@ -1,11 +1,30 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
-      <view class="tabs">
+      <view v-if="!loading && myRank" class="r3-kpi r4-kpi r4-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ myRank.rank > 0 ? '第 ' + myRank.rank + ' 名' : '暂无成绩' }}</text>
+          <text class="r3-kpi-label">{{ curLabel }} · 共 {{ myRank.total }} 人</text>
+          <text class="r3-kpi-sub">{{ formatScore(myRank.score) }} 分 · 已加载 {{ items.length }} 名</text>
+        </view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ myRank.rank > 0 ? myRank.rank : '—' }}</text><text class="r3-kpi-label">当前名次</text></view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ scoreBuckets.length }}</text><text class="r3-kpi-label">分数区间数</text></view>
+      </view>
+      <view v-if="!loading && r4AiRank" class="r3-ai r4-ai r4-enter" aria-label="AI 冲榜提示">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 冲榜提示</text>
+          <text class="r3-ai-engine">规则引擎 · 基于当前榜单</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiRank.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiRank.basis }}</text>
+        <view class="r3-ai-cta" @click="r4GoRank()">去冲榜关卡 →</view>
+      </view>
+      <view class="tabs r3-filter r4-filter">
         <view
           v-for="t in tabs"
           :key="t.key"
-          class="tab"
+          class="tab r3-chip"
           :class="{ active: curType === t.key }"
           @click="switchTab(t.key)"
         >
@@ -48,17 +67,18 @@
           <view class="skeleton-bar" style="width: 16%; margin-left: auto" />
         </view>
       </view>
-      <view v-else-if="items.length === 0" class="card empty-block">
-        <text class="empty-glyph">🏆</text>
-        <text class="muted">暂无数据</text>
-        <text class="dim">打一局战斗积累成长值，就能出现在这个榜上。</text>
+      <view v-else-if="items.length === 0" class="r3-empty r4-empty empty-block" aria-live="polite" role="status">
+        <text class="r3-empty-slot empty-glyph">🏆</text>
+        <text class="r3-empty-title">暂无数据 · 还没有榜单数据</text>
+        <text class="r3-empty-reason">{{ noScoreHint }}</text>
+        <view class="r3-empty-action" @click="r4GoRank()">去冲榜关卡 →</view>
       </view>
 
-      <view v-else class="card" style="padding: 8rpx 24rpx">
+      <view v-else class="card r3-data-grid r4-grid" style="padding: 8rpx 24rpx">
         <view
           v-for="(it, i) in items"
           :key="it.user_id"
-          class="rank-row"
+          class="rank-row list-row"
           :class="[rankRowClass(i, it), { me: it.user_id === store.userId }]"
         >
           <text class="rank-no mono" :class="'no-' + (i + 1)">{{ i + 1 }}</text>
@@ -220,6 +240,25 @@ function formatScore(v: number): string {
   // 2026-11-16：删掉同值死分支 —— 两个分支返回的都是 String(v)，
   // 「效率榜将来会格式化」的意图用这条注释保留，真需要时再写。
   return String(v)
+}
+
+/** R4：把分桶/名次/追赶分差翻译成一句可执行的冲榜建议。 */
+const r4AiRank = computed(() => {
+  const mine = myRank.value
+  const buckets = scoreBuckets.value
+  if (!mine || !buckets.length) return null
+  const band = buckets.find((b) => b.mine)
+  const need = chaseGap.value?.toAbove
+  return {
+    conclusion: need !== null && need !== undefined
+      ? `距上一名还差 ${need} 分，冲榜优先目标已锁定`
+      : `当前第 ${mine.rank || '—'}/${mine.total} 名，处在 ${band ? band.label + ' 分' : '待定'} 分数段`,
+    basis: `依据：${curLabel.value}分数分布 / 本人名次 · 更新于本次进入`,
+  }
+})
+
+function r4GoRank() {
+  uni.navigateTo({ url: '/pages/stage/stage' })
 }
 
 /** R18 前三名奖牌字形（与 --rank-* 令牌配色对应）。 */

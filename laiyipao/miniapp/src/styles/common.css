@@ -1354,3 +1354,18 @@ page {
   .r3-enter { animation: none !important; }
 }
 
+/* ==========================================================================
+   LYP-R4-SECONDARY-V1：第二批次级页语义钩子。
+   只复用 §1B 六组件（r3-*），不建平行样式体系；r4-* 仅作页面级锚点与滚动定位。
+   ========================================================================== */
+.r4-section,
+.r4-kpi,
+.r4-ai,
+.r4-filter,
+.r4-grid,
+.r4-empty { scroll-margin-top: 120rpx; }
+.r4-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r4-enter { animation: none !important; }
+}
+
