@@ -4564,5 +4564,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 预建 t99（design-reviewer，review，round=1，reviewedTaskId=t98，deps t97+t98+t23）：只读终审 t97 M1 sender 修复、t98 BBS 跨端桥接修复、t96 甄别结论三产出，确认缺陷闭环且 R300-R317 既有修复无回归；verdict=pass 且 findings=[] 才关闭 R318，需修订按结构化 findings 上报且 needs_revision 标 failed。
 - 时序：t97/t98 为后端单工作树+单二进制，串行推进；t99 待两修复完成后自动解锁，符合『写域不重叠才并行、后端改动串行』纪律。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 278. R318 t97 M1 修复收官与 t98 解锁（2026-11-21）
+- t97（page-comm）完成并队长独立复核通过：commit 59b5c0e8645c00edc2bca2d6a3423ece3ca2a461 精确 3 文件（lib.rs 2+/1- + tests_generated.rs 146+ + 文档 25+，172+/1-）；diff 确认仅 lib.rs:2836 .unwrap_or("system")→.unwrap_or(&sess.person_unique) 单行，显式 sender 覆盖保留、读谓词 MESSAGE_SENDER_OWNER_PREDICATE 未动；HEAD=TRACK=59b5c0e86，暂存区与工作树全干净。
+- 队长从正确根 oa4rust/backend 独立复跑 `cargo test -p message_assemble_communicate --lib`：117 passed/0 failed，新用例 r318_m1_custom_create_default_sender_is_self_visible 与 explicit_sender_is_preserved 均 ok，security_gate 未授权负例与路由注册探针无回退（EXIT=0）。
+- 文档 oa4rust/docs/ops/oa4rust-r318-m1-sender-fix.md 25 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence.json（gitignored）source 非物理真机、verdict=PASS/defaultVisible=true/sender=本人/pageErrors=0/apiFailures=0/nonadmin isAdmin=false；Linux ELF 原子部署 BACKEND_DEPLOY_OK、ELF 产物已删未入库。
+- 时序：t97 完成提交后 t98（BBS 跨端桥接修复）自动解锁 in_progress@page-work；后端单工作树+单二进制串行约束满足。t99 终审待 t98 完成后解锁。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
