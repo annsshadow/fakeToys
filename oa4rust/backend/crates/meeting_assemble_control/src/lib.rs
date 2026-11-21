@@ -2500,7 +2500,7 @@ pub async fn create_meeting(
 
     client
         .execute(
-            "INSERT INTO x_meeting (id, title, content, room_id, start_time, end_time, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            "INSERT INTO x_meeting (id, title, content, room_id, start_time, end_time, creator, create_time, applied) VALUES ($1, $2, $3, $4, $5::text::timestamp, $6::text::timestamp, $7, NOW(), TRUE)",
             &[&id, &title, &content, &room_id, &start_time, &end_time, &creator],
         )
         .await
