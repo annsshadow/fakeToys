@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
-import { onMounted, onActivated, ref } from 'vue'
+import { onMounted, onActivated, ref, computed } from 'vue'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 import { ElMessage } from 'element-plus'
 import { fetchEquipment, type AdminEquipmentView } from '@/api'
 
@@ -10,6 +13,12 @@ const loading = ref(false)
 const equipment = ref<AdminEquipmentView[]>([])
 const gems = ref<import('@/api').SeedGem[]>([])
 const skins = ref<import('@/api').SeedSkin[]>([])
+
+/** R6 §1E：装备配置建议（接口优先，未上线回退本地真实数据）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('equipment', {
+  equipment: equipment.value, gems: gems.value, skins: skins.value,
+}))
 
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
@@ -56,6 +65,10 @@ async function load() {
     equipment.value = res.equipment
     gems.value = res.gems
     skins.value = res.skins
+    // R6：推荐接口锦上添花，未上线/失败都不影响目录
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('equipment'), aiInsight.value)
+    } catch { recInsight.value = null }
     // 2026-10-21: the endpoint returns 8 keys but the old TS type declared
     // only 3, so enemies / reactions / mastery / rating_weights were
     // silently dropped on the way to the UI. They are now typed and
@@ -96,6 +109,8 @@ onActivated(() => {
       </p>
       </div>
     </div>
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <section class="section-kicker" aria-label="目录结构概览">
       <span class="section-kicker-cn">目录结构概览</span>

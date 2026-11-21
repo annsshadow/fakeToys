@@ -6,6 +6,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 
 const router = useRouter()
 
@@ -48,6 +51,10 @@ const emptyText = '还没有人设置防线'
 const loading = ref(false)
 const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
+
+/** R6 §1E：薄弱防线洞察（接口优先，未上线回退本地真实数据）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('defenses', { rows: rows.value }))
 
 // 防线挑战记录（2026-10-31 新一轮第 30 轮）。
 const challengeVisible = ref(false)
@@ -196,6 +203,10 @@ async function load() {
     if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
+    // R6：推荐接口锦上添花，未上线/失败都不影响防线列表
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('defenses'), aiInsight.value)
+    } catch { recInsight.value = null }
   } catch (e) {
     if (seq !== loadSeq) return
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
@@ -290,6 +301,8 @@ load()
       description="正常防线在样本量足够时胜率应在中间区间。极端胜率通常意味着挑战结果是伪造上报的，建议抽查战报哈希。"
       style="margin-bottom: 12px"
     />
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <section class="section-kicker" aria-label="防线监控概览">
       <span class="section-kicker-cn">防线监控概览</span>

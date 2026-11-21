@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import PageSkeleton from "@/components/PageSkeleton.vue"
-import {onMounted, ref, onActivated} from 'vue'
+import {onMounted, ref, onActivated, computed} from 'vue'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -39,6 +42,12 @@ const codes = ref<AdminRedeemCodeView[]>([])
 const codeTotal = ref(0)
 const logs = ref<AdminAuditLogView[]>([])
 const logTotal = ref(0)
+
+/** R6 §1E：真实数据洞察（接口优先，未上线回退本地真实数据规则）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('content', {
+  announcements: announcements.value, codes: codes.value, logs: logs.value,
+}))
 
 // 公告表单
 const annForm = ref({ title: '', body: '', published: false })
@@ -253,6 +262,10 @@ async function loadAll() {
   loading.value = true
   try {
     await Promise.all([loadAnnouncements(), loadCodes(), loadLogs()])
+    // R6：推荐接口锦上添花，未上线/失败都不影响内容列表
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('content'), aiInsight.value)
+    } catch { recInsight.value = null }
   } catch {
     // 各加载函数已分别报错；这里兜底避免未处理拒绝
   } finally {
@@ -809,6 +822,8 @@ loadAll()
       </div>
     </div>
 
+
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
 
     <section class="section-kicker" aria-label="内容运营概览">
       <span class="section-kicker-cn">内容运营概览</span>

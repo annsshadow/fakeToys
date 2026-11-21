@@ -111,6 +111,7 @@ onMounted(async () => {
         默认账号 <code>admin</code>。密码由环境变量
         <code>BOOTSTRAP_ADMIN_PASS</code> 决定，<strong>少于 10 位会被拒绝引导</strong>。
       </p>
+      <p class="ai-login-note" role="note">AI 提示：登录后可在各业务页查看「规则引擎」基于真实数据给出的运营洞察；本页不收集任何玩家数据。</p>
     </div>
   </div>
 </template>

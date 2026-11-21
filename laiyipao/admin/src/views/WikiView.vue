@@ -22,6 +22,9 @@ import { onMounted, onUnmounted, ref, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { fetchDashboardSoft } from '@/api'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
@@ -550,6 +553,12 @@ const loading = ref(false)
 const cfg = ref<ConfigResp | null>(null)
 const reactUsage = ref<Array<{ reaction: string; count: number }>>([])
 
+/** R6 §1E：知识缺口建议（接口优先，未上线回退 /config 真实数据）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('wiki', {
+  levels: cfg.value?.levels ?? [], enemies: cfg.value?.enemies ?? [], skills: cfg.value?.skills ?? [],
+}))
+
 /** 星级比例行（三档），由 `score_rules.star_target_ratio` 驱动而非硬编码。 */
 const starRatioRows = computed(() => {
   const r = cfg.value?.score_rules?.star_target_ratio ?? []
@@ -625,6 +634,10 @@ async function load() {
       // 锦上添花的东西拿不到，不该影响文档站本身
       reactUsage.value = []
     }
+    // R6：推荐接口锦上添花，未上线/失败都不影响文档站
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('wiki'), aiInsight.value)
+    } catch { recInsight.value = null }
   } catch (e) {
     ElMessage.error(`配置加载失败：${(e as Error).message}`)
   } finally {
@@ -649,6 +662,7 @@ onUnmounted(() => {
 
 <template>
   <div v-loading="loading" class="wiki">
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
     <div class="page-title">玩家玩法文档站</div>
     <p class="page-subtitle">
       本页数据直接来自线上 <code>/api/v1/config</code>，与游戏内实际数值同源 ——
