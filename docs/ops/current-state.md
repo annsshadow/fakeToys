@@ -4740,3 +4740,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R324 已于 §308 正式收官（HEAD=TRACK=ee76d81b）；t119 写域为一份新文档，与其他在途任务不重叠。审计回收后据实甄别再决定是否修复。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 310. R325 收官（H5 流程/待办页 0 真缺陷）（2026-11-21）
+- t119（qa-e2e）完成并队长独立复核：commit 1e18768114e3916c383c22f9b4202665c0f2fd5f 精确 1 文档 57 行 oa4rust/docs/ops/oa4rust-r325-h5-process-audit.md；HEAD=TRACK=1e1876811、暂存区与工作树全干净；文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence.json source=NOT physical device。t119 evidence_note 已附。
+- 判定：七段 P1 待办列表 200+7条 / P2 详情三端点 200 / P3 审批驳回真写 POST /api/task/{id}/reject 200+toast+列表刷新 / P4 已办 200 / P5 我发起 POST 200+49条 / P7 加载失败 500 兜底与空态可区分均 PASS，0 pageerror；P6 发起流程 fab 无头点击受 uni-tabbar-border 遮挡（meta viewport 980px）判取证限制+潜在布局风险候选（直连 start 路由 designer/list/all 200+12 流程正常证明实现无损，真机 safe-area 非0 不复现）。0 新增 P0/P1/P2 真缺陷、无产品语义差异，判据三分合规。
+- R325 完整闭环：立项(§309，据实据 process.vue 从未深度审计)→审计 t119 六段真写 PASS + 0 真缺陷→收官(本条)。P6 布局风险候选如实登记供真机复核，非可坐实缺陷、本轮不臆造修复。项目 ≥1000 轮非终态，继续据实立项下一轮。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
