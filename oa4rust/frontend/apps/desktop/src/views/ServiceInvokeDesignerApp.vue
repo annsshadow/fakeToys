@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
+  <div class="crud-view modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -14,7 +14,7 @@
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">🔌</div><p>暂无服务调用定义</p></div>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">🔌</div><p>暂无服务调用定义</p><p class="empty-hint">试试「新建」一条服务调用定义，让编排面板亮起来</p></div>
       <table v-else class="data-table">
         <thead><tr><th>名称</th><th>别名</th><th>分类</th><th>启用</th><th>校验</th><th>操作</th></tr></thead>
         <tbody>
@@ -219,6 +219,14 @@ function loadData() {
 .btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
 .btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
-.skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.skel{height:16px;border-radius:var(--radius-sm);margin-bottom:8px;background:var(--ai-skeleton-base);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* R306 C 组：AI 令牌深度消费（玻璃/渐变/栅格/骨架/动效），不触碰业务与接口。 */
+.ai-page{display:flex;flex-direction:column;gap:var(--ai-grid-2)}
+.ai-page .view-header{padding:var(--ai-grid-2) var(--ai-grid-3);border:1px solid var(--ai-glass-border);border-radius:var(--ai-cmd-radius);background:var(--ai-gradient-surface)}
+.ai-page .content-panel{border:1px solid var(--ai-glass-border);border-radius:var(--ai-cmd-radius);background:var(--ai-glass-bg)}
+.ai-page .btn-primary{border:none;background:var(--ai-gradient-brand);color:#fff;transition:background var(--ai-motion-fast) var(--ai-ease-spring)}
+.ai-page .empty-state{border:1px dashed var(--ai-glass-border);border-radius:var(--ai-cmd-radius)}
+.empty-hint{margin-top:8px;color:var(--text-secondary);font-size:12px}
 </style>

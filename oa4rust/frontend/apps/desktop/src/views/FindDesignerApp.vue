@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="editor-view">
-    <div class="view-header glass-card">
+  <div class="editor-view modern-page ai-page">
+    <div class="view-header glass-card ai-page ai-panel">
       <div class="header-actions">
         <button class="btn-secondary" @click="preview">预览</button>
         <button class="btn-primary" @click="save">💾 保存</button>
@@ -13,16 +13,16 @@
       <div class="editor-sidebar">
         <div class="sb-title">配置列表</div>
         <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
-        <div v-if="loading" class="loading-sm">加载中...</div>
+        <div v-if="loading" class="loading-sm ai-skeleton-line" aria-hidden="true"></div>
         <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
         <ul v-else class="sb-list">
           <li v-for="item in items" :key="item.id" class="sb-item" :class="{active:selected?.id===item.id}" @click="selectItem(item)">{{ item.name||item.flag||item.id }}</li>
-          <li v-if="items.length===0" class="empty">暂无配置</li>
+          <li v-if="items.length===0" class="empty">暂无配置，试试「新建」一份查询配置</li>
         </ul>
         <button class="btn-sm sb-add" @click="createNew">+ 新建</button>
       </div>
       <div class="editor-main">
-        <div v-if="!selected" class="empty-main"><div class="emi">⚙</div><p>选择或创建配置</p></div>
+        <div v-if="!selected" class="empty-main"><div class="emi">⚙</div><p>选择或创建配置</p><p class="empty-hint">试试「新建」一份配置，右侧编辑器随即就绪</p></div>
         <div v-else class="editor-content">
           <div class="ec-header"><span class="ec-title">{{ selected.name||selected.flag||'未命名' }}</span></div>
           <textarea v-model="config" class="code-editor" placeholder="在此输入JSON配置..." rows="20"></textarea>
@@ -108,13 +108,13 @@ function save() {
 }
 </script>
 <style scoped>
-.editor-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.editor-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
 .view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .header-actions{display:flex;gap:8px}
 .btn-secondary{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
-.btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
+.btn-primary{padding:var(--ai-grid-1) var(--ai-grid-2);border-radius:var(--radius-md);border:none;background:var(--ai-gradient-brand);color:#fff;cursor:pointer;font-weight:600;transition:background var(--ai-motion-fast) var(--ai-ease-spring)}
 .editor-layout{display:flex;flex:1;min-height:0;gap:16px}
 .editor-sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;padding:12px}
 .sb-title{font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px}
@@ -130,5 +130,14 @@ function save() {
 .ec-header{display:flex;align-items:center;justify-content:space-between}
 .ec-title{font-size:14px;font-weight:600;color:var(--text-primary)}
 .code-editor{flex:1;min-height:300px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'Fira Code',monospace;font-size:13px;outline:none;resize:none;tab-size:2}
-.loading-sm{padding:12px;color:var(--text-muted);font-size:12px}
+.loading-sm{padding:var(--ai-grid-2);color:var(--text-muted);font-size:12px}
+.ai-skeleton-line{height:16px;border-radius:var(--radius-sm);background:var(--ai-skeleton-base);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.empty-hint{margin-top:var(--ai-grid-1);color:var(--text-secondary);font-size:12px}
+
+/* R306 C 组：AI 令牌深度消费（玻璃/渐变/栅格/骨架/动效），不触碰业务与接口。 */
+.ai-page{display:flex;flex-direction:column;gap:var(--ai-grid-2)}
+.ai-page .btn-primary{border:none;background:var(--ai-gradient-brand);color:#fff;transition:background var(--ai-motion-fast) var(--ai-ease-spring)}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-page .view-header{padding:var(--ai-grid-2) var(--ai-grid-3);border:1px solid var(--ai-glass-border);border-radius:var(--ai-cmd-radius);background:var(--ai-gradient-surface)}
+.ai-page .editor-layout{border:1px solid var(--ai-glass-border);border-radius:var(--ai-cmd-radius);background:var(--ai-glass-bg);gap:var(--ai-grid-2)}
 </style>
