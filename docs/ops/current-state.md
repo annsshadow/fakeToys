@@ -4374,3 +4374,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - R310 收官：两项遗留均经真浏览器 + 源码定性为非缺陷（产品口径/取证限制），无需开 bug；若期望统一回收站可另立产品需求。全程只读、无源码改动。项目处于 ≥1000 轮持续迭代中，非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 245. R312 写端点可达性静态审计（2026-11-21）
+- t74（page-work，纯本地静态审计、不碰测试服）commit 4a2dca284 精确 1 文档 41 行 docs/ops/oa4rust-r312-write-entry-gap-audit.md。交叉验证 jpush/categoryinfo/document/hotpic/appinfo/form/program/cms 八域后端写端点注册 vs 桌面 UI 触发点，按 A（有 UI）/B（有封装无 UI）/C（无封装无 UI）分类。结论：**未发现 B 类真实缺口**，主业务写端点均 A 类；静态候选为 programCenterApi.dictCreate/documentApi.create 封装路径漂移（中价值）、jpush/hotpic GET 写变体仅诊断探测、program_center invoke/create 重复注册（低价值），均明确标注『非已确认缺陷、需真浏览器验证后再决策』。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=4a2dca284；实读 41 行文档 <YOUR_TEST_DOMAIN>/<TEST_HOST> 占位 0 真值；抽样验证 dictCreate 候选——packages/apis 封装路径与实际桌面直调确实不一致（封装漂移属实、但 UI 入口真实存在，与 t74 判定一致）。工作树 M/?? 均为 t70/t71 在途写入、未触碰。
+- R312 快照结论：本轮为静态审计快照、不代表项目完成；封装路径漂移等候选留后续轮次按真浏览器实测决策。与 t70/t71（R311 建日历入口）并行执行、写域不重叠。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
