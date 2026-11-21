@@ -4464,3 +4464,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 依据：t80（81cdaa4f5）F3 五处静态坐实漂移、t81（6b95568b5）守卫纳入+冻结快照标注待修，均非臆造；R314（§259）已收官，R315 延续审计与改造分离、写域不重叠加速策略。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 262. R315 t85 深度审计完成 / t86 修复入账（2026-11-21）
+- t85（qa-e2e）commit 15e2bca1f 精确 1 文档 49 行 docs/ops/oa4rust-r315-deep-functional-audit.md：测试服部署构建 index-95EPWgTt.js（DEPLOY_R315_HASH_OK），真浏览器 10 闭环 9 PASS+1 FAIL、全程 0 pageerror/0 API 失败。9 PASS 含 CMS 字典/程序中心/BAM 真统计 totalTask=48/completedTask=26/角色/回收站恢复+永久删除/上传 200 无 415（t82 修复生效）/通知。取证限制如实标注：IM 未读=0 无可流转、BAM 周期明细未单独取证、附件下载预览受数据限制未测。
+- D1【P1，真实缺陷】全局搜索有数据也不渲染：SearchApp.vue:90 `results.value=(r?.data??[])` 把整信封 r.data（对象 {designList,viewList}）当数组，results.length=undefined 使模板初始态/空态/结果三分支永不命中；关键词 a 后端 designList 明确返回 3 条真实数据（search-probe.json）页面仍停『输入关键词开始搜索』。修复方向：适配分组信封合并扁平数组（designList→title=name/type=design/desc=category，viewList 同理），契约 RED→GREEN + E2E 搜索 a 断言 3 结果项/无匹配断言空态。
+- t86（shell-eng）commit 7732f9e86 精确 4 文件（详见下节独立复核）：F3 四处真修+ jpush 一处按队长裁定①补 @dead 保留原路径；契约 R315 5/5、R313 4/4、route-methods 2/2 = 11 tests exit0；CDP fetch 五端点探针四处 200+JSON、jpush GET 404 佐证无 update 方法，未重建/未部署测试服（t85 独占部署）。
+- 队长独立复核（不采信自述）：t85 commit stat 精确 1 文档、LOCAL=TRACK=15e2bca1f、暂存区干净、文档零真值、search-probe.json 坐实 D1；t86 commit stat 精确 4 文件、LOCAL=TRACK=7732f9e86、定点复跑 11 tests exit0、grep 逐处确认封装修复、evidence 标注非物理真机/封装探针。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
