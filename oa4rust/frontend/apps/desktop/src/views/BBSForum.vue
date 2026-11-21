@@ -555,13 +555,20 @@ const {
     const resp = await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/50', {
       subjectId,
     })
-    return ((resp as any)?.data ?? []) as Reply[]
+    return (((resp as any)?.data?.data ?? (resp as any)?.data ?? []) as Reply[])
   },
-  enabled: computed(() => !!viewingTopic.value).value as any,
+  enabled: () => !!viewingTopic.value,
 })
 const replies = ref<Reply[]>([])
 watch(repliesData, (d) => {
-  if (d) replies.value = d
+  if (d) {
+    // R322 D1：reply/filter/list 只返回 creator，模板读 author；最小兼容映射，缺字段不臆造。
+    replies.value = d.map((r) => ({
+      ...r,
+      author: (r as any).author ?? (r as any).creator ?? '',
+      createTime: (r as any).createTime ?? (r as any).create_time ?? '',
+    }))
+  }
 })
 // 回复列表同理：失败时 replies 保持空数组，不能显示成「暂无回复」。
 const { loadError: repliesLoadError, reload: reloadReplies } = useListError({
