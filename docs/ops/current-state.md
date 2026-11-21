@@ -4395,3 +4395,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=7a8e90508、工作树干净；实读 77 行文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；双端 evidence（gitignored）标注非物理真机、apiCalls 全 200、PC chipsBefore=4→chipsAfter=5、H5 calsBefore=6→calsAfter=7→刷新仍7、eventAfterReload=true、0 错误。改造引入的 PC my_calendars 信封解析/跨轨 404 与 H5 core entity 双表漂移两真 bug 在真浏览器下未见复现。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 249. R311 终审判定：业务达标但 CI 三契约过时（2026-11-21）
+- t73（design-reviewer，只读终审 reviewedTaskId=t70）verdict=needs_revision / status=failed / findings_open=4，无改码无提交。业务侧全部达标无回退：PC/H5 建日历入口契约与源码一致、真浏览器双端闭环通过（PC chip 4→5、H5 6→7、事件回显刷新持久、0 pageerror/API失败）、R310 取证限制解除、文档 0 真值、提交精确。阻塞项为 CI 由绿转红：desktop 全量 3 failed/2107 passed（t65 基线 2104 全绿），均系旧契约守卫未随 R311 同步、非业务回退。
+- 队长独立复核（不采信自述）：t73 status=failed/verdict=needs_revision；独立复现三条失败并读断言定位根因：①CalendarApp.business.contract.test.ts:54-55 把 calWriteCE 列入『端点调试 handler 黑名单』，但 R311 已将其作为新建日历业务入口（data-testid=calendar-create-entry）；②CalendarApp.tdz.contract.test.ts:139 朴素 indexOf("loadCalendars('my')") 误抓函数体内 await 调用（位置 6779 < 声明 10660），真正顶层调用在声明后；③tests/contracts/mobile-endpoints.test.ts:213 白名单漏登 H5 新增 POST /api/calendar_assemble_control/calendar（后端 routes.rs:29-30 真实注册、t71/t72 真浏览器 200）。
+- 系统按质量门自动生成 t75（repair，page-core，修三契约；已 in_progress）+ t76（review，design-reviewer，复核 t75；pending）。队长已向 page-core 下发精确修复口径：只改契约断言、不改业务源码；calWriteCE 移出黑名单但保留其余断言；TDZ 断言改精确顶层判定但保留守护力（顶层调用移回声明前仍须失败）；白名单只补登该一条真实端点；底线 desktop 全量恢复 0 failed、typecheck exit0。t73 needs_revision 不可作下游依赖，R311 收官待 t75/t76。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
