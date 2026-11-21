@@ -4406,3 +4406,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=0c56d5351、工作树干净；diff 实读确认 TDZ 花括号栈判定保留守护力（非简单放宽）；独立从 oa4rust 根跑全量 vitest 258 files/2110 passed exit 0（从 t73 的 3 failed/2107 passed 恢复、与 t65 基线 2104 相比 +6 为 R311 新增契约，全绿）；三处契约 + R311 契约定点 4 files/17 tests exit 0。t75 自报『200 files/1104 tests』系其命令口径偏差，队长以 oa4rust 根全量复跑为准。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 251. R311 终审复核通过收官（2026-11-21）
+- t76（design-reviewer，只读复核 t75）verdict=pass / findings_open=0 / status=completed，无改码无提交。t73 四条 findings 全关闭：①CI 转绿（t75 仅同步 3 契约无业务源码改动）；②端点白名单补登 POST /api/calendar_assemble_control/calendar（后端 routes.rs:28-31 真实注册）；③business 契约移除 calWriteCE 误列并加正向断言；④tdz 契约改花括号栈深度判定，顶层调用 line411 > 声明 line406。双端真浏览器闭环 pass（PC chips4→5/事件回显刷新持久、H5 日历+1/事件回显持久、0 pageerror/API失败），evidence source 均 headless 非物理真机，r311 文档真域名/口令 grep 0 命中。
+- 队长独立复核（不采信自述）：t76 status=completed/verdict=pass/findings=[]；独立全量复跑 desktop 258 files/2110 passed exit 0 + mobile 71 files/458 passed exit 0，双端全绿无回归，与 t75 恢复态一致。
+- R311 收官：t70（PC 建日历入口+3 修复）→ t71（H5 建日历入口+同轨端点）→ t72（双端真浏览器复查、R310 取证限制解除）→ t73 终审 needs_revision（业务达标但 CI 三契约过时）→ t75 repair（仅同步 3 契约、保留 TDZ 守护力）→ t76 复核 pass。建日历与事件闭环在 PC/H5 双端打通、跨刷新持久、0 错误，全量测试全绿，无阻断缺陷。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
