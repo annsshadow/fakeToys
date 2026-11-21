@@ -4600,5 +4600,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 判定 A（全测试残留、无需迁移且明确建议不迁移）成立：真浏览器 PC section/list 15 / H5 forum/view-all 6 / 差集 13，13/13 带 R300~R318 测试标记 + 关联主题=0 + epoch 落历史 E2E 时段，candidateBusiness=0；证据边界（section/list 仅返回 id/name/enabled、create_time 由名称 epoch 推导）如实标注；evidence.json source 非物理真机、0 API 失败/0 pageerror。未改源码/契约、未执行回填。
 - 理由：13 个均为历史 E2E 测试残留，迁移会注入 H5 发帖 picker 污染真实用户选择列表（当前 picker 已含 6 个专测版块）；R319 收官，据实结论为不迁移。
 - 后续：§282 登记的 R320 候选（section 删除不删桥接 forum 的孤儿一致性）待下一轮审计前置甄别据实处理；项目持续迭代 ≥1000 轮非终态。
+
+## 284. R320 立项：section 删除与桥接 forum 一致性甄别（2026-11-21）
+- 立项依据：§282 纯只读侦察候选（非已确认缺陷）——t98 桥接 section_create 同 id 写 x_bbs_forum，但 section_delete（lib.rs:359-375）只删 section 不删桥接 forum；037 migration 已加 deleted_at 列而实现仍硬删（注释/DDL 漂移）。按纪律审计前置，禁臆造。
+- 派发 t101（qa-e2e，work，只读甄别，outOfScope 禁改源码/契约/禁部署/禁实际修复）：真浏览器建版块→H5 forum/view-all 可见→删版块→复查孤儿 forum 与关联主题可见性，结论 A 无孤儿归档／B 孤儿 forum 可见（真缺陷，给最小修复建议仅建议不执行）／C 取证受限；产出唯一脱敏文档 oa4rust/docs/ops/oa4rust-r320-section-delete-orphan-triage.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
