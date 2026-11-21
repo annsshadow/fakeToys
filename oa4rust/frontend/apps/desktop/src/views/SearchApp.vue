@@ -87,7 +87,14 @@ async function doSearch() {
       async (signal) => {
         // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
         const r: any = await api.post('/api/queryview/search', { key: query.value }, { signal })
-        results.value = (r?.data ?? []) as any[]
+        // R315 D1：后端返回 { data: { designList, viewList } } 分组信封，旧实现把整个对象当数组，模板 .length 为 undefined 导致有数据不渲染。
+        const envelope = r?.data ?? {}
+        const designList: any[] = Array.isArray(envelope.designList) ? envelope.designList : []
+        const viewList: any[] = Array.isArray(envelope.viewList) ? envelope.viewList : []
+        results.value = [
+          ...designList.map((d: any) => ({ id: d.id, title: d.name, type: 'design', desc: d.category })),
+          ...viewList.map((v: any) => ({ id: v.id, title: v.name, type: 'view', desc: v.category })),
+        ]
       },
       {
         onSettled: () => {
