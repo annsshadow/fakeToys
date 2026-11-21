@@ -4390,3 +4390,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 队长独立复核（不采信自述）：stat 精确 5 文件、HEAD=TRACK=9d679c19b、工作树干净；diff 实读确认同轨端点修复与注释；定点复跑 calendarCreate.R311 契约 5/5 exit 0；源码核实 create/list 同 crate 同写读 cal_calendar 表（u2.rs:335 create/:164 list）无双轨残留；文档 28 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（gitignored）source 非物理真机、create POST 200/日历 3→4/事件下拉自动选中新日历/今日事件可见/0 pageerror/0 API失败/passed=true。t25 normalizeRows、t51 ai-brand-fill 保留不回退。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 248. R311 建日历入口改造后真浏览器独立复查（2026-11-21）
+- t72（qa-e2e，只读复查）commit 7a8e90508 精确 1 文档 77 行 docs/ops/oa4rust-r311-calendar-after.md。PC 1440×900 / H5 390×844 双端真登录闭环复查：PC 日历 chip 4→5、新建日历+事件创建+回显+刷新持久、org loading 兜底正常（orgLoadingStuck=false）；H5 日历 6→7（刷新仍 7）、自动选中新日历、今日事件可见+刷新持久、信封归一化 envelopeOk=true、渐变品牌 branded=4；双端 errors=[]/apiFailures=0（PC 24 calls、H5 40 calls）。R310『日程新建取证受限』解除，t24 TDZ/t25 H5信封/t28 org loading/t51 branded 四项回归无异常，未发现新增真实缺陷。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=7a8e90508、工作树干净；实读 77 行文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；双端 evidence（gitignored）标注非物理真机、apiCalls 全 200、PC chipsBefore=4→chipsAfter=5、H5 calsBefore=6→calsAfter=7→刷新仍7、eventAfterReload=true、0 错误。改造引入的 PC my_calendars 信封解析/跨轨 404 与 H5 core entity 双表漂移两真 bug 在真浏览器下未见复现。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
