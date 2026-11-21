@@ -4554,4 +4554,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t97（page-comm，implementation，test-first RED→GREEN，后端-only 写域与 t96 审计完全不重叠）：先写 RED 测试『非 admin actor 创建缺省 sender 消息→本人列表可见』，修复 sender 缺省改 sess.person_unique（保留显式 sender 覆盖、不动读谓词），cargo test -p message_assemble_communicate --lib 全绿（security_gate_tests.rs:569 未授权负例与 tests_generated.rs:1503 注册用例不回退），真浏览器默认可见性复验（后端 Linux ELF 原子部署，禁 PE32+），产出脱敏文档 oa4rust/docs/ops/oa4rust-r318-m1-sender-fix.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
 - 边界：不改前端 IMChat.vue（死代码、bundle 不含端点）、不改读谓词、不改 message/src/lib.rs（M2 已修）、不判 BBS 分叉（归 t96）；取证受限如实标 C 不伪造。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+## 276. R318 t96 甄别收官与 BBS 桥接修复派发（2026-11-21）
+- t96（qa-e2e）完成并队长独立复核通过：commit 376ec2562 精确 1 文档 72 行 oa4rust/docs/ops/oa4rust-r318-bbs-section-forum-audit.md，HEAD=TRACK；文档 <YOUR_TEST_DOMAIN> 占位 0 真值、source 非物理真机；evidence-final.json 坐实 pcSectionList.found=true / pcNameInH5=false / topicCreate=200 / pcTopicList.found=true。判定 B 真缺陷 P2（非 A 产品语义、非 C 取证受限）。
+- 队长源码级三重确证：section_create 写 x_bbs_assemble_control_section（lib.rs:249，admin 门）、forum_view_all 读 x_bbs_forum（lib.rs:570）、伪桥接 section_viewforum_forumId 读无关第三表 x_bbs_section（lib.rs:842）——无有效 section→forum 桥接；主题按 forum_id 归档且跨端可见，故 forum 为归属主键。
+- 派发 t98（page-work，implementation，deps t97+t23，后端-only 写域不与 t97 message crate 重叠）：选 t96 方向二『补桥接』——section/create 成功后同步 INSERT x_bbs_forum 且 forum id 与 section id 一致（保 topic forum_id 归档正确），test-first RED→GREEN、两写同事务无半状态/无重复、admin 门与 creator=会话人保留、不改 PC section/list 读链、不迁移历史数据；cargo test -p bbs_assemble_control 全绿；等 t97 部署完成后才可编译/部署（后端单工作树+单二进制，硬时序依赖防互相覆盖）；真浏览器 pcNameInH5 false→true/0 pageerror；文档 oa4rust/docs/ops/oa4rust-r318-bbs-section-bridge-fix.md 脱敏、精确单提交。若方向二与产品语义冲突先回报队长勿强行实现。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
