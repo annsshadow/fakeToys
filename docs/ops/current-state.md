@@ -4656,3 +4656,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t107（design-reviewer）终审已解锁 in_progress：待 verdict=pass/findings=[] 关闭 R321。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 294. R321 收官（2026-11-21）
+- t107（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings_open=0、只读未改码未提交；HEAD=TRACK=1d3761c8 稳定、工作树干净；队长独立全量复跑前端 vitest exit0（264 files），定点契约 4/4 已独立跑；三份 R321 文档 <YOUR_TEST_DOMAIN> 占位 0 真值、evidence 非物理真机。t107 evidence_note 已附。
+- 终审非阻塞观察（t105 审计文档 §3『三链不同源』措辞与源码实际不符——新建/删除/回收三链均操作 FILE_FILE，真因仅前端未刷新）队长已采纳并源码级修正该文档措辞（commit 67501c43b），保留证据与 D1 判定不动，不影响收官。
+- R321 完整闭环：双审计（t104 H5 七模块 PASS+T1 归档、t105 PC 八模块 D1 判 P2）→ D1 根因队长源码级精确化（前端 deleteFile onSuccess 未刷新回收站）→ t106 纯前端 1 行修复（契约 RED→GREEN 4/4、真浏览器 7 断言全 true）→ t107 终审 pass。R321 正式收官，项目 ≥1000 轮非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
