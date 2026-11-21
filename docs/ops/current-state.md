@@ -3880,7 +3880,7 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 166. P1+P2 测试服部署与真机 E2E 复验（2026-11-20）
 - 提交推送：86867e1d4（14 文件 923+/742-）。首次 push 遇 schannel 握手偶发失败，默认 backend 重试成功，LOCAL=REMOTE=86867e1d4...。
 - 前端构建部署：pnpm --filter desktop build EXIT=0；新产物 index-DXXwuW-d.js 含「工作台/系统管理/会议室预订」标签（grep 实证）。scp 首次用 MSYS /d/ 路径失败（Windows OpenSSH scp 不认，SCP_EXIT=255），改 D:/ 路径成功。测试服 /usr/local/oa4rust 原子替换 web/，备份 web.bak-r297-predeploy，index.html mtime 15:16:15。
-- 真机 E2E（本地代理 127.0.0.1:8899 → testmall.zhongxinxinchuang.cn，Origin override 绕 CSRF）：R296/R297 导航 4 passed（live+coverage 各 2）；meeting-business.spec.ts 会议业务区块 2 passed（live+coverage 各 1）。此前因测试服旧产物的 2 例超时失败全部转绿。
+- 真机 E2E（本地代理 127.0.0.1:8899 → <YOUR_TEST_DOMAIN>，Origin override 绕 CSRF）：R296/R297 导航 4 passed（live+coverage 各 2）；meeting-business.spec.ts 会议业务区块 2 passed（live+coverage 各 1）。此前因测试服旧产物的 2 例超时失败全部转绿。
 - 结论：P1 导航收敛、P2 会议/工作流/文件业务化在测试服真机浏览器中功能正确，无死链、无端点调试残留。后续「全部重构」（其余 A 类页面 + P4 B 类迁管理区 + D 类删除）待续。
 
 ## 167. 全部重构收尾：A 类剩余页面业务化 + P4 管理区授权 + D 类空壳删除（2026-11-20）

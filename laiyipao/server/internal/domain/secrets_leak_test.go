@@ -246,3 +246,28 @@ func TestNoInfraIdentifiersInRepo(t *testing.T) {
 			len(hits), strings.Join(hits, "\n  "))
 	}
 }
+
+// 历史遗留守卫：docs/ops/current-state.md 的本地代理记录只准写占位符。
+//
+// 为什么单独一条：TestNoRealSecretsInRepo 依赖 .local.keys，CI / 干净 worktree 里
+// 该文件不存在会显式 Skip（不是通过）。这条只检查结构性事实，不需要真值，任何环境都执行。
+var currentStateProxyRe = regexp.MustCompile(`本地代理\s+127\.0\.0\.1:\d+\s*[→-]\s*([^\s，。）]+)`)
+
+func TestCurrentStateDocUsesDomainPlaceholder(t *testing.T) {
+	root := findRepoRoot(t)
+	p := filepath.Join(root, "docs", "ops", "current-state.md")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("读不到 %s：%v", p, err)
+	}
+	ms := currentStateProxyRe.FindAllStringSubmatch(string(b), -1)
+	if len(ms) == 0 {
+		t.Fatal("没找到「本地代理 ... → ...」记录；格式若已改，请同步更新这条守卫")
+	}
+	for _, m := range ms {
+		// 失败信息绝不打印 m[1]：它一旦是真值，日志本身就成了泄露。
+		if strings.TrimSpace(m[1]) != "<YOUR_TEST_DOMAIN>" {
+			t.Errorf("docs/ops/current-state.md 的本地代理目标不是占位符；必须写 <YOUR_TEST_DOMAIN>")
+		}
+	}
+}
