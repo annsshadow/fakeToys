@@ -4549,4 +4549,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t96（qa-e2e 只读前置审计，outOfScope 禁改源码/契约/禁部署）：真浏览器走【PC 建版块→H5 发帖 picker 可见性→H5 发帖→PC 可见性】闭环，结论三选一 A 产品语义差异／B 真缺陷（仅给修复建议）／C 取证受限；仅产出脱敏文档 oa4rust/docs/ops/oa4rust-r318-bbs-section-forum-audit.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机）。
 - 开工态复核（队长独立）：team phase=running、8 成员全 idle、0 活动任务、HEAD=TRACK=242b91f42、工作树干净。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+## 275. R318 M1 sender 写读同源修复派发（2026-11-21）
+- 队长独立定点源码复核：message_assemble_communicate/src/lib.rs:2812 message_custom_create 的 sender 取 req.sender.unwrap_or("system")（:2833-2836）写 x_message；列表 :2869 用 MESSAGE_SENDER_OWNER_PREDICATE（:2861-2866）=sender=$3(会话人) OR admin 过滤；缺省写入与读归属口径不一致，与 t95 真浏览器 CONFIRMED_PREDICATE_GAP（§273）一致，非臆造。
+- 派发 t97（page-comm，implementation，test-first RED→GREEN，后端-only 写域与 t96 审计完全不重叠）：先写 RED 测试『非 admin actor 创建缺省 sender 消息→本人列表可见』，修复 sender 缺省改 sess.person_unique（保留显式 sender 覆盖、不动读谓词），cargo test -p message_assemble_communicate --lib 全绿（security_gate_tests.rs:569 未授权负例与 tests_generated.rs:1503 注册用例不回退），真浏览器默认可见性复验（后端 Linux ELF 原子部署，禁 PE32+），产出脱敏文档 oa4rust/docs/ops/oa4rust-r318-m1-sender-fix.md（<YOUR_TEST_DOMAIN> 占位、0 真值、证据 gitignored 非物理真机），精确单提交。
+- 边界：不改前端 IMChat.vue（死代码、bundle 不含端点）、不改读谓词、不改 message/src/lib.rs（M2 已修）、不判 BBS 分叉（归 t96）；取证受限如实标 C 不伪造。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
