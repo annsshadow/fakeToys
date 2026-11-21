@@ -4705,3 +4705,8 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t114 终审解锁：待 verdict=pass/findings=[] 关闭 R323。t113 evidence_note 已附。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 303. R323 收官（2026-11-21）
+- t114（design-reviewer）终审完成并队长独立复核：终态 status=completed/verdict=pass/findings_open=0，只读未改码未提交；HEAD=TRACK=5e45f4c0 稳定、暂存区与工作树全干净。逐条确认 t112 甄别 B P2 与 t113 修复（3caf81179 精确 3 文件，u2 族三端点补 create_time::text + createTime 映射，WHERE/ORDER/分页/admin 门未改，reply/list/sub_id 与前端 PC/H5 零改动）；终审独立复跑 cargo 51 passed 含 R318/R320 桥接用例无回退；evidence r323-reply-verify-fix 非物理真机 REPLY_TIME_VERIFIED、PC/H5 时间一致、0 errors/0 apiFailures；脱敏 0 真值命中。t114 evidence_note 已附。
+- R323 完整闭环：候选登记(§298)→甄别 t112 判 B P2(§299/§301)→修复 t113 后端补字段(§302)→终审 t114 pass(本条)。R318/R319/R320/R321/R322/R323 六轮均收官；PC 回复时间缺失缺陷闭环，R315/R318/R320/R322 既有修复无回归。项目 ≥1000 轮非终态，继续据实立项下一轮。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
