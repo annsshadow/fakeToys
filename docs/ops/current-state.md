@@ -4714,5 +4714,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t115（page-core，只读审计，文档 oa4rust/docs/ops/oa4rust-r324-pc-attendance-audit.md）：PC 1440x900 真实 UI 逐条走考勤页 DOM 入口与真 API（移动端接收/新建明细/启禁类型/考勤明细读/建改记录），记录真状态与回显。
 - 派发 t116（qa-e2e，只读审计，文档 oa4rust/docs/ops/oa4rust-r324-h5-attendance-audit.md）：H5 390x844 真实 UI 逐条走考勤页 DOM 入口与真 API（preCheck/check/checkFromOut/selfHolidayApply/myStatistic/myDetailList），参照既有契约但不以契约代替真浏览器，关注加载竞态与 v2 端点口径。
 - 两任务写域为两份不同文档、互不重叠，可并行；均只读不改源码/契约，文档 <YOUR_TEST_DOMAIN> 占位、证据 gitignored 标注非物理真机，真缺陷/取证限制/产品语义三分，精确单提交。审计回收后据实甄别再决定修复。
+
+## 305. R324 H5 考勤审计收官（0 真缺陷）（2026-11-21）
+- t116（qa-e2e）完成并队长独立复核：commit e7eb25e28dcba907b89f95d899c6ea1867d6fa5a 精确 1 文档 57 行 oa4rust/docs/ops/oa4rust-r324-h5-attendance-audit.md；HEAD=TRACK=e7eb25e28、暂存区与工作树全干净；文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值非物理真机；evidence.json source=NOT physical device。
+- 判定：六段真浏览器 A0 preCheck 200 / A3 自助请假 POST selfholidaysimple 200 / A4 月度 v2/my/* 三端点 200 / A5 加载失败 500 兜底保留旧态+错误提示均 PASS，0 pageerror；A1/A2 打卡写因测试账号 canCheckIn=false 按钮真实 disabled 属取证限制（禁伪造写）；首轮 A0/A3 两处脚本归因/选择器误报已用 DOM 探查+补测更正。0 新增 P0/P1/P2 真缺陷，产品语义差异无，判据三分合规。t116 evidence_note 已附。
+- t115（page-core PC 考勤审计）仍在途；待其回收后据实甄别，R324 再整体收官。项目 ≥1000 轮非终态。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
