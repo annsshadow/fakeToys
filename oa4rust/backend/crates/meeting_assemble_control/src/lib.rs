@@ -1050,16 +1050,59 @@ pub async fn meeting_list_applied_wait(
     )))
 }
 
+/// R326 D1：把前端 statusFilter(0/1/2) 与 key 映射为 SQL 过滤片段。
+/// status 值与 meetingStatus.ts::statusTone 同源：0=pending(NULL/未识别)、
+/// 1=active('1'/processing/accepted/confirmed)、2=ended('2'/completed/denied/rejected)。
+/// 返回 (附加 WHERE 片段, key 的 ILIKE pattern, status 值)；三者全参数化($4/$5)，
+/// 无值时传 None→PG NULL→片段里的 IS NULL 分支保证不过滤（向后兼容）。
+pub fn meeting_list_filter_clause(key: &str, status: &str) -> (String, Option<String>, Option<String>) {
+    fn escape_like(s: &str) -> String {
+        let mut out = String::with_capacity(s.len());
+        for ch in s.chars() {
+            match ch {
+                '\\' => out.push_str("\\\\"),
+                '%' | '_' => { out.push('\\'); out.push(ch); }
+                _ => out.push(ch),
+            }
+        }
+        out
+    }
+    let pattern = if key.trim().is_empty() {
+        None
+    } else {
+        Some(format!("%{}%", escape_like(key.trim())))
+    };
+    let status_value = if status.is_empty() { None } else { Some(status.to_string()) };
+    // 统一片段：$4/$5 为 NULL 时不过滤；非法 status 走末尾兜底不过滤。
+    // tone 与 meetingStatus.ts::statusTone 同源，统一片段不按调用方分支生成，避免注入。
+    let extra = String::from(
+        " AND ($4::text IS NULL OR title ILIKE $4 ESCAPE '\\' OR content ILIKE $4 ESCAPE '\\') \
+         AND ($5::text IS NULL \
+           OR ($5 = '0' AND (status IS NULL OR status NOT IN ('1','processing','accepted','confirmed','2','completed','denied','rejected'))) \
+           OR ($5 = '1' AND status IN ('1','processing','accepted','confirmed')) \
+           OR ($5 = '2' AND status IN ('2','completed','denied','rejected')) \
+           OR ($5 <> '0' AND $5 <> '1' AND $5 <> '2'))"
+    );
+    (extra, pattern, status_value)
+}
+
 #[allow(non_snake_case)]
 pub async fn meeting_list_apply_page_size_size(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
+    // R326 D1：key/status 过滤。tone 映射与 meetingStatus.ts::statusTone 同源，
+    // NULL/$4/$5 不匹配时不过滤；归属谓词与分页/R309 两修复保持不变。
+    let (extra, key_pattern, status_value) = meeting_list_filter_clause(
+        params.get("key").map(String::as_str).unwrap_or(""),
+        params.get("status").map(String::as_str).unwrap_or(""),
+    );
 
     let rows = client
         .query(
@@ -1067,10 +1110,11 @@ pub async fn meeting_list_apply_page_size_size(
                 "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
                  to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
                  to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
-                 FROM x_meeting WHERE applied = true AND ({}) ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$3")
+                 FROM x_meeting WHERE applied = true AND ({}) {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$3"),
+                extra
             ),
-            &[&limit, &offset, &session.person_unique],
+            &[&limit, &offset, &session.person_unique, &key_pattern, &status_value],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

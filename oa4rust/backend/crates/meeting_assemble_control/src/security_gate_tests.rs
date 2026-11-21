@@ -775,6 +775,7 @@ mod r6_gate_tests {
                 Extension(pool.clone()),
                 Some(Extension(sess.clone())),
                 axum::extract::Path((1i64, 10i64)),
+                axum::extract::Query(std::collections::HashMap::new()),
             )
             .await
             .expect("分页列表读取应成功");

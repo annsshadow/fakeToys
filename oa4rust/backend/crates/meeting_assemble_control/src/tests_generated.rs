@@ -1033,4 +1033,46 @@ mod tests {
     // SKIPPED: u2_room_edit requires Session parameter
     // SKIPPED: u2_room_delete requires Session parameter
     // SKIPPED: u2_room_set_photo not accessible
+
+    // ---- R326 D1: meeting list key/status filter (test-first) ----
+    #[test]
+    fn r326_filter_key_escaped_and_parameterized() {
+        let (sql, pattern, status) = crate::meeting_list_filter_clause("____NO_SUCH_MEETING____", "");
+        assert!(sql.contains("title ILIKE $4"), "key 必须走参数 $4: {sql}");
+        assert_eq!(pattern.as_deref(), Some("%\\_\\_\\_\\_NO\\_SUCH\\_MEETING\\_\\_\\_\\_%"),
+            "LIKE 通配符必须转义，避免 ____ 匹配任意 4 字符");
+        assert!(status.is_none());
+    }
+
+    #[test]
+    fn r326_filter_status_unified_clause() {
+        let (sql, _, status) = crate::meeting_list_filter_clause("", "1");
+        assert!(sql.contains("$5"), "status 必须走参数 $5: {sql}");
+        assert!(sql.contains("'processing'"), "进行中 tone 需含 processing: {sql}");
+        assert!(sql.contains("'completed'"), "统一片段需含已结束 tone: {sql}");
+        assert_eq!(status.as_deref(), Some("1"));
+    }
+
+    #[test]
+    fn r326_filter_pending_explicit_null() {
+        let (sql, _, status) = crate::meeting_list_filter_clause("", "0");
+        assert!(sql.contains("status IS NULL"), "pending 必须显式含 NULL: {sql}");
+        assert!(!sql.contains("status = $5"), "不得等值匹配 NULL: {sql}");
+        assert_eq!(status.as_deref(), Some("0"));
+    }
+
+    #[test]
+    fn r326_filter_no_injection() {
+        let inj = "x' OR 1=1 --";
+        let (sql, pattern, _) = crate::meeting_list_filter_clause(inj, "2");
+        assert!(!sql.contains(inj), "用户输入不得进入 SQL 文本: {sql}");
+        assert!(pattern.unwrap().contains(inj), "输入只作为绑定参数出现");
+    }
+
+    #[test]
+    fn r326_filter_empty_is_noop() {
+        let (sql, pattern, status) = crate::meeting_list_filter_clause("", "");
+        assert!(sql.contains("$4::text IS NULL") && sql.contains("$5::text IS NULL"), "无参数必须不过滤: {sql}");
+        assert!(pattern.is_none() && status.is_none());
+    }
 }

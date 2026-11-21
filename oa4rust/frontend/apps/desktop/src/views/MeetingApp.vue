@@ -205,11 +205,13 @@ async function loadMeetings() {
   loading.value = true
   loadError.value = ''
   try {
-    const p: Record<string, string> = {}
-    if (searchKey.value) p.key = searchKey.value
-    if (statusFilter.value !== '') p.status = statusFilter.value
+    // R326 D1：key/status 必须真正进入 query string（原 p 为死变量，搜索/筛选永不生效）。
+    const p = new URLSearchParams()
+    if (searchKey.value) p.set('key', searchKey.value)
+    if (statusFilter.value !== '') p.set('status', statusFilter.value)
+    const qs = p.toString()
     // 后端无裸 meeting/list；meeting/list/apply/{page}/size/{size} 为真实列表端点。
-    const r = await api.get('/api/meeting/assemble/control/meeting/list/apply/1/size/50')
+    const r = await api.get('/api/meeting/assemble/control/meeting/list/apply/1/size/50' + (qs ? '?' + qs : ''))
     meetings.value = (r.data ?? []) as M[]
   } catch (e) {
     // 失败保留旧会议并显式报错，不能和「真的没有会议」混成同一种空态。
