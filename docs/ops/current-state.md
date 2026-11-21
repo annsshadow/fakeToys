@@ -4499,3 +4499,9 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 两任务已派发（send_message wake），均 pending→in_progress 待成员 claim；无真实发现须如实写『未复现/未发现同源漂移』并列出核对清单，禁止臆造。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 
+## 267. R317-A2 静态审计复核 + 消息候选真浏览器复验立项（2026-11-21）
+- t91（page-work 静态审计）commit ac8f1d733 精确 1 文档 68 行 oa4rust/docs/ops/oa4rust-r317-static-latent-audit.md：8 类实体 create→list 主端点均同源，未发现可复现的写 A 表读 B 表式同源漂移（历史 4 处同类已修）。3 项静态候选均有源码定位、诚实标注非已确认缺陷：M1 消息 custom_create sender 缺省 system vs 列表 sender=会话人谓词、M2 系统消息 consumer 缺省空串 vs consume/list 按 xconsumer 过滤、T1 日历/组织/文件 x_* vs 大写遗留表双轨（需甄别业务语义）。
+- 队长独立复核（不采信自述）：git show --stat ac8f1d733=精确 1 文档 68 行、HEAD=TRACK=ac8f1d733、暂存区与工作树干净；实读 68 行文档确认占位域名、0 真值、明确标注纯静态审计/候选非已确认缺陷；evidence_note 已附。
+- 派 t92（page-work 只读真浏览器复验）：M1/M2 静态证据链最完整但未经真浏览器确认，用现有测试服产物真浏览器坐实或排除（真缺陷/预期语义/取证限制三分类），不改源码、单文件文档 oa4rust/docs/ops/oa4rust-r317-message-candidate-verify.md、证据 gitignored oa4rust/test-results/r317-message-verify/、精确单提交；与 t90（qa-e2e H5 审计）写域不重叠并行。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
