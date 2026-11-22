@@ -271,3 +271,47 @@ func TestCurrentStateDocUsesDomainPlaceholder(t *testing.T) {
 		}
 	}
 }
+
+// JWT 字面量守卫：仓库里不得出现真实签发的 JWT token。
+//
+// 为什么：QA 审计脚本常用 localStorage.setItem 注入真 token 来绕过登录，
+// 把 token 原文留在脚本/日志里 = 把可重放凭据入库。真 token 即使过期，
+// payload 里的 sid/uid 仍是会话定位信息。eyJ 是 JWT header base64 的固定前缀，
+// 三段式 x.y.z 是 JWT 的形状；每段至少 8 字符以避开短占位符噪声。
+//
+// 白名单：OIDC 测试夹具里的假 token（payload 是 test.example.com 占位域名与
+// 固定假 exp），不是任何真凭据，且有明确测试用途，故精确路径放行。
+//
+// 失败信息只列文件相对路径，绝不打印 token 原文 —— 否则测试日志本身成了泄露。
+var (
+	jwtLiteralRe        = regexp.MustCompile(`eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`)
+	jwtFixtureWhitelist = map[string]bool{
+		filepath.Join("oa4rust", "backend", "crates", "auth", "src", "oidc.rs"): true,
+	}
+)
+
+func TestNoJWTLiteralInRepo(t *testing.T) {
+	root := findRepoRoot(t)
+
+	var hits []string
+	walkTracked(t, root, func(rel, path string) {
+		if jwtFixtureWhitelist[rel] {
+			return
+		}
+		if !isProbablyText(path) {
+			return
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return
+		}
+		if jwtLiteralRe.Match(b) {
+			hits = append(hits, rel)
+		}
+	})
+	if len(hits) > 0 {
+		t.Fatalf("仓库里有 %d 处 JWT 字面量（可能是真实签发的 token）：\n  %s\n"+
+			"请从环境变量/占位符读取 token，例如 <YOUR_TEST_TOKEN>；不要把 token 原文写进脚本或日志。",
+			len(hits), strings.Join(hits, "\n  "))
+	}
+}

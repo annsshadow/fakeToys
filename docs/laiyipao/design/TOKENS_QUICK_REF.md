@@ -173,4 +173,10 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 - 玩法三类：元素反应链构筑、装备/宝石搭配、关卡难度与 BOSS 机制引导；每条结论必须带真实字段依据与可点击 CTA。
 - 推荐卡四区：AI 徽章 + 一句结论 → 数据条 → 「为什么推荐」 → 主 CTA；加载/空态/错误态等高，错误态标注「本地规则引擎」。契约：`admin/tests/r6PersonalizedRec.contract.test.ts`、`miniapp/src/styles/r6PersonalizedRec.contract.test.ts`。
 
+## 7D. R7 玩法体验速查（主规范 §1F）
 
+- 依据：`docs/laiyipao/audits/round7-gameplay/README.md`（非物理真机）。三缺口 → 三动作：复盘归因（19726 → 10909 / 74s 上限 / 11941 门槛）→ 结算与战报写「为什么没拿星」；战斗中无目标感 → 「战斗实时星级差额」HUD；成长推荐无法落地 → 「当前 vs 推荐」+「确认替换」。
+- 复盘只解释服务端权威字段：`settleResult.score/stars/leaked/reactions/clamped/clamp_note/replay_hash` + `star_targets` / `max_score` / `score_full_at_sec`；不得重算分数或星级。优先级：时长额度 → 漏怪 → 反应链（30% 口径，禁止「关系不大」）；缺字段走诚实空态。
+- HUD：`gap = star_targets[下一个未达门槛] - score`，门槛来自服务端配置，不得硬编码 11941；回合结束前可见、非阻塞、不遮挡塔位与技能卡，reduce 下静止。
+- 推荐落地：`/me/recommendations?context=skills|equipment` 的 `evidence[]` 解释因果，`expected_gain` 以 t65 接口为准；两步 CTA「应用推荐 → 当前 vs 推荐 → 确认替换 / 取消」，禁止无确认写出战配置，失败回退标注「本地规则引擎」。
+- 令牌与守卫：不新增视觉令牌（v1 / v3-r3 / r6 锚点保留，无 v4），契约 `admin/tests/r7GameplayFeedback.contract.test.ts` 与 `miniapp/src/styles/r7GameplayFeedback.contract.test.ts` 保持 GREEN。

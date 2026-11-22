@@ -535,6 +535,51 @@ admin / PC（12 视图）：
 
 ---
 
+## 1F. R7 玩法体验规范：复盘归因 · 实时差额 · 推荐落地
+
+本章是 §1A–§1E 的**玩法交互**增量下限，不替代任何视觉判据。依据 t62 真浏览器全流程实测（报告 `docs/laiyipao/audits/round7-gameplay/README.md`，截图全部标注「非物理真机」）：首屏引导与反应空态谎报已修，但玩家仍看不懂「为什么没拿星」、战斗中缺少目标感、成长页推荐无法一键落地。以下五条由设计负责人拍板，h5-ui / admin-ui / 后端按各自写域实现；本章只定信息契约与验收口径，不写死任何业务数值。
+
+### 1F.1 依据、范围与不回退基线
+
+- 证据 1（战后复盘）：`r7-09-battle-result.png` / `r7-10-battle-report.png`，本局 0 星、`10909` 分，战报只写「防守扎实：0/39 漏怪」，未把「得分超时长额度：`19726` → `10909`（`74s` 内上限）」与 `11941` 分的一星门槛关联，玩家看不出该提速还是该加反应。
+- 证据 2（目标感）：`r7-03-stage-select.png` 只有关卡页数字门槛，战斗中无实时差额提示，玩家只能结算后被动知道结果。
+- 证据 3（成长落地）：`r7-11-skills.png` 推荐「重炮弹」、`r7-11-equipment.png` 推荐「母核碎片」，但本局靠焰/冰/电反应拿分（`r7-10-battle-report.png`），因果与换上后的收益没有被解释。
+- 适用范围：H5 `battle.vue` / `battles.vue` / `skills.vue` / `equipment.vue` 为主；admin `BattlesView.vue` 的复盘行只复用同一字段语义，不照搬战斗 HUD。其余页面继续按 §1B–§1E 执行。
+- 不回退正向基线（R7 实测已具备）：选卡遮罩三选项与即时反馈、结算精确差额「还差 N 分就能拿 X 星」、战报 AI 诊断 / 命中率 / 波次 / 峰值热量 / 元素反应地形 / 回放哈希验真、成长三页真实推荐卡。任何新交互不得遮挡或替换这些入口。
+
+### 1F.2 战后复盘归因：为什么没拿星
+
+- **必答问题**：每次未拿满星的结算/战报都要回答「为什么没拿星」，并给出一条可执行的下一步；不允许只列指标让玩家自己猜。
+- **权威输入只取已存在字段**：`settleResult.score`、`settleResult.stars`、`settleResult.leaked`、`settleResult.reactions`、`settleResult.clamped`、`settleResult.clamp_note`、`settleResult.replay_hash`，加关卡配置 `engine.cfg.level.star_targets`、`max_score` 与规则 `score_full_at_sec`。归因文案**不得重算**分数或星级，也不得用引擎本地未裁剪分数替代服务端权威值；`clamp_note` 由服务端 `ClampReason`（`得分超时长额度：原始分 → 裁剪分（N s 内上限，满分需 M s）`）生成，前端只解释不改写。
+- **确定性优先级**（从上到下命中即停，避免自相矛盾）：① `clamped` 且 `clamp_note` 含「得分超时长额度」且分数低于下一星门槛 → 主因是时长额度，文案写「`得分超时长额度：{原始分} → {settleResult.score}`（本局 `{N}s` 内上限，满分需 `score_full_at_sec` 秒）」+「距下一星还差 `{gap}` 分（门槛 `star_targets[n]`），提速到满分区间最多可拿回 `{上限 - settleResult.score}` 分」；② `leaked > 0` → 主因是漏怪，建议补溅射/控场并指向关卡；③ `reactions < 3` → 主因是反应链不足，建议补元素搭配。
+- **诚实文案同步**：第 ③ 条与 `battle.vue` 旧句「反应伤害与面板攻击力关系不大」同义，必须同步为「反应伤害中元素侧是主力，面板攻击力也有贡献但权重上限 30%」（与 `reactions.vue` 修复后口径一致）；禁止在任何新文案里复现「关系不大」。漏怪、反应、时长三项同时存在时只选主因，其余降为「次要因素」。
+- **AI 卡结构**：「AI」汉字徽章 + 一句结论 + 依据行「依据：结算 `clamp_note` / `star_targets` / `leaked` / `reactions` · 回放 `{settleResult.replay_hash}`」+ 一个 CTA（看回放 / 去关卡重试）。四判据沿用 §1A.1：可见汉字「AI」、真实数据结论、依据、CTA，缺一不算；不宣称 GPT，不编造置信度。
+- **诚实空态**：缺 `clamp_note`、`star_targets`、`replay_hash` 或战报接口失败时，写清「数据不足：无法归因本局星级，缺少 {字段名}」+「回到关卡」CTA，与正常卡等高；禁止写「暂无数据」或用写死示例分数填空。已拿三星时只显示「三星达成」与真实依据，不强套归因模板。
+
+### 1F.3 战斗实时星级差额 HUD
+
+- 组件名固定为「战斗实时星级差额」，在战斗页分数旁以非阻塞行内 HUD 呈现；8× 倍速同样可见。
+- **门槛只来自服务端关卡配置**：读取 `engine.cfg.level.star_targets` 与 `max_score`，用当前权威分数取下一个未达门槛 `t`：`gap = t - score`，显示「距 {i+1} 星还差 `{gap}` 分（门槛 `{t}` 分）」；全部达成显示「三星门槛已达成，稳住防线」。`score_full_at_sec` 只用于解释满分所需时长，不当作实时分数上限。
+- **不得硬编码 11941** 或任何具体关卡通关分；不得在前端由 `max_score` 自行推算 `star_targets`。配置未下发 / 门槛数组为空时隐藏差额并写「关卡门槛未下发，暂不显示星级差额」，不得显示 0 或假门槛。结算裁剪只由服务端决定，HUD 不预告裁剪后的分数。
+- **可玩性约束**：`回合结束前` 必须可见且至少在分数变化时刷新、每波结束强制刷新；HUD 非阻塞、不遮挡塔位与技能卡，不抢占选卡遮罩焦点；390×844 首屏可读，正文走文本四阶，`--ai-accent` 只做边框/装饰不做正文；`prefers-reduced-motion` 下关闭脉冲与位移动画；可点区域沿用全局 `:focus-visible` 焦点环。
+- 验收：交 1 张战斗中差额 HUD 真浏览器截图（390×844，标注「非物理真机」）与 `r7-03-stage-select.png` 对照；断言截图里的门槛值来自该关配置而非固定常量。admin 不新增 HUD。
+
+### 1F.4 推荐一键落地：因果解释 + 对比确认
+
+- 技能页「重炮弹」、装备页「母核碎片」这类推荐必须回答「为什么是它」：结论取 `GET /me/recommendations?context=skills|equipment` 的 `evidence[]` / `basis[]`，输入快照写清本局/近 N 场反应构成与当前出战配置；禁止把当前视图常量拼成「个性化」结论。
+- 收益预估字段以 t65 后端落地的 `expected_gain`（或同一响应中的同义字段）为准；接口尚未返回时只写「收益数据不可用，暂不展示预计数值」，不编造百分比。接口失败回退本地规则引擎时必须显式标注「本地规则引擎」，沿用 §1E.2 的 `schema_version` / `model` / `confidence` 诚实规则，不宣称 GPT / 大模型。
+- **CTA 流程固定两步**：点「应用推荐」→ 弹出「当前 vs 推荐」对比（当前技能/等级或装备槽/道具 vs 推荐项、`expected_gain`、`evidence[]` 来源与 `config_version`）→ 用户点「确认替换」才调用既有写入接口并更新出战配置；点「取消」直接关闭且不产生任何写请求。
+- **禁止无确认**直接改出战配置、技能等级或装备槽，禁止乐观写入后再回滚掩盖失败；写入失败时保留原配置、显示真实错误与「重试」，并让卡面回到对比前状态。H5 触控区 ≥88rpx，admin 用等价对话框且 `:focus-visible` 2px 令牌描边；对比层与空态等高，避免布局跳动。
+
+### 1F.5 令牌、不回退项与 test-first 契约
+
+- **不新增视觉令牌**：保持 `--lyp-token-version: lyp-tokens-v1`、`--lyp-r3-version: lyp-tokens-v3-r3`、`--lyp-r6-version: lyp-tokens-r6` 原样，禁止误升 `lyp-tokens-v4`，也禁止新增 `--r7-*` 一类视觉变量；复盘卡与 HUD 复用 `panel-2`、文本四阶、既有焦点环与骨架类。
+- 不回退项：R1-R6 诚实文案（尤其反应 30% 口径与空态写法）、25% AoE 平衡、顶栏脱敏、对比度守卫、`:focus-visible`、`prefers-reduced-motion`、玻璃/元素 soft 禁用组合（§2.4）。新增交互只能增加信息层次，不能替换这些约束。
+- **test-first**：先写 `laiyipao/admin/tests/r7GameplayFeedback.contract.test.ts` 与 `laiyipao/miniapp/src/styles/r7GameplayFeedback.contract.test.ts`，§1F 与速查 §7D 落盘前必须 RED，落盘后 GREEN。断言覆盖五子条款、三项真浏览器证据与真实数字、复盘字段与诚实空态、HUD 服务端门槛与不遮挡、对比确认流程、AI 四判据与不回退项、双端令牌锚点。
+- **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts`、`r4Mapping.contract.test.ts`、`r5Mapping.contract.test.ts`、`r6PersonalizedRec.contract.test.ts` 的任何判据。
+- 验收门禁：双端全量测试绿；交 H5 战斗 HUD / 结算归因 / 技能与装备对比弹窗各 1 张 390×844 真浏览器截图，admin 交 1 张 1440×900 复盘归因截图，全部标注「非物理真机」；design-reviewer 按 §1A.1 复核汉字「AI」、真实字段依据、可点击 CTA 与诚实空态。
+
+---
 ## 2. 色彩系统
 
 ### 2.1 深色科幻底（表面分层）
