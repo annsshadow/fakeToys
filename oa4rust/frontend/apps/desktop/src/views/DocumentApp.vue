@@ -116,6 +116,12 @@ const documentColumns: AdminTableColumn[] = [
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+
+function documentWriteSucceeded(resp:any):boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -168,6 +174,7 @@ async function onCipherPublish(item: DocItem) {
   if (!cipherText.trim()) return
   try {
     const r: any = await api.put('/api/document/cipher/publish/content', { docId: item.id, cipherText })
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success(`密文已发布：${(r as any)?.data?.ciphered ?? 0} 条`)
   } catch (e: any) {
     toast.error(`密文发布失败: ${e?.message ?? ''}`)
@@ -243,7 +250,8 @@ async function onCreate() {
   if (!createForm.value.title.trim()) return
   creating.value = true
   try {
-    await api.post('/api/document', createForm.value)
+    const r: any = await api.post('/api/document', createForm.value)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     showCreate.value = false
     createForm.value = { title: '', content: '' }
     doSearch()
@@ -260,7 +268,8 @@ async function onDelete(item: DocItem) {
   if (!(await confirmMsg(`确定删除文档「${item.title || item.id}」？`))) return
   deletingId.value = item.id
   try {
-    await api.delete(`/api/document/${item.id}`)
+    const r: any = await api.delete(`/api/document/${item.id}`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error(`删除失败: : ${e?.message ?? ''}`)
@@ -272,7 +281,8 @@ async function onDelete(item: DocItem) {
 async function onCommend(item: DocItem) {
   try {
     // GET document/{id}/commend —— 推荐（Path id，无 body）
-    await api.get(`/api/document/${item.id}/commend`)
+    const r: any = await api.get(`/api/document/${item.id}/commend`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已推荐')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -281,7 +291,8 @@ async function onCommend(item: DocItem) {
 async function onTop(item: DocItem) {
   try {
     // GET document/{id}/top —— 置顶
-    await api.get(`/api/document/${item.id}/top`)
+    const r: any = await api.get(`/api/document/${item.id}/top`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已置顶')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -290,7 +301,8 @@ async function onTop(item: DocItem) {
 async function onPublish(item: DocItem) {
   try {
     // PUT document/publish/{id} —— 发布
-    await api.put(`/api/document/publish/${item.id}`)
+    const r: any = await api.put(`/api/document/publish/${item.id}`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已发布')
     doSearch()
   } catch (e: any) {
@@ -300,7 +312,8 @@ async function onPublish(item: DocItem) {
 async function onUncommend(item: DocItem) {
   try {
     // GET document/{id}/uncommend —— 取消推荐
-    await api.get(`/api/document/${item.id}/uncommend`)
+    const r: any = await api.get(`/api/document/${item.id}/uncommend`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已取消推荐')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -309,7 +322,8 @@ async function onUncommend(item: DocItem) {
 async function onUnTop(item: DocItem) {
   try {
     // GET document/{id}/unTop —— 取消置顶
-    await api.get(`/api/document/${item.id}/unTop`)
+    const r: any = await api.get(`/api/document/${item.id}/unTop`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已取消置顶')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -318,7 +332,8 @@ async function onUnTop(item: DocItem) {
 async function onPublishCancel(item: DocItem) {
   try {
     // PUT document/publish/{id}/cancel —— 撤销发布
-    await api.put(`/api/document/publish/${item.id}/cancel`)
+    const r: any = await api.put(`/api/document/publish/${item.id}/cancel`)
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已撤销发布')
     doSearch()
   } catch (e: any) {
@@ -347,7 +362,8 @@ async function onPersons(item: DocItem) {
 async function onNotify(item: DocItem) {
   try {
     // POST document/{id}/notify —— 触发文档通知
-    await api.post(`/api/document/${item.id}/notify`, {})
+    const r: any = await api.post(`/api/document/${item.id}/notify`, {})
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已发送通知')
   } catch (e: any) {
     toast.error(`通知失败: ${e?.message ?? ''}`)
@@ -356,7 +372,8 @@ async function onNotify(item: DocItem) {
 // rev422：记录文档浏览 POST /api/document/cipher/{id}/persist/view/record（append x_cms_viewrecord，doc_id 取行、person 会话；用户点击触发的真实浏览留痕）
 async function onViewRecord(item: DocItem) {
   try {
-    await api.post(`/api/document/cipher/${item.id}/persist/view/record`, {})
+    const r: any = await api.post(`/api/document/cipher/${item.id}/persist/view/record`, {})
+    if (!documentWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     toast.success('已记录浏览')
   } catch (e: any) {
     toast.error(`记录浏览失败: ${e?.message ?? ''}`)
