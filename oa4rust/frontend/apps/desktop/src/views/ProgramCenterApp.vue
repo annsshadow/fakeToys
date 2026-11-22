@@ -392,6 +392,19 @@
 </template>
 
 <script setup lang="ts">
+// R367: 后端统一信封 ActionResult 在 HTTP200 下可能 type:error/success:false，
+// 写链必须据此判失败，不得因 HTTP2xx 无条件 toast.success；288 处 success(json) 无 bool，故不强制 bool。
+function writeSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
+async function guardedWrite(p: Promise<any>): Promise<any> {
+  const resp = await p
+  if (!writeSucceeded(resp)) throw new Error(resp?.message || '操作未生效，请刷新后重试')
+  return resp
+}
+
 import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
@@ -909,7 +922,7 @@ function switchTab(t: Tab) {
 async function toggleAgent(a: Agent) {
   try {
     const action = a.enabled !== false ? 'disable' : 'enable'
-    await api.get(`/api/program_center/agent/${a.flag || a.id}/${action}`)
+    await guardedWrite(await api.get(`/api/program_center/agent/${a.flag || a.id}/${action}`))
     toast.success(action === 'enable' ? '已启用' : '已禁用')
     loadAgents()
   } catch (e: any) {
@@ -919,7 +932,7 @@ async function toggleAgent(a: Agent) {
 async function executeAgent(a: Agent) {
   try {
     // GET /agent/{flag}/execute —— 触发调度并记录日志
-    await api.get(`/api/program_center/agent/${a.flag || a.id}/execute`)
+    await guardedWrite(await api.get(`/api/program_center/agent/${a.flag || a.id}/execute`))
     toast.success('已触发执行')
   } catch (e: any) {
     toast.error(e?.message ?? '执行失败')
@@ -1026,12 +1039,12 @@ async function saveAgentEdit(): Promise<void> {
   if (!id || agentSaving.value) return
   agentSaving.value = true
   try {
-    await api.post(`/api/program_center/agent/save/${id}`, { name, flag, description })
+    await guardedWrite(await api.post(`/api/program_center/agent/save/${id}`, { name, flag, description }))
     toast.success('Agent 属性已保存')
     showEditAgent.value = false
     loadAgents()
-  } catch {
-    toast.error('保存失败')
+  } catch (e: any) {
+    toast.error(e?.message ?? '保存失败')
   } finally {
     agentSaving.value = false
   }
@@ -1082,11 +1095,12 @@ async function saveDictData(): Promise<void> {
   dictDataSaving.value = true
   try {
     // path 段为占位（handler 仅按 dictFlag 写 app_data）；真实路由无重复 data 段。
-    await api.post(`/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data`, body)
+    await guardedWrite(await api.post(`/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data`, body))
     toast.success('字典数据已保存')
     showDictData.value = false
-  } catch {
-    dictDataError.value = '保存失败'
+  } catch (e: any) {
+    dictDataError.value = e?.message ?? '保存失败'
+    toast.error(e?.message ?? '保存失败')
   } finally {
     dictDataSaving.value = false
   }
@@ -1121,12 +1135,12 @@ async function saveScript(): Promise<void> {
   scriptEditSaving.value = true
   try {
     // script_save_flag：ScriptSaveRequest {name, content, category}，按 flag 定位更新
-    await api.post(`/api/program_center/script/${encodeURIComponent(flag)}`, { name, content })
+    await guardedWrite(await api.post(`/api/program_center/script/${encodeURIComponent(flag)}`, { name, content }))
     toast.success('脚本已保存')
     showScriptEdit.value = false
     loadScripts()
-  } catch {
-    toast.error('脚本保存失败')
+  } catch (e: any) {
+    toast.error(e?.message ?? '脚本保存失败')
   } finally {
     scriptEditSaving.value = false
   }
@@ -1406,13 +1420,13 @@ async function loadProgramDeepReads() {
 async function pcStyleErase(kind: string) {
   if (!(await confirmMsg(`确定清除该风格图片（${kind}）？`))) return
   try {
-    if (kind === 'appTop') await api.delete('/api/program_center/appstyle/image/application/top/erase')
-    else if (kind === 'launchLogo') await api.delete('/api/program_center/appstyle/image/launch/logo/erase')
-    else if (kind === 'loginAvatar') await api.delete('/api/program_center/appstyle/image/login/avatar/erase')
-    else if (kind === 'menuBlur') await api.delete('/api/program_center/appstyle/image/menu/logo/blur/erase')
-    else if (kind === 'menuFocus') await api.delete('/api/program_center/appstyle/image/menu/logo/focus/erase')
-    else if (kind === 'processDefault') await api.delete('/api/program_center/appstyle/image/process/default/erase')
-    else await api.delete('/api/program_center/appstyle/image/setup/about/logo/erase')
+    if (kind === 'appTop') await guardedWrite(await api.delete('/api/program_center/appstyle/image/application/top/erase'))
+    else if (kind === 'launchLogo') await guardedWrite(await api.delete('/api/program_center/appstyle/image/launch/logo/erase'))
+    else if (kind === 'loginAvatar') await guardedWrite(await api.delete('/api/program_center/appstyle/image/login/avatar/erase'))
+    else if (kind === 'menuBlur') await guardedWrite(await api.delete('/api/program_center/appstyle/image/menu/logo/blur/erase'))
+    else if (kind === 'menuFocus') await guardedWrite(await api.delete('/api/program_center/appstyle/image/menu/logo/focus/erase'))
+    else if (kind === 'processDefault') await guardedWrite(await api.delete('/api/program_center/appstyle/image/process/default/erase'))
+    else await guardedWrite(await api.delete('/api/program_center/appstyle/image/setup/about/logo/erase'))
     toast.success('已清除风格图片')
   } catch (e: any) {
     toast.error(`清除失败: ${e?.message ?? ''}`)
@@ -1422,7 +1436,7 @@ async function pcCollectDelete() {
   const id = prompt('要删除的采集配置 ID:', '') || ''
   if (!(await confirmMsg('确定删除该采集配置？'))) return
   try {
-    await api.delete(`/api/program_center/collect/delete/${encodeURIComponent(id)}`)
+    await guardedWrite(await api.delete(`/api/program_center/collect/delete/${encodeURIComponent(id)}`))
     toast.success('采集配置已删除')
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
@@ -1432,7 +1446,7 @@ async function pcInvokeSaveById() {
   const id = prompt('接口配置 ID:', '') || ''
   const name = prompt('名称:', '') || ''
   try {
-    await api.put(`/api/program_center/invoke/save/${encodeURIComponent(id)}`, { name })
+    await guardedWrite(await api.put(`/api/program_center/invoke/save/${encodeURIComponent(id)}`, { name }))
     toast.success('接口配置已保存')
   } catch (e: any) {
     toast.error(`保存失败: ${e?.message ?? ''}`)
@@ -1442,7 +1456,7 @@ async function pcInvokeDeleteById() {
   const id = prompt('要删除的接口配置 ID:', '') || ''
   if (!(await confirmMsg('确定删除该接口配置？'))) return
   try {
-    await api.delete(`/api/program_center/invoke/delete/${encodeURIComponent(id)}`)
+    await guardedWrite(await api.delete(`/api/program_center/invoke/delete/${encodeURIComponent(id)}`))
     toast.success('接口配置已删除')
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
@@ -1457,8 +1471,8 @@ async function pcConfigSave(kind: string) {
     body = { value: val }
   }
   try {
-    if (kind === 'centerserver') await api.put('/api/program_center/config/centerserver', body)
-    else await api.put('/api/program_center/config/person', body)
+    if (kind === 'centerserver') await guardedWrite(await api.put('/api/program_center/config/centerserver', body))
+    else await guardedWrite(await api.put('/api/program_center/config/person', body))
     toast.success('配置已保存')
   } catch (e: any) {
     toast.error(`保存失败: ${e?.message ?? ''}`)
@@ -1467,7 +1481,7 @@ async function pcConfigSave(kind: string) {
 async function pcTokenThreshold() {
   const t = prompt('令牌阈值（数字）:', '1000') || '0'
   try {
-    await api.post('/api/program_center/tokenthreshold/update', { threshold: Number(t) })
+    await guardedWrite(await api.post('/api/program_center/tokenthreshold/update', { threshold: Number(t) }))
     toast.success('令牌阈值已更新')
   } catch (e: any) {
     toast.error(`更新失败: ${e?.message ?? ''}`)
@@ -1557,34 +1571,34 @@ async function pcU3(op: string) {
   try {
     if (op === 'warnlog') {
       const message = prompt('告警内容:', '') || ''
-      await api.post('/api/program_center/warnlog', { level: 'WARN', message })
+      await guardedWrite(await api.post('/api/program_center/warnlog', { level: 'WARN', message }))
     } else if (op === 'dictData') {
       const flag = prompt('字典 flag:', '') || ''
-      await api.post(`/api/program_center/dict/${encodeURIComponent(flag)}/data`, {})
+      await guardedWrite(await api.post(`/api/program_center/dict/${encodeURIComponent(flag)}/data`, {}))
     } else if (op === 'dictUpdate') {
       const id = prompt('字典 ID:', '') || ''
       const name = prompt('新名称:', '') || ''
-      await api.put(`/api/program_center/dict/${encodeURIComponent(id)}`, { name })
+      await guardedWrite(await api.put(`/api/program_center/dict/${encodeURIComponent(id)}`, { name }))
     } else if (op === 'dictDelete') {
       const id = prompt('要删除的字典 ID:', '') || ''
       if (!(await confirmMsg('确定删除该字典？'))) return
-      await api.delete(`/api/program_center/dict/${encodeURIComponent(id)}`)
+      await guardedWrite(await api.delete(`/api/program_center/dict/${encodeURIComponent(id)}`))
     } else if (op === 'agentUpdate') {
       const flag = prompt('代理 flag:', '') || ''
-      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}`, {})
+      await guardedWrite(await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}`, {}))
     } else if (op === 'agentDelete') {
       const flag = prompt('要删除的代理 flag:', '') || ''
       if (!(await confirmMsg('确定删除该代理？'))) return
-      await api.delete(`/api/program_center/agent/${encodeURIComponent(flag)}`)
+      await guardedWrite(await api.delete(`/api/program_center/agent/${encodeURIComponent(flag)}`))
     } else if (op === 'menuUpdate') {
       const id = prompt('公众号菜单 ID:', '') || ''
-      await api.post(`/api/program_center/mpweixin/menu/update/${encodeURIComponent(id)}`, {})
+      await guardedWrite(await api.post(`/api/program_center/mpweixin/menu/update/${encodeURIComponent(id)}`, {}))
     } else if (op === 'menuDelete') {
       const id = prompt('要删除的公众号菜单 ID:', '') || ''
       if (!(await confirmMsg('确定删除该公众号菜单？'))) return
-      await api.delete(`/api/program_center/mpweixin/menu/delete/${encodeURIComponent(id)}`)
+      await guardedWrite(await api.delete(`/api/program_center/mpweixin/menu/delete/${encodeURIComponent(id)}`))
     } else {
-      await api.post('/api/program_center/dict/list/paging/1/size/20', {})
+      await guardedWrite(await api.post('/api/program_center/dict/list/paging/1/size/20', {}))
     }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
@@ -1598,27 +1612,27 @@ async function pcU4Write(op: string) {
       const key = prompt('配置键(key):', '') || ''
       if (!key) return
       const value = prompt('配置值(value):', '') || ''
-      await api.put('/api/program_center/config/save', { key, value })
+      await guardedWrite(await api.put('/api/program_center/config/save', { key, value }))
     } else if (op === 'scriptCreate') {
       const name = prompt('脚本名称:', 'script') || 'script'
       const content = prompt('脚本内容:', '') || ''
-      await api.post('/api/program_center/script', { name, content })
+      await guardedWrite(await api.post('/api/program_center/script', { name, content }))
     } else if (op === 'dictDataPut') {
       const flag = prompt('字典 flag:', '') || ''
       const path = prompt('字典路径:', 'root') || 'root'
       const value = prompt('数据值(JSON/文本):', '') || ''
-      await api.put(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`, value)
+      await guardedWrite(await api.put(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`, value))
     } else if (op === 'dictDataDel') {
       const flag = prompt('字典 flag:', '') || ''
       const path = prompt('字典路径:', 'root') || 'root'
       if (!(await confirmMsg('确定清空该字典数据？'))) return
-      await api.delete(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`)
+      await guardedWrite(await api.delete(`/api/program_center/dict/${encodeURIComponent(flag)}/${encodeURIComponent(path)}/data`))
     } else if (op === 'inputCreate') {
-      await api.post('/api/program_center/input/create', {})
+      await guardedWrite(await api.post('/api/program_center/input/create', {}))
     } else if (op === 'outputList') {
-      await api.post('/api/program_center/output/list', {})
+      await guardedWrite(await api.post('/api/program_center/output/list', {}))
     } else {
-      await api.post('/api/program_center/designer/search', {})
+      await guardedWrite(await api.post('/api/program_center/designer/search', {}))
     }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
@@ -1750,17 +1764,17 @@ async function pcU5Write(op: string) {
     if (op === 'appDelete') {
       const id = prompt('要删除的应用 ID:', '') || ''
       if (!(await confirmMsg('确定删除该应用？'))) return
-      await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`)
+      await guardedWrite(await api.delete(`/api/program_center/application/delete/${encodeURIComponent(id)}`))
     } else if (op === 'scriptPut') {
       const flag = prompt('脚本 flag:', '') || ''
-      await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {})
+      await guardedWrite(await api.put(`/api/program_center/script/${encodeURIComponent(flag)}`, {}))
     } else if (op === 'dictData') {
       const df = prompt('字典 flag:', '') || ''
       const path = prompt('路径:', 'root') || 'root'
-      await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {})
-    } else if (op === 'cacheDispatch') await api.put('/api/program_center/cachedispatch', {})
-    else if (op === 'scheduleReport') await api.post('/api/program_center/schedule/report', {})
-    else await api.put('/api/program_center/module/list', {})
+      await guardedWrite(await api.post(`/api/program_center/dict/${encodeURIComponent(df)}/${encodeURIComponent(path)}/data`, {}))
+    } else if (op === 'cacheDispatch') await guardedWrite(await api.put('/api/program_center/cachedispatch', {}))
+    else if (op === 'scheduleReport') await guardedWrite(await api.post('/api/program_center/schedule/report', {}))
+    else await guardedWrite(await api.put('/api/program_center/module/list', {}))
     toast.success('程序中心写操作已提交')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -1771,49 +1785,49 @@ async function pcU6(op: string) {
   try {
     if (op === 'agentDisable') {
       const f = encodeURIComponent(prompt('代理 flag:', '') || '')
-      await api.get(`/api/program_center/agent/${f}/disable`)
+      await guardedWrite(await api.get(`/api/program_center/agent/${f}/disable`))
     } else if (op === 'agentEnable') {
       const f = encodeURIComponent(prompt('代理 flag:', '') || '')
-      await api.get(`/api/program_center/agent/${f}/enable`)
+      await guardedWrite(await api.get(`/api/program_center/agent/${f}/enable`))
     } else if (op === 'agentSave') {
       const id = encodeURIComponent(prompt('代理 ID:', '') || '')
       const name = prompt('代理名称:', '') || ''
-      await api.put(`/api/program_center/agent/save/${id}`, { name })
+      await guardedWrite(await api.put(`/api/program_center/agent/save/${id}`, { name }))
     } else if (op === 'invokeGet') {
       const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
-      await api.get(`/api/program_center/invoke/${f}`)
+      await guardedWrite(await api.get(`/api/program_center/invoke/${f}`))
     } else if (op === 'invokeUpdate') {
       const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
       const name = prompt('调用器名称:', '') || ''
-      await api.put(`/api/program_center/invoke/${f}`, {
+      await guardedWrite(await api.put(`/api/program_center/invoke/${f}`, {
         name,
         alias: '',
         category: '',
         description: '',
         enable: true,
         enableToken: false,
-      })
+      }))
     } else if (op === 'invokeDelete') {
       const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
       if (!(await confirmMsg('确定删除该调用器？'))) return
-      await api.delete(`/api/program_center/invoke/${f}`)
+      await guardedWrite(await api.delete(`/api/program_center/invoke/${f}`))
     } else if (op === 'invokeExecGet') {
       const f = encodeURIComponent(prompt('调用器 flag:', '') || '')
-      await api.get(`/api/program_center/invoke/${f}/execute/get`)
+      await guardedWrite(await api.get(`/api/program_center/invoke/${f}/execute/get`))
     } else if (op === 'moduleOutputFile') {
       const id = encodeURIComponent(prompt('模块 ID:', '') || '')
-      await api.get(`/api/program_center/module/output/${id}/file`)
+      await guardedWrite(await api.get(`/api/program_center/module/output/${id}/file`))
     } else if (op === 'moduleWrite') {
       const id = encodeURIComponent(prompt('模块 ID:', '') || '')
-      await api.put(`/api/program_center/module/write/${id}`, {})
+      await guardedWrite(await api.put(`/api/program_center/module/write/${id}`, {}))
     } else if (op === 'moduleRemoveStruct') {
       const id = encodeURIComponent(prompt('模块 ID:', '') || '')
       if (!(await confirmMsg('确定删除该模块结构？'))) return
-      await api.delete(`/api/program_center/module/remove/structure/${id}`)
+      await guardedWrite(await api.delete(`/api/program_center/module/remove/structure/${id}`))
     } else {
       const id = encodeURIComponent(prompt('应用 ID:', '') || '')
       const name = prompt('应用名称:', '') || ''
-      await api.put(`/api/program_center/application/save/${id}`, { name })
+      await guardedWrite(await api.put(`/api/program_center/application/save/${id}`, { name }))
     }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
@@ -1823,14 +1837,14 @@ async function pcU6(op: string) {
 // rev396：程序中心 数据输入 比较/覆盖/创建/预备覆盖/预备创建 + Jest 清缓存(按源) 真实路由（input_* 均 Path-free pool-only 空体、jest_clear_cache handler 忽略 {source} 参不 trap500；POST/PUT 孪生择一，用户触发）
 async function pcU7(op: string) {
   try {
-    if (op === 'inputCompare') await api.post('/api/program_center/input/compare', {})
-    else if (op === 'inputCover') await api.post('/api/program_center/input/cover', {})
-    else if (op === 'inputCreate') await api.put('/api/program_center/input/create', {})
-    else if (op === 'inputPrepareCover') await api.post('/api/program_center/input/prepare/cover', {})
-    else if (op === 'inputPrepareCreate') await api.post('/api/program_center/input/prepare/create', {})
+    if (op === 'inputCompare') await guardedWrite(await api.post('/api/program_center/input/compare', {}))
+    else if (op === 'inputCover') await guardedWrite(await api.post('/api/program_center/input/cover', {}))
+    else if (op === 'inputCreate') await guardedWrite(await api.put('/api/program_center/input/create', {}))
+    else if (op === 'inputPrepareCover') await guardedWrite(await api.post('/api/program_center/input/prepare/cover', {}))
+    else if (op === 'inputPrepareCreate') await guardedWrite(await api.post('/api/program_center/input/prepare/create', {}))
     else {
       const src = encodeURIComponent(prompt('缓存源:', '') || '')
-      await api.get(`/api/program_center/jest/clear/cache/${src}`)
+      await guardedWrite(await api.get(`/api/program_center/jest/clear/cache/${src}`))
     }
     toast.success('程序中心操作已提交')
   } catch (e: any) {
@@ -2017,7 +2031,7 @@ async function pcU19(op: string) {
         toast.error('JSON 解析失败')
         return
       }
-      await api.put('/api/program_center/appstyle', data)
+      await guardedWrite(await api.put('/api/program_center/appstyle', data))
       toast.success('应用样式配置已保存')
     } else if (op === 'runtime') {
       const raw = prompt('运行时配置(JSON):', '{}') || '{}'
@@ -2028,10 +2042,10 @@ async function pcU19(op: string) {
         toast.error('JSON 解析失败')
         return
       }
-      await api.post('/api/program_center/config/open/run/time/config', data)
+      await guardedWrite(await api.post('/api/program_center/config/open/run/time/config', data))
       toast.success('运行时配置已保存')
     } else {
-      await api.put('/api/program_center/module/output', {})
+      await guardedWrite(await api.put('/api/program_center/module/output', {}))
       toast.success('模块输出同步已触发')
     }
   } catch (e: any) {
@@ -2349,11 +2363,11 @@ async function loadTopThree() {
 }
 async function installMarket(m: Market) {
   try {
-    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/install/or/update`)
+    await guardedWrite(await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/install/or/update`))
     toast.success('安装/更新已触发')
     checkVersion(m)
-  } catch {
-    toast.error('安装失败')
+  } catch (e: any) {
+    toast.error(e?.message ?? '安装失败')
   }
 }
 async function checkVersion(m: Market) {
@@ -2368,10 +2382,10 @@ async function checkVersion(m: Market) {
 async function uninstallMarket(m: Market) {
   if (!(await confirmMsg(`确定卸载「${m.name || m.title || m.id}」？`))) return
   try {
-    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall`)
+    await guardedWrite(await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall`))
     toast.success('卸载已触发')
-  } catch {
-    toast.error('卸载失败')
+  } catch (e: any) {
+    toast.error(e?.message ?? '卸载失败')
   }
 }
 loadMarketCats()
