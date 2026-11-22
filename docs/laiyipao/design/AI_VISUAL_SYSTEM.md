@@ -579,6 +579,40 @@ admin / PC（12 视图）：
 - **不弱化既有断言**：不修改 `designTokens.contract.test.ts`、`textContrast.test.ts`、`focusVisible.contract.test.ts`、`tokens.contract.test.ts`、`r4Mapping.contract.test.ts`、`r5Mapping.contract.test.ts`、`r6PersonalizedRec.contract.test.ts` 的任何判据。
 - 验收门禁：双端全量测试绿；交 H5 战斗 HUD / 结算归因 / 技能与装备对比弹窗各 1 张 390×844 真浏览器截图，admin 交 1 张 1440×900 复盘归因截图，全部标注「非物理真机」；design-reviewer 按 §1A.1 复核汉字「AI」、真实字段依据、可点击 CTA 与诚实空态。
 
+## 1G. R8 关卡规范：星级口径 · 机制拐点 · 时间预算
+
+本章是 §1A–§1F 的**玩法交互**增量下限，不替代任何视觉判据。依据 t79 真浏览器审计 docs/laiyipao/audits/round8-gameplay/README.md（截图 r8-01-terrain-index-deduped.png / r8-02-enemy-threat-tags.png / r8-03-level1-result.png 均为非物理真机）：100 关 / 6 章 / 22 敌种；1★ 门槛下降 47 次、max_score 下降 44 次非单调（约 0.60）；r5AiStage 把首个并列 +33‰ 跳变当「本章最大跳变」；第 1 关 8× 仍 75s、满分 19708 被钳到 11056。h5-ui / gameplay / admin-ui 按写域实现，本章只定信息契约。
+
+### 1G.1 星级口径：按本关满分百分比给星
+
+- 关卡页必须同时展示「本关满分 `max_score`」与「本关 `star_targets`」，并解释「按本关满分百分比给星」；1★门槛=本关满分约60%（100关中1★降47次/max降44次非单调）。禁止只显示门槛数字。
+- 非单调不得解释成「高关更容易」：文案应写「关卡难度仍逐级上升；星级门槛按本关满分缩放，因此不同关卡的绝对分数线会升降」，并把难度 ‰、波数、敌种与门槛并列。
+- 具体数值全部来自 `engine.cfg.level.max_score` / `star_targets` / `difficulty`；不得硬编码 11941 或任何固定关卡数字，也不得在前端由满分反推门槛。
+
+### 1G.2 难度曲线：机制拐点标注取代假洞察
+
+- 难度曲线上的标注点必须有机制依据：boss 关 56/60/91/95/96/100、新敌种首现关、地形变化关；三类点在曲线上用不同形状/标签，配一句「为什么这里变难」。
+- 禁止把首个并列 +33‰ 跳变称为「本章最大跳变」；r5AiStage 当前实现必须改为优先标记 boss / 新敌种 / 地形拐点，只有没有任何机制拐点时才允许显示「本章难度平稳上升」。
+- 新敌种首现关必须写出威胁类型（飞行 / 潜地 / 远程 / boss）与对应克制建议；地形变化关写出地形机制名称（油桶 / 崩塌掩体 / 蓄能塔 / 潮汐闸 / 旋转风障）。依据必须可核对：机制标签取自 is_boss / 敌种 id / 地形 id，不能把固定数值斜率和随机截图当 AI 结论。
+
+### 1G.3 战斗时间预算 HUD：剩余保分窗口
+
+- 战斗中显示「剩余保分窗口：{N}s」，N 来自关卡配置 `score_full_at_sec` 或等价服务端字段与实时战斗计时；临近截止即时提示「保分窗口即将结束」，不等待结算才解释钳分。
+- 不得硬编码 75s / 19708 等实测数字；配置未下发时隐藏并写「保分窗口未下发，暂不显示」，不得显示 0 或假秒数。
+- HUD 非阻塞、不遮挡塔位与技能卡、不抢占选卡遮罩焦点；390×844 首屏可读，`prefers-reduced-motion` 下关闭脉冲；可点区域沿用全局 `:focus-visible` 焦点环。首次提示只出现一次，禁止每帧弹窗。
+
+### 1G.4 AI 四判据是硬下限
+
+- 任何 AI 卡（关卡洞察 / 复盘 / 推荐 / 空态）必须同时满足：可见汉字「AI」、真实数据结论、依据、CTA，缺一不算；低透明度底纹不算，不宣称 GPT，不编造置信度。
+- 依据行写清真实字段（如 `max_score` / `star_targets` / `is_boss` / `score_full_at_sec` / `clamp_note`），CTA 必须可点击并指向对应关卡/战斗/成长页；诚实空态与正常卡等高。
+- 不回退 R1-R7：诚实文案、反应 30% 口径、25% AoE、顶栏脱敏、对比度守卫、`:focus-visible`、`prefers-reduced-motion`、玻璃/元素 soft 禁用组合；本章只增加解释层次。
+
+### 1G.5 令牌、test-first 与验收
+
+- 不新增视觉令牌：保持 `--lyp-token-version: lyp-tokens-v1`、`--lyp-r3-version: lyp-tokens-v3-r3`、`--lyp-r6-version: lyp-tokens-r6`（v1E/v1F 为同包标记，不改锚点），禁止误升 `lyp-tokens-v4`，禁止新增 `--r8-*` 视觉变量；HUD / 曲线标注复用 panel-2、文本四阶、既有焦点环与骨架类。
+- test-first：先写 laiyipao/admin/tests/r8LevelCurve.contract.test.ts 与 laiyipao/miniapp/src/styles/r8LevelCurve.contract.test.ts，§1G 与速查 §7E 落盘前必须 RED，落盘后 GREEN；不弱化 designTokens/textContrast/focusVisible/tokens/r4/r5/r6/r7 既有断言。
+- 验收门禁：双端全量测试绿；交 H5 关卡页 / 战斗 HUD 真浏览器截图（标注非物理真机）与 r8 审计对照，断言门槛/秒数来自配置；design-reviewer 按 §1G.4 复核 AI 四判据。
+
 ---
 ## 2. 色彩系统
 

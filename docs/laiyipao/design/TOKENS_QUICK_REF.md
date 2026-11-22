@@ -180,3 +180,10 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 - HUD：`gap = star_targets[下一个未达门槛] - score`，门槛来自服务端配置，不得硬编码 11941；回合结束前可见、非阻塞、不遮挡塔位与技能卡，reduce 下静止。
 - 推荐落地：`/me/recommendations?context=skills|equipment` 的 `evidence[]` 解释因果，`expected_gain` 以 t65 接口为准；两步 CTA「应用推荐 → 当前 vs 推荐 → 确认替换 / 取消」，禁止无确认写出战配置，失败回退标注「本地规则引擎」。
 - 令牌与守卫：不新增视觉令牌（v1 / v3-r3 / r6 锚点保留，无 v4），契约 `admin/tests/r7GameplayFeedback.contract.test.ts` 与 `miniapp/src/styles/r7GameplayFeedback.contract.test.ts` 保持 GREEN。
+## 7E. R8 关卡规范速查（主规范 §1G）
+
+- 依据：docs/laiyipao/audits/round8-gameplay/README.md（非物理真机）。星级非单调：1★降47次/max降44次、约0.60；关卡页并列显示 `max_score` 与 `star_targets`，解释「按本关满分百分比给星」，禁止「高关更容易」误读与硬编码11941。
+- 难度曲线：标注 boss 关 56/60/91/95/96/100、新敌种首现、地形变化；拒绝 r5AiStage 首个并列 +33‰ 当「本章最大跳变」。
+- 时间预算 HUD：「剩余保分窗口：{N}s」来自 `score_full_at_sec` 或等价字段，临近截止即时提示，不遮挡不硬编码，配置缺失走诚实空态。
+- AI 四判据：可见汉字「AI」+真实数据结论+依据+CTA，低透明度底纹不算；不回退 R1-R7 诚实文案与可访问性。
+- 令牌与守卫：不新增视觉令牌（v1/v3-r3/r6 与 v1E/v1F 标记保留，无 v4、无 `--r8-*`）；双端契约 r8LevelCurve.contract.test.ts 保持 GREEN。
