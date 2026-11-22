@@ -3,11 +3,7 @@
 
 <template>
   <div class="portal-view">
-    <AdminPageHeader title="门户管理" subtitle="接入 /api/portal/* — 页面设计与发布">
-      <template #actions>
-        <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
-      </template>
-    </AdminPageHeader>
+    <AdminPageHeader title="门户管理" subtitle="接入 /api/portal/* — 页面设计与发布"></AdminPageHeader>
     <div class="admin-section-nav endpoint-groups glass-card">
       <details class="endpoint-group">
         <summary>端点操作 · 门户与表面</summary>
@@ -457,7 +453,6 @@ async function surfaceOps(op: string) {
   }
 }
 const pages = ref<PortalPage[]>([])
-const showEditor = ref(false)
 const queryClient = useQueryClient()
 
 const { data, isError, error, isPending } = useQuery({
