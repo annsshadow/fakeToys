@@ -174,7 +174,17 @@ async function doSearch() {
       async (signal) => {
         // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
         const r = await api.post('/api/queryview/search', { key: keyword.value }, { signal })
-        views.value = r.data ?? []
+        // R345 P1：后端返回分组信封 {data:{designList,key,viewList}}，直塞对象会让
+        // views.length=undefined、v-for 遍历对象键 → 恒 3 行垃圾且无法走空态。
+        // 与 SearchApp.vue R315 修复范式对齐，仅解包两个数组并映射模板所需字段。
+        const envelope: any = r?.data ?? {}
+        const designList: any[] = Array.isArray(envelope.designList) ? envelope.designList : []
+        const viewList: any[] = Array.isArray(envelope.viewList) ? envelope.viewList : []
+        views.value = [...designList, ...viewList].map((x: any) => ({
+          id: x.id,
+          flag: x.flag ?? x.id,
+          name: x.name ?? x.viewName ?? x.title ?? '',
+        }))
       },
       {
         onSettled: () => {
