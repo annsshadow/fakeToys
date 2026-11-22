@@ -160,8 +160,26 @@ function statText(): string {
     const v = s[k]
     return v === undefined || v === null ? '' : String(v)
   }
-  const normal = pick('normalCount') || pick('normal') || '0'
-  const abnormal = pick('abnormalCount') || pick('abnormal') || '0'
+  // R356: 后端 v2_my_statistic 实际返回 detailByStatus（[{status,count}]），
+  // 平铺 normalCount/abnormalCount 仅为旧形状 fallback，保持旧后端兼容。
+  const detail = s.detailByStatus
+  const agg = { normal: 0, abnormal: 0, recognized: false }
+  if (Array.isArray(detail)) {
+    for (const row of detail) {
+      if (!row || typeof row !== 'object') continue
+      if (row.status === undefined || row.status === null) continue
+      const st = String(row.status).trim().toLowerCase()
+      const bucket = st === 'normal' || st === '正常' ? 'normal' : st === 'abnormal' || st === '异常' ? 'abnormal' : ''
+      if (!bucket) continue
+      agg.recognized = true
+      const num = Number(row.count)
+      if (!Number.isFinite(num)) continue
+      if (bucket === 'normal') agg.normal += num
+      else if (bucket === 'abnormal') agg.abnormal += num
+    }
+  }
+  const normal = agg.recognized ? String(agg.normal) : (pick('normalCount') || pick('normal') || '0')
+  const abnormal = agg.recognized ? String(agg.abnormal) : (pick('abnormalCount') || pick('abnormal') || '0')
   const month = pick('month') || pick('yearMonth') || '本月'
   return `${month} · 正常 ${normal} · 异常 ${abnormal}`
 }
