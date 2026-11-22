@@ -77,3 +77,73 @@ export function damageScore(rules: ScoreRules, totalDamage: bigint): bigint {
 export function killScore(rules: ScoreRules, isBoss: boolean): bigint {
   return isBoss ? rules.onKillBoss : rules.onKillNormal
 }
+
+/**
+ * 服务端 `domain/battle.go` 的 `SpeedAnchorPermille`：满分锚点 = 理论清怪秒数 × 9。
+ * 客户端要提前告诉玩家还剩多少"保分窗口"，必须用同一个系数；
+ * 这里用跨端测试解析 Go 源码钉住，避免两份定义悄悄漂移。
+ */
+export const SPEED_ANCHOR_PERMILLE = 9000n
+
+/** 进入钳分区前多少秒开始预警（纯 UI 策略，不改变得分规则）。 */
+export const TIME_BUDGET_WARN_SEC = 5
+
+export interface ScoreTimeBudget {
+  /** 打满分数所需秒数（由关卡波次推导，服务端同款口径） */
+  anchorSec: number
+  elapsedSec: number
+  remainingSec: number
+  /** 是否已进入钳分区或临近钳分 */
+  warning: boolean
+  /** 是否已越过锚点、得分开始被裁剪 */
+  clamped: boolean
+  text: string
+}
+
+interface WaveForBudget {
+  spawns?: ReadonlyArray<{ count?: number; interval?: number; delay?: number }>
+}
+
+/**
+ * 从关卡波次推导剩余保分窗口。
+ *
+ * 与服务端 `theoreticalClearSec` / `speedAnchorSec` 同口径：
+ * 每波取 `delay + (count-1)*interval` 的最大值求和并向下取整到秒，再乘 0.9。
+ * 没有波次配置时返回 null —— 不允许拿本地硬编码秒数冒充服务端口径。
+ */
+export function scoreTimeBudget(
+  level: { waves?: ReadonlyArray<WaveForBudget> },
+  elapsedMs: number,
+): ScoreTimeBudget | null {
+  const waves = level?.waves
+  if (!waves || !waves.length) return null
+  let theoreticalMs = 0
+  for (const wave of waves) {
+    let waveEndMs = 0
+    for (const spawn of wave.spawns ?? []) {
+      const count = Math.max(0, Number(spawn.count ?? 0))
+      const interval = Math.max(0, Number(spawn.interval ?? 0))
+      const delay = Math.max(0, Number(spawn.delay ?? 0))
+      const end = delay + Math.max(0, count - 1) * interval
+      if (end > waveEndMs) waveEndMs = end
+    }
+    theoreticalMs += waveEndMs
+  }
+  const fullSec = Math.floor(theoreticalMs / 1000)
+  const anchorSec = Math.floor((fullSec * Number(SPEED_ANCHOR_PERMILLE)) / 1000)
+  if (!Number.isFinite(anchorSec) || anchorSec <= 0) return null
+
+  const elapsedSec = Math.max(0, Math.floor(Number(elapsedMs) / 1000))
+  const remainingSec = Math.max(0, anchorSec - elapsedSec)
+  const clamped = elapsedSec >= anchorSec
+  const warning = clamped || remainingSec <= TIME_BUDGET_WARN_SEC
+  // ⚠️ 服务端 scoreCapFor 是「快于锚点才裁、到锚点才满分」的负向闸：
+  // 锚点之前一直处于钳分区，剩余秒数是「距离免钳分还有多久」，
+  // 绝不能写成「保分窗口」——那会让玩家以为慢打会扣分。
+  const text = clamped
+    ? '已免钳分'
+    : warning
+      ? `钳分中 · 距满分 ${remainingSec}s（即将免钳分）`
+      : `钳分中 · 距满分 ${remainingSec}s`
+  return { anchorSec, elapsedSec, remainingSec, warning, clamped, text }
+}

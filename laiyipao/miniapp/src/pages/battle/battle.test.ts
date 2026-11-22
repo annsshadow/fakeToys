@@ -68,7 +68,14 @@ class FakeEngine {
   leaked = 2
   reactionsCount = 3
   score = 100
-  cfg: { level: { wave_count: number; star_targets?: number[] } } = { level: { wave_count: 3 } }
+  elapsedMs = 0
+  cfg: {
+    level: {
+      wave_count: number
+      star_targets?: number[]
+      waves?: Array<{ wave_index: number; spawns: Array<{ enemy_id: number; count: number; interval: number; delay: number }> }>
+    }
+  } = { level: { wave_count: 3 } }
   deck = {
     hand: [
       { id: 'c1', name: '燃烧弹', kind: 'skill', rarity: 'rare', descr: 'd1', element: 'fire' },
@@ -483,6 +490,36 @@ describe('battle.vue 战斗页', () => {
     expect(text).toContain('11941')
     expect(text).toContain('295')
     expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
+  })
+
+  it('R8 战斗 HUD 实时显示免钳分倒计时并在临近锚点时提示（来自关卡波次与战斗时钟）', async () => {
+    // 2026-11-22 真浏览器：第 1 关 75s 结算时分数被钳到 19708，
+    // 但战斗全程没有任何提示；玩家只能事后在结算卡看到上限。
+    // 服务端是「快于锚点按比例裁分」，所以这是免钳分倒计时，不是保分窗口。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const liveEngine = (wrapper.vm as any).engine as any
+    expect(liveEngine, '页面必须把 engine 暴露给模板').toBeTruthy()
+    liveEngine.cfg.level.waves = Array.from({ length: 5 }, (_, i) => ({
+      wave_index: i,
+      spawns: [{ enemy_id: 1, count: 6, interval: 200, delay: 0 }],
+    }))
+    liveEngine.elapsedMs = 10_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('钳分中 · 距满分 35s')
+    expect(wrapper.text(), '锚点前仍在钳分区，不能说成保分窗口').not.toContain('保分窗口')
+    expect(wrapper.find('.time-budget').classes(), '安全期不得预警').not.toContain('warn')
+
+    liveEngine.elapsedMs = 40_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('即将免钳分')
+    expect(wrapper.find('.time-budget').classes()).toContain('warn')
+
+    liveEngine.elapsedMs = 46_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('已免钳分')
+    expect(wrapper.find('.time-budget').classes()).toContain('clamped')
   })
 
   it('R7 战斗 HUD 实时显示距下一星差额（门槛来自关卡配置，随分数更新）', async () => {

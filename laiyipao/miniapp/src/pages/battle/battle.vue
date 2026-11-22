@@ -27,6 +27,16 @@
         <view class="hud-pill"><text class="wave-text">波次 {{ waveText }}</text></view>
         <view class="hud-pill"><text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text></view>
         <view v-if="liveStarGap" class="hud-pill"><text class="star-gap-text">{{ liveStarGap }}</text></view>
+        <!-- R8 缺口3：免钳分倒计时与临近锚点提示。纯 HUD 胶囊，不遮挡战场；
+             数值来自关卡波次 + 战斗时钟，绝不在页面里写死 60s/75s。
+             服务端是「快于锚点才裁」，锚点前显示钳分中，不能谎称保分窗口。 -->
+        <view
+          v-if="timeBudget"
+          class="hud-pill time-budget"
+          :class="{ warn: timeBudget.warning, clamped: timeBudget.clamped }"
+        >
+          <text class="time-budget-text">{{ timeBudget.text }}</text>
+        </view>
       </view>
       <view class="hud-row">
         <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
@@ -337,7 +347,7 @@ import {
 } from '@/render/canvas'
 import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
-import { scoreRulesFromServer } from '@/game/score'
+import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -429,6 +439,18 @@ const liveStarGap = computed(() => {
     if (score < target) return `距 ${i + 1} 星 ${target - score}`
   }
   return '已达满星门槛'
+})
+
+/**
+ * R8 缺口3：战斗中实时显示距离「免钳分锚点」还有多久。
+ * 服务端 scoreCapFor 是负向闸（快于锚点按比例裁分），锚点前一直钳分中，
+ * 所以文案必须是「距满分 Xs / 即将免钳分」，不能说成「保分窗口」。
+ * 锚点由关卡波次按服务端同款系数推导，已用战斗时钟 elapsedMs 更新；
+ * 没有波次配置或已结算时不显示，避免把本地猜测当成服务端口径。
+ */
+const timeBudget = computed(() => {
+  if (settled.value || !engine.value) return null
+  return scoreTimeBudget(engine.value.cfg?.level, Number(engine.value.elapsedMs ?? 0))
 })
 
 /** R7 缺口1：把服务端权威分数、钳分上限、星级门槛与漏怪数串成一句可执行的复盘建议。 */
@@ -1667,9 +1689,33 @@ onShareAppMessage(() =>
 
 .wave-text,
 .kill-text,
-.star-gap-text {
+.star-gap-text,
+.time-budget-text {
   font-size: 24rpx;
   color: var(--text-2);
+}
+
+/* R8 时间预算胶囊：钳分中低调、临近免钳分变黄、已免钳分变绿，
+   只改文字颜色/边框，不改变布局，也不盖住战场。 */
+.time-budget {
+  border-color: var(--border-soft);
+}
+
+.time-budget.warn {
+  border-color: rgba(255, 209, 61, 0.7);
+}
+
+.time-budget.warn .time-budget-text {
+  color: #ffd33d;
+}
+
+.time-budget.clamped {
+  border-color: rgba(126, 231, 135, 0.7);
+}
+
+.time-budget.clamped .time-budget-text {
+  color: #7ee787;
+  font-weight: 600;
 }
 
 .sheet {
