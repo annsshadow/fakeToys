@@ -145,9 +145,18 @@ async function loadItems() {
   }
 }
 
+function recycleWriteSucceeded(resp: any, flagKey?: string): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (!(resp.type === 'success' || (resp.type === undefined && resp.success !== false))) return false
+  if (flagKey !== undefined) return (resp.data?.[flagKey] ?? resp[flagKey]) === true
+  return true
+}
+
 async function resume(item: RecycleItem) {
   try {
-    await api.post(`/api/recycle/resume/${item.id}`, null)
+    const r: any = await api.post(`/api/recycle/resume/${item.id}`, null)
+    if (!recycleWriteSucceeded(r, 'resumed')) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     allItems.value = allItems.value.filter((i) => i.id !== item.id)
     selectedIds.value = selectedIds.value.filter((id) => id !== item.id)
   } catch (e: any) {
@@ -160,7 +169,8 @@ async function permanentDelete(item: RecycleItem) {
   busy.value = true
   try {
     if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
-    await api.delete(`/api/recycle/${item.id}/delete`)
+    const r: any = await api.delete(`/api/recycle/${item.id}/delete`)
+    if (!recycleWriteSucceeded(r, 'deleted')) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     allItems.value = allItems.value.filter((i) => i.id !== item.id)
     selectedIds.value = selectedIds.value.filter((id) => id !== item.id)
   } catch (e: any) {
@@ -177,10 +187,17 @@ async function batchResume() {
   try {
     const ids = [...selectedIds.value]
     const results = await Promise.allSettled(ids.map((id) => api.post(`/api/recycle/resume/${id}`, null)))
-    const ok = results.filter((r) => r.status === 'fulfilled').length
-    allItems.value = allItems.value.filter((i) => !ids.includes(i.id))
-    selectedIds.value = []
-    toast.success(`已恢复 ${ok} 个项目${ok < ids.length ? `，${ids.length - ok} 个失败` : ''}`)
+    const succeededIds: string[] = []
+    const failedMessages: string[] = []
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled' && recycleWriteSucceeded(r.value, 'resumed')) succeededIds.push(ids[idx])
+      else failedMessages.push(r.status === 'fulfilled' ? (r.value as any)?.message || '操作未生效' : (r.reason as any)?.message || '请求失败')
+    })
+    const ok = succeededIds.length
+    allItems.value = allItems.value.filter((i) => !succeededIds.includes(i.id))
+    selectedIds.value = ids.filter((id) => !succeededIds.includes(id))
+    if (ok > 0) toast.success(`已恢复 ${ok} 个项目${ok < ids.length ? `，${ids.length - ok} 个失败` : ''}`)
+    if (failedMessages.length > 0) toast.error(failedMessages.join('；'))
   } catch (e: any) {
     toast.error(`批量恢复失败: ${e?.message ?? ''}`)
   } finally {
@@ -195,10 +212,17 @@ async function batchDelete() {
   try {
     const ids = [...selectedIds.value]
     const results = await Promise.allSettled(ids.map((id) => api.delete(`/api/recycle/${id}/delete`)))
-    const ok = results.filter((r) => r.status === 'fulfilled').length
-    allItems.value = allItems.value.filter((i) => !ids.includes(i.id))
-    selectedIds.value = []
-    toast.success(`已永久删除 ${ok} 个项目${ok < ids.length ? `，${ids.length - ok} 个失败` : ''}`)
+    const succeededIds: string[] = []
+    const failedMessages: string[] = []
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled' && recycleWriteSucceeded(r.value, 'deleted')) succeededIds.push(ids[idx])
+      else failedMessages.push(r.status === 'fulfilled' ? (r.value as any)?.message || '操作未生效' : (r.reason as any)?.message || '请求失败')
+    })
+    const ok = succeededIds.length
+    allItems.value = allItems.value.filter((i) => !succeededIds.includes(i.id))
+    selectedIds.value = ids.filter((id) => !succeededIds.includes(id))
+    if (ok > 0) toast.success(`已永久删除 ${ok} 个项目${ok < ids.length ? `，${ids.length - ok} 个失败` : ''}`)
+    if (failedMessages.length > 0) toast.error(failedMessages.join('；'))
   } catch (e: any) {
     toast.error(`批量删除失败: ${e?.message ?? ''}`)
   } finally {
@@ -211,7 +235,8 @@ async function emptyRecycle() {
   busy.value = true
   try {
     if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
-    await api.delete('/api/recycle/empty')
+    const r: any = await api.delete('/api/recycle/empty')
+    if (!recycleWriteSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     allItems.value = []
     selectedIds.value = []
   } catch (e: any) {
