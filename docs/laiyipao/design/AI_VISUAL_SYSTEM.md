@@ -613,6 +613,39 @@ admin / PC（12 视图）：
 - test-first：先写 laiyipao/admin/tests/r8LevelCurve.contract.test.ts 与 laiyipao/miniapp/src/styles/r8LevelCurve.contract.test.ts，§1G 与速查 §7E 落盘前必须 RED，落盘后 GREEN；不弱化 designTokens/textContrast/focusVisible/tokens/r4/r5/r6/r7 既有断言。
 - 验收门禁：双端全量测试绿；交 H5 关卡页 / 战斗 HUD 真浏览器截图（标注非物理真机）与 r8 审计对照，断言门槛/秒数来自配置；design-reviewer 按 §1G.4 复核 AI 四判据。
 
+## 1H. R9 战斗反馈与选卡因果规范
+
+本章是 §1A–§1G 的**战斗内层交互**增量下限，只定信息契约，不改数值公式。依据 t88 真浏览器审计 docs/laiyipao/audits/round9-gameplay/README.md（截图 r9-06-reaction-feed.png / r9-07-next-level-cta.png / r9-08-level3-result.png 均为非物理真机）：第 1～3 关全程跳过卡牌仍通关 C/C/B，钳分 19684→8992（61s）、19208→10130（71s）、16297→11521（76s），反应数 67/94/102。D1/D2 已修（HUD 最近反应 + 下一关入口），本章针对 §4 三个未解缺口。h5-ui / gameplay / admin-ui 按写域实现。
+
+### 1H.1 反应因果链可追溯：为什么这一击痛
+
+- 战斗 HUD 的最近反应记录（`recentReactions` / `.reaction-feed`）每条必须同时具备：反应名称（来自 `REACTIONS[reaction].name`，如「过热」「超导」）、触发元素（引擎反应事件的元素组合，不得只显示数字键）、伤害数值（来自事件 `damage`，抗性时标注「抗性削减」）。玩家看一行就能读出「当前元素组合 → 触发哪种反应 → 这一击造成多少伤害」。
+- 必须把反应图鉴的克制信息压成一句战斗内 contextual hint：例如「焰+电 → 过热，范围爆发克制密集波」；文案必须有 `REACTIONS` / 元素组合 / 敌种或波次场景的真实依据，不得编造「攻击力无关」或泛泛写「试试冰系」。记录保留最近 3 条，每局开始清空；`aria-live="polite"` 与 `pointer-events:none`，非阻塞、不遮挡塔位/技能卡/选卡遮罩，reduce 下静止。
+- 若引擎事件缺少元素字段，只显示已确认字段并写「元素组合未上报」，不得臆造；数据缺失不等于谎报。
+
+### 1H.2 选卡取舍反馈：跳过不是免费
+
+- 卡面与结算必须把选卡决策变成可归因反馈：权威来源是 `card_picks`（每波一项，取/弃/跳编码见 engine.ts 152-184 与 server/domain/battle.go:209）；结算要统计取卡数、弃卡数、跳过波数与对应反应数/伤害变化（伤害占比按本局真实 `reaction_damage` 与总伤害计算，缺字段走诚实空态「本局未记录选择收益」）。
+- 卡面可显示「与当前构筑的相对收益」提示，但只能来自真实构筑状态（已取卡的元素/机制与当前反应链），**不做数值碾压**：禁止「必拿」「不拿就输」「+999%」等保证式文案，禁止把 C/C/B 通关解读成选卡无用或强迫选卡。
+- 全程跳过仍通关是合法策略：结算应写「本局全程跳过卡牌，反应 67 次，通关 C」这类真实陈述与一句可行动建议，不得羞辱玩家，也不得暗示不买卡就无法通关。
+
+### 1H.3 钳分与星级预警：统一实时换算口径
+
+- 战斗中 `liveStarGap`「距下一星还差 N 分」与 timeBudget「钳分中·距满分 Xs / 即将免钳分 / 已免钳分」必须共用同一套权威数值：`score_full_at_sec`（或等价配置）、当前战斗时钟、`star_targets`、`max_score` 与服务端同款钳分系数；不得硬编码 61s/11941，不得在前端重算星级。
+- 结算归因「上限→实得→差额」公式要提前到 HUD 做轻量实时换算：当前速度下预计实得与下一星差额，必须与结算文案使用同一来源；锚点前不得说「保分窗口」（服务端 scoreCapFor 是负向闸，慢打不扣分），禁止各说各话。
+- 换算是非阻塞提示，放在既有 HUD 胶囊内；配置缺失隐藏并写「钳分/星级配置未下发」，不得显示 0 或假秒数；`prefers-reduced-motion` 下关闭脉冲，首次提示只出现一次。
+
+### 1H.4 AI 四判据是硬下限
+
+- 任何 AI 卡（战斗内 contextual hint / 选卡收益 / 战报复盘 / 诚实空态）必须同时满足：可见汉字「AI」、真实数据结论、依据、CTA，缺一不算；低透明度底纹不算，不宣称 GPT，不编造置信度。
+- 依据行写清真实字段（`reaction` / `damage` / `card_picks` / `score_full_at_sec` / `star_targets` / `clamp_note`），CTA 指向选卡、下一关或战报；诚实空态与正常卡等高。
+- 不回退 R1-R8：诚实文案、元素伤害 30% 上限口径、25% AoE、顶栏脱敏、对比度守卫、`:focus-visible`、`prefers-reduced-motion`、玻璃/元素 soft 禁用组合与「锚点前不是保分窗口」语义；本章只补因果解释层。
+
+### 1H.5 令牌、test-first 与验收
+
+- 不新增视觉令牌：保持 `--lyp-token-version: lyp-tokens-v1`、`--lyp-r3-version: lyp-tokens-v3-r3`、`--lyp-r6-version: lyp-tokens-r6`（v1E/v1F 与 r8 标记为同包标记，不改锚点），禁止误升 `lyp-tokens-v4`，禁止新增 `--r9-*` 视觉变量；反馈条复用 panel-2、文本四阶、既有焦点环与骨架类。
+- test-first：先写 laiyipao/admin/tests/r9BattleFeedback.contract.test.ts 与 laiyipao/miniapp/src/styles/r9BattleFeedback.contract.test.ts，§1H 与速查 §7F 落盘前必须 RED，落盘后 GREEN；不弱化 designTokens/textContrast/focusVisible/tokens/r4/r5/r6/r7/r8 既有断言。
+- 验收门禁：双端全量测试绿；交 H5 战斗 HUD / 选卡 / 结算真浏览器截图（标注非物理真机）与 r9 审计对照；design-reviewer 按 §1H.4 复核 AI 四判据，确认跳过选卡文案不羞辱玩家、钳分语义不回退。
 ---
 ## 2. 色彩系统
 

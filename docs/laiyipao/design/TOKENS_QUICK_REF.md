@@ -187,3 +187,12 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 - 时间预算 HUD：「剩余保分窗口：{N}s」来自 `score_full_at_sec` 或等价字段，临近截止即时提示，不遮挡不硬编码，配置缺失走诚实空态。
 - AI 四判据：可见汉字「AI」+真实数据结论+依据+CTA，低透明度底纹不算；不回退 R1-R7 诚实文案与可访问性。
 - 令牌与守卫：不新增视觉令牌（v1/v3-r3/r6 与 v1E/v1F 标记保留，无 v4、无 `--r8-*`）；双端契约 r8LevelCurve.contract.test.ts 保持 GREEN。
+## 7F. R9 战斗反馈与选卡因果速查（主规范 §1H）
+
+- 依据：docs/laiyipao/audits/round9-gameplay/README.md（非物理真机）。三关全程跳过卡牌仍 C/C/B；钳分 19684→8992（61s）/19208→10130（71s）/16297→11521（76s）；D1 已做反应 HUD（过热 -216 等）与下一关 CTA。
+- 反应因果：`recentReactions` 每条含 REACTIONS 名称 + 触发元素 + `damage` + 抗性标记，保留 3 条、每局清空、aria-live、pointer-events:none；补一句「焰+电 → 过热，克制密集波」式 contextual hint，缺元素字段写「元素组合未上报」。
+- 选卡反馈：权威 `card_picks` 统计取/弃/跳与反应数/伤害占比，卡面相对收益只来自当前构筑，禁止数值碾压与「不拿就输」；全程跳过通关写真实陈述与可行动建议，不羞辱玩家。
+- 实时换算：钳分倒计时与星级差额共用 `score_full_at_sec` + 战斗时钟 + `star_targets`；「上限→实得→差额」提前到 HUD；锚点前只说「钳分中·距满分 Xs / 即将免钳分」，禁止「保分窗口」与硬编码。
+- AI 四判据：可见汉字「AI」+真实数据结论+依据+CTA，低透明度底纹不算；不回退 R1-R8 诚实文案、30% 口径、25% AoE、顶栏脱敏、focus-visible/reduced-motion、玻璃 soft 禁用组合。
+- 令牌与守卫：不新增视觉令牌（v1/v3-r3/r6 与 v1E/v1F/r8 标记保留，无 v4、无 `--r9-*`）；双端契约 r9BattleFeedback.contract.test.ts 保持 GREEN。
+
