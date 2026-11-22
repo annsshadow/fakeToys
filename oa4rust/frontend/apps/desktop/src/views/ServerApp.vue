@@ -82,10 +82,18 @@ import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: used in Vue template.
 import { AdminPageHeader } from '../components/admin'
-import { toast } from '../utils/toast'
+import { toast, confirmMsg } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+function consoleWriteSucceeded(resp: any, flagKey?: string): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type !== 'success' && !(resp.type === undefined && resp.success !== false)) return false
+  if (flagKey !== undefined) return (resp.data?.[flagKey] ?? resp[flagKey]) === true
+  return true
+}
 
 const command = ref('')
 const executing = ref(false)
@@ -246,24 +254,29 @@ async function serverConsoleOps(op: string) {
     if (op === 'cacheClear') {
       const t = encodeURIComponent(prompt('缓存类型:', '') || '')
       if (!(await confirmMsg('确定清理该类型缓存？'))) return
-      await api.post(`/api/console/cache/clear/${t}`, {})
+      const r: any = await api.post(`/api/console/cache/clear/${t}`, {})
+      if (!consoleWriteSucceeded(r, 'cleared')) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     } else if (op === 'cmdExecute') {
       const c = prompt('命令:', '') || ''
       if (!c) return
-      await api.post('/api/console/command/execute', { command: c })
+      const r: any = await api.post('/api/console/command/execute', { command: c })
+      if (!consoleWriteSucceeded(r)) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     } else if (op === 'sendMessage') {
       const msg = prompt('广播消息:', '') || ''
       if (!msg) return
-      await api.post('/api/console/send/message', { message: msg })
+      const r: any = await api.post('/api/console/send/message', { message: msg })
+      if (!consoleWriteSucceeded(r, 'sent')) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     } else if (op === 'deploySave') {
       const id = encodeURIComponent(prompt('部署 ID:', '') || '')
       if (!id) return
-      await api.put(`/api/server/deploy/save/${id}`, {})
+      const r: any = await api.put(`/api/server/deploy/save/${id}`, {})
+      if (!consoleWriteSucceeded(r, 'saved')) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     } else if (op === 'deployDelete') {
       const id = encodeURIComponent(prompt('部署 ID:', '') || '')
       if (!id) return
       if (!(await confirmMsg('确定删除该部署？'))) return
-      await api.post(`/api/server/deploy/delete/${id}`, {})
+      const r: any = await api.post(`/api/server/deploy/delete/${id}`, {})
+      if (!consoleWriteSucceeded(r, 'deleted')) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     } else {
       const r: any = await api.get('/api/config/system/config')
       execOutput.value = JSON.stringify(r?.data ?? {}, null, 2)
