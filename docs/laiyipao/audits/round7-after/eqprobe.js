@@ -1,0 +1,1 @@
+(async function(){var t=localStorage.getItem('lyp_token');var r=await fetch('http://127.0.0.1:8080/api/v1/me/recommendations?context=equipment',{headers:{Authorization:'Bearer '+t}});var j=await r.json();var d=j.data||j;return 'EQREC '+JSON.stringify({status:r.status,insights:(d.insights||[]).map(function(x){return {headline:x.headline,cta:x.cta}})})})()

@@ -1,0 +1,1 @@
+(function(){var all=document.querySelectorAll('uni-view,view,text,button,.btn');for(var i=0;i<all.length;i++){var e=all[i];var t=(e.innerText||'').trim();if(t.indexOf('开始战斗')>=0&&e.children.length===0){e.click();return 'clicked:'+t}}return 'no-btn'})()

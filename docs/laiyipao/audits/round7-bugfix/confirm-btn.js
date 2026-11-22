@@ -1,0 +1,1 @@
+(function(){var e=[].slice.call(document.querySelectorAll('[role=button],.r7-btn')).find(function(x){return (x.innerText||'').trim().indexOf('确认替换')>=0});if(!e)return 'NO_CONFIRM';e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return 'CONFIRM '+Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)+' '+e.innerText.trim()})()

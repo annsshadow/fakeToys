@@ -1,0 +1,1 @@
+(function(){var p=window.__LYP_PROBE__||{};var t=document.body.innerText;var m=t.match(/.{0,40}(?:写入失败|未写入|写入中|已应用|已写入|确认替换).{0,80}/g)||[];return 'APPLY '+JSON.stringify({msgs:m.slice(0,6),consoleErrors:(p.consoleErrors||[]).slice(-3),pageErrors:(p.pageErrors||[]).slice(-2)})})()

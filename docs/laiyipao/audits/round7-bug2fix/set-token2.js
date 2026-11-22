@@ -1,0 +1,1 @@
+(function(){localStorage.setItem('lyp_token','__TOKEN__');localStorage.removeItem('lyp_token_exp');return 'SETLEN '+localStorage.getItem('lyp_token').length+' EXP='+localStorage.getItem('lyp_token_exp')})()

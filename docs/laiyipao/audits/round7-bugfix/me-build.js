@@ -1,0 +1,1 @@
+(async function(){var t=localStorage.getItem('lyp_token');var r=await fetch('http://127.0.0.1:8080/api/v1/me',{headers:{Authorization:'Bearer '+t}});var j=await r.json();var d=j.data||j;var b=d.build||d.snapshot||d.loadout||{};return 'ME '+JSON.stringify({status:r.status,skills:b.skills||d.skills||null,equipment:b.equipment||d.equipment||null,keys:Object.keys(d).slice(0,20)})})()
