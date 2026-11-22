@@ -1501,3 +1501,124 @@ page {
   .r6-enter, .r6-skeleton { animation: none !important; }
 }
 
+/* -------------------------------------------------------------------------- */
+/* LYP-R7-IMPACT-APPLY-V1：真实收益对比 + 两步确认                             */
+/* -------------------------------------------------------------------------- */
+.r7-impact {
+  margin-top: 12rpx;
+  padding: 12rpx 14rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 12rpx;
+  background: var(--panel);
+}
+.r7-impact-title { display: block; font-size: 22rpx; font-weight: 700; color: var(--ai-ink); }
+.r7-bar-block { margin-top: 8rpx; }
+.r7-delta { display: block; margin-top: 6rpx; font-size: 20rpx; color: var(--ai-ink); font-variant-numeric: tabular-nums; }
+.r7-bar-row { display: flex; align-items: center; gap: 10rpx; min-height: 48rpx; }
+.r7-bar-label { width: 132rpx; flex-shrink: 0; font-size: 20rpx; color: var(--text-2); }
+.r7-bar { flex: 1; height: 12rpx; border-radius: 999rpx; background: var(--progress-track); overflow: hidden; }
+.r7-bar-fill { height: 100%; border-radius: 999rpx; background: var(--accent-grad); }
+.r7-bar-next .r7-bar-fill { background: var(--ai-accent); }
+.r7-bar-val { width: 150rpx; text-align: right; font-size: 20rpx; color: var(--text); font-variant-numeric: tabular-nums; }
+.r7-star { display: block; margin-top: 8rpx; font-size: 20rpx; line-height: 1.5; color: var(--text-2); }
+.r7-why { display: block; margin-top: 8rpx; font-size: 20rpx; line-height: 1.5; color: var(--ai-ink); }
+.r7-basis { display: block; margin-top: 4rpx; font-size: 19rpx; line-height: 1.5; color: var(--muted); }
+.r7-empty-note { display: block; margin-top: 10rpx; font-size: 21rpx; color: var(--muted); }
+.r7-compare-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  background: rgba(7, 10, 16, .82);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.r7-compare {
+  width: 100%;
+  max-width: 680rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24rpx;
+  border: 1rpx solid var(--glass-border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+  background: var(--panel-2);
+  box-shadow: var(--ai-glow);
+}
+.r7-compare-title { display: block; font-size: 30rpx; font-weight: 700; color: var(--text); }
+.r7-vs-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 72rpx;
+  margin-top: 10rpx;
+  padding: 0 14rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 10rpx;
+  background: var(--panel);
+  font-size: 24rpx;
+}
+.r7-vs-row.is-next { border-color: var(--ai-accent); background: var(--ai-halo); }
+.r7-vs-label { flex: 1; min-width: 0; color: var(--muted); }
+.r7-vs-arrow { flex: 0 0 auto; color: var(--ai-ink); font-weight: 700; }
+.r7-vs-name { flex: 1; color: var(--text); font-weight: 600; }
+.r7-vs-val { color: var(--ai-ink); font-variant-numeric: tabular-nums; }
+.r7-error { display: block; margin-top: 10rpx; font-size: 21rpx; line-height: 1.5; color: var(--fire); }
+.r7-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
+.r7-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+  background: var(--panel);
+  color: var(--text-2);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.r7-btn.primary { border-color: var(--ai-accent); background: var(--ai-halo); color: var(--ai-ink); }
+.r7-btn.btn-disabled { opacity: .55; }
+.r7-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r7-enter, .r7-compare-mask, .r7-compare { animation: none !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LYP-R7-CAUSAL-V1：成长页「本局靠什么拿分 → 换上后预计提升」因果链            */
+/* 只消费 v1/v3/r6 既有令牌；收益缺失时只写诚实文案，不编造数值。              */
+/* -------------------------------------------------------------------------- */
+.r7-causal {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 16rpx 18rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+}
+.r7-causal-title { display: block; font-size: 24rpx; font-weight: 600; color: var(--ai-ink); }
+.r7-causal-text { display: block; margin-top: 8rpx; font-size: 23rpx; line-height: 1.55; color: var(--text); }
+.r7-causal-next { display: block; margin-top: 8rpx; font-size: 23rpx; line-height: 1.55; color: var(--text-2); }
+.r7-causal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-top: 8rpx;
+  padding: 12rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+.r7-causal-src { display: block; margin-top: 8rpx; font-size: 19rpx; color: var(--dim); }
+.r7-causal-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r7-causal-enter { animation: none !important; }
+}
+

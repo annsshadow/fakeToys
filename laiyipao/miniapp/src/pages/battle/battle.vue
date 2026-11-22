@@ -26,6 +26,7 @@
         <view class="hud-spacer" />
         <view class="hud-pill"><text class="wave-text">波次 {{ waveText }}</text></view>
         <view class="hud-pill"><text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text></view>
+        <view v-if="liveStarGap" class="hud-pill"><text class="star-gap-text">{{ liveStarGap }}</text></view>
       </view>
       <view class="hud-row">
         <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
@@ -141,7 +142,7 @@
           <!-- 元素与反应 -->
           <view class="legend-sec">
             <text class="legend-sec-title">元素反应（核心玩法）</text>
-            <text class="legend-p">敌人身上先挂一种元素，再用另一种元素命中它就会触发<b>反应</b> —— 反应伤害与面板攻击力关系不大，凑齐元素搭配更重要。</text>
+            <text class="legend-p">敌人身上先挂一种元素，再用另一种元素命中它就会触发<b>反应</b> —— 反应伤害中元素侧是主力，<b>面板攻击力也有贡献但权重上限 30%</b>，凑齐元素搭配更重要。</text>
             <view v-for="k in REACTION_ORDER" :key="k" class="legend-rxn">
               <view class="legend-rxn-head">
                 <text class="legend-rxn-name">{{ REACTIONS[k].name }}</text>
@@ -265,6 +266,7 @@
       <view v-if="settleResult.clamped" class="clamp-note">
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
+      <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
       <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
       <view v-if="settleFailed" class="settle-error">
         <text class="settle-error-hint">{{ settleErrorHint }}</text>
@@ -367,6 +369,14 @@ const settleErrorHint = computed(() => {
   return '战绩上报失败，这一局未计入战绩。可放弃退回体力，或稍后重试。'
 })
 
+/** R7：星级门槛只认服务端下发的关卡配置；拿不到就不显示差额，绝不硬编码。 */
+function levelStarTargets(): number[] {
+  const raw = engine.value?.cfg?.level?.star_targets
+  return Array.isArray(raw)
+    ? raw.map((t: unknown) => Number(t)).filter((t: number) => Number.isFinite(t))
+    : []
+}
+
 /** G91 战斗评级：基于星级/漏怪/反应的综合评价，给玩家一个可追求的目标（纯客户端派生）。 */
 const battleGrade = computed(() => {
   const r = settleResult.value
@@ -391,14 +401,12 @@ const nextGoal = computed(() => {
   const stars = Number(r.stars ?? 0)
   if (stars >= 3) return '完美三星！试试更少反应或更高难度关卡。'
   if (leaked > 0) return `漏了 ${leaked} 只怪 —— 补点溅射/控场技能守住防线即可拿更高星。`
-  if (reactions < 3) return '多凑一种元素触发反应链，反应伤害与面板攻击力关系不大，优先凑齐元素搭配。'
+  // t63 §1F：反应伤害攻击侧贡献最高 300‰，「关系不大」同样是误导养成，必须说清上限 30%。
+  if (reactions < 3) return '多凑一种元素触发反应链，反应伤害中元素侧是主力，面板攻击力也有贡献但权重上限 30%，优先凑齐元素搭配。'
   // R5 真浏览器实测：0 星 / 11646 分（1★ 门槛 11941）还显示「冲 3 星」，
   // 玩家连最低门槛都没摸到，这句建议等于没说。门槛由服务端下发在关卡配置里，
   // 分数用结算返回的权威值（含超时长裁剪），别拿引擎本地分数自说自话。
-  const rawTargets = engine.value?.cfg?.level?.star_targets
-  const targets = Array.isArray(rawTargets)
-    ? rawTargets.map((t: unknown) => Number(t)).filter((t: number) => Number.isFinite(t))
-    : []
+  const targets = levelStarTargets()
   const nextStar = stars + 1
   if (targets.length >= nextStar) {
     const target = targets[nextStar - 1]!
@@ -408,6 +416,45 @@ const nextGoal = computed(() => {
     }
   }
   return '再稳一点，冲 3 星拿满钥匙。'
+})
+
+/** R7 缺口2：战斗中实时显示距下一星差额；门槛来自关卡配置，分数来自引擎当前值。 */
+const liveStarGap = computed(() => {
+  if (settleResult.value || !engine.value) return null
+  const targets = levelStarTargets()
+  if (!targets.length) return null
+  const score = Math.max(0, Number(engine.value.score ?? 0) || 0)
+  for (let i = 0; i < targets.length; i++) {
+    const target = targets[i]!
+    if (score < target) return `距 ${i + 1} 星 ${target - score}`
+  }
+  return '已达满星门槛'
+})
+
+/** R7 缺口1：把服务端权威分数、钳分上限、星级门槛与漏怪数串成一句可执行的复盘建议。 */
+const settleAttribution = computed(() => {
+  const r = settleResult.value
+  if (!r || !r.win || settleFailed.value) return null
+  const score = Math.max(0, Number(r.score ?? 0) || 0)
+  const leaked = Math.max(0, Number(r.leaked ?? 0) || 0)
+  const targets = levelStarTargets()
+  const nextStar = Math.max(1, Number(r.stars ?? 0) + 1)
+  const target = nextStar <= targets.length ? targets[nextStar - 1]! : null
+
+  // 服务端 SettleResp 没有结构化 time_cap；钳分串由 domain/battle.go 生成，
+  // 只从真实返回的 clamp_note 解析。没有就只讲真实分数，绝不编造上限。
+  const note = String(r.clamp_note ?? '')
+  const clamp = note.match(/得分超时长额度：(\d+)\s*→\s*(\d+)（(\d+)s\s*内上限/)
+  const parts: string[] = []
+  if (clamp) parts.push(`${clamp[3]}s 内得分上限 ${clamp[1]}，实得 ${score}`)
+  else parts.push(`实得 ${score}`)
+  if (target !== null) {
+    if (score < target) parts.push(`距 ${nextStar} 星门槛 ${target} 还差 ${target - score}`)
+    else parts.push(`已达 ${nextStar} 星门槛 ${target}`)
+  }
+  parts.push(`漏怪 ${leaked}`)
+  parts.push(clamp ? '建议缩短清波时间或少漏怪、多触发反应提分' : '建议少漏怪、多触发反应提分')
+  return parts.join('；') + '。'
 })
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
@@ -1619,7 +1666,8 @@ onShareAppMessage(() =>
 }
 
 .wave-text,
-.kill-text {
+.kill-text,
+.star-gap-text {
   font-size: 24rpx;
   color: var(--text-2);
 }
@@ -1804,6 +1852,15 @@ onShareAppMessage(() =>
   padding: 12rpx 16rpx;
   border-radius: 8rpx;
   margin-bottom: 16rpx;
+}
+
+.settle-attribution {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: -6rpx 20rpx 16rpx;
 }
 
 .settle-local-note {

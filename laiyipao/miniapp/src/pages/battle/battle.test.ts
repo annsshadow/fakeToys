@@ -485,10 +485,86 @@ describe('battle.vue 战斗页', () => {
     expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
   })
 
-  it('反应偏少时的下一步建议不得谎称反应伤害完全不吃攻击力', async () => {
-    // 2026-11-21 R4 真浏览器实测：结算建议写「反应伤害不吃攻击力加成」，
-    // 但 damage.ts 的反应伤害里攻击侧贡献最高 300‰（战斗图例自己也写「关系不大」）。
-    // 这句谎话会让玩家把攻击词条全洗掉，是能直接误导养成的 UX 缺陷。
+  it('R7 战斗 HUD 实时显示距下一星差额（门槛来自关卡配置，随分数更新）', async () => {
+    // 2026-11-22 R7 实测：关卡目标只在选关页与结算卡出现，战斗中不知道还差多少分。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    // VTU 会把 setup 的 ref 解包，wrapper.vm.engine 就是响应式的引擎代理；
+    // 直接改它才能验证「随得分变化更新」，改 FakeEngine 的原始对象不会触发渲染。
+    const liveEngine = (wrapper.vm as any).engine as any
+    expect(liveEngine, '页面必须把 engine 暴露给模板').toBeTruthy()
+    liveEngine.cfg.level.star_targets = [11941, 16916, 19503]
+    liveEngine.score = 10000
+    await flushPromises()
+    expect(wrapper.text()).toContain('距 1 星 1941')
+    liveEngine.score = 12000
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('距 2 星 4916')
+    expect(text, '跨过 1 星门槛后不应继续显示 1 星差额').not.toContain('距 1 星')
+  })
+
+  it('R7 结算归因把超时长钳分上限、实得分、星级门槛和漏怪数串成可执行建议', async () => {
+    // 2026-11-22 R7 实测：第 1 关 74s 结算 10909 分，1★ 门槛 11941，
+    // 页面只分散显示原始 clamp_note 与分数，玩家不知道「为什么没星、该改什么」。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 10909,
+      loot: {},
+      new_max_stage: 0,
+      clamped: true,
+      clamp_note: '得分超时长额度：19726 → 10909（74s 内上限，满分需 60s）',
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'r7-attribution' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('74s 内得分上限 19726')
+    expect(text).toContain('实得 10909')
+    expect(text).toContain('1 星门槛 11941')
+    expect(text).toContain('还差 1032')
+    expect(text).toContain('漏怪 0')
+    expect(text).toContain('缩短清波时间')
+  })
+
+  it('R7 结算归因没有钳分数据时不得编造超时长上限', async () => {
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 11646,
+      loot: {},
+      new_max_stage: 0,
+      clamped: false,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'r7-no-cap' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('实得 11646')
+    expect(text).toContain('1 星门槛 11941')
+    expect(text, '服务端没给 clamp_note 时不能编造得分上限').not.toContain('得分上限')
+  })
+
+  it('反应偏少时的下一步建议必须诚实说明攻击力权重上限，不得说关系不大', async () => {
+    // 2026-11-21 R4 真浏览器实测：结算建议写「反应伤害不吃攻击力加成」；
+    // t63 §1F 进一步钉住：damage.ts 反应攻击侧最高 300‰，「关系不大」同样是说谎，
+    // 会让玩家误洗攻击词条。必须说清元素侧为主、攻击力也有贡献且上限 30%。
     mockApi.settleBattle.mockResolvedValue({
       win: true,
       stars: 1,
@@ -506,8 +582,10 @@ describe('battle.vue 战斗页', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('多凑一种元素触发反应链')
-    expect(wrapper.text(), '不能把「关系不大」说成「完全不吃」，否则玩家会误洗攻击词条').not.toContain('不吃攻击力加成')
-    expect(wrapper.text()).toContain('关系不大')
+    expect(wrapper.text(), '不能把有 30% 贡献说成完全不吃').not.toContain('不吃攻击力加成')
+    expect(wrapper.text(), 't63 §1F：30% 不是「关系不大」').not.toContain('关系不大')
+    expect(wrapper.text()).toContain('面板攻击力也有贡献')
+    expect(wrapper.text()).toContain('30%')
   })
 
   it('结算被服务端拒绝 → 结果卡不冒充通关，也不展示虚构的星级/奖励/战报入口', async () => {
@@ -865,6 +943,10 @@ describe('battle.vue 战场图例（2026-11-17）', () => {
     expect(legendText).toContain('蒸汽爆发')
     expect(legendText).toContain('破甲击退')
     expect(legendText).toContain('腐蚀扩散')
+    // t63 §1F：图例也不能把攻击侧最高 300‰ 说成「关系不大」，会误导洗词条。
+    expect(legendText, 't63 §1F：30% 不是「关系不大」').not.toContain('关系不大')
+    expect(legendText).toContain('面板攻击力也有贡献')
+    expect(legendText).toContain('30%')
     // 点遮罩空白处关闭
     await wrapper.find('.legend-overlay').trigger('click')
     expect(wrapper.find('.legend-overlay').exists()).toBe(false)

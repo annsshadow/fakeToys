@@ -235,6 +235,20 @@ describe('index.vue 首页', () => {
     expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/mastery/mastery' })
   })
 
+  it('R7 新玩家首屏给出明确目标与下一步：引导卡指向第 1 关', async () => {
+    mountPage()
+    await flushPromises()
+    const store = useGameStore()
+    store.setMaxStage(0)
+    await flushPromises()
+    const guide = wrapper.find('.first-run-guide')
+    expect(guide.exists()).toBe(true)
+    expect(guide.text()).toContain('新玩家先打第 1 关')
+    expect(guide.text()).toContain('守住防线')
+    await guide.trigger('click')
+    expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/stage/stage?level=1' })
+  })
+
   it('点击主行动卡 → 跳转下一关（unlockedLevel = maxStage + 1）', async () => {
     mountPage()
     await flushPromises()

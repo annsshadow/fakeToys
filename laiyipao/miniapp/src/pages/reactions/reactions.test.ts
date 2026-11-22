@@ -165,6 +165,16 @@ describe('reactions.vue 反应图鉴', () => {
     wrapper.unmount()
   })
 
+  it('R7 空反应链提示不得谎称攻击力完全无关', async () => {
+    const wrapper = await mountReactions('fire_only')
+    const text = wrapper.text()
+    expect(text).toContain('当前出战技能的元素凑不出任何反应链')
+    expect(text).not.toContain('反应伤害与面板攻击力无关')
+    expect(text).toContain('面板攻击力也有贡献')
+    expect(text).toContain('30%')
+    wrapper.unmount()
+  })
+
   it('标出「我的构筑可达」的反应（P4-3：reachableReactions 此前零 UI 消费）', async () => {
     const wrapper = await mountReactions('fire_ice')
     // 引擎的 reachableReactions(fire, ice) 命中 steam_burst

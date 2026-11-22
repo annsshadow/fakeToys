@@ -46,6 +46,17 @@
     </view>
 
     <view v-else class="pad">
+      <!--
+        R7 真实新玩家实测：首屏第一眼只有 AI 洞察/公告/评分，主行动「开始」要滚动很远才看到。
+        这里给 0 通关玩家一条明确目标与下一步，且按钮直达同一套 goStage 导航，不做假入口。
+      -->
+      <view v-if="store.maxStage === 0" class="card first-run-guide tap" @click="goStage">
+        <text class="first-run-kicker">新玩家先打第 {{ store.unlockedLevel }} 关</text>
+        <text class="first-run-title">守住防线，清完全部波次</text>
+        <text class="first-run-sub">打完就能解锁技能、装备与元素反应搭配，先在这里试一手。</text>
+        <text class="first-run-cta">去第 {{ store.unlockedLevel }} 关 →</text>
+      </view>
+
       <!-- P8 / F-10-2：首屏第一张内容卡 —— AI 战术洞察（规则引擎，非聊天） -->
       <view v-if="aiInsight" id="ai-insight" class="card ai-insight-card" aria-label="AI 战术洞察">
         <view class="ai-head">
@@ -910,6 +921,43 @@ onShareAppMessage(() => indexShare())
 .dim-empty-hint {
   font-size: 22rpx;
   color: var(--dim);
+}
+
+/* R7 新玩家首屏引导：把「目标 + 下一步」放在第一眼，不假装成已通关玩家。 */
+.first-run-guide {
+  border-left: 6rpx solid var(--fire);
+  padding: 24rpx 26rpx;
+  margin-bottom: 24rpx;
+}
+
+.first-run-kicker {
+  font-size: 22rpx;
+  color: var(--fire);
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  display: block;
+}
+
+.first-run-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  display: block;
+  margin-top: 8rpx;
+}
+
+.first-run-sub {
+  font-size: 22rpx;
+  color: var(--muted);
+  display: block;
+  margin-top: 8rpx;
+  line-height: 1.6;
+}
+
+.first-run-cta {
+  font-size: 24rpx;
+  color: var(--fire);
+  display: block;
+  margin-top: 14rpx;
 }
 
 .weakness-box {

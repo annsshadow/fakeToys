@@ -88,7 +88,7 @@
           <view v-for="k in myReactions" :key="k" class="chip hit">{{ reactionName(k) }}</view>
         </view>
         <text v-else class="muted">
-          当前出战技能的元素凑不出任何反应链 —— 反应伤害与面板攻击力无关，
+          当前出战技能的元素凑不出任何反应链 —— 反应伤害中元素侧是主力，面板攻击力也有贡献但权重上限 30%，
           换一种元素搭配比堆面板更有效。
         </text>
         <text v-if="myReactions.length" class="muted" style="display: block; margin-top: 12rpx">
