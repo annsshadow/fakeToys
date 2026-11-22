@@ -152,40 +152,50 @@ async function loadHotpicDeep() {
     toast.error(`加载热图深度读失败: ${e?.message ?? ''}`)
   }
 }
+function hotpicWriteSucceeded(resp: any, flagKey?: string): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (!(resp.type === 'success' || (resp.type === undefined && resp.success !== false))) return false
+  if (flagKey !== undefined) return resp.data?.[flagKey] === true
+  return true
+}
 // rev340：热图 创建/改标题/配置/用户热图增删/密文清除/实体 真实写端点（用户触发，shape 已核；避 autoquery-guards 禁的 save/hotpic·delete/hotpic）
 async function hotpicWrite(op: string) {
   try {
+    let wr: any
     if (op === 'create') {
       const title = prompt('热图标题:', '') || ''
-      await api.post('/api/hotpic/create/hotpic', { title })
+      wr = await api.post('/api/hotpic/create/hotpic', { title })
     } else if (op === 'changeTitle') {
       const title = prompt('新标题:', '') || ''
-      await api.post('/api/hotpic/assemble/control/user/hotpic/changeTitle', { title })
+      wr = await api.post('/api/hotpic/assemble/control/user/hotpic/changeTitle', { title })
     } else if (op === 'config') {
-      await api.post('/api/hotpic/assemble/control/update/control/config', {})
+      wr = await api.post('/api/hotpic/assemble/control/update/control/config', {})
     } else if (op === 'userCreate') {
       const title = prompt('用户热图标题:', '') || ''
-      await api.post('/api/hotpic/assemble/control/user/hotpic', { title })
+      wr = await api.post('/api/hotpic/assemble/control/user/hotpic', { title })
     } else if (op === 'userDelete') {
       const id = prompt('用户热图 ID:', '') || ''
       if (!(await confirmMsg('确定删除该用户热图？'))) return
-      await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
+      wr = await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
     } else if (op === 'cipherBbs') {
       const id = prompt('BBS 密文热图 ID:', '') || ''
       if (!(await confirmMsg('确定清除该 BBS 密文热图？'))) return
-      await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/bbs/${encodeURIComponent(id)}`)
+      wr = await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/bbs/${encodeURIComponent(id)}`)
     } else if (op === 'cipherCms') {
       const id = prompt('CMS 密文热图 ID:', '') || ''
       if (!(await confirmMsg('确定清除该 CMS 密文热图？'))) return
-      await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/cms/${encodeURIComponent(id)}`)
+      wr = await api.delete(`/api/hotpic/assemble/control/cipher/hotpic/cms/${encodeURIComponent(id)}`)
     } else if (op === 'coreCreate') {
       const title = prompt('实体热图标题:', '') || ''
-      await api.post('/api/hotpic/core/entity/create', { title })
+      wr = await api.post('/api/hotpic/core/entity/create', { title })
     } else {
       const id = prompt('要删除的实体热图 ID:', '') || ''
       if (!(await confirmMsg('确定删除该实体热图？'))) return
-      await api.delete(`/api/hotpic/core/entity/delete/${encodeURIComponent(id)}`)
+      wr = await api.delete(`/api/hotpic/core/entity/delete/${encodeURIComponent(id)}`)
     }
+    const flagged = op === 'userDelete' ? 'deleted' : undefined
+    if (!hotpicWriteSucceeded(wr, flagged)) { toast.error(wr?.message || '操作未生效，请刷新后重试'); return }
     toast.success('热图操作已提交')
   } catch (e: any) {
     toast.error(`热图操作失败: ${e?.message ?? ''}`)
@@ -194,24 +204,27 @@ async function hotpicWrite(op: string) {
 // rev363：热图 存在校验 + 用户热图按应用/按 id + 密文/用户热图 分页过滤读 + 用户热图删（复合 id/{id2}）真实路由（避开 autoquery-guards 禁的 save/hotpic·delete/hotpic）
 async function hotpicMore(op: string) {
   try {
+    let mr: any
     if (op === 'existsCheck') {
-      await api.get('/api/hotpic/user/hotpic/exists/check')
+      mr = await api.get('/api/hotpic/user/hotpic/exists/check')
     } else if (op === 'byApp') {
       const infoId = prompt('应用 infoId:', '') || ''
-      await api.get(`/api/hotpic/assemble/control/user/hotpic/application/${encodeURIComponent(infoId)}`)
+      mr = await api.get(`/api/hotpic/assemble/control/user/hotpic/application/${encodeURIComponent(infoId)}`)
     } else if (op === 'byId') {
       const id = prompt('热图 ID:', '') || ''
-      await api.get(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
+      mr = await api.get(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}`)
     } else if (op === 'cipherList') {
-      await api.put('/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20', {})
+      mr = await api.put('/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/20', {})
     } else if (op === 'userList') {
-      await api.put('/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20', {})
+      mr = await api.put('/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/20', {})
     } else {
       const id = prompt('热图 ID:', '') || ''
       const id2 = prompt('子 ID:', '') || ''
       if (!(await confirmMsg('确定删除该用户热图？'))) return
-      await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}/${encodeURIComponent(id2)}`)
+      mr = await api.delete(`/api/hotpic/assemble/control/user/hotpic/${encodeURIComponent(id)}/${encodeURIComponent(id2)}`)
     }
+    const flagged = op === 'userDelete2' ? 'deleted' : undefined
+    if (!hotpicWriteSucceeded(mr, flagged)) { toast.error(mr?.message || '操作未生效，请刷新后重试'); return }
     toast.success('热图操作已提交')
   } catch (e: any) {
     toast.error(`热图操作失败: ${e?.message ?? ''}`)
@@ -252,7 +265,8 @@ async function doSearch() {
 async function onDelete(item: any) {
   if (!(await confirmMsg(`确定删除热帖「${item.title || item.id}」？`))) return
   try {
-    await api.delete(`/api/hotpic/core/entity/delete/${item.id}`)
+    const dr: any = await api.delete(`/api/hotpic/core/entity/delete/${item.id}`)
+    if (!hotpicWriteSucceeded(dr)) { toast.error(dr?.message || '操作未生效，请刷新后重试'); return }
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error(`删除失败: : ${e?.message ?? '未知错误'}`)
