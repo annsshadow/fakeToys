@@ -71,10 +71,14 @@ async function changePassword() {
   }
   pwdSaving.value = true
   try {
-    await authApi.changePassword({
+    const resp: any = await authApi.changePassword({
       oldPassword: pwdForm.value.oldPassword,
       newPassword: pwdForm.value.newPassword,
     })
+    if (resp?.type === 'error' || resp?.success === false) {
+      uni.showToast({ title: resp?.message || '修改失败', icon: 'none' })
+      return
+    }
     uni.showToast({ title: '密码修改成功', icon: 'success' })
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
   } catch (e: unknown) {
