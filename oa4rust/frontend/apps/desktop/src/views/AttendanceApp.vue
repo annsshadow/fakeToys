@@ -284,6 +284,17 @@
   </div>
 </template>
 <script setup lang="ts">
+
+function writeSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
+async function guardedWrite(p: Promise<any>): Promise<any> {
+  const resp = await p
+  if (!writeSucceeded(resp)) throw new Error(resp?.message || '操作未生效，请刷新后重试')
+  return resp
+}
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
@@ -412,7 +423,7 @@ function audit(a: A, action: string) {
 async function auditAppealV2(a: A, auditStatus: string) {
   try {
     // POST attendanceappealInfo/audit → UPDATE 审核状态 {id, auditStatus}
-    await api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus })
+    await guardedWrite(api.post('/api/attendance/assemble/control/attendanceappealInfo/audit', { id: a.id, auditStatus }))
     // 服务器权威态已变更：刷新请假申请列表，避免继续显示旧状态（待审批徽标/按钮）误导重复操作。
     await loadAppeals()
     toast.success('已审核申诉')
@@ -423,7 +434,7 @@ async function auditAppealV2(a: A, auditStatus: string) {
 async function checkAppeal(a: A) {
   try {
     // POST attendanceappealInfo/check → UPDATE {id, checked}
-    await api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true })
+    await guardedWrite(api.post('/api/attendance/assemble/control/attendanceappealInfo/check', { id: a.id, checked: true }))
     // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
     await loadAppeals()
     toast.success('已标记检查')
@@ -434,9 +445,9 @@ async function checkAppeal(a: A) {
 async function updateAppealStatus(a: A, status: string) {
   try {
     // POST attendanceappealInfo/appeal/{id} → UPDATE {status}
-    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
+    await guardedWrite(api.post(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(a.id)}`, {
       status,
-    })
+    }))
     // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
     await loadAppeals()
     toast.success('已更新申诉状态')
@@ -448,7 +459,7 @@ async function archiveAppeal(a: A) {
   if (!(await confirmMsg('确定归档该申诉？'))) return
   try {
     // POST attendanceappealInfo/archive/{id} → UPDATE 归档 {id}
-    await api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {})
+    await guardedWrite(api.post(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(a.id)}`, {}))
     // 服务器权威态已变更：刷新请假申请列表，避免旧状态残留。
     await loadAppeals()
     toast.success('已归档申诉')
@@ -641,39 +652,39 @@ async function attV2Write(op: string) {
     if (op === 'workplaceCreate') {
       const name = prompt('打卡点名称:', '') || ''
       const address = prompt('地址:', '') || ''
-      await api.post('/api/attendance/assemble/control/v2/workplace', { name, address })
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/workplace', { name, address }))
     } else if (op === 'workplaceDelete') {
       const id = prompt('要删除的打卡点 ID:', '') || ''
       if (!(await confirmMsg('确定删除该打卡点？'))) return
-      await api.delete(`/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/v2/workplace/${encodeURIComponent(id)}`))
     } else if (op === 'workplaceListIds') {
       const ids = (prompt('打卡点 ID（逗号分隔）:', '') || '')
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
-      await api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids })
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/workplace/list/ids', { ids }))
     } else if (op === 'scheduleListFilter') {
-      await api.post('/api/attendance/assemble/control/v2/groupschedule/list/filter', {})
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/groupschedule/list/filter', {}))
     } else if (op === 'shiftUpdate') {
       const id = prompt('班次 ID:', '') || ''
       const shiftName = prompt('班次名称:', '') || ''
-      await api.post('/api/attendance/assemble/control/v2/shift/update', { id, shiftName })
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/shift/update', { id, shiftName }))
     } else if (op === 'appealStart') {
       const id = prompt('申诉 ID:', '') || ''
-      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/start/process`, {})
+      await guardedWrite(api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/start/process`, {}))
     } else if (op === 'appealEnd') {
       const id = prompt('申诉 ID:', '') || ''
-      await api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process`, {})
+      await guardedWrite(api.post(`/api/attendance/assemble/control/v2/appeal/${encodeURIComponent(id)}/end/process`, {}))
     } else if (op === 'detailStat') {
-      await api.post('/api/attendance/assemble/control/v2/detail/statistic/filter', {})
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/detail/statistic/filter', {}))
     } else if (op === 'selfHolidayDelete') {
       const id = prompt('要删除的自定义假期 ID:', '') || ''
       if (!(await confirmMsg('确定删除该自定义假期？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceselfholiday/${encodeURIComponent(id)}`))
     } else {
       const docId = prompt('要删除的简易假期 docId:', '') || ''
       if (!(await confirmMsg('确定删除该简易假期？'))) return
-      await api.delete(`/api/attendance/assemble/control/selfholidaysimple/docId/${encodeURIComponent(docId)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/selfholidaysimple/docId/${encodeURIComponent(docId)}`))
     }
     toast.success('考勤 v2 操作已提交')
   } catch (e: any) {
@@ -789,26 +800,26 @@ async function attCoreEntity(op: string) {
     if (op === 'recordCreate') {
       const userId = prompt('人员 ID:', '') || ''
       const checkInTime = prompt('打卡时间:', '') || ''
-      await api.post('/api/attendance/core/entity/record/create', { userId, checkInTime, status: 'normal' })
+      await guardedWrite(api.post('/api/attendance/core/entity/record/create', { userId, checkInTime, status: 'normal' }))
     } else if (op === 'recordUpdate') {
       const id = prompt('记录 ID:', '') || ''
-      await api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/update`, {})
+      await guardedWrite(api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/update`, {}))
     } else if (op === 'recordDelete') {
       const id = prompt('要删除的记录 ID:', '') || ''
       if (!(await confirmMsg('确定删除该考勤记录？'))) return
-      await api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`, {})
+      await guardedWrite(api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`, {}))
     } else if (op === 'ruleCreate') {
       const name = prompt('规则名称:', '') || ''
       const startTime = prompt('开始时间:', '') || ''
       const endTime = prompt('结束时间:', '') || ''
-      await api.post('/api/attendance/core/entity/rule/create', { name, startTime, endTime })
+      await guardedWrite(api.post('/api/attendance/core/entity/rule/create', { name, startTime, endTime }))
     } else if (op === 'ruleUpdate') {
       const id = prompt('规则 ID:', '') || ''
-      await api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/update`, {})
+      await guardedWrite(api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/update`, {}))
     } else {
       const id = prompt('要删除的规则 ID:', '') || ''
       if (!(await confirmMsg('确定删除该考勤规则？'))) return
-      await api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`, {})
+      await guardedWrite(api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`, {}))
     }
     toast.success('考勤核心实体操作已提交')
   } catch (e: any) {
@@ -818,70 +829,70 @@ async function attCoreEntity(op: string) {
 // rev368：考勤 管理员/员工/排班/工作日/统计要求日志/统计周期/导入文件 建删 + 申诉审核/校验/归档 + 明细分析/归档 + 规则开关/统计执行/v2配置 真实写读（避 POST/PUT 方法孪生择一；避 dingding/qywx 外部同步）
 async function attWrite3(op: string) {
   try {
-    if (op === 'adminCreate') await api.post('/api/attendance/assemble/control/attendanceadmin', {})
+    if (op === 'adminCreate') await guardedWrite(api.post('/api/attendance/assemble/control/attendanceadmin', {}))
     else if (op === 'adminDelete') {
       const id = prompt('管理员 ID:', '') || ''
       if (!(await confirmMsg('确定删除该考勤管理员？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`)
-    } else if (op === 'empCreate') await api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {})
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceadmin/${encodeURIComponent(id)}`))
+    } else if (op === 'empCreate') await guardedWrite(api.post('/api/attendance/assemble/control/attendanceemployeeconfig', {}))
     else if (op === 'empDelete') {
       const id = prompt('员工配置 ID:', '') || ''
       if (!(await confirmMsg('确定删除该员工配置？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`)
-    } else if (op === 'schedCreate') await api.post('/api/attendance/assemble/control/attendanceschedulesetting', {})
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceemployeeconfig/${encodeURIComponent(id)}`))
+    } else if (op === 'schedCreate') await guardedWrite(api.post('/api/attendance/assemble/control/attendanceschedulesetting', {}))
     else if (op === 'schedDelete') {
       const id = prompt('排班设置 ID:', '') || ''
       if (!(await confirmMsg('确定删除该排班设置？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`)
-    } else if (op === 'workdayCreate') await api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {})
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceschedulesetting/${encodeURIComponent(id)}`))
+    } else if (op === 'workdayCreate') await guardedWrite(api.post('/api/attendance/assemble/control/attendanceworkdayconfig', {}))
     else if (op === 'workdayDelete') {
       const id = prompt('工作日配置 ID:', '') || ''
       if (!(await confirmMsg('确定删除该工作日配置？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceworkdayconfig/${encodeURIComponent(id)}`))
     } else if (op === 'workdayFilter')
-      await api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {})
-    else if (op === 'reqlogCreate') await api.post('/api/attendance/assemble/control/attendancestatisticrequirelog', {})
+      await guardedWrite(api.post('/api/attendance/assemble/control/attendanceworkdayconfig/filter', {}))
+    else if (op === 'reqlogCreate') await guardedWrite(api.post('/api/attendance/assemble/control/attendancestatisticrequirelog', {}))
     else if (op === 'reqlogDelete') {
       const id = prompt('统计要求日志 ID:', '') || ''
       if (!(await confirmMsg('确定删除该统计要求日志？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendancestatisticrequirelog/${encodeURIComponent(id)}`))
     } else if (op === 'cycleDelete') {
       const id = prompt('统计周期 ID:', '') || ''
       if (!(await confirmMsg('确定删除该统计周期？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendancestatisticalcycle/${encodeURIComponent(id)}`))
     } else if (op === 'importDelete') {
       const id = prompt('导入文件 ID:', '') || ''
       if (!(await confirmMsg('确定删除该导入文件？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`)
-    } else if (op === 'appealAudit') await api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {})
-    else if (op === 'appealCheck') await api.put('/api/attendance/assemble/control/attendanceappealInfo/check', {})
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceimportfileinfo/${encodeURIComponent(id)}`))
+    } else if (op === 'appealAudit') await guardedWrite(api.put('/api/attendance/assemble/control/attendanceappealInfo/audit', {}))
+    else if (op === 'appealCheck') await guardedWrite(api.put('/api/attendance/assemble/control/attendanceappealInfo/check', {}))
     else if (op === 'appealDo') {
       const id = prompt('申诉 ID:', '') || ''
-      await api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {})
+      await guardedWrite(api.put(`/api/attendance/assemble/control/attendanceappealInfo/appeal/${encodeURIComponent(id)}`, {}))
     } else if (op === 'appealArchive') {
       const id = prompt('申诉 ID:', '') || ''
-      await api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendanceappealInfo/archive/${encodeURIComponent(id)}`))
     } else if (op === 'appealDelete') {
       const id = prompt('申诉 ID:', '') || ''
       if (!(await confirmMsg('确定删除该申诉？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`)
-    } else if (op === 'detailAnalyse') await api.post('/api/attendance/assemble/control/attendancedetail/analyse', {})
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendanceappealInfo/${encodeURIComponent(id)}`))
+    } else if (op === 'detailAnalyse') await guardedWrite(api.post('/api/attendance/assemble/control/attendancedetail/analyse', {}))
     else if (op === 'detailAnalyseId') {
       const id = prompt('明细 ID:', '') || ''
-      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendancedetail/analyse/id/${encodeURIComponent(id)}`))
     } else if (op === 'detailArchive') {
       const id = prompt('明细 ID:', '') || ''
-      await api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendancedetail/archive/${encodeURIComponent(id)}`))
     } else if (op === 'ruleToggle') {
       const id = prompt('规则 ID:', '') || ''
-      await api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {})
-    } else if (op === 'statDo') await api.post('/api/attendance/assemble/control/statistic/do', {})
-    else if (op === 'v2Config') await api.post('/api/attendance/assemble/control/v2/config', {})
-    else if (op === 'v2ConfigPerson') await api.post('/api/attendance/assemble/control/v2/config/person', {})
-    else if (op === 'v2DetailList') await api.post('/api/attendance/assemble/control/v2/detail/list/1/size/20', {})
+      await guardedWrite(api.post(`/api/attendance/assemble/control/rule/${encodeURIComponent(id)}/toggle`, {}))
+    } else if (op === 'statDo') await guardedWrite(api.post('/api/attendance/assemble/control/statistic/do', {}))
+    else if (op === 'v2Config') await guardedWrite(api.post('/api/attendance/assemble/control/v2/config', {}))
+    else if (op === 'v2ConfigPerson') await guardedWrite(api.post('/api/attendance/assemble/control/v2/config/person', {}))
+    else if (op === 'v2DetailList') await guardedWrite(api.post('/api/attendance/assemble/control/v2/detail/list/1/size/20', {}))
     else if (op === 'v2AppealMgr')
-      await api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {})
-    else await api.get('/api/attendance/assemble/control/uuid/random')
+      await guardedWrite(api.post('/api/attendance/assemble/control/v2/appeal/list/manager/1/size/20', {}))
+    else await guardedWrite(api.get('/api/attendance/assemble/control/uuid/random'))
     toast.success('考勤操作已提交')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -891,41 +902,41 @@ async function attWrite3(op: string) {
 async function attV2Ops(op: string) {
   try {
     const id = () => encodeURIComponent(prompt('目标 ID:', '') || '')
-    if (op === 'appealMgrStatus') await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/manager/status`)
+    if (op === 'appealMgrStatus') await guardedWrite(api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/manager/status`))
     else if (op === 'appealResetStatus')
-      await api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/appeal/${id()}/reset/status`))
     else if (op === 'detailRebuild') {
       const p = encodeURIComponent(prompt('人员:', '') || '')
       const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
-      await api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/detail/rebuild/person/${p}/date/${d}`))
     } else if (op === 'groupRebuild') {
       const g = encodeURIComponent(prompt('群组 ID:', '') || '')
       const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
-      await api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/group/rebuild/detail/group/${g}/date/${d}`))
     } else if (op === 'groupRefresh')
-      await api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/group/${id()}/refresh/participate`))
     else if (op === 'recordDelete') {
       const p = encodeURIComponent(prompt('人员:', '') || '')
       const d = encodeURIComponent(prompt('日期(YYYY-MM-DD):', '') || '')
       if (!(await confirmMsg('确定删除该人当日记录？'))) return
-      await api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/record/delete/people/${p}/date/${d}`))
     } else if (op === 'analyse') {
       const sd = encodeURIComponent(prompt('开始日期(YYYY-MM-DD):', '') || '')
       const ed = encodeURIComponent(prompt('结束日期(YYYY-MM-DD):', '') || '')
-      await api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendancedetail/analyse/${sd}/${ed}`))
     } else if (op === 'checkCycle') {
       const y = encodeURIComponent(prompt('周期年:', '') || '')
       const mo = encodeURIComponent(prompt('周期月:', '') || '')
-      await api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/${y}/${mo}`))
     } else if (op === 'filterNext') {
       const cnt = 20
-      await api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/attendancedetail/filter/list/${id()}/next/${cnt}`))
     } else if (op === 'appealArchive') {
       if (!(await confirmMsg('确定归档该申诉？'))) return
-      await api.post(`/api/attendance/appeal/archive/${id()}`, {})
+      await guardedWrite(api.post(`/api/attendance/appeal/archive/${id()}`, {}))
     } else {
       if (!(await confirmMsg('确定删除该移动明细？'))) return
-      await api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`)
+      await guardedWrite(api.delete(`/api/attendance/assemble/control/attendancedetail/mobile/${id()}`))
     }
     toast.success('考勤操作已提交')
   } catch (e: any) {
@@ -1003,19 +1014,22 @@ async function reciveDetailById() {
   const id = prompt('考勤明细 ID:', '') || ''
   if (!id.trim()) return
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/recive', { id })
+    await guardedWrite(api.post('/api/attendance/assemble/control/attendancedetail/recive', { id }))
     toast.success('明细接收已提交')
   } catch (e: any) {
     toast.error(`接收失败: ${e?.message ?? ''}`)
   }
 }
 async function createAttDetail() {
+  // R371: 自包含信封守卫——兼容 R324 老契约的精简桩环境（不注入外部 guardedWrite）
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
   const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   const status = prompt('状态(如 normal/late):', 'normal') || 'normal'
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
+    const resp = await api.post('/api/attendance/assemble/control/attendancedetail', { personId, date, status })
+    const ok = resp && typeof resp === 'object' && resp.type !== 'error' && resp.success !== false && (resp.type === 'success' || resp.type === undefined)
+    if (!ok) throw new Error(resp?.message || '操作未生效，请刷新后重试')
     toast.success('考勤明细已创建')
     loadData() // R324 R1：建后刷新列表与统计，保持与删除/申诉写后刷新同口径
   } catch (e: any) {
@@ -1027,7 +1041,7 @@ async function reciveMobileDetail() {
   if (!personId.trim()) return
   const date = prompt('日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
-    await api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date })
+    await guardedWrite(api.post('/api/attendance/assemble/control/attendancedetail/mobile/recive', { personId, date }))
     toast.success('移动端接收已提交')
   } catch (e: any) {
     toast.error(`接收失败: ${e?.message ?? ''}`)
@@ -1038,7 +1052,7 @@ async function myMobileDetail() {
   const personId = prompt('人员标识:', '') || ''
   if (!personId.trim()) return
   try {
-    const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/mobile/my', { personId })
+    const r: any = await guardedWrite(api.post('/api/attendance/assemble/control/attendancedetail/mobile/my', { personId }))
     const n = Array.isArray(r?.data) ? r.data.length : Array.isArray(r?.data?.data) ? r.data.data.length : 0
     toast.success(`我的考勤明细：${n} 条`)
   } catch (e: any) {
@@ -1050,7 +1064,7 @@ async function importLeave() {
   if (!leaveType.trim()) return
   const person = prompt('人员标识:', '') || ''
   try {
-    await api.post('/api/attendance/assemble/control/v2/leave/import', { rows: [{ leaveType, person }] })
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/leave/import', { rows: [{ leaveType, person }] }))
     toast.success('请假导入已提交')
   } catch (e: any) {
     toast.error(`导入失败: ${e?.message ?? ''}`)
@@ -1065,19 +1079,19 @@ async function importAttV2Records(mode: string) {
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
       const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
-      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import/daily', {
+      const r: any = await guardedWrite(api.post('/api/attendance/assemble/control/v2/record/import/daily', {
         date,
         records: [{ userId, checkInType }],
-      })
+      }))
       toast.success(`按日导入：${(r as any)?.data?.inserted ?? 0} 条`)
     } else {
       const userId = prompt('人员标识(userId):', '') || ''
       if (!userId.trim()) return
       const checkInType = prompt('打卡类型(如 OnDuty/OffDuty):', 'OnDuty') || 'OnDuty'
       const recordDateString = prompt('打卡日期(YYYY-MM-DD):', businessTodayYMD()) || ''
-      const r: any = await api.post('/api/attendance/assemble/control/v2/record/import', {
+      const r: any = await guardedWrite(api.post('/api/attendance/assemble/control/v2/record/import', {
         rows: [{ userId, checkInType, recordDateString }],
-      })
+      }))
       toast.success(`打卡导入：${(r as any)?.data?.inserted ?? 0} 条`)
     }
   } catch (e: any) {
@@ -1089,20 +1103,20 @@ async function attAppealWrite(op: string) {
   try {
     if (op === 'analyseRedo') {
       const personId = prompt('人员标识(留空为全体):', '') || ''
-      const r: any = await api.post('/api/attendance/assemble/control/attendancedetail/analyse/redo', { personId })
+      const r: any = await guardedWrite(api.post('/api/attendance/assemble/control/attendancedetail/analyse/redo', { personId }))
       toast.success(`重新分析已提交：${((r as any)?.data?.count ?? (r as any)?.data) ? '完成' : ''}`)
     } else if (op === 'appealById') {
       const id = prompt('申诉记录 ID:', '') || ''
       if (!id.trim()) return
-      await api.post(
+      await guardedWrite(api.post(
         `/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/${encodeURIComponent(id)}`,
         {},
-      )
+      ))
       toast.success('申诉流程已发起')
     } else {
       const appealId = prompt('申诉记录 ID:', '') || ''
       if (!appealId.trim()) return
-      await api.post('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', { appealId })
+      await guardedWrite(api.post('/api/attendance/assemble/control/attendanceappealInfo/workflow/sync', { appealId }))
       toast.success('申诉流程状态已同步')
     }
   } catch (e: any) {
@@ -1112,7 +1126,7 @@ async function attAppealWrite(op: string) {
 async function checkMyRestDate() {
   const date = prompt('校验日期(YYYY-MM-DD):', businessTodayYMD()) || ''
   try {
-    await api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date })
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/my/rest/date/check', { date }))
     toast.success('休息日校验已提交')
   } catch (e: any) {
     toast.error(`校验失败: ${e?.message ?? ''}`)
@@ -1534,7 +1548,7 @@ async function addGroup() {
   const groupName = prompt('考勤组名称 (groupName):', '')
   if (!groupName) return
   try {
-    await api.post('/api/attendance/assemble/control/v2/group', { groupName, checkType: 'field', status: 1 })
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/group', { groupName, checkType: 'field', status: 1 }))
     toast.success('已新建考勤组')
     switchMore('v2group')
   } catch (e: any) {
@@ -1548,12 +1562,12 @@ async function addShift() {
   const onDutyTime = prompt('上班时间 (onDutyTime, 如 09:00):', '09:00') || ''
   const offDutyTime = prompt('下班时间 (offDutyTime, 如 18:00):', '18:00') || ''
   try {
-    await api.post('/api/attendance/assemble/control/v2/shift/create', {
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/shift/create', {
       shiftName,
       onDutyTime,
       offDutyTime,
       workTime: 480,
-    })
+    }))
     toast.success('已新建班次')
     switchMore('v2shift')
   } catch (e: any) {
@@ -1568,7 +1582,7 @@ async function addLeave() {
   const endTime = prompt('结束时间 (endTime, 如 2026-09-22 18:00):', '') || ''
   try {
     // POST v2/leave —— 新建请假
-    await api.post('/api/attendance/assemble/control/v2/leave', { leaveType, startTime, endTime })
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/leave', { leaveType, startTime, endTime }))
     toast.success('已新建请假')
     switchMore('v2leave')
   } catch (e: any) {
@@ -1583,7 +1597,7 @@ async function addSelfHoliday() {
   if (!holidayDate) return
   const reason = prompt('事由 (reason):', '') || ''
   try {
-    await api.post('/api/attendance/assemble/control/attendanceselfholiday', { holidayDate, reason })
+    await guardedWrite(api.post('/api/attendance/assemble/control/attendanceselfholiday', { holidayDate, reason }))
     toast.success('假期申请已提交')
     switchMore('holiday')
   } catch (e: any) {
@@ -1597,9 +1611,9 @@ async function syncDingding() {
   const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
   if (!from || !to) return
   try {
-    await api.get(
+    await guardedWrite(api.get(
       `/api/attendance/assemble/control/dingding/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`,
-    )
+    ))
     toast.success('钉钉同步已启动')
   } catch (e: any) {
     toast.error(`钉钉同步失败: ${e?.message ?? ''}`)
@@ -1612,9 +1626,9 @@ async function syncQywx() {
   const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
   if (!from || !to) return
   try {
-    await api.get(
+    await guardedWrite(api.get(
       `/api/attendance/assemble/control/qywx/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`,
-    )
+    ))
     toast.success('企微同步已启动')
   } catch (e: any) {
     toast.error(`企微同步失败: ${e?.message ?? ''}`)
@@ -1627,9 +1641,9 @@ async function statDingdingPerson() {
   const month = prompt('月份 (MM):', String(new Date().getMonth() + 1).padStart(2, '0')) || ''
   if (!year || !month) return
   try {
-    await api.get(
+    await guardedWrite(api.get(
       `/api/attendance/assemble/control/dingding/statistic/person/year/${encodeURIComponent(year)}/month/${encodeURIComponent(month)}`,
-    )
+    ))
     toast.success('个人月统计已触发')
   } catch (e: any) {
     toast.error(`统计触发失败: ${e?.message ?? ''}`)
@@ -1646,7 +1660,7 @@ async function syncGroupSchedule() {
     return
   }
   try {
-    await api.post('/api/attendance/assemble/control/v2/groupschedule', { groupId, userId, scheduleMonthString: month })
+    await guardedWrite(api.post('/api/attendance/assemble/control/v2/groupschedule', { groupId, userId, scheduleMonthString: month }))
     toast.success('群排班同步已受理')
   } catch (e: any) {
     toast.error(`群排班同步失败: ${e?.message ?? ''}`)
@@ -1680,12 +1694,12 @@ async function deleteMore(it: MoreItem) {
   if (!(await confirmMsg('确认删除该项？'))) return
   try {
     if (moreTab.value === 'v2group') {
-      await api.get(`/api/attendance/assemble/control/v2/group/${it.id}/delete`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/group/${it.id}/delete`))
     } else if (moreTab.value === 'v2leave') {
       // GET v2/leave/delete/{id} —— 删除请假（owner/admin 门禁）
-      await api.get(`/api/attendance/assemble/control/v2/leave/delete/${it.id}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/leave/delete/${it.id}`))
     } else {
-      await api.get(`/api/attendance/assemble/control/v2/shift/delete/${it.id}`)
+      await guardedWrite(api.get(`/api/attendance/assemble/control/v2/shift/delete/${it.id}`))
     }
     toast.success('已删除')
     switchMore(moreTab.value)
@@ -1700,14 +1714,14 @@ async function addCycle() {
   if (!cycleMonth) return
   try {
     // 后端 attendancestatisticalcycle_create 读 cycleYear/cycleMonth(必填)/topUnitName/unitName/description
-    const r: any = await api.post('/api/attendance/assemble/control/attendancestatisticalcycle', {
+    const r: any = await guardedWrite(api.post('/api/attendance/assemble/control/attendancestatisticalcycle', {
       cycleYear,
       cycleMonth,
-    })
+    }))
     const id = r.data?.id
     if (id) {
       // 回读一次确认（GET {id}）
-      const g: any = await api.get(`/api/attendance/assemble/control/attendancestatisticalcycle/${id}`)
+      const g: any = await guardedWrite(api.get(`/api/attendance/assemble/control/attendancestatisticalcycle/${id}`))
       moreItems.value = [(g.data ?? { id, name: `${cycleYear}-${cycleMonth}` }) as MoreItem]
     }
     toast.success('已新建统计周期')
@@ -1743,7 +1757,7 @@ async function detailInfo(r: R) {
 }
 async function analyseOne(r: R) {
   try {
-    await api.post(`/api/attendance/assemble/control/attendancedetail/analyse/id/${r.id}`, {})
+    await guardedWrite(api.post(`/api/attendance/assemble/control/attendancedetail/analyse/id/${r.id}`, {}))
     toast.success('已标记分析')
   } catch (e: any) {
     toast.error(`分析失败: ${e?.message ?? ''}`)
@@ -1751,16 +1765,19 @@ async function analyseOne(r: R) {
 }
 async function archiveOne(r: R) {
   try {
-    await api.post(`/api/attendance/assemble/control/attendancedetail/archive/${r.id}`, {})
+    await guardedWrite(api.post(`/api/attendance/assemble/control/attendancedetail/archive/${r.id}`, {}))
     toast.success('已归档')
   } catch (e: any) {
     toast.error(`归档失败: ${e?.message ?? ''}`)
   }
 }
 async function deleteDetail(r: R) {
+  // R371: 自包含信封守卫——兼容 R324 老契约的精简桩环境（不注入外部 guardedWrite）
   if (!(await confirmMsg('确认删除该考勤明细？'))) return
   try {
-    await api.delete(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
+    const resp = await api.delete(`/api/attendance/assemble/control/attendancedetail/${r.id}`)
+    const ok = resp && typeof resp === 'object' && resp.type !== 'error' && resp.success !== false && (resp.type === 'success' || resp.type === undefined)
+    if (!ok) throw new Error(resp?.message || '操作未生效，请刷新后重试')
     toast.success('已删除')
     records.value = records.value.filter((x) => x.id !== r.id)
     loadData() // R324 R1：删后重取，统计卡与分页 total 与真实明细即时一致
