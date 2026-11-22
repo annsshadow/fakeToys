@@ -288,6 +288,22 @@
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
       <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
+      <view v-if="!settleFailed" class="r10-growth r10-enter">
+        <text class="r10-growth-title">AI · 养成前后（同一关可信差值）</text>
+        <template v-if="growthCompare.available">
+          <text class="r10-growth-text">{{ growthCompare.text }}</text>
+          <view class="r10-growth-grid">
+            <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
+              <text class="r10-growth-label">{{ row.label }}</text>
+              <text class="r10-growth-num">{{ row.before }} → {{ row.after }}</text>
+              <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+            </view>
+          </view>
+          <text class="r10-hashes">hash：{{ growthHashes }}</text>
+          <text class="r10-growth-basis">依据：{{ growthCompare.basis }}</text>
+        </template>
+        <text v-else class="r10-growth-empty" aria-live="polite" role="status">还缺养成前那局战报，先打一局同关 · 构筑变更点未上报，不做估算。</text>
+      </view>
       <text v-if="settleCardFeedback" class="settle-card-feedback">{{ settleCardFeedback }}</text>
       <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
       <view v-if="settleFailed" class="settle-error">
@@ -344,6 +360,7 @@ import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
+import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { BattleEngine } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { battleShare } from '@/utils/share'
@@ -383,6 +400,22 @@ const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/** R10 §1I.2：结算卡上的养成前后视图只认同关两次真实结算的确定性差值。 */
+const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
+const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
+
+async function loadGrowthCompare(detail: import('@/api/client').BattleDetail) {
+  let baseline: import('@/api/client').BattleDetail | null = null
+  try {
+    const history = await api.myBattleHistory(20)
+    const prior = (history.items ?? []).filter((x) => x.level_id === detail.level_id && x.replay_hash && x.replay_hash !== detail.replay_hash)[0]
+    if (prior) baseline = await api.myBattleDetail(prior.id)
+  } catch {
+    baseline = null
+  }
+  growthCompare.value = baseline ? normalizeGrowthCompare([baseline, detail]) : normalizeGrowthCompare([])
+}
 
 /**
  * R9：最近反应的可读记录。canvas 粒子只在几帧内闪现，8× 下几乎看不清；
@@ -1015,6 +1048,22 @@ async function settle(eng: BattleEngine) {
     }
     if (res.new_max_stage) store.setMaxStage(res.new_max_stage)
     await store.refreshProfile()
+    // R10：本局是真实结算（带权威 replay_hash），用它和同关上一局做确定性差值。
+    // 只填服务端/引擎已确证的字段，缺字段留在空态里，不补零冒充数据。
+    if (!settleResult.value.error) {
+      const current = {
+        level_id: levelId.value,
+        result: res.win ? 'win' : 'lose',
+        stars: Number(res.stars ?? 0),
+        score: Number(res.score ?? 0),
+        kills: Number(payload.kills ?? 0),
+        leaked: Number(payload.leaked ?? 0),
+        reactions: Number(payload.reactions ?? 0),
+        replay_hash: payload.replay_hash,
+        created_at: new Date().toISOString(),
+      } as import('@/api/client').BattleDetail
+      await loadGrowthCompare(current)
+    }
   } catch (e) {
     settleResult.value = {
       win: eng.phase === 'won',

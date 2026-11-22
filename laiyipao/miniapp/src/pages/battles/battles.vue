@@ -185,6 +185,22 @@
                 <text class="muted">回放哈希</text>
                 <text class="mono hash">{{ detail.replay_hash }}</text>
               </view>
+              <view class="r10-growth r10-enter">
+                <text class="r10-growth-title">AI · 养成前后（同一关可信差值）</text>
+                <template v-if="growthCompare.available">
+                  <text class="r10-growth-text">{{ growthCompare.text }}</text>
+                  <view class="r10-growth-grid">
+                    <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
+                      <text class="r10-growth-label">{{ row.label }}</text>
+                      <text class="r10-growth-num">{{ row.before }} → {{ row.after }}</text>
+                      <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+                    </view>
+                  </view>
+                  <text class="r10-hashes">hash：{{ growthHashes }}</text>
+                  <text class="r10-growth-basis">依据：{{ growthCompare.basis }}</text>
+                </template>
+                <text v-else class="r10-growth-empty" aria-live="polite" role="status">还缺养成前那局战报，先打一局同关 · 构筑变更点未上报，不做估算。</text>
+              </view>
               <!-- 复制哈希（2026-11-01 新一轮第 87 轮）：用外部工具验真时无需手选 -->
               <view class="btn copy-hash-btn" @click="copyHash(detail.replay_hash)">复制回放哈希</view>
               <!-- 直达验真（2026-11-01 新一轮第 47 轮）：验真页已支持 battle_id 深链，
@@ -209,6 +225,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import type { BattleHistoryItem, BattleDetail } from '@/api/client'
+import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
 
@@ -323,6 +340,23 @@ onLoad((query) => {
 const detail = computed<BattleDetail | undefined>(() =>
   expandedId.value ? details.value[expandedId.value] : undefined,
 )
+
+/** R10 §1I.2：同关相邻两次真实结算的确定性差值；详情加载后按 level_id 从历史里配对。 */
+const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
+const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
+
+async function loadGrowthCompare(d: BattleDetail) {
+  let baseline: BattleDetail | null = null
+  try {
+    const history = await api.myBattleHistory(20)
+    const sameLevel = (history.items ?? []).filter((x) => x.level_id === d.level_id && x.replay_hash && x.id !== d.id)
+    const priorId = sameLevel[0]?.id
+    if (priorId) baseline = await api.myBattleDetail(priorId)
+  } catch {
+    baseline = null
+  }
+  growthCompare.value = baseline ? normalizeGrowthCompare([baseline, d]) : normalizeGrowthCompare([])
+}
 
 const CURRENCY_NAME: Record<string, string> = {
   coin: '金币',
@@ -526,7 +560,9 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
   if (details.value[it.id]) return
   detailLoadingIds.value.add(it.id)
   try {
-    details.value[it.id] = await api.myBattleDetail(it.id)
+    const d = await api.myBattleDetail(it.id)
+    details.value[it.id] = d
+    await loadGrowthCompare(d)
   } catch {
     // 详情加载失败：保留展开态，可再次点击重试
   } finally {

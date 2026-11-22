@@ -1621,4 +1621,64 @@ page {
 @media (prefers-reduced-motion: reduce) {
   .r7-causal-enter { animation: none !important; }
 }
+/* -------------------------------------------------------------------------- */
+/* LYP-R10-CAUSAL-V1：养成前后可信差值 + 宝石佩戴属性差分 + 收益不可用依据       */
+/* 只消费 v1/v3-r3/r6 既有令牌，不新增视觉变量；诚实空态与正常卡等高。          */
+/* -------------------------------------------------------------------------- */
+.r10-growth {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 16rpx 18rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+}
+.r10-growth-title { display: block; font-size: 24rpx; font-weight: 600; color: var(--ai-ink); }
+.r10-growth-text { display: block; margin-top: 8rpx; font-size: 22rpx; line-height: 1.55; color: var(--text); }
+.r10-growth-grid { display: flex; flex-direction: column; gap: 6rpx; margin-top: 10rpx; }
+.r10-growth-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 10rpx;
+  background: var(--panel);
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+.r10-growth-label { flex: 1; }
+.r10-growth-num { min-width: 96rpx; text-align: right; font-variant-numeric: tabular-nums; }
+.r10-growth-delta { min-width: 88rpx; text-align: right; font-variant-numeric: tabular-nums; color: var(--ok); }
+.r10-growth-delta.negative { color: var(--bad); }
+.r10-growth-empty {
+  margin-top: 8rpx;
+  padding: 14rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.r10-hashes, .r10-growth-basis { display: block; margin-top: 8rpx; font-size: 19rpx; line-height: 1.5; color: var(--dim); word-break: break-all; }
+.r10-gem-gain {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 14rpx 16rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+}
+.r10-gem-title { display: block; font-size: 23rpx; font-weight: 600; color: var(--ai-ink); }
+.r10-gem-row { display: flex; align-items: center; gap: 8rpx; margin-top: 6rpx; font-size: 21rpx; color: var(--text-2); }
+.r10-gem-row .r10-gem-key { flex: 1; }
+.r10-gem-row .r10-gem-delta { min-width: 110rpx; text-align: right; font-variant-numeric: tabular-nums; color: var(--ok); }
+.r10-gem-empty { display: block; margin-top: 8rpx; font-size: 21rpx; line-height: 1.5; color: var(--muted); }
+.r10-basis-note { display: block; margin-top: 8rpx; font-size: 19rpx; line-height: 1.5; color: var(--dim); }
+.r10-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r10-enter { animation: none !important; }
+}
+
 

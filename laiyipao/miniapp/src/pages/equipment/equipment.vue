@@ -102,7 +102,7 @@
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）· {{ r7Impact.starRateNote }}</text>
         <text v-if="r7Impact" class="r7-why">为什么是它：{{ r7Impact.replacedName }} → {{ r7Impact.candidateName }} · {{ r7Impact.method }}</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }} · 近 {{ r7Impact.windowDays }} 天 {{ r7Impact.battleCount }} 场</text>
-        <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7Error || '接口未提供真实预估' }}。不展示虚构数值。</text>
+        <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7WhyUnavailable }}。不展示虚构数值。</text>
         <text v-if="r7Impact" class="r7-btn primary" role="button" @click="r7OpenCompare()">应用推荐 · 先看收益对比 →</text>
       </view>
       <view v-if="r6Rec && r6Rec.status === 'local' && r3AiEquip" class="r3-ai r6-local r3-enter">
@@ -227,10 +227,11 @@
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }}</text>
         <text v-if="r7ApplyError" class="r7-error">{{ r7ApplyError }}</text>
-        <text v-if="r7ApplyDone" class="r7-error">已替换为「{{ r7ApplyDone }}」，装备配置已更新。</text>
+        <text v-if="r7ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r7ApplyDone }}」，装备配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r7CompareOpen = false">取消</text>
-          <text class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
+          <text class="r7-btn" role="button" @click="r7CompareOpen = false">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="r7CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
     </view>
@@ -430,6 +431,14 @@ const r7StarText = computed(() => {
   const n = r7Impact.value?.changes.starRateObserved
   return typeof n === 'number' ? n.toFixed(1) : '—'
 })
+/** R10：无候选 id/replace 时，用服务端 insights[].basis 解释「为什么收益不可用」。 */
+const r7WhyUnavailable = computed(() => {
+  if (r7Error.value) return r7Error.value
+  const b = r6Rec.value?.basis ?? []
+  const why = b.filter((x) => /没有|不足|尚|未|缺口|不符合|不满足|优先|需要|缺少/.test(x)).join('；') || b.join('；')
+  return why ? '服务端依据：' + why : '推荐接口未提供可执行的候选与替换参数'
+})
+
 const r7BasisText = computed(() => {
   const v = r7Impact.value
   if (!v) return '服务端未提供依据'
@@ -444,6 +453,7 @@ async function loadR6Recommendation() {
   const rec = await fetchRecommendations('equipment')
   if (rec) {
     r6Rec.value = rec
+    r7Error.value = ''
     const candidateId = Number(rec.cta.params?.id ?? 0)
     const replacedId = Number(rec.cta.params?.replace ?? 0)
     if (candidateId && replacedId) {
@@ -451,6 +461,12 @@ async function loadR6Recommendation() {
       if (result.card) r6Rec.value = result.card
       r7Impact.value = result.impact
       if (!result.impact) r7Error.value = result.error || '收益数据不可用：服务端未提供真实预估'
+    } else {
+      // R10 §1I.1：权威参数缺失是防作弊设计，不伪造 id/replace；直接展示服务端依据。
+      const why = rec.basis.filter((x) => /没有|不足|尚|未|缺口|不符合|不满足|优先|需要|缺少/.test(x)).join('；') || rec.basis.join('；')
+      r7Error.value = why
+        ? '服务端依据：' + why + '；本次没有可执行的候选/替换参数'
+        : '推荐接口未提供可执行的候选与替换参数'
     }
   } else {
     r6Rec.value = localFallbackCard({
@@ -505,7 +521,7 @@ async function r7ConfirmApply() {
     await applyEquipmentImpact(current, impact.candidateId, impact.replacedId, candidate.slot)
     await store.loadEquipment()
     r7ApplyDone.value = impact.candidateName
-    r7CompareOpen.value = false
+    // R10：成功提示只在这个遮罩里；若立即关闭，玩家看不到写入结果。等玩家点「完成」。
     void loadR6Recommendation()
   } catch (e) {
     r7ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原装备配置未改动。请重试'
@@ -571,4 +587,7 @@ onShow(() => { void loadPage() })
 .bs-name { color: var(--warn); font-weight: 600; }
 
 /* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
+
+/* R10 写入成功反馈：与错误色区分，保持遮罩内可见直到玩家关闭 */
+.apply-done { display: block; margin-top: 10rpx; font-size: 22rpx; line-height: 1.5; color: var(--ok); }
 </style>

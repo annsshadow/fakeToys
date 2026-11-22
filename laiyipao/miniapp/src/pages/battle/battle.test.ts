@@ -48,6 +48,8 @@ vi.mock('@/api/client', () => ({
   startBattle: vi.fn(),
   settleBattle: vi.fn(),
   abandonBattle: vi.fn(),
+  myBattleHistory: vi.fn(),
+  myBattleDetail: vi.fn(),
 }))
 
 const TICK = 50
@@ -246,6 +248,8 @@ beforeEach(() => {
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.startBattle.mockResolvedValue(startBattleResp as any)
   mockApi.abandonBattle.mockResolvedValue({ refunded_energy: 6, abandoned: true } as any)
+  mockApi.myBattleHistory.mockResolvedValue({ items: [], next_cursor: 0 } as any)
+  mockApi.myBattleDetail.mockResolvedValue({} as any)
   mockApi.settleBattle.mockResolvedValue({
     win: true,
     stars: 3,
@@ -399,6 +403,17 @@ describe('battle.vue 战斗页', () => {
     expect(eng.stepCount).toBe(steps)
   })
 
+  it('R10 §1I.2：结算卡只在两次真实结算时给差值，缺历史显示诚实空态', async () => {
+    mockQueryNode(null)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    await new Promise((r) => setTimeout(r, TICK * 5))
+    await flushPromises()
+    expect(wrapper.text()).toContain('AI · 养成前后（同一关可信差值）')
+    expect(wrapper.text()).toContain('还缺养成前那局战报，先打一局同关')
+    expect(wrapper.text()).not.toContain('提升 +')
+  })
   it('帧循环驱动 won → 结算成功：结果卡、奖励、new_max_stage、停帧', async () => {
     const Battle = await loadPage()
     const { wrapper, store } = mountPage(Battle)

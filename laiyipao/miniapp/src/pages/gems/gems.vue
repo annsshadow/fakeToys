@@ -34,6 +34,19 @@
           <text class="r7-causal-src">依据：{{ r7Causal.source }} · 本地规则引擎不写出战配置，不展示虚构收益。</text>
         </view>
       </view>
+      <view class="r10-gem-gain r10-enter">
+        <text class="r10-gem-title">AI · 宝石佩戴收益（服务端属性差分）</text>
+        <template v-if="gemGain.available">
+          <text class="r10-gem-text">{{ gemGain.text }}</text>
+          <view v-for="row in gemGain.rows" :key="row.key" class="r10-gem-row">
+            <text class="r10-gem-key">{{ row.label }} {{ row.before }} → {{ row.after }}</text>
+            <text class="r10-gem-delta">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+          </view>
+        </template>
+        <text v-else class="r10-gem-empty" aria-live="polite" role="status">佩戴收益未上报，先看词条描述</text>
+        <!-- r10GemGainCacheKey(store.userId, gemId) 只用于同账号本地缓存定位，不渲染给玩家 -->
+        <text class="r10-basis-note">依据：{{ gemGain.basis }} · 结果来自本机同账号佩戴前后的权威属性快照</text>
+      </view>
       <view v-if="r3AiGem && gems.length" class="r3-ai r3-enter">
         <view class="r3-ai-head">
           <text class="r3-ai-badge">AI</text>
@@ -43,6 +56,7 @@
         <text class="r3-ai-conclusion">{{ r3AiGem.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiGem.basis }}</text>
         <text class="r3-ai-cta" role="button" @click="r3GoShop">去商城找宝石 →</text>
+        <text class="r3-ai-cta secondary" role="button" @click="r3GoBag">去背包镶嵌 →</text>
       </view>
       <view v-else-if="!store.configLoading && gems.length === 0" class="r3-empty" aria-live="polite" role="status">
         <view class="r3-empty-slot">AI</view>
@@ -138,11 +152,28 @@ import { computed, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
+import { normalizeGemGain, r10GemGainCacheKey, type GemGainView } from '@/pages/_shared/r10GemGain'
 import { gemAttrBadge, affixName, qualityName as labelQualityName } from '@/utils/labels'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView } from '@/pages/_shared/r7GameplayCausal'
 
 const store = useGameStore()
+
+/** R10 §1I.3：图鉴只读背包真实写后缓存的服务端属性差分；无缓存不虚构收益。 */
+const gemGain = ref<GemGainView>(normalizeGemGain(null))
+function loadGemGain() {
+  let raw: string | null = null
+  try {
+    const prefix = r10GemGainCacheKey(store.userId, 0).replace(/:0$/, ':')
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(prefix)) { raw = localStorage.getItem(k); break }
+    }
+  } catch { raw = null }
+  gemGain.value = normalizeGemGain(raw ? JSON.parse(raw) : null)
+}
+loadGemGain()
+onShow(() => { loadGemGain() })
 
 /** 宝石图鉴展示所需的字段形状（服务端 /config.gems 元素）。 */
 interface GemDef {
@@ -330,9 +361,16 @@ const r3AiGem = computed(() => {
 function r3GoShop() {
   uni.navigateTo({ url: '/pages/shop/shop' })
 }
+function r3GoBag() {
+  // 宝石图鉴只做收集线索；真正的镶嵌入口在背包宝石页签。
+  uni.navigateTo({ url: '/pages/bag/bag' })
+}
 </script>
 
 <style scoped>
+/* R10 图鉴与镶嵌是两个入口，次按钮与主按钮并列但弱化 */
+.r3-ai-cta.secondary { margin-left: 16rpx; }
+
 /* G130 词条区间 */
 .ar-row { display: flex; flex-direction: row; justify-content: space-between; padding: 6rpx 0; border-bottom: 1rpx solid var(--border-soft); }
 .ar-name { font-size: 24rpx; }

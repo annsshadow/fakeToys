@@ -490,6 +490,7 @@ import * as api from '@/api/client'
 import { skillBaseDamageAtLevel } from '@/game/skill'
 import { HEAT_MAX } from '@/game/heatmap'
 import type { OwnedGem } from '@/api/client'
+import { captureGemGain, r10GemGainCacheKey } from '@/pages/_shared/r10GemGain'
 import type { SkillDef } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
 
@@ -851,11 +852,17 @@ async function doEquipGem(g: OwnedGem) {
   gemBusyId.value = g.id
   presetWriteBusy.value = true
   try {
+    const beforeMe = await api.fetchMe()
     const r = await api.equipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
     if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
     // 佩戴改变构筑 → 刷新档案（power/rating 以服务端为准）。
     await store.refreshProfile()
+    // 差分结果按服务端 /me 的 user_id（store.userId）与宝石 id 建缓存键；不写真值到代码或日志。
+    captureGemGain(beforeMe).then((data) => {
+      if (!data) return
+      try { localStorage.setItem(r10GemGainCacheKey(store.userId, g.id), JSON.stringify(data)) } catch { /* 隐私模式下写入失败不影响佩戴 */ }
+    })
     uni.showToast({ title: '已佩戴，词条已生效', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
@@ -871,10 +878,15 @@ async function doUnequipGem(g: OwnedGem) {
   gemBusyId.value = g.id
   presetWriteBusy.value = true
   try {
+    const beforeMe = await api.fetchMe()
     const r = await api.unequipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
     if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
     await store.refreshProfile()
+    captureGemGain(beforeMe).then((data) => {
+      if (!data) return
+      try { localStorage.setItem(r10GemGainCacheKey(store.userId, g.id), JSON.stringify(data)) } catch { /* 隐私模式下写入失败不影响卸下 */ }
+    })
     uni.showToast({ title: '已卸下', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
