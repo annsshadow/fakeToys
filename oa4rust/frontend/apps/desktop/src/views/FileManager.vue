@@ -181,6 +181,13 @@ import { describeListError } from './listQuery'
 
 const session = useSession()
 
+// 写响应成功判定（R369）：type 判定为主，不强制 bool；后端 200+type:error 须判失败。
+function writeSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
+
 interface FileItem {
   id: string
   name: string
@@ -211,13 +218,21 @@ async function createRecyclableFile(): Promise<void> {
   const name = prompt('新建文件名称:', '') || ''
   if (!name.trim()) return
   try {
-    const resp = await api.post('/api/file/core/entity/file', {
+    const resp: any = await api.post('/api/file/core/entity/file', {
       name,
       person: session.state.user?.unique ?? '',
       reference_type: 'attachment',
     })
-    const created = (resp as { data?: { id?: string } })?.data
+    if (!writeSucceeded(resp)) {
+      toast.error(resp?.message || '操作未生效，请刷新后重试')
+      return
+    }
+    const created = resp?.data
     const id = String(created?.id ?? '')
+    if (!id) {
+      toast.error(resp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     recyclableFiles.value = [{ id, name, type: 'file' }, ...recyclableFiles.value]
     toast.success('文件已创建，可删除进入回收站')
   } catch (e: any) {
@@ -898,7 +913,11 @@ async function deleteFile(f: FileItem): void {
   if (!(await confirmMsg(`确定删除「${f.name}」？`))) return
   deletingId.value = f.id
   deleteMutation.mutate(f.id, {
-    onSuccess: () => {
+    onSuccess: (r: any) => {
+      if (!writeSucceeded(r)) {
+        toast.error(r?.message || '操作未生效，请刷新后重试')
+        return
+      }
       recyclableFiles.value = recyclableFiles.value.filter((x) => x.id !== f.id)
       loadRecycleBin()
       toast.success('文件已删除')

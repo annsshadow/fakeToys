@@ -23,7 +23,7 @@ function fnBody(start: string): string {
 
 function mutateSuccessCallback(): string {
   const body = fnBody('async function deleteFile')
-  const p = body.indexOf('onSuccess: () => {')
+  const p = body.indexOf('onSuccess: (r: any) => {')
   if (p < 0) return ''
   let depth = 0, end = -1
   for (let i = body.indexOf('{', p); i < body.length; i++) {
