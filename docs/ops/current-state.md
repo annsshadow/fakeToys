@@ -4912,3 +4912,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据实立项 R340（批量只读甄别）：等待期队长侦察——全量差集中除已审计 PortalApp 外仍有 9 个从未被任何审计点名但有真实写端点的同构 CRUD 页（CmsColumnManagerApp/CmsModuleApp/ProcessDictDesignerApp/ProcessFormDesignerApp/ProcessScriptDesignerApp/ProcessXformApp/QueryImporterDesignerApp/QueryStatDesignerApp/TemplateApp），静态抽查 TemplateApp/CmsModuleApp 均正确使用具名插槽非默认插槽缺陷类。派 t144（qa-e2e，只读审计，deps无）：逐页梳理写端点→代表性只读安全写闭环（新建回显/编辑save/删除确认守卫，破坏性写不伪造）→三分判定，唯一文档 oa4rust/docs/ops/oa4rust-r340-crud-pages-audit.md 脱敏0真值非物理真机、精确单文档提交。（task t144 已创建，pending@qa-e2e）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R340 甄别回收后据实再定是否修复，禁臆造。
 
+## 337. R340 收官 + R341 立项：4页信封/字段解析失配缺陷修复（2026-11-22）
+- R340 收官：t144（qa-e2e，批量只读甄别）完成，commit 287ee9be01b102cb2b8f76fca55ef0e4bc615356 精确单文档 76 行 oa4rust/docs/ops/oa4rust-r340-crud-pages-audit.md。队长独立复核通过（不采信自述）：文档全占位 0 真值、敏感扫描 0 命中、非物理真机、多版 evidence + 21 截图落 gitignored。9 页首次真浏览器写闭环：create 全 POST200（排除 200-error-body）、删除取消守卫 9 页有效 0 DELETE、0 pageerror、6 页 500 兜底可区分；5 页通过。t144 evidence_note 已附（count=1）。
+- P1×3 真缺陷（双层信封解析致列表恒空）经 evidence-v3.json 铁证坐实：ProcessDictDesignerApp/ProcessFormDesignerApp/ProcessXformApp 的 list body 为双层信封 {"data":{"count":3,"data":[...]}}，而前端 queryFn 统一 Array.isArray(r?.data)（:119/:138/:124）对对象返回 false→[]→列表恒空、create 200 成功但用户不可见、编辑/删除无行可触达；对照 cms-module 单层信封 {"data":[...]} 正常。P2（CmsColumnManager）list 返回小写 columnid/personid、前端列 key 驼峰 columnId/personId（:29/:32）→显示「—」。
+- 结论：R340（9页批量甄别，坐实 3 P1 + 1 P2）闭环，4 页缺陷另派修复。
+- 据实立项 R341（前端解析失配修复）：队长裁决——P1 三页各自 queryFn 兼容双层信封 Array.isArray(d)?d:(Array.isArray(d?.data)?d.data:[])（保留单层兼容）；P2 CmsColumnManager 最小改展示读小写字段或 queryFn 映射驼峰。三页 P1 完全同构同修法，合并单任务一次部署（simplicity+减少协调），P2 同批纳入。只改 4 个 .vue + 契约 + 文档，不动后端/SDK/组件/其它页、不改 create/save/delete 端点逻辑。任一实测冲突先回报。
+- 派发 t145（page-core，implementation，deps t144+t23）：inScope 4 .vue（ProcessDict/Form/Xform/CmsColumnManager）+ ProcessEnvelopeField.contract.test.ts + oa4rust-r341-envelope-field-fix.md；test-first RED→GREEN（契约参数带 : string 防 TS7006）；verify vitest+desktop typecheck exit0；真浏览器三页新建后列表可见、CmsColumnManager 列显示真实值、0pageerror、evidence 非物理真机；精确 6 文件单提交。（task t145 已创建，claimed@page-core attempt1）预建 t146（design-reviewer 终审，reviewedTaskId=t145，deps t144+t145+t23）：verdict=pass 方可关闭 R341。（task t146 已创建，pending@design-reviewer）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R341 修复回收后据实入账。
+
