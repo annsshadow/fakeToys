@@ -35,13 +35,25 @@ async function doSearch(): Promise<void> {
     // 两个来源各自容错：任一失败不影响另一来源结果，但失败必须可见。
     try {
       const g = await searchApi.global(kw)
-      out.push(...((g.data ?? []) as Row[]).map((r) => ({ ...r, _from: '全局' })))
+      // R352：全局返回分组信封 {data:{designList,viewList}}，先解包数组再 map
+      const env = (g.data ?? {}) as { designList?: Row[]; viewList?: Row[] }
+      const rowsG: Row[] = [
+        ...(Array.isArray(env.designList) ? env.designList : []),
+        ...(Array.isArray(env.viewList) ? env.viewList : []),
+      ]
+      out.push(...rowsG.map((r) => ({ ...r, _from: '全局' })))
     } catch (error) {
       failed.push(describeLoadError('全局检索失败', error))
     }
     try {
       const b = await searchApi.bbsSubject(kw)
-      out.push(...((b.data ?? []) as Row[]).map((r) => ({ ...r, _from: '论坛' })))
+      // R352：论坛返回 {data:{data:[...],total}}，解包内层数组，兼容单层数组
+      const rowsB: Row[] = Array.isArray(b.data)
+        ? b.data
+        : Array.isArray((b.data as { data?: Row[] })?.data)
+          ? (b.data as { data: Row[] }).data
+          : []
+      out.push(...rowsB.map((r) => ({ ...r, _from: '论坛' })))
     } catch (error) {
       failed.push(describeLoadError('论坛检索失败', error))
     }
