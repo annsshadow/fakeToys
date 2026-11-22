@@ -112,7 +112,15 @@ const { data, isError, error } = useQuery({
     loading.value = true
     try {
       const r = (await api.get(listEp)) as unknown as { data?: unknown }
-      return Array.isArray(r?.data) ? (r.data as Item[]) : []
+      const d = (r as any)?.data
+      const rows = Array.isArray(d) ? d : (Array.isArray(d?.data) ? d.data : [])
+      return (rows as Item[]).map((row: any) => ({
+        ...row,
+        columnId: row.columnId ?? row.columnid,
+        personId: row.personId ?? row.personid,
+        createTime: row.createTime ?? row.createtime,
+        updateTime: row.updateTime ?? row.updatetime,
+      })) as Item[]
     } finally {
       loading.value = false
     }
