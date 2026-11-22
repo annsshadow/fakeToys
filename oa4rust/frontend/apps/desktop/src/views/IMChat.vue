@@ -147,6 +147,14 @@
 </template>
 
 <script setup lang="ts">
+// R374：IM 文件上传成功判定——type 判定为主并校验权威 fileUrl/url，不强制 bool。
+function imUploadSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (!(resp.type === 'success' || (resp.type === undefined && resp.success !== false))) return false
+  const data = resp.data
+  return !!(data && (data.fileUrl || data.url))
+}
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -437,8 +445,12 @@ function sendFileMessage(): void {
     form.append('file', file, file.name)
     const type = file.type.startsWith('image/') ? 'image' : 'file'
     try {
-      const r = await api.upload(`/api/message/assemble/communicate/im/msg/upload/${convId}/type/${type}`, form)
-      const url = String((r.data as any)?.fileUrl ?? (r.data as any)?.url ?? '')
+      const r: any = await api.upload(`/api/message/assemble/communicate/im/msg/upload/${convId}/type/${type}`, form)
+      if (!imUploadSucceeded(r)) {
+        toast.error(r?.message || '文件发送失败，请重试')
+        return
+      }
+      const url = String(r?.data?.fileUrl ?? r?.data?.url ?? '')
       toast.success(url ? `文件消息已发送：${file.name}` : '文件消息已发送')
       void refreshFirstPage()
     } catch (e: any) {
