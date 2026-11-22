@@ -87,7 +87,8 @@ const { data, isError, error } = useQuery({
     loading.value = true
     try {
       const r = (await api.get(listEp)) as unknown as { data?: unknown }
-      return Array.isArray(r?.data) ? (r.data as Item[]) : []
+      const d = (r as any)?.data
+      return Array.isArray(d) ? (d as Item[]) : Array.isArray(d?.data) ? (d.data as Item[]) : []
     } finally {
       loading.value = false
     }
