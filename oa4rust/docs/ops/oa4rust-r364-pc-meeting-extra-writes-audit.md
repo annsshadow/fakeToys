@@ -21,7 +21,7 @@
 
 ### 2.1 三函数写链结构
 
-D:/WORKSPACE/fakeToys/oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue：
+oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue：
 
 - meetingWrite(:836-889)：约 20 个 op 分支，覆盖 accept/reject/confirmAllow/confirmDeny/checkin/delete/buildingEdit/buildingDelete/roomEdit/roomDelete/roomPhoto/config/coreRoomCreate/coreRoomSave/attDelete/mtgCreate/mtgCtrlCreate/sysCfgManage/attFromPp 及缺省 attachment update；:885 无条件 toast.success（会议操作已提交），:886-888 仅 catch 报 toast.error。
 - meetingMore(:891-919)：addInvite/delInvite/modifyStart/modifyComplete/manualComplete/coreSave/核心会议删除；:915 无条件 toast.success。
