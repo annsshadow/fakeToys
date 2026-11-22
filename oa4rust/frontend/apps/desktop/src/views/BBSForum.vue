@@ -244,6 +244,18 @@ import { useListError } from './listQuery'
 const session = useSession()
 const qc = useQueryClient()
 
+/**
+ * R376：写响应信封统一判定——type 为主，不强求 bool；提供 flagKey 时要求权威布尔严格 true。
+ * 适配 o2server HTTP200 + type:error 业务失败，以及 type:success 但 saved/deleted:false 的伪成功。
+ */
+function bbsWriteSucceeded(resp: any, flagKey?: string): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (!(resp.type === 'success' || (resp.type === undefined && resp.success !== false))) return false
+  if (flagKey !== undefined) return resp.data?.[flagKey] === true
+  return true
+}
+
 /** 后端分页端点回 {data:{data:rows,total}}（o2server ActionResult 信封），
  *  部分端点直接回数组；统一解包为行数组（与 ProcessWork 的 paged-aware 解包同型）。 */
 function listRows(resp: { data?: unknown }): unknown[] {
@@ -368,10 +380,18 @@ async function saveSection(): Promise<void> {
   try {
     if (sectionModalMode.value === 'edit' && sectionModalTarget.value?.id) {
       // POST 别名（后端 put+post 双注册）
-      await api.post(`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
+      const editResp: any = await api.post(`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
+      if (!bbsWriteSucceeded(editResp, 'saved')) {
+        toast.error(editResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('版块已重命名')
     } else {
-      await api.post('/api/bbs/assemble/control/section/create', { name })
+      const createResp: any = await api.post('/api/bbs/assemble/control/section/create', { name })
+      if (!bbsWriteSucceeded(createResp)) {
+        toast.error(createResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('版块已创建')
     }
     closeSectionModal()
@@ -388,7 +408,11 @@ async function deleteSection(sec: Section): Promise<void> {
   if (!ok) return
   sectionBusy.value = true
   try {
-    await api.post(`/api/bbs/assemble/control/section/delete/${sec.id}`)
+    const resp: any = await api.post(`/api/bbs/assemble/control/section/delete/${sec.id}`)
+    if (!bbsWriteSucceeded(resp, 'deleted')) {
+      toast.error(resp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     if (selectedSection.value?.id === sec.id) {
       selectedSection.value = null
     }
@@ -585,7 +609,8 @@ const createMutation = useMutation({
   onSettled: () => (topicSaving.value = false),
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
     api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
-  onSuccess: () => {
+  onSuccess: (data: any) => {
+    if (!bbsWriteSucceeded(data)) return
     showNewTopic.value = false
     refetch()
     newTopic.value = { sectionId: '', title: '', content: '' }
@@ -611,7 +636,11 @@ function createTopic(): void {
   createMutation.mutate(
     { ...newTopic.value },
     {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
+        if (!bbsWriteSucceeded(data)) {
+          toast.error(data?.message || '操作未生效，请刷新后重试')
+          return
+        }
         showNewTopic.value = false
         newTopic.value = { sectionId: '', title: '', content: '' }
         toast.success('帖子已发布')
@@ -632,7 +661,8 @@ const replyMutation = useMutation({
       subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
       content,
     }),
-  onSuccess: () => {
+  onSuccess: (data: any) => {
+    if (!bbsWriteSucceeded(data)) return
     replyText.value = ''
     refetchReplies() // refetch replies
     // refresh topic list to update reply count
@@ -645,7 +675,11 @@ function submitReply(): void {
   if (!replyText.value.trim() || !viewingTopic.value) return
   replySaving.value = true
   replyMutation.mutate(replyText.value, {
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (!bbsWriteSucceeded(data)) {
+        toast.error(data?.message || '操作未生效，请刷新后重试')
+        return
+      }
       replyText.value = ''
       toast.success('回复已发送')
     },
