@@ -26,10 +26,18 @@
         <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3GemPct + '%' }" /></view>
         <text class="r3-progress-num">已拥有 {{ ownedCount }}/{{ gems.length }}</text>
       </view>
+      <view class="r7-causal r7-causal-enter">
+        <text class="r7-causal-title">AI 因果链 · 本局靠什么拿分 → 换上后预计提升</text>
+        <text class="r7-causal-text">{{ r7Causal.text }}</text>
+        <view class="r7-causal-empty" aria-live="polite" role="status">
+          <text class="r7-causal-next">宝石页只提供收集线索：{{ r3AiGem ? r3AiGem.conclusion : '图鉴数据不足' }}</text>
+          <text class="r7-causal-src">依据：{{ r7Causal.source }} · 本地规则引擎不写出战配置，不展示虚构收益。</text>
+        </view>
+      </view>
       <view v-if="r3AiGem && gems.length" class="r3-ai r3-enter">
         <view class="r3-ai-head">
           <text class="r3-ai-badge">AI</text>
-          <text class="r3-ai-title">AI 建议 · 收集缺口</text>
+          <text class="r3-ai-title">AI 建议（本地规则引擎） · 收集缺口</text>
           <text class="r3-ai-engine">规则引擎</text>
         </view>
         <text class="r3-ai-conclusion">{{ r3AiGem.conclusion }}</text>
@@ -132,6 +140,7 @@ import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
 import { gemAttrBadge, affixName, qualityName as labelQualityName } from '@/utils/labels'
 import DefIcon from '@/components/DefIcon.vue'
+import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView } from '@/pages/_shared/r7GameplayCausal'
 
 const store = useGameStore()
 
@@ -301,6 +310,9 @@ onShow(() => {
 })
 
 /** R3 AI 线索：以已拥有数 + 最缺宝石给一条确定性收集建议，不编造概率。 */
+const r7Causal = ref<BattleCausalView>(normalizeBattleCausal(null))
+void fetchLatestBattleCausal().then((v) => { r7Causal.value = v })
+
 const r3GemPct = computed(() => {
   const total = gems.value.length
   return total ? Math.round(ownedCount.value / total * 100) : 0

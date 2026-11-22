@@ -64,6 +64,47 @@
         </view>
         <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()">{{ r6Rec.cta.label }} →</text>
       </view>
+
+      <!-- R7 §1F.4：先讲清本局靠什么拿分，再说推荐换上后的预期收益 -->
+      <view class="r7-causal r7-causal-enter">
+        <text class="r7-causal-title">AI 因果链 · 本局靠什么拿分 → 换上后预计提升</text>
+        <text class="r7-causal-text">{{ r7Causal.text }}</text>
+        <text v-if="r7Causal.hasHistory" class="r7-causal-next">
+          换上推荐：{{ r7Impact ? r7Impact.candidateName + '，预期护甲 ' + r7Impact.baseline.armorPermille + '‰ → ' + r7Impact.candidate.armorPermille + '‰、每波伤害 ' + r7Impact.baseline.estimatedDamagePerWave + ' → ' + r7Impact.candidate.estimatedDamagePerWave : '收益数据不可用：没有真实收益预估，不展示预计数值' }}
+        </text>
+        <view v-else class="r7-causal-empty" aria-live="polite" role="status">
+          <text>{{ r7Causal.text }}</text>
+          <text class="r7-causal-src">规则引擎 · 依据：battle_records；收益数据不可用，不展示预计数值。</text>
+        </view>
+        <text class="r7-causal-src">依据：{{ r7Causal.source }} · 本地规则引擎不编造收益数字</text>
+      </view>
+      <!-- R7 §1F.4：收益数字只来自 impact 端点；本地规则卡不冒充真实预估 -->
+      <view v-if="r6Rec" class="r7-impact r7-enter">
+        <text class="r7-impact-title">真实收益预估 · 当前 vs 推荐</text>
+        <view class="r7-vs-row">
+          <text class="r7-vs-label">当前 {{ r7Impact ? r7Impact.replacedName : '—' }}</text>
+          <text class="r7-vs-arrow">→</text>
+          <text class="r7-vs-label">推荐 {{ r7Impact ? r7Impact.candidateName : '—' }}</text>
+        </view>
+        <view v-if="r7Impact" class="r7-bar-block">
+          <view class="r7-bar-row">
+            <text class="r7-bar-label">当前每波伤害</text>
+            <view class="r7-bar"><view class="r7-bar-fill" :style="{ width: r7BaseWidth + '%' }" /></view>
+            <text class="r7-bar-val">{{ r7Impact.baseline.estimatedDamagePerWave }}</text>
+          </view>
+          <view class="r7-bar-row">
+            <text class="r7-bar-label">推荐每波伤害</text>
+            <view class="r7-bar r7-bar-next"><view class="r7-bar-fill" :style="{ width: r7NextWidth + '%' }" /></view>
+            <text class="r7-bar-val">{{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+          </view>
+          <text class="r7-delta">每波 {{ r7Impact.changes.damagePerWaveDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWaveDelta }}（{{ r7Impact.changes.damagePerWavePct >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWavePct }}%）· 战力 {{ r7Impact.changes.powerDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.powerDelta }} · 评分 {{ r7Impact.changes.ratingTotalDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.ratingTotalDelta }}</text>
+        </view>
+        <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）· {{ r7Impact.starRateNote }}</text>
+        <text v-if="r7Impact" class="r7-why">为什么是它：{{ r7Impact.replacedName }} → {{ r7Impact.candidateName }} · {{ r7Impact.method }}</text>
+        <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }} · 近 {{ r7Impact.windowDays }} 天 {{ r7Impact.battleCount }} 场</text>
+        <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7Error || '接口未提供真实预估' }}。不展示虚构数值。</text>
+        <text v-if="r7Impact" class="r7-btn primary" role="button" @click="r7OpenCompare()">应用推荐 · 先看收益对比 →</text>
+      </view>
       <view v-if="r6Rec && r6Rec.status === 'local' && r3AiEquip" class="r3-ai r6-local r3-enter">
         <view class="r3-ai-head">
           <text class="r3-ai-badge">AI</text>
@@ -167,6 +208,32 @@
         </view>
       </view>
     </view>
+
+    <!-- R7 两步 CTA：首次点击只预览，确认后才整组替换装备 -->
+    <view v-if="r7CompareOpen" class="r7-compare-mask" @click="r7CompareOpen = false">
+      <view class="r7-compare r7-enter" @click.stop>
+        <text class="r7-compare-title">当前 vs 推荐 · 确认替换</text>
+        <view v-if="r7Impact" class="r7-vs-row">
+          <text class="r7-vs-label">{{ r7Impact.replacedName }}（当前）</text>
+          <text class="r7-vs-arrow">→</text>
+          <text class="r7-vs-label">{{ r7Impact.candidateName }}（推荐）</text>
+        </view>
+        <view v-if="r7Impact" class="r7-vs-row">
+          <text class="r7-vs-label">每波伤害 {{ r7Impact.baseline.estimatedDamagePerWave }} → {{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+        </view>
+        <view v-if="r7Impact" class="r7-vs-row">
+          <text class="r7-vs-label">护甲 {{ r7Impact.baseline.armorPermille }}‰ → {{ r7Impact.candidate.armorPermille }}‰ · 评分 {{ r7Impact.baseline.ratingTotal }} → {{ r7Impact.candidate.ratingTotal }}</text>
+        </view>
+        <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）</text>
+        <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }}</text>
+        <text v-if="r7ApplyError" class="r7-error">{{ r7ApplyError }}</text>
+        <text v-if="r7ApplyDone" class="r7-error">已替换为「{{ r7ApplyDone }}」，装备配置已更新。</text>
+        <view class="r7-actions">
+          <text class="r7-btn" role="button" @click="r7CompareOpen = false">取消</text>
+          <text class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -177,6 +244,8 @@ import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
+import { fetchRecommendationImpact, applyEquipmentImpact, type R7ImpactView } from '@/pages/_shared/r7ImpactApply'
+import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView } from '@/pages/_shared/r7GameplayCausal'
 
 const store = useGameStore()
 
@@ -337,11 +406,52 @@ const r6Loading = ref(true)
 const r6Rec = ref<R6Card | null>(null)
 const r6Open = ref(false)
 
+/* R7：收益预估与两步确认状态，数值只来自 impact 响应。 */
+const r7Impact = ref<R7ImpactView | null>(null)
+const r7Error = ref('')
+const r7Causal = ref<BattleCausalView>(normalizeBattleCausal(null))
+const r7CompareOpen = ref(false)
+const r7Applying = ref(false)
+const r7ApplyError = ref('')
+const r7ApplyDone = ref('')
+const r7BaseWidth = computed(() => {
+  const v = r7Impact.value
+  if (!v) return 0
+  const max = Math.max(v.baseline.estimatedDamagePerWave, v.candidate.estimatedDamagePerWave, 1)
+  return Math.round(v.baseline.estimatedDamagePerWave / max * 100)
+})
+const r7NextWidth = computed(() => {
+  const v = r7Impact.value
+  if (!v) return 0
+  const max = Math.max(v.baseline.estimatedDamagePerWave, v.candidate.estimatedDamagePerWave, 1)
+  return Math.round(v.candidate.estimatedDamagePerWave / max * 100)
+})
+const r7StarText = computed(() => {
+  const n = r7Impact.value?.changes.starRateObserved
+  return typeof n === 'number' ? n.toFixed(1) : '—'
+})
+const r7BasisText = computed(() => {
+  const v = r7Impact.value
+  if (!v) return '服务端未提供依据'
+  const evidence = v.evidence.map((e) => e.metric + ' ' + e.value + e.unit + '（' + e.source + ' · ' + e.window + '）')
+  return v.basis.concat(evidence).join('；')
+})
+
 async function loadR6Recommendation() {
   r6Loading.value = true
+  r7Impact.value = null
+  r7Error.value = ''
   const rec = await fetchRecommendations('equipment')
   if (rec) {
     r6Rec.value = rec
+    const candidateId = Number(rec.cta.params?.id ?? 0)
+    const replacedId = Number(rec.cta.params?.replace ?? 0)
+    if (candidateId && replacedId) {
+      const result = await fetchRecommendationImpact('equipment', candidateId, replacedId)
+      if (result.card) r6Rec.value = result.card
+      r7Impact.value = result.impact
+      if (!result.impact) r7Error.value = result.error || '收益数据不可用：服务端未提供真实预估'
+    }
   } else {
     r6Rec.value = localFallbackCard({
       context: "equipment",
@@ -351,6 +461,7 @@ async function loadR6Recommendation() {
       ctaLabel: '去关卡看掉落',
       ctaRoute: '/pages/stage/stage',
     })
+    r7Error.value = '本地规则引擎没有真实推荐，不调用收益预估，不展示虚构数值'
   }
   r6Loading.value = false
 }
@@ -365,6 +476,44 @@ function r6Go() {
 }
 
 void loadR6Recommendation()
+void fetchLatestBattleCausal().then((v) => { r7Causal.value = v })
+
+function r7OpenCompare() {
+  r7ApplyError.value = ''
+  r7ApplyDone.value = ''
+  if (!r7Impact.value) {
+    r7Error.value = '收益数据不可用：请先等待真实收益预估返回'
+    return
+  }
+  r7CompareOpen.value = true
+}
+
+async function r7ConfirmApply() {
+  const impact = r7Impact.value
+  if (!impact || r7Applying.value) return
+  r7Applying.value = true
+  r7ApplyError.value = ''
+  r7ApplyDone.value = ''
+  try {
+    await store.loadEquipment()
+    const candidate = store.equipment.find((e) => e.id === impact.candidateId)
+    if (!candidate) {
+      r7ApplyError.value = '推荐装备尚未拥有，未写入任何配置。请重试'
+      return
+    }
+    const current = store.equipment.map((e) => ({ id: e.id, slot: e.slot, equipped: e.equipped }))
+    await applyEquipmentImpact(current, impact.candidateId, impact.replacedId, candidate.slot)
+    await store.loadEquipment()
+    r7ApplyDone.value = impact.candidateName
+    r7CompareOpen.value = false
+    void loadR6Recommendation()
+  } catch (e) {
+    r7ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原装备配置未改动。请重试'
+  } finally {
+    r7Applying.value = false
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* R3 冷启动配置加载：深链接/刷新直入时自行拉 /config                             */
 /* -------------------------------------------------------------------------- */
