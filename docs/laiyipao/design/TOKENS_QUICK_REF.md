@@ -195,4 +195,13 @@ soft 背景只允许叠 panel / panel-2；必须叠 soft+panel-3 时，文字改
 - 实时换算：钳分倒计时与星级差额共用 `score_full_at_sec` + 战斗时钟 + `star_targets`；「上限→实得→差额」提前到 HUD；锚点前只说「钳分中·距满分 Xs / 即将免钳分」，禁止「保分窗口」与硬编码。
 - AI 四判据：可见汉字「AI」+真实数据结论+依据+CTA，低透明度底纹不算；不回退 R1-R8 诚实文案、30% 口径、25% AoE、顶栏脱敏、focus-visible/reduced-motion、玻璃 soft 禁用组合。
 - 令牌与守卫：不新增视觉令牌（v1/v3-r3/r6 与 v1E/v1F/r8 标记保留，无 v4、无 `--r9-*`）；双端契约 r9BattleFeedback.contract.test.ts 保持 GREEN。
+## 7G. R10 养成因果链与收益可解释速查（主规范 §1I）
+
+- 依据：docs/laiyipao/audits/round10-gameplay/README.md（非物理真机）。燃烧弹 100→105 后同关 10614→12088 分、C→B、反应 92→93，hash `501a22c7`→`1c36fcc2`；D1 写入成功可见、D2 宝石图鉴双 CTA 已修。
+- 推荐收益：`RecCTA.params.candidate/replace` 必须由服务端 `recImpactCTA` 给出（配置存在/已解锁/已拥有/同槽或同主战/数值更优），无参数或不可执行走诚实空态；客户端不得伪造、不得猜文案；两步确认后才写入，成功后 `.apply-done` 可见。
+- 养成因果：战报并列养成前/后同一关可信差值（分数/评级/星级/反应数/上限→实得→差额），来自两次真实结算并各带 hash；缺一局显示诚实空态，禁止估算冒充。
+- 宝石三段：图鉴「去商城找宝石」+「去背包镶嵌 →」最短路径；佩戴收益只认服务端属性差分（attack/crit/element_coef/reaction_mult/heat_cap），未上报写「佩戴收益未上报」，不虚构。
+- AI 四判据：可见汉字「AI」+真实数据结论+依据+CTA，低透明度底纹不算；不回退 R1-R9 诚实文案、30% 口径、25% AoE、顶栏脱敏、focus-visible/reduced-motion、玻璃 soft 禁用组合、锚点前非保分窗口、跳过选卡不羞辱。
+- 令牌与守卫：不新增视觉令牌（v1/v3-r3/r6 与 v1E/v1F/r8/r9 标记保留，无 v4、无 `--r10-*`）；双端契约 r10GrowthCausal.contract.test.ts 保持 GREEN。
+
 

@@ -646,6 +646,39 @@ admin / PC（12 视图）：
 - 不新增视觉令牌：保持 `--lyp-token-version: lyp-tokens-v1`、`--lyp-r3-version: lyp-tokens-v3-r3`、`--lyp-r6-version: lyp-tokens-r6`（v1E/v1F 与 r8 标记为同包标记，不改锚点），禁止误升 `lyp-tokens-v4`，禁止新增 `--r9-*` 视觉变量；反馈条复用 panel-2、文本四阶、既有焦点环与骨架类。
 - test-first：先写 laiyipao/admin/tests/r9BattleFeedback.contract.test.ts 与 laiyipao/miniapp/src/styles/r9BattleFeedback.contract.test.ts，§1H 与速查 §7F 落盘前必须 RED，落盘后 GREEN；不弱化 designTokens/textContrast/focusVisible/tokens/r4/r5/r6/r7/r8 既有断言。
 - 验收门禁：双端全量测试绿；交 H5 战斗 HUD / 选卡 / 结算真浏览器截图（标注非物理真机）与 r9 审计对照；design-reviewer 按 §1H.4 复核 AI 四判据，确认跳过选卡文案不羞辱玩家、钳分语义不回退。
+## 1I. R10 养成因果链与收益可解释规范
+
+本章是 §1A–§1H 的**养成层**增量下限，只定信息契约，不改数值公式。依据 t98 真浏览器审计 docs/laiyipao/audits/round10-gameplay/README.md（截图 r10-05-upgraded-battle-result.png / r10-07-gems-bag-cta-visible.png / r10-08-skills-impact-unavailable.png / r10-08-equipment-impact-unavailable.png 均为非物理真机）：技能图鉴 24 项、装备图鉴 18 件、宝石 0/8；真实把燃烧弹 100→105 后同关 10614→12088 分、C→B、反应 92→93，hash 由 `501a22c7` 变 `1c36fcc2`。D1/D2 已修（写入成功可见、宝石图鉴新增「去背包镶嵌」CTA），本章针对 §4 三个未解缺口。h5-ui / admin-ui / gameplay / backend 按写域实现。
+
+### 1I.1 推荐收益链路必须参数可达
+
+- 服务端 `RecCTA`（`laiyipao/server/internal/service/recommendations.go`）若 Label 承诺「应用推荐 / 看收益 / 调整技能 / 查看搭配」，必须给出客户端可执行的 `params.candidate`（新条目 id）与 `params.replace`（被替换 id），或提供服务端直接可执行的动作；禁止下发无参数 CTA 让链路断掉，禁止只写路由不写替换参数。
+- 权威参数只能来自服务端 `recImpactCTA`：候选必须配置存在、玩家进度已解锁、玩家已拥有、同槽（装备）或同为主战（技能）、数值确实更优；任一不满足就不给 id/replace，前端走「接口未提供真实预估」诚实空态，客户端不得伪造 id、不得从展示文案猜参数、不得发起注定 400 的请求。
+- 两步确认沿用 §1F.4：先「当前 vs 推荐」对比与预期收益，再「确认替换 / 取消」；成功后 `.apply-done`（role=status / aria-live=polite）可见、主按钮变「完成」，禁止写入后立刻关闭遮罩。
+
+### 1I.2 养成前后因果视图：只认两次真实结算
+
+- 战报中并列「养成前 / 养成后同一关可信差值」：分数、评级、星级、击杀、漏怪、反应数、钳分上限与实得必须来自两次真实结算记录（各自的 `hash` / `replay_hash` 可核对），不得用配置推算或在同一场上叠加估算。
+- 差值要写清同一关、同一难度与养成变更点（如「燃烧弹基础伤害 100→105，每级 +50‰」），并带两次 hash；缺任一次结算就显示「还缺养成前那局战报，先打一局同关」诚实空态，禁止编造「提升 X%」。
+- 钳分仍按权威规则呈现「上限→实得→差额」，不得把钳分损失误归因于养成无效；差值只解释可核对的字段。
+
+### 1I.3 宝石收集-镶嵌-收益三段打通
+
+- 宝石图鉴提供最短路径到背包宝石页签：次级 CTA「去背包镶嵌 →」指向 `/pages/bag/bag`，与「去商城找宝石」并列且弱化；图鉴讲收集缺口，背包讲佩戴，商城讲获取，三段各自只说自己能证实的事。
+- 佩戴收益必须来自服务端属性差分（佩戴前后真实 `attack` / `crit` / `element_coef` / `reaction_mult` / `heat_cap` 等字段），前端在同一页呈现；服务端未下发差分时写「佩戴收益未上报，先看词条描述」，不得把 `/config.gems` 的静态说明当已生效收益，**不虚构**佩戴收益数据。
+- 空态要同时给出可行动下一步（去商城 / 去背包镶嵌）与数据缺口说明；与正常卡等高，不闪烁、不遮挡。
+
+### 1I.4 AI 四判据是硬下限
+
+- 任何 AI 卡（推荐 / 收益预估 / 养成前后 / 宝石缺口 / 诚实空态）必须同时满足：可见汉字「AI」、真实数据结论、依据、CTA，缺一不算；低透明度底纹不算，不宣称 GPT，不编造置信度。
+- 依据行写清真实字段（`params.candidate` / `params.replace` / `hash` / `replay_hash` / `attack` / `crit` / `reaction_mult` / `heat_cap`），CTA 指向技能/装备/背包/战报；诚实空态与正常卡等高。
+- 不回退 R1-R9：诚实文案、元素伤害 30% 口径、25% AoE、顶栏脱敏、对比度守卫、`:focus-visible`、`prefers-reduced-motion`、玻璃/元素 soft 禁用组合、锚点前非保分窗口、跳过选卡不羞辱；本章只补养成因果解释层。
+
+### 1I.5 令牌、test-first 与验收
+
+- 不新增视觉令牌：保持 `--lyp-token-version: lyp-tokens-v1`、`--lyp-r3-version: lyp-tokens-v3-r3`、`--lyp-r6-version: lyp-tokens-r6`（v1E/v1F 与 r8/r9 标记为同包标记，不改锚点），禁止误升 `lyp-tokens-v4`，禁止新增 `--r10-*` 视觉变量；复用 panel-2、文本四阶、既有焦点环与骨架类。
+- test-first：先写 laiyipao/admin/tests/r10GrowthCausal.contract.test.ts 与 laiyipao/miniapp/src/styles/r10GrowthCausal.contract.test.ts，§1I 与速查 §7G 落盘前必须 RED，落盘后 GREEN；不弱化 designTokens/textContrast/focusVisible/tokens/r4/r5/r6/r7/r8/r9 既有断言。
+- 验收门禁：双端全量测试绿；交 H5 技能/装备/宝石/战报真浏览器截图（标注非物理真机）与 r10 审计对照；design-reviewer 按 §1I.4 复核 AI 四判据，确认无伪造 CTA 参数、无估算冒充两次结算、无虚构宝石收益。
 ---
 ## 2. 色彩系统
 
