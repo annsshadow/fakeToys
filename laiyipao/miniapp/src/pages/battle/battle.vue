@@ -38,6 +38,16 @@
           <text class="time-budget-text">{{ timeBudget.text }}</text>
         </view>
       </view>
+      <!-- R9：最近反应记录。与星级/钳分胶囊同属顶部浮层，不拦截点击。 -->
+      <view v-if="recentReactions.length" class="reaction-feed" aria-live="polite">
+        <view v-for="r in recentReactions" :key="r.id" class="reaction-line">
+          <view class="reaction-line-main">
+            <text class="reaction-name">{{ r.pair }} → {{ r.name }}</text>
+            <text class="reaction-damage">{{ r.resisted ? '抗性削减 ' : '' }}-{{ r.damage }}</text>
+          </view>
+          <text class="reaction-cue">AI {{ r.cue }}</text>
+        </view>
+      </view>
       <view class="hud-row">
         <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
              的时刻几乎总是"正在打"，让他退出战斗去找设置等于把开关藏起来。 -->
@@ -204,6 +214,7 @@
           <!-- 第六批 R69：牌堆剩余此前完全不展示，玩家不知道这波卡是从多少张里抽的 -->
           <text> 本波还能弃 {{ deck.discardsLeft }} 张，牌堆剩 {{ deck.size }} 张。</text>
         </text>
+        <text v-if="cardChoiceFeedback" class="card-choice-feedback">{{ cardChoiceFeedback }}</text>
       </view>
       <view class="cards">
         <view
@@ -277,6 +288,7 @@
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
       <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
+      <text v-if="settleCardFeedback" class="settle-card-feedback">{{ settleCardFeedback }}</text>
       <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
       <view v-if="settleFailed" class="settle-error">
         <text class="settle-error-hint">{{ settleErrorHint }}</text>
@@ -306,6 +318,12 @@
       <!-- 再来一局（2026-11-01 新一轮第 53 轮）：redirectTo 替换当前页，
            重新进入同一关（重新扣体力/发 token），省去返回选关再点一次的路径。 -->
       <view v-if="!settleFailed" class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
+      <view
+        v-if="canGoNextLevel"
+        class="btn btn-primary next-level-btn"
+        style="margin-top: 20rpx"
+        @click="goNextLevel"
+      >前往第 {{ nextLevelId }} 关 →</view>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
     </view>
 
@@ -345,9 +363,10 @@ import {
   logicIntervalMs,
   normalizeSpeed,
 } from '@/render/canvas'
-import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element } from '@/game/elements'
+import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
+import { damageShareFromEvents, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -364,6 +383,20 @@ const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/**
+ * R9：最近反应的可读记录。canvas 粒子只在几帧内闪现，8× 下几乎看不清；
+ * HUD 这三条短记录不拦截点击、不盖住战场，让玩家知道「刚刚打出了什么」。
+ */
+interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean }
+const recentReactions = ref<ReactionLog[]>([])
+let reactionSeq = 0
+/** R9：累计本局真实 hit/reaction 事件金额，只用于展示「反应伤害占比」，不进回放哈希。 */
+const damageShare = ref<DamageShare>({ reactionDamage: 0, totalDamage: 0, ratioPct: null })
+/** cardPicks 是引擎类实例上的普通数组；显式版本号让选卡反馈能随 take/discard/skip 刷新。 */
+const cardChoiceVersion = ref(0)
+/** 结算时冻结权威 card_picks，避免后续操作改写归因。 */
+const settleCardPicks = ref<number[]>([])
 
 /**
  * 结算被服务端拒绝（如 replay_skills 与构筑不符）时，这一局**没有入账**。
@@ -477,6 +510,33 @@ const settleAttribution = computed(() => {
   parts.push(`漏怪 ${leaked}`)
   parts.push(clamp ? '建议缩短清波时间或少漏怪、多触发反应提分' : '建议少漏怪、多触发反应提分')
   return parts.join('；') + '。'
+})
+
+/** R9 选卡面板：统计来自权威 card_picks，反应数来自引擎，不虚构任何收益。 */
+const cardChoiceFeedback = computed(() => {
+  const eng = engine.value
+  void cardChoiceVersion.value
+  if (!eng || settled.value) return null
+  const picks = Array.isArray(eng.cardPicks) ? eng.cardPicks : []
+  const s = summarizeCardPicks(picks)
+  const reactions = Math.max(0, Number(eng.reactionsCount ?? 0) || 0)
+  if (s.total === 0 && reactions === 0) {
+    return 'AI 本局还没有可归因的选择记录；依据 card_picks / reaction 事件，点卡装备或全部不要了继续。'
+  }
+  return `AI 已取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；依据 card_picks / reaction 事件；点卡装备或全部不要了推进下一波。`
+})
+
+/** R9 结算：把权威选择、真实反应数与伤害占比串成可复盘结论。缺数据就诚实空态。 */
+const settleCardFeedback = computed(() => {
+  const r = settleResult.value
+  if (!r || settleFailed.value) return null
+  const picks = settleCardPicks.value
+  if (!Array.isArray(picks) || !picks.length) return 'AI 本局未记录选择收益（缺 card_picks）；下一局可对比不同搭配。'
+  const s = summarizeCardPicks(picks)
+  const reactions = Math.max(0, Number(r.reactions ?? 0) || 0)
+  const share = damageShare.value
+  const shareText = share.ratioPct === null ? '本局无完整伤害记录' : `反应伤害占比 ${share.ratioPct}%`
+  return `AI 本局取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；${shareText}；依据 card_picks / hit+reaction 事件；下一局可换元素搭配对比收益。`
 })
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
@@ -688,6 +748,38 @@ function getCanvas(): Promise<any | null> {
  * 抽成具名函数是为了换挡时能重建定时器 —— 此前它是 setup() 里的一个
  * 内联闭包，倍速改不到它，于是「兼容模式」下档位是个摆设。
  */
+function noteReactions(events: unknown[]): void {
+  const d = damageShareFromEvents(events as Array<{ type?: string; damage?: bigint | number }>)
+  if (d.reactionDamage > 0 || d.totalDamage > 0) {
+    const prev = damageShare.value
+    const totalDamage = prev.totalDamage + d.totalDamage
+    const reactionDamage = prev.reactionDamage + d.reactionDamage
+    damageShare.value = {
+      reactionDamage,
+      totalDamage,
+      ratioPct: totalDamage > 0 ? Math.round(reactionDamage * 1000 / totalDamage) / 10 : null,
+    }
+  }
+  const reactions = events.filter(
+    (e): e is { type: 'reaction'; reaction: ReactionKey; damage: bigint | number; resisted: boolean; existingElement?: Element | ''; incomingElement?: Element | '' } =>
+      (e as { type?: string })?.type === 'reaction',
+  )
+  if (!reactions.length) return
+  const fresh = reactions.slice(-3).map((e) => {
+    const cue = reactionCue(e.reaction, e.existingElement, e.incomingElement, e.damage)
+    return {
+      id: ++reactionSeq,
+      key: e.reaction,
+      name: cue.name,
+      pair: cue.pair,
+      cue: cue.cue,
+      damage: Math.max(0, Number(e.damage)),
+      resisted: Boolean(e.resisted),
+    }
+  })
+  recentReactions.value = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+}
+
 function fallbackTick(): void {
   // ⚠️ 必须显式还原类型：`engine` 是 ref，Vue 的 `UnwrapRef` 会把类实例的
   // **类型**摊成结构映射（私有成员不在 keyof 里 → 方法看起来全丢了），
@@ -699,6 +791,7 @@ function fallbackTick(): void {
   if (paused.value) return
   const events = eng.step()
   playBattleEvents(events)
+  noteReactions(events)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -801,6 +894,10 @@ async function setup() {
         ? scoreRulesFromServer(store.config.score_rules)
         : undefined,
     })
+    recentReactions.value = []
+    damageShare.value = { reactionDamage: 0, totalDamage: 0, ratioPct: null }
+    settleCardPicks.value = []
+    cardChoiceVersion.value++
     engine.value = eng
     eng.start()
 
@@ -834,6 +931,7 @@ async function setup() {
         const events = eng.step()
         // 音效与视觉同源：都从同一批事件来，不另算一份状态
         playBattleEvents(events)
+        noteReactions(events)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -888,6 +986,8 @@ async function settle(eng: BattleEngine) {
   }
   try {
     let payload = eng.settleInput(tokenId.value)
+    const reportedPicks = (payload as { card_picks?: unknown }).card_picks
+    settleCardPicks.value = Array.isArray(reportedPicks) ? [...reportedPicks] : []
     let res: any
     try {
       res = await api.settleBattle(payload)
@@ -935,18 +1035,21 @@ function takeCard(id: string) {
   if (!engine.value) return
   engine.value.takeCard(id)
   hand.value = [...engine.value.deck.hand]
+  cardChoiceVersion.value++
 }
 
 function discardCard(id: string) {
   if (!engine.value) return
   engine.value.discardCard(id)
   hand.value = [...engine.value.deck.hand]
+  cardChoiceVersion.value++
 }
 
 function skipCards() {
   if (!engine.value) return
   engine.value.skipCards()
   hand.value = []
+  cardChoiceVersion.value++
 }
 
 function backToStage() {
@@ -974,6 +1077,21 @@ function goBattleReport() {
  */
 function retryLevel() {
   uni.redirectTo({ url: `/pages/battle/battle?level=${levelId.value}` })
+}
+
+/** R9 通关后的下一关入口：只认服务端解锁进度与真实存在的关卡配置。 */
+const nextLevelId = computed(() => levelId.value + 1)
+const canGoNextLevel = computed(() => {
+  const r = settleResult.value
+  return Boolean(
+    r?.win && !settleFailed.value &&
+      store.levelMap.has(nextLevelId.value) &&
+      nextLevelId.value <= store.unlockedLevel,
+  )
+})
+function goNextLevel() {
+  if (!canGoNextLevel.value) return
+  uni.redirectTo({ url: `/pages/stage/stage?level=${nextLevelId.value}` })
 }
 
 /**
@@ -1605,12 +1723,14 @@ onShareAppMessage(() =>
   pointer-events: none;
 }
 
-/* HUD 行：胶囊各自排布，行内不再互相拉伸 */
+/* HUD 行：胶囊各自排布；窄屏换行但胶囊本身绝不挤压成竖排 */
 .hud-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
   align-items: center;
-  gap: 12rpx;
+  gap: 8rpx 12rpx;
 }
 
 .hud-spacer {
@@ -1620,9 +1740,12 @@ onShareAppMessage(() =>
 /* 波次 / 击杀胶囊：真浮层才用玻璃，画布上方的 HUD 允许 */
 .hud-pill {
   display: inline-flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   align-items: center;
-  height: 56rpx;
-  padding: 0 20rpx;
+  height: 52rpx;
+  padding: 0 14rpx;
+  white-space: nowrap;
   border-radius: 999rpx;
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -1639,6 +1762,7 @@ onShareAppMessage(() =>
   border-radius: 16rpx;
   padding: 12rpx 20rpx;
   min-width: 240rpx;
+  flex-shrink: 0;
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.06), 0 6rpx 20rpx rgba(0, 0, 0, 0.30);
 }
 
@@ -1691,8 +1815,9 @@ onShareAppMessage(() =>
 .kill-text,
 .star-gap-text,
 .time-budget-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: var(--text-2);
+  white-space: nowrap;
 }
 
 /* R8 时间预算胶囊：钳分中低调、临近免钳分变黄、已免钳分变绿，
@@ -1716,6 +1841,101 @@ onShareAppMessage(() =>
 .time-budget.clamped .time-budget-text {
   color: #7ee787;
   font-weight: 600;
+}
+
+/* t95：390×844 移动视口是 H5 主场景。让 HUD 行换行、胶囊内文字保持单行，
+   并给反应因果链留出宽度；pointer-events 仍由 .overlay-top 关闭，不挡战场。 */
+@media (max-width: 430px) {
+  .hud-row {
+    gap: 6rpx 8rpx;
+  }
+  .hud-spacer { display: none; }
+  .hp-box {
+    min-width: 0;
+    padding: 8rpx 12rpx;
+  }
+  .hud-pill {
+    height: 44rpx;
+    padding: 0 10rpx;
+  }
+  .wave-text,
+  .kill-text,
+  .star-gap-text,
+  .time-budget-text {
+    font-size: 20rpx;
+    white-space: nowrap;
+  }
+  .reaction-feed {
+    gap: 4rpx;
+  }
+  .reaction-line {
+    flex-wrap: wrap;
+    row-gap: 2rpx;
+    padding: 4rpx 10rpx;
+    width: 100%;
+  }
+  .reaction-line-main {
+    gap: 8rpx;
+  }
+  .reaction-name,
+  .reaction-damage {
+    font-size: 20rpx;
+  }
+  .reaction-cue {
+    font-size: 18rpx;
+    max-width: 100%;
+  }
+}
+
+/* R9 最近反应：只占顶部浮层一行，pointer-events 由 .overlay-top 关闭。 */
+.reaction-feed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6rpx;
+}
+
+.reaction-line {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  align-items: baseline;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(13, 17, 23, 0.82);
+  border: 1rpx solid var(--border-soft);
+}
+
+.reaction-name {
+  font-size: 22rpx;
+  color: #ffd33d;
+}
+
+.reaction-line-main {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  align-items: baseline;
+}
+
+.reaction-damage {
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+
+.reaction-cue {
+  font-size: 20rpx;
+  color: #58a6ff;
+  line-height: 1.45;
+  max-width: 620rpx;
+}
+
+.card-choice-feedback {
+  display: block;
+  margin-bottom: 16rpx;
+  font-size: 22rpx;
+  color: #58a6ff;
+  line-height: 1.5;
 }
 
 .sheet {
@@ -1907,6 +2127,15 @@ onShareAppMessage(() =>
   color: var(--muted);
   line-height: 1.6;
   margin: -6rpx 20rpx 16rpx;
+}
+
+.settle-card-feedback {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: #58a6ff;
+  line-height: 1.55;
+  margin: 0 20rpx 16rpx;
 }
 
 .settle-local-note {

@@ -495,6 +495,10 @@ export type BattleEvent =
       y: bigint
       damage: bigint
       resisted: boolean
+      /** 触发前敌人身上占优的元素（展示用，不进回放哈希） */
+      existingElement?: Element | ''
+      /** 本次弹丸携带的元素（展示用，不进回放哈希） */
+      incomingElement?: Element | ''
     }
   | { type: 'kill'; x: bigint; y: bigint; boss: boolean }
   | { type: 'leak'; damage: bigint }
@@ -1614,6 +1618,9 @@ export class BattleEngine {
       applyStacks: p.applyStacks,
       roll: this.rng.roll(),
     }
+    // R9：在 applyElementStacks 之前取「旧元素」，否则会把本次弹丸也算进去。
+    // 只用于 reaction 事件的展示字段，不参与命中/伤害/回放哈希。
+    const existingElement = def.dominantElement()
     const res: HitResult = resolveHit(att, def, input)
     // 施加元素必须在伤害结算之后，否则会自我触发反应
     applyElementStacks(att, def, input)
@@ -1718,6 +1725,8 @@ export class BattleEngine {
         y: e.y,
         damage: res.reactionDamage,
         resisted,
+        existingElement,
+        incomingElement: p.element,
       })
       this.pushFloat(
         e.x,
