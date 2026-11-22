@@ -63,7 +63,7 @@
           <text class="r3-ai-engine">规则引擎</text>
         </view>
         <text class="r3-ai-conclusion">{{ r5AiStage.conclusion }}</text>
-        <text class="r3-ai-basis">依据：关卡曲线/地形/星数 · 当前存档 · 更新于本次进入</text>
+        <text class="r3-ai-basis">依据：关卡曲线/地形/星数 · 当前存档 · 更新于本次进入 · 机制字段 is_boss / 敌种 id / 地形 id</text>
         <text class="r3-ai-cta" role="button" @click="r5GoLevel()">{{ r5AiStage.ctaText }}</text>
       </view>
 
@@ -116,18 +116,50 @@
         </view>
       </view>
 
+      <!-- R8 §1G.1 星级口径：满分/门槛都来自服务端配置，解释按满分百分比给星 -->
+      <view v-if="selected && selected.max_score > 0 && selected.star_targets.length" class="card star-rule-card">
+        <view class="card-title">星级口径<text class="dim">本关配置</text></view>
+        <view class="sr-row"><text class="muted">本关满分</text><text class="mono">{{ selected.max_score }}</text></view>
+        <view class="sr-row"><text class="muted">1★门槛</text><text class="mono">{{ selected.star_targets[0] }}（约满分的{{ starOnePct }}%）</text></view>
+        <view class="sr-row">
+          <text class="mono">难度 {{ selected.difficulty }}‰</text>
+          <text class="mono">波次 {{ selected.wave_count }}</text>
+          <text class="mono">元素上限 {{ selected.element_cap }}</text>
+        </view>
+        <text class="sr-note">按本关满分百分比给星；关卡难度仍逐级上升，星级门槛按本关满分缩放，因此不同关卡的绝对分数线会升降，不代表高关更容易。</text>
+      </view>
+
       <!-- G85 本章难度曲线：折线看章内难度爬升 -->
       <view v-if="difficultyCurve.pts.length >= 2" class="card diff-curve-card">
-        <view class="card-title">本章难度曲线</view>
-        <svg class="diff-svg" viewBox="0 0 300 92" aria-label="关卡难度曲线">
+        <view class="card-title">本章难度曲线<text class="dim">机制拐点</text></view>
+        <svg class="diff-svg" viewBox="0 0 300 112" aria-label="关卡难度曲线与机制拐点">
           <polyline class="diff-line" :points="difficultyCurve.line" />
           <circle
             v-for="p in difficultyCurve.pts"
             :key="p.id"
             :cx="p.x" :cy="p.y" r="3"
             class="diff-dot"
+            :class="{ 'diff-dot-boss': p.boss, 'diff-dot-enemy': p.newEnemy, 'diff-dot-terrain': p.terrain }"
+          />
+          <circle
+            v-for="m in difficultyCurve.milestones"
+            :key="'m' + m.id"
+            :cx="m.x" :cy="m.y" r="6"
+            class="diff-marker"
+            :class="m.shape"
           />
         </svg>
+        <view class="diff-legend">
+          <text class="diff-legend-item"><text class="diff-shape boss">◆</text> 首领</text>
+          <text class="diff-legend-item"><text class="diff-shape enemy">▲</text> 本关敌种</text>
+          <text class="diff-legend-item"><text class="diff-shape terrain">■</text> 地形</text>
+        </view>
+        <view v-for="m in difficultyCurve.milestones" :key="'t' + m.id" class="diff-milestone">
+          <text class="diff-ms-shape" :class="m.shape">{{ m.glyph }}</text>
+          <text class="diff-ms-label">第 {{ m.id }} 关 · {{ m.label }}</text>
+          <text class="dim">{{ m.reason }}</text>
+        </view>
+        <text v-if="!difficultyCurve.milestones.length" class="dim">本章难度平稳上升（无首领/敌种/地形拐点）。</text>
       </view>
 
       <!-- G129 地形关索引 -->
@@ -252,7 +284,7 @@
           <view v-for="(w, wi) in detailWaves" :key="wi" class="wave-row">
             <text class="muted">第 {{ wi + 1 }} 波</text>
             <text v-for="(sp, si) in w.spawns" :key="si" class="wave-spawn">
-              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}
+              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}<text v-if="enemyThreatTag(sp.enemy_id)" class="threat-tag"> {{ enemyThreatTag(sp.enemy_id) }}</text>
             </text>
           </view>
         </view>
@@ -317,7 +349,7 @@ import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
 import Icon from '@/components/Icon.vue'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
-import type { LevelSummary, TerrainKind, Wave } from '@/game/types'
+import type { EnemyDef, LevelSummary, TerrainKind, Wave } from '@/game/types'
 
 const store = useGameStore()
 
@@ -365,16 +397,24 @@ const chapterTotal = computed(() => chapterLevels.value.length * 3)
 /** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
 /** G129 地形关索引：按地形类型列出哪些关有它 —— 想练/避开某地形时一次找全。 */
 const terrainIndex = computed(() => {
-  const m = new Map<string, number[]>()
+  // 同一关可能配置多个同类地形（如第 59 关有两个 charge_tower），
+  // 索引问的是「哪些关有这种地形」而不是「有几块地形」，所以按关卡号去重。
+  const m = new Map<string, Set<number>>()
   for (const l of store.config?.levels ?? []) {
     for (const t of l.terrain ?? []) {
-      const arr = m.get(t.kind) ?? []
-      arr.push(l.id)
-      m.set(t.kind, arr)
+      let ids = m.get(t.kind)
+      if (!ids) {
+        ids = new Set<number>()
+        m.set(t.kind, ids)
+      }
+      ids.add(l.id)
     }
   }
   return [...m.entries()]
-    .map(([kind, ids]) => ({ kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }))
+    .map(([kind, idSet]) => {
+      const ids = [...idSet].sort((a, b) => a - b)
+      return { kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }
+    })
     .sort((a, b) => b.total - a.total)
 })
 
@@ -392,19 +432,52 @@ const bossLevels = computed(() =>
     .map((l) => ({ id: l.id, name: l.name, difficulty: l.difficulty, stars: starOf(l.id) })),
 )
 
+/** R8 §1G.1：1★ 门槛占本关满分的百分比只用于解释，不参与任何星级判定。 */
+const starOnePct = computed(() => {
+  const lv = selected.value
+  if (!lv || !lv.max_score || !lv.star_targets.length) return 0
+  return Math.round(lv.star_targets[0] / lv.max_score * 100)
+})
+
 const difficultyCurve = computed(() => {
   const list = chapterLevels.value
   const max = Math.max(1, ...list.map((l) => l.difficulty ?? 0))
   const min = Math.min(...list.map((l) => l.difficulty ?? 0), max)
   const span = Math.max(1, max - min)
-  const pts = list.map((l, i) => ({
-    id: l.id,
-    x: list.length <= 1 ? 150 : (i / (list.length - 1)) * 300,
-    // 难度越高 y 越小（越靠上）
-    y: 80 - ((l.difficulty ?? 0) - min) / span * 64,
-    diff: l.difficulty ?? 0,
-  }))
-  return { pts, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+  // /config 不下发每关 waves；detailWaves 只属于当前选中关，不能伪造成整章每关的"首现敌种"。
+  // 只在当前关标注它真实的敌种（去重）， label 写"本关敌种"而非"首现"，避免假洞察。
+  const currentId = selected.value?.id ?? activeLevelId.value
+  const pts = list.map((l, i) => {
+    const x = list.length <= 1 ? 150 : (i / (list.length - 1)) * 300
+    const y = 80 - ((l.difficulty ?? 0) - min) / span * 64
+    const enemyIds = l.id === currentId
+      ? [...new Set((detailWaves.value ?? []).flatMap((w) => w.spawns ?? []).map((sp) => sp.enemy_id))]
+      : []
+    return {
+      id: l.id, x, y,
+      diff: l.difficulty ?? 0,
+      boss: !!l.is_boss,
+      terrain: (l.terrain ?? []).length > 0,
+      newEnemy: enemyIds.length > 0,
+      enemyIds,
+    }
+  })
+  const milestones = pts.flatMap((p, i) => {
+    const out: { id: number; x: number; y: number; label: string; reason: string; shape: string; glyph: string }[] = []
+    if (p.boss) out.push({ id: p.id, x: p.x, y: p.y, label: '首领关', reason: '首领血量与技能机制改变打法', shape: 'boss', glyph: '◆' })
+    for (const eid of p.enemyIds) {
+      const e = enemyDefMap.value.get(eid)
+      if (!e) continue
+      const threat = enemyThreatTag(eid).replace(/[][]/g, '') || '新机制'
+      out.push({ id: p.id, x: p.x, y: p.y, label: `本关敌种 ${e.name}`, reason: `${threat} · 调整对空/远程/清场手段`, shape: 'enemy', glyph: '▲' })
+    }
+    const lv = list[i]
+    for (const t of lv?.terrain ?? []) {
+      out.push({ id: p.id, x: p.x, y: p.y, label: `地形变化 ${terrainName(t.kind)}`, reason: terrainDescr(t.kind), shape: 'terrain', glyph: '■' })
+    }
+    return out
+  })
+  return { pts, milestones, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
 })
 
 /* -------------------------------------------------------------------------- */
@@ -442,20 +515,24 @@ const activeLevelId = computed(() => selected.value?.id ?? store.unlockedLevel)
 /** R5：按章内难度最大爬升点给出推进建议，输入全部来自当前存档。 */
 const r5AiStage = computed(() => {
   const pts = difficultyCurve.value.pts
-  let target = activeLevelId.value
-  let jump = 0
-  for (let i = 1; i < pts.length; i++) {
-    const d = pts[i].diff - pts[i - 1].diff
-    if (d > jump) { jump = d; target = pts[i].id }
-  }
-  const terrain = terrainIndex.value.find((t) => t.ids.includes(target))
-  const terrainName = terrain ? terrain.name : '常规'
+  const ms = difficultyCurve.value.milestones
+  const ahead = ms.filter((m) => m.id >= activeLevelId.value)
+  const next = ahead[0] ?? ms[0]
+  const nextBoss = bossLevels.value.find((b) => b.id > activeLevelId.value) ?? bossLevels.value[0]
+  const fallback = pts.find((p) => p.id >= activeLevelId.value) ?? pts[0]
+  const target = next?.id ?? nextBoss?.id ?? fallback?.id ?? activeLevelId.value
   const unlocked = target <= store.unlockedLevel
+  const conclusion = next
+    ? `第 ${target} 关是机制拐点：${next.label}（${next.reason}）。难度爬升来自机制变化，不能只看分数斜率。`
+    : nextBoss
+      ? `第 ${target} 关是首领关（难度 ${nextBoss.difficulty}‰），需要针对机制配装。`
+      : pts.length
+        ? '本章难度平稳上升，没有首领/新敌种/地形拐点；按当前节奏推进即可。'
+        : '关卡配置未下发，暂时无法判断机制节奏。'
   return {
     visible: pts.length > 0,
     target,
-    jump,
-    conclusion: `第 ${target} 关难度爬升最大（地形 ${terrainName}、本章 ${chapterStars.value}/${chapterTotal.value}★），优先补该关。`,
+    conclusion,
     ctaText: unlocked ? `直达第 ${target} 关 →` : '先去装备页补强 →',
     unlocked,
   }
@@ -488,6 +565,27 @@ const enemyNameMap = computed(() => {
 
 function enemyName(id: number): string {
   return enemyNameMap.value.get(id) ?? `#${id}`
+}
+
+/**
+ * R8 敌人辨识度：波次预览只写名字时，玩家看不出「浮空囊」要对空、
+ * 「潜地者」需要范围清场。服务端配置本就带 fly_height / burrow /
+ * attack_range / is_boss，直接标出来，不必进战斗试错。
+ */
+const enemyDefMap = computed(() => {
+  const m = new Map<number, EnemyDef>()
+  for (const e of store.config?.enemies ?? []) m.set(e.id, e)
+  return m
+})
+
+function enemyThreatTag(id: number): string {
+  const e = enemyDefMap.value.get(id)
+  if (!e) return ''
+  if (e.is_boss) return '[首领]'
+  if (e.fly_height > 0) return '[飞行]'
+  if (e.burrow) return '[潜地]'
+  if (e.attack_range > 0) return '[远程]'
+  return ''
 }
 
 // 第 69 轮：切关竞态守卫。快速点选关卡时，先发请求可能晚到；
@@ -746,9 +844,30 @@ onMounted(() => {
 .bl-cleared { color: var(--warn); font-weight: 600; }
 
 /* G85 本章难度曲线 */
+/* R8 §1G.1 星级口径说明卡 */
+.sr-row { display: flex; flex-direction: row; align-items: center; gap: 14rpx; padding: 6rpx 0; font-size: 23rpx; }
+.sr-note { display: block; margin-top: 8rpx; font-size: 21rpx; line-height: 1.5; color: var(--text-2); }
+
 .diff-svg { width: 100%; height: 184rpx; overflow: visible; }
 .diff-line { fill: none; stroke: var(--fire); stroke-width: 2; stroke-linejoin: round; }
 .diff-dot { fill: var(--warn); }
+.diff-dot-boss { fill: var(--fire); }
+.diff-dot-enemy { fill: var(--ice); }
+.diff-dot-terrain { fill: var(--corrosion); }
+.diff-marker { fill: none; stroke-width: 2; }
+.diff-marker.boss { stroke: var(--fire); }
+.diff-marker.enemy { stroke: var(--ice); }
+.diff-marker.terrain { stroke: var(--corrosion); }
+.diff-legend { display: flex; flex-direction: row; flex-wrap: wrap; gap: 18rpx; margin-top: 6rpx; font-size: 20rpx; color: var(--text-2); }
+.diff-shape.boss { color: var(--fire); }
+.diff-shape.enemy { color: var(--ice); }
+.diff-shape.terrain { color: var(--corrosion); }
+.diff-milestone { display: flex; flex-direction: row; align-items: baseline; gap: 10rpx; padding: 6rpx 0; border-bottom: 1rpx solid var(--border-soft); font-size: 21rpx; }
+.diff-ms-shape { font-size: 22rpx; }
+.diff-ms-shape.boss { color: var(--fire); }
+.diff-ms-shape.enemy { color: var(--ice); }
+.diff-ms-shape.terrain { color: var(--corrosion); }
+.diff-ms-label { flex-shrink: 0; }
 
 /* G63 全章节星级总览 */
 .overview-card .card-title .mono { color: var(--warn); }
@@ -972,6 +1091,10 @@ onMounted(() => {
 }
 .wave-spawn {
   color: var(--muted);
+}
+.threat-tag {
+  color: var(--fire);
+  font-size: 22rpx;
 }
 
 /* 通关掉落预览（2026-11-01 新一轮第 39 轮） */

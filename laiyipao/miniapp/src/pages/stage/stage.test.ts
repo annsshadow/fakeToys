@@ -14,12 +14,13 @@ import * as api from '@/api/client'
 import { installUniMock } from '../../test/uni-mock'
 import { triggerUniHook } from '../../test/uni-app-stub'
 import { mountPage } from '../../test/page'
-import { makeConfig, makeLevel } from '../../test/fixtures'
+import { makeConfig, makeEnemy, makeLevel } from '../../test/fixtures'
 import { isSfxUnlocked, __resetSfxForTest } from '@/audio/sfx'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
   fetchConfigIfVersion: vi.fn(),
+  fetchLevel: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -117,6 +118,162 @@ afterEach(() => {
     expect(text).toMatch(/火区/)
     wrapper.unmount()
   })
+
+  /**
+   * R8 真浏览器审计：服务端配置里同一关可出现两个同类地形（例如第 59 关
+   * 有两个 charge_tower），旧实现把每次出现都当独立关卡，索引显示
+   * 「第 59、59 关 等 14 关」。玩家找不到第 59 关在哪，统计也虚高。
+   */
+  it('R8 地形关索引同一关重复出现的同类地形只计一次', async () => {
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: makeConfig({
+        levels: [
+          makeLevel({ id: 22, chapter: 1, terrain: [
+            { kind: 'collapse_wall', x: 1, y: 1, param: 1 },
+            { kind: 'charge_tower', x: 2, y: 2, param: 2 },
+            { kind: 'collapse_wall', x: 3, y: 3, param: 3 },
+          ] }),
+          makeLevel({ id: 59, chapter: 1, terrain: [
+            { kind: 'charge_tower', x: 4, y: 4, param: 4 },
+            { kind: 'oil_drum', x: 5, y: 5, param: 5 },
+            { kind: 'charge_tower', x: 6, y: 6, param: 6 },
+          ] }),
+        ],
+      }),
+      serverTimeMs: 0,
+    })
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    const rows = wrapper.findAll('.ti-row').map((r) => r.text())
+    const collapse = rows.find((t) => t.includes('崩塌掩体')) ?? ''
+    const charge = rows.find((t) => t.includes('蓄能塔')) ?? ''
+    expect(collapse).toContain('第 22 关')
+    expect(collapse).not.toContain('22、22')
+    expect(collapse).not.toContain('等 2 关')
+    expect(charge).toContain('第 22、59 关')
+    expect(charge).not.toContain('59、59')
+    expect(charge).not.toContain('等 4 关')
+    wrapper.unmount()
+  })
+
+
+  /**
+   * R8 真浏览器审计：第 98 关敌人组成只写「浮空囊 ×6」「铁罐炮 ×3」，
+   * 玩家看不出要带对空/远程应对手段。关卡配置本就有 fly_height / burrow /
+   * attack_range / is_boss，预览应直接标注威胁类型。
+   */
+  it('R8 敌人组成预览标注飞行、潜地、远程与首领威胁类型', async () => {
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: makeConfig({
+        levels: [makeLevel({ id: 1, chapter: 1 })],
+        enemies: [
+          makeEnemy({ id: 13, name: '浮空囊', fly_height: 180 }),
+          makeEnemy({ id: 17, name: '潜地者', burrow: true }),
+          makeEnemy({ id: 10, name: '铁罐炮', attack_range: 500 }),
+          makeEnemy({ id: 22, name: '白垩母皇', is_boss: true }),
+        ],
+      }),
+      serverTimeMs: 0,
+    })
+    mockApi.fetchLevel.mockResolvedValue({
+      waves: [{ spawns: [
+        { enemy_id: 13, count: 6 },
+        { enemy_id: 17, count: 2 },
+        { enemy_id: 10, count: 3 },
+        { enemy_id: 22, count: 1 },
+      ] }],
+    } as any)
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', { level: 1 })
+    await flushPromises()
+    const spawns = wrapper.findAll('.wave-spawn').map((s) => s.text())
+    expect(spawns.some((s) => s.includes('浮空囊') && s.includes('[飞行]'))).toBe(true)
+    expect(spawns.some((s) => s.includes('潜地者') && s.includes('[潜地]'))).toBe(true)
+    expect(spawns.some((s) => s.includes('铁罐炮') && s.includes('[远程]'))).toBe(true)
+    expect(spawns.some((s) => s.includes('白垩母皇') && s.includes('[首领]'))).toBe(true)
+    wrapper.unmount()
+  })
+
+
+/**
+ * R8 缺口①：星级口径诚实解释。数值只能来自配置（max_score / star_targets），
+ * 禁止写死 11941 / 20187 等具体关卡数字；必须解释按满分百分比给星与非单调。
+ */
+it('R8 星级口径说明卡展示配置满分/1★门槛与百分比口径，不写死关卡数字', async () => {
+  mockApi.fetchConfigIfVersion.mockResolvedValue({
+    status: 'modified',
+    config: makeConfig({
+      levels: [makeLevel({ id: 98, chapter: 1, max_score: 33646, star_targets: [20187, 28000, 33000], difficulty: 1500, wave_count: 7 })],
+    }),
+    serverTimeMs: 0,
+  })
+  const { wrapper } = mountPage(Stage)
+  await flushPromises()
+  triggerUniHook(wrapper.vm, 'onLoad', { level: 98 })
+  await flushPromises()
+  const text = wrapper.text()
+  const card = wrapper.find('.star-rule-card')
+  expect(card.exists(), '缺少 .star-rule-card 星级口径说明卡').toBe(true)
+  expect(card.text()).toContain('按本关满分百分比给星')
+  expect(card.text()).toMatch(/本关满分\s*33646/)
+  expect(card.text()).toMatch(/1★门槛\s*20187/)
+  expect(card.text()).toMatch(/约满分的60%|约 60%/)
+  expect(card.text()).toContain('关卡难度仍逐级上升')
+  expect(card.text()).toContain('难度 1500‰')
+  expect(card.text()).toContain('波次 7')
+  expect(text).not.toMatch(/11941|39132|65220/)
+  wrapper.unmount()
+})
+
+/** R8 缺口②：难度曲线标注 boss / 新敌种首现 / 地形变化；r5AiStage 不得再称「本章最大跳变」。 */
+it('R8 难度曲线按机制拐点标注 boss/新敌种/地形，r5AiStage 改为机制节奏说明', async () => {
+  mockApi.fetchConfigIfVersion.mockResolvedValue({
+    status: 'modified',
+    config: makeConfig({
+      levels: [
+        makeLevel({ id: 95, chapter: 1, difficulty: 1000, is_boss: true }),
+        makeLevel({ id: 96, chapter: 1, difficulty: 1033, terrain: [{ kind: 'charge_tower', x: 1, y: 1, param: 1 }] }),
+        makeLevel({ id: 98, chapter: 1, difficulty: 1066 }),
+      ],
+      enemies: [makeEnemy({ id: 13, name: '浮空囊', fly_height: 180 })],
+    }),
+    serverTimeMs: 0,
+  })
+  mockApi.fetchLevel.mockResolvedValue({
+    waves: [{ spawns: [{ enemy_id: 13, count: 6 }] }],
+  } as any)
+  const { wrapper } = mountPage(Stage)
+  await flushPromises()
+  triggerUniHook(wrapper.vm, 'onLoad', { level: 98 })
+  await flushPromises()
+  const curve = wrapper.find('.diff-curve-card')
+  expect(curve.exists()).toBe(true)
+  const markers = wrapper.findAll('.diff-milestone')
+  expect(markers.length).toBeGreaterThanOrEqual(2)
+  const markerText = markers.map((m) => m.text()).join(' | ')
+  expect(markerText).toMatch(/首领|BOSS|boss/i)
+  expect(markerText).toMatch(/飞行|浮空囊/)
+  expect(markerText).toMatch(/蓄能塔|地形/)
+  // 回归：当前关的敌种不能伪造成整章每一关的"首现"；只有一个关卡带敌种标记
+  const enemyMarkers = wrapper.findAll('.diff-milestone').filter((m) => m.text().includes('本关敌种'))
+  expect(enemyMarkers.length).toBeGreaterThan(0)
+  for (const m of enemyMarkers) expect(m.text()).toContain('第 98 关')
+  const aiText = wrapper.find('.r5-ai-stage').exists() ? wrapper.find('.r5-ai-stage').text() : wrapper.text()
+  expect(aiText).not.toContain('本章最大跳变')
+  expect(aiText).not.toContain('+33‰')
+  expect(aiText).toMatch(/机制|拐点|节奏/)
+  const aiBasis = wrapper.find('.r3-ai-basis')
+  expect(aiBasis.exists()).toBe(true)
+  expect(aiBasis.text()).toMatch(/is_boss/)
+  expect(aiBasis.text()).toMatch(/敌种 id/)
+  expect(aiBasis.text()).toMatch(/地形 id/)
+  wrapper.unmount()
+})
 
 describe('stage.vue 选关页', () => {
   it('挂载后默认选中可解锁关（第 1 关），详情卡与开始按钮齐全，诊断可用时展示', async () => {
