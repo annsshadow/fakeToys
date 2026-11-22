@@ -123,6 +123,13 @@ import { api } from '@oa4rust/sdk'
 import { computed, onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 
+function writeSucceeded(resp:any):boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (!(resp.type === 'success' || (resp.type === undefined && resp.success !== false))) return false
+  return !!(resp.data && resp.data.id)
+}
+
 type Tab = 'person' | 'unit' | 'identity' | 'group' | 'role' | 'manage' | 'auth'
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'person', label: '人员' },
@@ -254,13 +261,14 @@ async function createUnitFromForm(): Promise<void> {
   unitCreating.value = true
   unitCreateError.value = ''
   try {
-    await withTimeout(
+    const r: any = await withTimeout(
       api.post(
         '/api/organization/assemble/control/unit',
         { name, parentId: newDeptParent.value.trim() },
       ),
       DEPT_TREE_TIMEOUT_MS,
     )
+    if (!writeSucceeded(r)) { toast.error(r?.message || '部门未创建，请重试'); return }
     newDeptName.value = ''
     newDeptParent.value = ''
     showUnitCreate.value = false
