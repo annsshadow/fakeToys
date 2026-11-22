@@ -39,6 +39,8 @@ function stripTs(body: string): string {
     .replace(/let data: any/g, "let data")
     .replace(/catch \(e: any\)/g, "catch (e)")
     .replace(/catch \(e: unknown\)/g, "catch (e)")
+    .replace(/\(r as any\)/g, "r")
+    .replace(/as any/g, "")
 }
 
 const helperBody = safeBody("function writeSucceeded(")
@@ -60,6 +62,7 @@ interface CtxOpts { resp: unknown; prompts?: string[]; confirmed?: boolean; reje
 function ref<T>(v: T): { value: T } { return { value: v } }
 function makeCtx(opts: CtxOpts) {
   const toasts: { success: string[]; error: string[]; warning: string[] } = { success: [], error: [], warning: [] }
+  const capturedMutations: Record<string, any> = {}
   const queue = opts.prompts ? opts.prompts.slice() : []
   const api = {
     get: async (): Promise<unknown> => { if (opts.reject) throw opts.reject; return opts.resp },
@@ -86,12 +89,17 @@ function makeCtx(opts: CtxOpts) {
     ref({ flag: "s367", name: "script", content: "" }), ref(false), ref(false),
     ref(false), ref("{}"), ref(""), ref("d367"), ref(false), ref(false), ref(false),
   ]
+  const useMutation = (cfg: any): any => {
+    const tag = String(cfg?.mutationFn ?? "").match(/program_center\/[a-z_/]+/)?.[0] ?? String(cfg?.mutationFn ?? "")
+    capturedMutations[tag] = cfg
+    return { mutate: (_v: unknown): void => {} }
+  }
   const run = async (sig: string): Promise<void> => {
     const fn = compile(sig)
     expect(fn, "函数体应可提取: " + sig).not.toBeNull()
     await fn!(...values)
   }
-  return { toasts, run }
+  return { toasts, run, api, toast, succeeded, guarded }
 }
 const all = (c: ReturnType<typeof makeCtx>): string[] => c.toasts.success.concat(c.toasts.error, c.toasts.warning)
 
@@ -149,6 +157,118 @@ describe("R367 ProgramCenterApp 裸写函数 type:error 误报成功修复", () 
       const ctx = makeCtx({ resp: {}, reject: new Error("HTTP 500: Internal Server Error") })
       await ctx.run(c.sig)
       expect(ctx.toasts.success.length).toBe(0)
+    })
+  }
+})
+
+// ── t182 F1: useMutation onSuccess 回调真执行 ──
+function onSuccessBody(name: string): string {
+  const at = src.indexOf("const " + name + " = useMutation(")
+  if (at < 0) throw new Error("未找到 mutation: " + name)
+  const open = src.indexOf("{", src.indexOf("onSuccess:", at))
+  let depth = 0
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === "{") depth++
+    else if (src[i] === "}") { depth--; if (depth === 0) return src.slice(open + 1, i) }
+  }
+  throw new Error("onSuccess 花括号未配对: " + name)
+}
+const MUTATION_CASES = [
+  { name: "createAgentM", ok: "Agent已创建" },
+  { name: "deleteAgentM", ok: "Agent已删除" },
+  { name: "deleteAppM", ok: "Application已删除" },
+  { name: "deleteScriptM", ok: "Script已删除" },
+  { name: "deleteDictM", ok: "字典已删除" },
+  { name: "createDictM", ok: "字典已创建" },
+  { name: "compareM", ok: "对比完成" },
+  { name: "runScriptM", ok: "脚本已执行" },
+  { name: "eraseImageM", ok: "图片已清除" },
+]
+function runOnSuccess(name: string, resp: unknown, ctx: ReturnType<typeof makeCtx>): void {
+  const body = stripTs(onSuccessBody(name))
+  const noop = (): void => {}
+  const compileOne = new Function("r", "toast", "loadAgents", "loadApps", "loadScripts", "loadDict", "showCreateAgent", "agentForm", "showCreateDict", "dictForm", "writeSucceeded", body)
+  compileOne(resp, ctx.toast, noop, noop, noop, noop, ref(false), ref({ name: "", flag: "" }), ref(false), ref({ name: "", dictFlag: "" }), ctx.succeeded)
+}
+describe("t182 F1 useMutation onSuccess type:error 误报成功修复", () => {
+  for (const c of MUTATION_CASES) {
+    it(c.name + ": 200+type:error 走 toast.error 且不弹成功", () => {
+      const ctx = makeCtx({ resp: {} })
+      const bad = { type: "error", message: "R367 agent not found", success: false }
+      runOnSuccess(c.name, bad, ctx)
+      expect(ctx.toasts.success.join("|")).not.toContain(c.ok)
+      expect(all(ctx).join("|")).toContain("R367 agent not found")
+    })
+    it(c.name + ": 200+type:success 仍成功提示", () => {
+      const ctx = makeCtx({ resp: {} })
+      runOnSuccess(c.name, { type: "success", success: true, data: {} }, ctx)
+      expect(ctx.toasts.success.join("|")).toContain(c.ok)
+    })
+  }
+})
+
+// ── t182 F2: pcOpenPlatform 7 分支真执行 ──
+const OPEN_OPS = [
+  { op: "tokenPut", prompts: ["R367-token"], ok: "系统令牌已更新" },
+  { op: "thresholdPut", prompts: ["1000"], ok: "令牌阈值（PUT）已更新" },
+  { op: "invokeTokenExec", prompts: ["f367", "web", "R367-token"], ok: "令牌执行已提交" },
+  { op: "moduleComparePost", prompts: [], ok: "模块对比上传已提交" },
+  { op: "moduleComparePut", prompts: [], ok: "模块对比同步(PUT)已提交" },
+  { op: "avatarPut", prompts: ["R367-path"], ok: "登录头像图已保存" },
+  { op: "avatarEraseGet", prompts: [], ok: "登录头像图已清除" },
+]
+async function runOpenOp(op: string, prompts: string[], resp: unknown): Promise<ReturnType<typeof makeCtx>> {
+  const ctx = makeCtx({ resp })
+  const fn = compile("async function pcOpenPlatform(")!
+  const queue = prompts.slice()
+  const noop = (): void => {}
+  // FN_PARAMS 顺序：api,toast,loadAgents×6,prompt,loadCollect,confirmMsg,encodeURIComponent,writeSucceeded,guardedWrite,a,iv,m,kind,op,agentEdit,scriptEdit,scriptEditSaving,showScriptEdit,dictDataSaving,dictDataText,dictDataError,dictDataFlag,showDictData,agentSaving,showEditAgent
+  const values: unknown[] = [
+    ctx.api, ctx.toast, noop, noop, noop, noop, noop, noop,
+    (): string => queue.shift() ?? "", noop, async (): Promise<boolean> => true, encodeURIComponent, ctx.succeeded, ctx.guarded,
+    { id: "A367" }, { id: "I367" }, { id: "M367" },
+    "appTop", op,
+    ref({ id: "A367" }), ref({ flag: "s367" }), ref(false), ref(false), ref(false), ref("{}"), ref(""), ref("d367"), ref(false), ref(false), ref(false),
+  ]
+  await fn(...values)
+  return ctx
+}
+describe("t182 F2 pcOpenPlatform 7 分支 type:error 误报成功修复", () => {
+  for (const c of OPEN_OPS) {
+    it(c.op + ": 200+type:error 走 catch toast.error 且不弹成功", async () => {
+      const ctx = await runOpenOp(c.op, c.prompts, { type: "error", message: "R367 agent not found", success: false })
+      expect(ctx.toasts.success.join("|")).not.toContain(c.ok)
+      expect(all(ctx).join("|")).toContain("R367 agent not found")
+    })
+    it(c.op + ": 200+type:success 仍成功提示", async () => {
+      const ctx = await runOpenOp(c.op, c.prompts, { type: "success", success: true, data: {} })
+      expect(ctx.toasts.success.join("|")).toContain(c.ok)
+    })
+  }
+})
+
+// ── t182 F3: createInvoke/deleteInvoke + pcU10/13/15/16/17 真执行两态 ──
+const F3_CASES = [
+  { name: "createInvoke", sig: "async function createInvoke(", prompts: ["I367"] },
+  { name: "deleteInvoke", sig: "async function deleteInvoke(", prompts: [] },
+  { name: "pcU10", sig: "async function pcU10(", prompts: [], ok: "集成同步已触发" },
+  { name: "pcU13", sig: "async function pcU13(", prompts: [], ok: "同步/异常日志已上报" },
+  { name: "pcU15", sig: "async function pcU15(", prompts: ["pack367", "1.0.0", ""], ok: "打包/同步已提交" },
+  { name: "pcU16", sig: "async function pcU16(", prompts: ["", ""], ok: "注册/输出/调用器已提交" },
+  { name: "pcU17", sig: "async function pcU17(", prompts: [""], ok: "部署/注册已提交" },
+]
+describe("t182 F3 同类残留 type:error 误报成功修复", () => {
+  for (const c of F3_CASES) {
+    it(c.name + ": 200+type:error 不弹成功且显示后端 message", async () => {
+      const ctx = makeCtx({ resp: { type: "error", message: "R367 agent not found", success: false }, prompts: c.prompts, confirmed: true })
+      await ctx.run(c.sig)
+      if (c.ok) expect(ctx.toasts.success.join("|")).not.toContain(c.ok)
+      expect(all(ctx).join("|")).toContain("R367 agent not found")
+    })
+    it(c.name + ": 200+type:success 仍成功提示", async () => {
+      const ctx = makeCtx({ resp: { type: "success", success: true, data: {} }, prompts: c.prompts, confirmed: true })
+      await ctx.run(c.sig)
+      if (c.ok) expect(ctx.toasts.success.join("|")).toContain(c.ok)
     })
   }
 })

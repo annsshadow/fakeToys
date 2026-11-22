@@ -38,3 +38,12 @@
 ## 五、边界与复核
 
 破坏性真状态翻转/真删未授权不执行，用假 ID 真探针 + route 注入对照取证；changePassword/adminLogout 等敏感写仅验取消守卫未真执行。实测响应形状与本裁决不符需先报队长，不静默改向。证据截图标注 Playwright Chromium headless against deployed test server; not a physical device，非物理真机。
+
+## 六、t182 复审续修（F1/F2/F3 全部纳入守卫，无豁免）
+
+t181 复审指出三类遗漏，本轮按裁决全部纳入修复、无独立后续、无豁免：
+
+1. F1（high）：createAgentM/deleteAgentM/deleteAppM/deleteScriptM/deleteDictM/createDictM/compareM/runScriptM/eraseImageM 九个 useMutation 在 onSuccess 入口新增 writeSucceeded 守卫：type:error 走 toast.error 透传后端 message 并 return，不落态、不刷新、不弹成功；type:success 保持原成功提示与 load* 刷新。mutationFn/端点/payload/onError 不变。
+2. F2（medium）：pcOpenPlatform 的 tokenPut/thresholdPut/invokeTokenExec/moduleComparePost/moduleComparePut/avatarPut/avatarEraseGet 七分支统一 awaited guardedWrite 包裹，失败经既有 catch 的 toast.error 透传 message；端点路径/payload/confirm 取消守卫不变。同函数 changePassword/invokeExecGet/invokeTokenPost/adminLogout 原有 type 判定保留。
+3. F3（low）：createInvoke/deleteInvoke 与 pcU10/pcU13/pcU15/pcU16/pcU17 的 await api 写调用统一套 guardedWrite；s() 的 catch 吞错 GET 探针（pcU11/pcU12/pcU14）属只读探测且刻意容错过网请求，不构成写成功误报，非有意豁免写链守卫。
+4. 契约扩充到 111 it：F1 九例两态、F2 七例两态、F3 七例两态真执行；用 HEAD(t180) 版源码反向验证 26 failed / 85 passed（F1×9 + F2×7 + F3×7 全部 RED），修复版 111/111 GREEN。根全量 vitest 278 files / 2350 tests 0 failed；desktop tsc --noEmit exit 0。

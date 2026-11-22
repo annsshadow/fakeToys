@@ -942,7 +942,8 @@ async function executeAgent(a: Agent) {
 const createAgentM = useMutation({
   onSettled: () => (agentCreateSaving.value = false),
   mutationFn: (data: { name: string; flag: string }) => api.post('/api/program_center/agent/create', data),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     showCreateAgent.value = false
     agentForm.value = { name: '', flag: '' }
     toast.success('Agent已创建')
@@ -963,7 +964,8 @@ watch(tab, (t) => switchTab(t), { immediate: true })
 const deleteAgentM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/agent/${id}`),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     loadAgents()
     toast.success('Agent已删除')
   },
@@ -971,7 +973,8 @@ const deleteAgentM = useMutation({
 const deleteAppM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/application/${id}`),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     loadApps()
     toast.success('Application已删除')
   },
@@ -979,7 +982,8 @@ const deleteAppM = useMutation({
 const deleteScriptM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/script/${id}`),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     loadScripts()
     toast.success('Script已删除')
   },
@@ -987,7 +991,8 @@ const deleteScriptM = useMutation({
 const deleteDictM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/dict/${id}`),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     loadDict()
     toast.success('字典已删除')
   },
@@ -1010,7 +1015,8 @@ async function deleteDict(d: Dict) {
 const createDictM = useMutation({
   onSettled: () => (dictCreateSaving.value = false),
   mutationFn: (data: { name: string; dictFlag: string }) => api.post('/api/program_center/dict', data),
-  onSuccess: () => {
+  onSuccess: (r: any) => {
+    if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return }
     showCreateDict.value = false
     dictForm.value = { name: '', dictFlag: '' }
     toast.success('字典已创建')
@@ -1172,7 +1178,7 @@ function closeVersions(): void {
 // 模块对比
 const compareM = useMutation({
   mutationFn: (id: string) => api.get(`/api/program_center/module/${id}/compare`),
-  onSuccess: () => toast.success('对比完成'),
+  onSuccess: (r: any) => { if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return } toast.success('对比完成') },
   onError: () => toast.error('对比失败'),
 })
 function compareApp(app: App) {
@@ -1183,7 +1189,7 @@ function compareApp(app: App) {
 // 执行脚本
 const runScriptM = useMutation({
   mutationFn: (flag: string) => api.post(`/api/program_center/invoke/${flag}/execute`, {}),
-  onSuccess: () => toast.success('脚本已执行'),
+  onSuccess: (r: any) => { if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return } toast.success('脚本已执行') },
   onError: () => toast.error('执行失败'),
 })
 async function runScript(s: Script) {
@@ -1216,7 +1222,7 @@ function addCollect() {
 const eraseImageM = useMutation({
   mutationFn: ({ type, flag }: { type: string; flag: string }) =>
     api.delete(`/api/program_center/appstyle/image/${type}/${flag}/erase`),
-  onSuccess: () => toast.success('图片已清除'),
+  onSuccess: (r: any) => { if (!writeSucceeded(r)) { toast.error(r?.message || '操作未生效，请刷新后重试'); return } toast.success('图片已清除') },
   onError: () => toast.error('操作失败'),
 })
 async function eraseAppStyleImage(type: string, flag: string) {
@@ -1307,7 +1313,7 @@ async function createInvoke() {
   const category = prompt('分类（可选）:', '') ?? ''
   try {
     // 后端 u2_invoke_create：U2InvokeRequest{ name(必填)/alias/category/description }
-    await api.post('/api/program_center/invoke', { name, alias, category, description: '' })
+    await guardedWrite(await api.post('/api/program_center/invoke', { name, alias, category, description: '' }))
     loadInvokes()
   } catch (e: any) {
     toast.error(`新建失败: ${e?.message ?? ''}`)
@@ -1316,7 +1322,7 @@ async function createInvoke() {
 async function deleteInvoke(iv: Invoke) {
   if (!(await confirmMsg(`确定删除接口「${iv.name || iv.id}」？`))) return
   try {
-    await api.delete(`/api/program_center/invoke/${iv.id || ''}`)
+    await guardedWrite(await api.delete(`/api/program_center/invoke/${iv.id || ''}`))
     loadInvokes()
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
@@ -1513,11 +1519,11 @@ async function pcOpenPlatform(op: string) {
     } else if (op === 'tokenPut') {
       const val = prompt('新的系统令牌值（Token）:', '') || ''
       if (!(await confirmMsg('将覆盖 system.token 配置，确定？'))) return
-      await api.put('/api/program_center/config/token', { token: val })
+      await guardedWrite(await api.put('/api/program_center/config/token', { token: val }))
       toast.success('系统令牌已更新')
     } else if (op === 'thresholdPut') {
       const t = prompt('令牌阈值（数字）:', '1000') || '0'
-      await api.put('/api/program_center/tokenthreshold/update', { threshold: Number(t) })
+      await guardedWrite(await api.put('/api/program_center/tokenthreshold/update', { threshold: Number(t) }))
       toast.success('令牌阈值（PUT）已更新')
     } else if (op === 'invokeExecGet') {
       if (!(await confirmMsg('执行最新接口并写入调用日志？'))) return
@@ -1540,21 +1546,21 @@ async function pcOpenPlatform(op: string) {
       const client = encodeURIComponent(clientRaw)
       const token = encodeURIComponent(tokenRaw)
       if (!(await confirmMsg('以该令牌执行接口？'))) return
-      await api.post(`/api/program_center/invoke/${flag}/client/${client}/token/${token}/execute`, {})
+      await guardedWrite(await api.post(`/api/program_center/invoke/${flag}/client/${client}/token/${token}/execute`, {}))
       toast.success('令牌执行已提交')
     } else if (op === 'moduleComparePost') {
-      await api.post('/api/program_center/module/compare/upload', {})
+      await guardedWrite(await api.post('/api/program_center/module/compare/upload', {}))
       toast.success('模块对比上传已提交')
     } else if (op === 'moduleComparePut') {
-      await api.put('/api/program_center/module/compare/upload')
+      await guardedWrite(await api.put('/api/program_center/module/compare/upload'))
       toast.success('模块对比同步(PUT)已提交')
     } else if (op === 'avatarPut') {
       const path = prompt('登录头像图路径（资源 path）:', '') || ''
-      await api.put('/api/program_center/appstyle/image/login/avatar', { path })
+      await guardedWrite(await api.put('/api/program_center/appstyle/image/login/avatar', { path }))
       toast.success('登录头像图已保存')
     } else if (op === 'avatarEraseGet') {
       if (!(await confirmMsg('清除当前登录头像图？'))) return
-      await api.get('/api/program_center/appstyle/image/login/avatar/erase')
+      await guardedWrite(await api.get('/api/program_center/appstyle/image/login/avatar/erase'))
       toast.success('登录头像图已清除')
     } else if (op === 'adminLogout') {
       if (!(await confirmMsg('登出管理台（清除当前管理员会话）？'))) return
@@ -1887,9 +1893,9 @@ async function pcU9() {
 async function pcU10() {
   if (!(await confirmMsg('确定触发集成同步/清缓存？'))) return
   try {
-    await api.get('/api/program_center/andfx/pull/sync')
-    await api.get('/api/program_center/dingding/pull/sync')
-    await api.get('/api/program_center/jest/clear/cache/source')
+    await guardedWrite(await api.get('/api/program_center/andfx/pull/sync'))
+    await guardedWrite(await api.get('/api/program_center/dingding/pull/sync'))
+    await guardedWrite(await api.get('/api/program_center/jest/clear/cache/source'))
     toast.success('集成同步已触发')
   } catch (e: any) {
     toast.error(`触发失败: ${e?.message ?? ''}`)
@@ -1928,17 +1934,17 @@ async function pcU12() {
 // rev427：程序中心 WeLink 拉取同步(落 x_program_sync_log)·前端异常日志上报(prompterrorlog→x_program_prompt_error_log·unexpectederrorlog→x_program_unexpected_error_log) 三条 pool-only 写审计/日志，distinct 表，无外部 HTTP
 async function pcU13() {
   try {
-    await api.get('/api/program_center/welink/pull/sync')
-    await api.post('/api/program_center/prompterrorlog', {
+    await guardedWrite(await api.get('/api/program_center/welink/pull/sync'))
+    await guardedWrite(await api.post('/api/program_center/prompterrorlog', {
       exceptionClass: 'ClientPromptError',
       loggerName: 'ProgramCenterApp',
       message: '控制台手动上报提示异常',
-    })
-    await api.post('/api/program_center/unexpectederrorlog', {
+    }))
+    await guardedWrite(await api.post('/api/program_center/unexpectederrorlog', {
       errorType: 'ClientUnexpected',
       message: '控制台手动上报未预期异常',
       stackTrace: '',
-    })
+    }))
     toast.success('同步/异常日志已上报')
   } catch (e: any) {
     toast.error(`上报失败: ${e?.message ?? ''}`)
@@ -1964,10 +1970,10 @@ async function pcU15() {
   try {
     const name = prompt('打包名称:', 'android-pack') || 'android-pack'
     const version = prompt('版本号:', '1.0.0') || '1.0.0'
-    await api.post('/api/program_center/apppack/pack/info/android/start', { name, version })
+    await guardedWrite(await api.post('/api/program_center/apppack/pack/info/android/start', { name, version }))
     const pubId = prompt('要发布的打包 ID（可空跳过发布）:', '') || ''
-    if (pubId.trim()) await api.post('/api/program_center/apppack/pack/info/file/publish', { id: pubId })
-    await api.post('/api/program_center/welink/request/pull/sync', {})
+    if (pubId.trim()) await guardedWrite(await api.post('/api/program_center/apppack/pack/info/file/publish', { id: pubId }))
+    await guardedWrite(await api.post('/api/program_center/welink/request/pull/sync', {}))
     toast.success('打包/同步已提交')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -1976,12 +1982,12 @@ async function pcU15() {
 // rev430：程序中心 中心注册应用清单(PUT 读 x_applications 无参)·输出按flag选择(PUT UPDATE x_program_output by flag)·调用器按flag改文本(PUT UPDATE x_program_invoke text) 三条，distinct 表，无外部 HTTP
 async function pcU16() {
   try {
-    await api.put('/api/program_center/center/regist/applications', {})
+    await guardedWrite(await api.put('/api/program_center/center/regist/applications', {}))
     const outFlag = prompt('输出 flag（可空跳过）:', '') || ''
-    if (outFlag.trim()) await api.put(`/api/program_center/output/${encodeURIComponent(outFlag)}/select`, {})
+    if (outFlag.trim()) await guardedWrite(await api.put(`/api/program_center/output/${encodeURIComponent(outFlag)}/select`, {}))
     const invFlag = prompt('调用器 flag（可空跳过）:', '') || ''
     if (invFlag.trim())
-      await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' })
+      await guardedWrite(await api.put(`/api/program_center/invoke/${encodeURIComponent(invFlag)}/file`, { text: '控制台更新' }))
     toast.success('注册/输出/调用器已提交')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
@@ -1990,18 +1996,18 @@ async function pcU16() {
 // rev433：程序中心 部署服务器资源(POST INSERT x_program_deploy_resource)·企业微信注册(POST INSERT x_program_callback_registration)·Agent按flag部署文件(PUT INSERT x_program_deploy_resource) 三条写端点，distinct 路由/动作
 async function pcU17() {
   try {
-    await api.post('/api/program_center/deploy/server/resource', {
+    await guardedWrite(await api.post('/api/program_center/deploy/server/resource', {
       name: '控制台资源',
       type: 'manual',
       path: '/deploy/manual',
-    })
-    await api.post('/api/program_center/qiyeweixin', {})
+    }))
+    await guardedWrite(await api.post('/api/program_center/qiyeweixin', {}))
     const flag = prompt('Agent flag（可空跳过部署文件）:', '') || ''
     if (flag.trim())
-      await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, {
+      await guardedWrite(await api.put(`/api/program_center/agent/${encodeURIComponent(flag)}/file`, {
         fileName: 'agent-file',
         filePath: '/agent/file',
-      })
+      }))
     toast.success('部署/注册已提交')
   } catch (e: any) {
     toast.error(`操作失败: ${e?.message ?? ''}`)
