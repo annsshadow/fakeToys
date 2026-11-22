@@ -99,13 +99,19 @@ function switchTab(key: TabKey): void {
   void load([])
 }
 
-async function act(id: string, fn: () => Promise<unknown>, okText: string): Promise<void> {
+async function act(id: string, fn: () => Promise<unknown>, okText: string, flagKey: string): Promise<void> {
   if (busyId.value) return
   busyId.value = id
   try {
-    await fn()
-    uni.showToast({ title: okText, icon: 'success' })
-    await load()
+    const resp: any = await fn()
+    const typeOk = resp?.type === 'success' || (resp?.type === undefined && resp?.success !== false)
+    const flag = resp?.data?.[flagKey] ?? resp?.[flagKey]
+    if (typeOk && flag === true) {
+      uni.showToast({ title: okText, icon: 'success' })
+      await load()
+    } else {
+      uni.showToast({ title: resp?.message || '操作未生效，请刷新后重试', icon: 'none' })
+    }
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '操作失败', icon: 'none' })
   } finally {
@@ -113,11 +119,11 @@ async function act(id: string, fn: () => Promise<unknown>, okText: string): Prom
   }
 }
 
-const accept = (m: MeetingRow) => act(m.id, () => meetingApi.accept(m.id), '已接受')
-const reject = (m: MeetingRow) => act(m.id, () => meetingApi.reject(m.id), '已拒绝')
-const allow = (m: MeetingRow) => act(m.id, () => meetingApi.confirmAllow(m.id), '已确认出席')
-const deny = (m: MeetingRow) => act(m.id, () => meetingApi.confirmDeny(m.id), '已确认缺席')
-const checkin = (m: MeetingRow) => act(m.id, () => meetingApi.checkin(m.id), '签到成功')
+const accept = (m: MeetingRow) => act(m.id, () => meetingApi.accept(m.id), '已接受', 'accepted')
+const reject = (m: MeetingRow) => act(m.id, () => meetingApi.reject(m.id), '已拒绝', 'rejected')
+const allow = (m: MeetingRow) => act(m.id, () => meetingApi.confirmAllow(m.id), '已确认出席', 'confirmed')
+const deny = (m: MeetingRow) => act(m.id, () => meetingApi.confirmDeny(m.id), '已确认缺席', 'denied')
+const checkin = (m: MeetingRow) => act(m.id, () => meetingApi.checkin(m.id), '签到成功', 'checkedIn')
 
 // 签到码（checkin/code）：组织者在会上出示给参会人扫码
 const codeText = ref('')

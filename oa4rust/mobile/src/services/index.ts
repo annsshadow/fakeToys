@@ -400,24 +400,17 @@ export const meetingApi = {
     list(mapi.get<MeetingRow[]>(`/api/meeting/assemble/control/meeting/list/coming/day/${count}`)),
   detail: (id: string) => mapi.get<MeetingRow>(`/api/meeting/assemble/control/meeting/${id}`),
   /** 接受邀请。 */
-  accept: (id: string) =>
-    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/accept`, null, { discardResponse: true }),
+  accept: (id: string) => mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/accept`, null),
   /** 拒绝邀请。 */
-  reject: (id: string) =>
-    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/reject`, null, { discardResponse: true }),
+  reject: (id: string) => mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/reject`, null),
   /** 确认出席。 */
   confirmAllow: (id: string) =>
-    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/allow`, null, {
-      discardResponse: true,
-    }),
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/allow`, null),
   /** 确认缺席。 */
   confirmDeny: (id: string) =>
-    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/deny`, null, {
-      discardResponse: true,
-    }),
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/deny`, null),
   /** 签到。 */
-  checkin: (id: string) =>
-    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/checkin`, null, { discardResponse: true }),
+  checkin: (id: string) => mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/checkin`, null),
   /** 签到码（二维码内容）。 */
   checkinCode: (id: string) => mapi.get<{ code?: string }>(`/api/meeting/assemble/control/meeting/${id}/checkin/code`),
 }
