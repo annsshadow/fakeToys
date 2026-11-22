@@ -128,6 +128,137 @@ func recInsight(id, headline, route, label string, basis []string, params map[st
 	}
 }
 
+// recOwnedIDs 返回玩家真实拥有的技能/装备 id（不等于"当前装备"）。
+// 写入端 SaveLoadout / SetEquippedEquipment 都以这两张表为归属事实源，
+// 推荐侧必须读同一事实源，否则两步确认弹层会指向必然 400 的 id。
+func (s *Service) recOwnedIDs(ctx context.Context, userID int64, kind string) (map[int]bool, error) {
+	query := `SELECT equipment_id FROM user_equipment WHERE user_id = $1`
+	if kind == "skill" {
+		query = `SELECT skill_id FROM user_skills WHERE user_id = $1`
+	}
+	rows, err := s.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("recommendation owned %s: %w", kind, err)
+	}
+	defer rows.Close()
+	owned := map[int]bool{}
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan owned %s: %w", kind, err)
+		}
+		owned[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate owned %s: %w", kind, err)
+	}
+	return owned, nil
+}
+
+// recImpactCTA 从当前构筑、配置与**玩家已拥有集合**推导可用于 /me/recommendations/impact 的替换关系。
+//
+// 只下发"配置里真实存在、玩家进度已解锁、玩家已拥有、且当前确实装在身上"的关系：
+// 候选必须是同槽（装备）或同为主战（技能）且数值更优的项；任何一项不满足
+// 就不给 id/replace，让前端跳过收益卡而不是发出注定 400 的请求。
+func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[string]any, cfg GameConfig, maxStage int, context string) (map[string]any, string) {
+	if maxStage <= 0 {
+		return nil, ""
+	}
+	switch context {
+	case "skills":
+		equipped, _ := build["skills"].(map[string]any)
+		owned, err := s.recOwnedIDs(ctx, userID, "skill")
+		if err != nil {
+			return nil, "" // 归属查不到就 fail closed，绝不下发未经验证的 id
+		}
+		damage := map[int]int64{}
+		kind := map[int]string{}
+		unlock := map[int]int{}
+		name := map[int]string{}
+		all := make([]int, 0, len(cfg.Skills)+len(cfg.Composite))
+		for _, sk := range cfg.Skills {
+			damage[sk.ID], kind[sk.ID], unlock[sk.ID], name[sk.ID] = sk.BaseDamage, sk.Kind, sk.UnlockLevel, sk.Name
+			all = append(all, sk.ID)
+		}
+		for _, sk := range cfg.Composite {
+			damage[sk.ID], kind[sk.ID], unlock[sk.ID], name[sk.ID] = sk.BaseDamage, sk.Kind, sk.UnlockLevel, sk.Name
+			all = append(all, sk.ID)
+		}
+		replacedID, replacedDamage := 0, int64(0)
+		for _, raw := range equipped {
+			m, _ := raw.(map[string]any)
+			id := int(impactInt(m, "id"))
+			slot := int(impactInt(m, "slot"))
+			if id <= 0 || slot < 0 || kind[id] != "active" {
+				continue
+			}
+			if replacedID == 0 || damage[id] < replacedDamage || (damage[id] == replacedDamage && id < replacedID) {
+				replacedID, replacedDamage = id, damage[id]
+			}
+		}
+		if replacedID == 0 {
+			return nil, ""
+		}
+		for _, id := range all {
+			if kind[id] != "active" || unlock[id] > maxStage || damage[id] <= replacedDamage {
+				continue
+			}
+			if !owned[id] {
+				continue
+			}
+			// build.skills 包含所有已拥有技能，未上槽的 slot=-1；只有真正
+			// 占槽的才排除，否则刚授予的候选会被误判为"已装备"而永远推不出来。
+			if m, ok := equipped[strconv.Itoa(id)].(map[string]any); ok && impactInt(m, "slot") >= 0 {
+				continue
+			}
+			return map[string]any{"id": id, "replace": replacedID},
+				fmt.Sprintf("候选 %s(id=%d) 已在你的已拥有技能中，基础伤害 %d，高于当前 %s(id=%d) 的 %d（配置版本 %s）",
+					name[id], id, damage[id], name[replacedID], replacedID, replacedDamage, cfg.Version)
+		}
+		return nil, fmt.Sprintf("已拥有技能里没有同为主战且基础伤害高于当前 %s(id=%d) 的候选，未给出替换 id", name[replacedID], replacedID)
+	case "equipment":
+		equipped, _ := build["equipment"].([]int)
+		owned, err := s.recOwnedIDs(ctx, userID, "equipment")
+		if err != nil {
+			return nil, "" // 归属查不到就 fail closed
+		}
+		bonus := map[int]int64{}
+		slot := map[int]string{}
+		unlock := map[int]int{}
+		name := map[int]string{}
+		for _, eq := range cfg.Equipment {
+			bonus[eq.ID], slot[eq.ID], unlock[eq.ID], name[eq.ID] = eq.BaseBonusPct, eq.Slot, eq.UnlockLevel, eq.Name
+		}
+		on := map[int]bool{}
+		replacedID, replacedBonus := 0, int64(0)
+		for _, id := range equipped {
+			on[id] = true
+			if _, ok := bonus[id]; !ok {
+				continue
+			}
+			if replacedID == 0 || bonus[id] < replacedBonus || (bonus[id] == replacedBonus && id < replacedID) {
+				replacedID, replacedBonus = id, bonus[id]
+			}
+		}
+		if replacedID == 0 {
+			return nil, ""
+		}
+		for _, eq := range cfg.Equipment {
+			if on[eq.ID] || eq.Slot != slot[replacedID] || eq.UnlockLevel > maxStage || eq.BaseBonusPct <= replacedBonus {
+				continue
+			}
+			if !owned[eq.ID] {
+				continue
+			}
+			return map[string]any{"id": eq.ID, "replace": replacedID},
+				fmt.Sprintf("候选 %s(id=%d) 已在你的已拥有装备中，同槽加成 %d‰，高于当前 %s(id=%d) 的 %d‰（配置版本 %s）",
+					eq.Name, eq.ID, eq.BaseBonusPct, name[replacedID], replacedID, replacedBonus, cfg.Version)
+		}
+		return nil, fmt.Sprintf("已拥有装备里没有同槽且加成高于当前 %s(id=%d) 的候选，未给出替换 id", name[replacedID], replacedID)
+	}
+	return nil, ""
+}
+
 func recEmpty(code, message string) *RecEmptyReason {
 	return &RecEmptyReason{Code: code, Message: message}
 }
@@ -204,6 +335,7 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 		return RecResponse{}, err
 	}
 	cfgVersion := s.ConfigVersion()
+	gameCfg := s.LoadGameConfig()
 	resp := RecResponse{
 		SchemaVersion: recSchemaVersion,
 		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
@@ -265,10 +397,17 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 		if weakness != "" {
 			headline = "构筑短板「" + weakness + "」：优先调整装备与专精"
 		}
+		params := map[string]any{"slot": 0}
+		basis := []string{fmt.Sprintf("装备协同 %d/18、元素覆盖 %d/5 来自 /me 构筑快照", rating.EquipmentSynergy, rating.ElementCoverage), fmt.Sprintf("配置版本 %s", cfgVersion)}
+		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "equipment")
+		if impactBasis != "" {
+			basis = append(basis, impactBasis)
+		}
+		for k, v := range impactParams {
+			params[k] = v
+		}
 		resp.Insights = append(resp.Insights, recInsight(
-			"equip-synergy", headline, "/pages/equipment/equipment", "查看搭配",
-			[]string{fmt.Sprintf("装备协同 %d/18、元素覆盖 %d/5 来自 /me 构筑快照", rating.EquipmentSynergy, rating.ElementCoverage), fmt.Sprintf("配置版本 %s", cfgVersion)},
-			map[string]any{"slot": 0}))
+			"equip-synergy", headline, "/pages/equipment/equipment", "查看搭配", basis, params))
 	case "reactions":
 		if st.TopReaction == "" {
 			resp.EmptyReason = recEmpty("NOT_ENOUGH_DATA", "近 7 天有战斗但没有记录元素反应触发：在战斗中用两种元素命中同一目标后，再看反应链结论。")
@@ -279,10 +418,17 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 			[]string{fmt.Sprintf("来自 battle_records.reactions_used，近 7 天共 %d 次触发", st.Reactions), fmt.Sprintf("元素覆盖 %d/5，短板 %q", rating.ElementCoverage, weakness)},
 			map[string]any{"reaction": st.TopReaction}))
 	case "skills":
+		params := map[string]any{"context": "skills"}
+		basis := []string{fmt.Sprintf("场均击杀来自 battle_records.kills（%d 场）", st.Count), fmt.Sprintf("元素覆盖 %d/5", rating.ElementCoverage)}
+		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "skills")
+		if impactBasis != "" {
+			basis = append(basis, impactBasis)
+		}
+		for k, v := range impactParams {
+			params[k] = v
+		}
 		resp.Insights = append(resp.Insights, recInsight(
-			"skill-tempo", "近 7 场场均击杀 "+fmt.Sprintf("%.1f", float64(st.Kills)/float64(st.Count))+"，平均推进到第 "+waveText+" 波", "/pages/skills/skills", "调整技能",
-			[]string{fmt.Sprintf("场均击杀来自 battle_records.kills（%d 场）", st.Count), fmt.Sprintf("元素覆盖 %d/5", rating.ElementCoverage)},
-			map[string]any{"context": "skills"}))
+			"skill-tempo", "近 7 场场均击杀 "+fmt.Sprintf("%.1f", float64(st.Kills)/float64(st.Count))+"，平均推进到第 "+waveText+" 波", "/pages/skills/skills", "调整技能", basis, params))
 	case "stage":
 		failText := "0"
 		if st.Losses > 0 {
