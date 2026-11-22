@@ -4904,3 +4904,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t142（page-core，implementation，deps t141+t23）：inScope PortalApp.vue + PortalApp.newpage.contract.test.ts + oa4rust-r339-portal-dead-cta-fix.md；test-first RED→GREEN（契约自定义函数参数带 : string 防 TS7006）；verify vitest+desktop typecheck exit0；真浏览器死 CTA 移除+端点组回归+0pageerror、非物理真机；精确3文件单提交。（task t142 已创建，pending@page-core）预建 t143（design-reviewer 终审，reviewedTaskId=t142，deps t141+t142+t23）：verdict=pass 方可关闭 R339。（task t143 已创建，pending@design-reviewer）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R339 修复回收后据实入账。
 
+## 336. R339 关闭 + R340 立项：PortalApp 死按钮闭环 + 未审计 CRUD 页批量甄别（2026-11-22）
+- R339 收官：t142（page-core）完成，commit f6c1f8cd5a31c5a760731f5b0f94d7abfda51103 精确3文件（PortalApp.vue 7行改动+契约57+文档38）已push。方案A移除头部死 CTA（@click=showEditor=true 的新建页面按钮）+ showEditor 死变量，成对空 AdminPageHeader 保留 t4-admin-restyle 锚点（踩坑：改自闭合会破坏该契约的 indexOf 闭合锚点，已恢复成对标签），端点分组/端点参数/组件/SDK/后端/其他页零改。
+- 队长独立复核（不采信自述）：diff 确认方案A落地；亲跑 desktop typecheck exit0、PortalApp.newpage.contract.test.ts 5/5、全量 vitest 272files/2186tests exit0（t4-admin-restyle 契约未破坏）；evidence.json（gitignored，source 非物理真机）8断言全true：pageLoaded/noDeadHeaderCta(deadCta=0,newPageBtn=0)/endpointGroupsExpanded(groupCount=4)/createBtnVisible/surfaceCreate200/noPageErrors/noApiFailures、截图2张；文档38行占位0真值、敏感扫描0命中。t142 evidence_note已附。
+- t143（design-reviewer，review round1）终审 verdict=pass/findings=0/completed：P1完整闭环、pre-fix RED坐实、契约5it GREEN、全量vitest 272/2186 exit0、typecheck exit0、真浏览器8断言全true/0pageerror、文档脱敏方案A边界合规、HEAD=TRACK AB=0/0。队长独立复核终态 pass/HEAD=TRACK=f6c1f8cd5稳定/只读未改码/工作树干净，t143 evidence_note已附。
+- 结论：R339（PortalApp +新建页面死按钮 P1）完整闭环并关闭。延伸建议（带 portalId 的新建页面弹窗接 designer/page 全字段，需先有门户数据）不在本轮范围、未实施。至此 R318–R339 共22轮全部收官。
+- 据实立项 R340（批量只读甄别）：等待期队长侦察——全量差集中除已审计 PortalApp 外仍有 9 个从未被任何审计点名但有真实写端点的同构 CRUD 页（CmsColumnManagerApp/CmsModuleApp/ProcessDictDesignerApp/ProcessFormDesignerApp/ProcessScriptDesignerApp/ProcessXformApp/QueryImporterDesignerApp/QueryStatDesignerApp/TemplateApp），静态抽查 TemplateApp/CmsModuleApp 均正确使用具名插槽非默认插槽缺陷类。派 t144（qa-e2e，只读审计，deps无）：逐页梳理写端点→代表性只读安全写闭环（新建回显/编辑save/删除确认守卫，破坏性写不伪造）→三分判定，唯一文档 oa4rust/docs/ops/oa4rust-r340-crud-pages-audit.md 脱敏0真值非物理真机、精确单文档提交。（task t144 已创建，pending@qa-e2e）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R340 甄别回收后据实再定是否修复，禁臆造。
+
