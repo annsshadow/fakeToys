@@ -848,7 +848,7 @@ const delM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
-    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+    qc.invalidateQueries({ queryKey: ['query', 'defs'] })
     if (selected.value?.id) selected.value = null
   },
 })
@@ -869,7 +869,7 @@ const cm = useMutation({
     }),
   onSuccess: () => {
     showCreate.value = false
-    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+    qc.invalidateQueries({ queryKey: ['query', 'defs'] })
   },
 })
 function createQuery() {
@@ -880,7 +880,7 @@ function createQuery() {
 }
 
 function refresh() {
-  qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+  qc.invalidateQueries({ queryKey: ['query', 'defs'] })
 }
 // 视图配置真应用：列投影 + 客户端过滤 + 排序 + 分页，全部作用于最近一次执行结果，
 // 网格与导出所见即所得。过滤支持 field=value / field!=value / field~子串 / 裸子串，
