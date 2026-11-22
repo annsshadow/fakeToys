@@ -1,0 +1,1 @@
+(function(){var m=document.querySelector('.r7-compare');var t=document.body.innerText||'';return JSON.stringify({modal:!!m,title:m?(m.querySelector('.r7-compare-title')||{}).innerText||'':'',hasConfirm:/确认替换|确认应用/.test(t),rows:m?m.innerText.slice(0,220):''})})()
