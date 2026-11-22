@@ -25,12 +25,23 @@ const errMsg = ref('')
  * ⚠️ 第 155 轮起消费它。但 `redirect` 是**用户可改**的 query 参数，
  * 若不限制，`/admin/login?redirect=https://evil.com` 就成了开放重定向。
  * 判据：必须**以 `/admin` 开头**（后台路由都在这个前缀下），
- * 其余（外部 URL、协议相对 `//evil.com`、`/wiki` 等壳外路径）一律落到看板。
- * 这是「同源约束」，不是「白名单」—— 后台新增页面时自动生效，不用改这里。
+ * 或精确匹配壳外文档站 `/wiki`（可带 query 深链，如 `?tab=enemies&focus=...`）。
+ * 其余（外部 URL、协议相对 `//evil.com`、`/wiki.evil.com` 这类前缀伪装）一律落到看板。
+ * 这是「同源约束 + 一个显式壳外例外」，不是开放白名单。
+ *
+ * ⚠️ R9-WIKI：`/wiki` 此前被误归为「壳外不合法」，
+ * 但侧栏 wiki-link 指的就是它，守卫对无令牌 `/wiki` 会写 `redirect=/wiki`；
+ * 登录成功后旧逻辑落在 dashboard，运营永远点不开文档站。
+ * 用 `pathname === '/wiki'` 而非 `startsWith('/wiki')` 放行，
+ * 保证 `/wiki.evil.com` 仍被拒（开放重定向防护不回退）。
  */
 function redirectTarget(): string {
   const r = route.query.redirect
-  if (typeof r === 'string' && r.startsWith('/admin')) return r
+  if (typeof r === 'string') {
+    if (r.startsWith('/admin')) return r
+    // 仅放行 /wiki 本身及其 query/fragment，不允许 /wiki.xxx 前缀伪装
+    if (/^\/wiki(?:[?#]|$)/.test(r)) return r
+  }
   return '/admin/dashboard'
 }
 

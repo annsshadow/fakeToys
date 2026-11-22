@@ -663,6 +663,11 @@ onUnmounted(() => {
 <template>
   <div v-loading="loading" class="wiki">
     <AiInsightCard :insight="aiInsight" :loading="loading" />
+    <!-- R9-WIKI(t89)：内容区眉题（§1B.2 SectionKicker），沿用全局 .section-kicker 令牌样式 -->
+    <div class="section-kicker">
+      <span class="section-kicker-cn">玩法知识库</span>
+      <span class="section-kicker-en">PLAYER GUIDE</span>
+    </div>
     <div class="page-title">玩家玩法文档站</div>
     <p class="page-subtitle">
       本页数据直接来自线上 <code>/api/v1/config</code>，与游戏内实际数值同源 ——
@@ -1165,6 +1170,11 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--lyp-muted);
   margin: 8px 0 0;
+}
+
+/* R9-WIKI(t89)：内容区眉题与标题的间距（全局 .section-kicker 样式在 main.css） */
+.wiki > .section-kicker {
+  margin-top: 20px;
 }
 code {
   font-family: ui-monospace, monospace;
