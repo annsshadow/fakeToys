@@ -631,34 +631,57 @@ async function cancelMeeting(m: M) {
     toast.error(`取消失败: : ${e?.message ?? ''}`)
   }
 }
+// R363：写端点 HTTP 200 可能仍返回 type:error 或 type:success+bool:false，
+// 只有明确成功且权威布尔为 true 才允许成功提示；其余 fail-loud 交业务层处理。
+function meetingWriteSucceeded(resp: any, flagKey: string): boolean {
+  const typeOk = resp?.type === 'success' || (resp?.type === undefined && resp?.success !== false)
+  const flag = resp?.data?.[flagKey] ?? resp?.[flagKey]
+  return typeOk && flag === true
+}
+
 async function approveMeeting(m: M) {
   try {
     // 审批通过 = confirm/allow。
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/confirm/allow`)
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/confirm/allow`)
+    if (!meetingWriteSucceeded(r, "confirmed")) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     loadMeetings()
   } catch (e: any) {
     toast.error(`审批失败: : ${e?.message ?? ''}`)
   }
 }
+
 async function joinMeeting(m: M) {
   try {
     // 加入会议 = accept（接受邀请）。
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/accept`)
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/accept`)
+    if (!meetingWriteSucceeded(r, "accepted")) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.info('已加入会议')
     loadMeetings()
   } catch (e: any) {
     toast.error(`加入失败: : ${e?.message ?? ''}`)
   }
 }
+
 async function leaveMeeting(m: M) {
   try {
     // 后端无 /meeting/leave；退出/拒绝继续参与 = reject（最接近的真实语义，待产品确认）。
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/reject`)
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/reject`)
+    if (!meetingWriteSucceeded(r, "rejected")) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     loadMeetings()
   } catch (e: any) {
     toast.error(`离开失败: : ${e?.message ?? ''}`)
   }
 }
+
 // rev314：会议管理真实写端点（用户触发，非挂载自动触发）——改时间/标记完成/签到码/邀请增删
 async function modifyMeetingTime(m: M) {
   const startTime = prompt('新的开始时间 (YYYY-MM-DD HH:mm:ss):', m.startTime || '')
@@ -666,10 +689,14 @@ async function modifyMeetingTime(m: M) {
   const endTime = prompt('新的结束时间 (可留空):', '') || undefined
   try {
     // POST meeting/{id}/modify/starttime → UPDATE x_meeting start_time(+end_time?)
-    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/starttime`, {
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/starttime`, {
       startTime,
       ...(endTime ? { endTime } : {}),
     })
+    if (!meetingWriteSucceeded(r, "modified")) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     if (endTime) {
       // POST meeting/{id}/modify/completedtime → UPDATE x_meeting completed_time
       await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/modify/completedtime`, {
@@ -682,11 +709,16 @@ async function modifyMeetingTime(m: M) {
     toast.error(`改时间失败: ${e?.message ?? ''}`)
   }
 }
+
 async function markMeetingCompleted(m: M) {
   if (!(await confirmMsg('确定将该会议标记为已完成？'))) return
   try {
     // POST meeting/{id}/manual/completed → UPDATE x_meeting status='completed'（无 body）
-    const r = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    const r: any = await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/manual/completed`)
+    if (!meetingWriteSucceeded(r, "completed")) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     // 列表端点 meeting/list/apply 的 SELECT 不含 status 列，重载会把刚完成的会议显示成「未开始」。
     // 消费 manual/completed 响应里的权威布尔并就地落态。
     if (meetingCompletedFromResponse(r)) m.status = 'completed'
