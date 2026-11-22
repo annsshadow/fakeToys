@@ -1,0 +1,1 @@
+(function(){try{localStorage.removeItem('lyp_token');localStorage.removeItem('lyp_token_exp');localStorage.removeItem('lyp_profile')}catch(e){};return 'CLEAR'})()
