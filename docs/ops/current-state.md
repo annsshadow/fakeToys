@@ -4927,3 +4927,11 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 据实立项 R342（只读深审）：等待期队长侦察——QueryManagerDeep.vue 被 R296/R302/R304/R306 多份文档点名但均为静态枚举/基线冒烟/调试门，从未对写路径做真浏览器深审；该页有 63 个真实写端点（query/statement/stat/importmodel/neural/model 的 create/save/delete + 设计器工具写），风险面大。另 QueryViewApp 76、BamApp 17 写端点页留待后续。派 t147（qa-e2e，只读审计，deps无）：先甄别覆盖清单→静态梳理 63 写端点分组→逐组代表性只读安全写闭环（破坏性删除仅验确认守卫不伪造）→三分判定，特别留意与 R341 同构的双层信封/字段大小写失配，唯一文档 oa4rust/docs/ops/oa4rust-r342-query-deep-audit.md 脱敏0真值非物理真机、精确单文档提交。（task t147 已创建，pending@qa-e2e）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R342 审计回收后据实再定是否修复，禁臆造。
 
+## 339. R342 收官 + R343 立项：QueryManagerDeep queryKey 失配 P1 修复（2026-11-22）
+- R342 收官：t147（qa-e2e，只读深审）完成，commit c16d3a580c8c86d48e7faee357d188912c5d3196 精确单文档 60 行 oa4rust/docs/ops/oa4rust-r342-query-deep-audit.md。队长独立复核通过：文档全占位 0 真值、敏感扫描 0 命中、非物理真机、6 截图+evidence/evidence-v2 落 gitignored。覆盖甄别合理（R296/R302/R304/R306 均静态/视觉层点名、0 写路径真浏览器覆盖）；63 写端点分 10 组、15 组代表性安全写全 200、删除守卫取消 0 DELETE、500 兜底可区分、0 pageerror。特别核实本页 list 为裸数组 data[]、无 R340 双层信封/字段大小写失配（如实排除）。t147 evidence_note 已附（count=1）。
+- P1 真缺陷（queryKey 不匹配致写后列表不回显+刷新死按钮）源码+证据双坐实：useQuery 订阅 ['query','defs']（:496/:510），而新建(:872)/删除(:851)/刷新(:883) 三处 invalidateQueries 全用 ['qm','list']，失效打在无人订阅键上；evidence-v2 铁证 nBefore=11→nAfterCreate=11→nAfterRefreshBtn=11、backend n=12、nAfterReload=12。
+- 结论：R342（QueryManagerDeep 63 写端点群首次深审）闭环，1 P1 另派修复。至此 R318–R342 共25轮全部收官。
+- 据实立项 R343（P1 修复）：队长裁决最小修复——三处 invalidateQueries 的 queryKey 从 ['qm','list'] 统一改为 ['query','defs']（与 useQuery 订阅键一致，共 :851/:872/:883 三处字符串字面量）；不改订阅键、不改端点调用/payload、不动其它页/后端/SDK/组件。实测冲突先回报。
+- 派发 t148（page-core，implementation，deps t147+t23）：inScope QueryManagerDeep.vue + QueryManagerDeep.querykey.contract.test.ts + oa4rust-r343-querykey-fix.md；test-first RED→GREEN（契约参数带 : string 防 TS7006）；verify vitest+desktop typecheck exit0；真浏览器新建后列表即时回显（无需 reload）+刷新按钮生效+删除后更新+0pageerror、evidence 非物理真机；精确 3 文件单提交。（task t148 已创建，claimed@page-core attempt1）预建 t149（design-reviewer 终审，reviewedTaskId=t148，deps t147+t148+t23）：verdict=pass 方可关闭 R343。（task t149 已创建，pending@design-reviewer）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R343 修复回收后据实入账。
+
