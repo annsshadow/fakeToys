@@ -4920,3 +4920,10 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - 派发 t145（page-core，implementation，deps t144+t23）：inScope 4 .vue（ProcessDict/Form/Xform/CmsColumnManager）+ ProcessEnvelopeField.contract.test.ts + oa4rust-r341-envelope-field-fix.md；test-first RED→GREEN（契约参数带 : string 防 TS7006）；verify vitest+desktop typecheck exit0；真浏览器三页新建后列表可见、CmsColumnManager 列显示真实值、0pageerror、evidence 非物理真机；精确 6 文件单提交。（task t145 已创建，claimed@page-core attempt1）预建 t146（design-reviewer 终审，reviewedTaskId=t145，deps t144+t145+t23）：verdict=pass 方可关闭 R341。（task t146 已创建，pending@design-reviewer）
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R341 修复回收后据实入账。
 
+## 338. R341 关闭 + R342 立项：4页信封字段缺陷闭环 + 查询设计器审计（2026-11-22）
+- R341 收官：t145（page-core）完成，commit 56845cb70d254f599fefd1c80a462b1f736b6fcc 精确6文件（4 vue+契约107+文档41，163+/4-）已push。三页 P1 双层信封兼容（保留单层）、CmsColumnManager 小写→驼峰映射，列key/插槽/端点写链/后端/SDK/组件/其它页零改。队长独立复核（不采信自述）：diff 确认 surgical 改动、亲跑 typecheck exit0、契约 9/9、全量 vitest 273files/2195tests exit0、HEAD=TRACK工作树干净；evidence.json（非物理真机）10断言全true——dict/form/xform list 3→4 marker可见/create200、CMS第一行 columnId/personId 真实值非—（后两行 personid 后端本身为空串经 evidence-v3 证实非映射缺陷）、编辑删除入口可触达、0pageerror/0API失败。文档41行占位0真值、敏感扫描0命中。t145 evidence_note已附。
+- t146（design-reviewer，review round1）终审 verdict=pass/findings=0/completed：P1/P2完整闭环、RED→GREEN独立坐实（OLD双层=0单层=1→NEW双层=1单层=1）、契约9/9、vitest 273/2195 exit0、typecheck exit0、真浏览器10断言全true、文档脱敏取证限制合规、HEAD=origin AB=0/0。队长独立复核终态 pass/HEAD=TRACK=56845cb7稳定/只读未改码/工作树干净，t146 evidence_note已附。
+- 结论：R341（双层信封3页列表恒空P1 + CmsColumnManager字段映射P2）完整闭环并关闭。至此 R318–R341 共24轮全部收官。
+- 据实立项 R342（只读深审）：等待期队长侦察——QueryManagerDeep.vue 被 R296/R302/R304/R306 多份文档点名但均为静态枚举/基线冒烟/调试门，从未对写路径做真浏览器深审；该页有 63 个真实写端点（query/statement/stat/importmodel/neural/model 的 create/save/delete + 设计器工具写），风险面大。另 QueryViewApp 76、BamApp 17 写端点页留待后续。派 t147（qa-e2e，只读审计，deps无）：先甄别覆盖清单→静态梳理 63 写端点分组→逐组代表性只读安全写闭环（破坏性删除仅验确认守卫不伪造）→三分判定，特别留意与 R341 同构的双层信封/字段大小写失配，唯一文档 oa4rust/docs/ops/oa4rust-r342-query-deep-audit.md 脱敏0真值非物理真机、精确单文档提交。（task t147 已创建，pending@qa-e2e）
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。项目 ≥1000 轮非终态，R342 审计回收后据实再定是否修复，禁臆造。
+
