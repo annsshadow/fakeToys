@@ -98,6 +98,13 @@ async function loadPortalMeta3() {
 
 // 十类功能5：门户布局 保存/删除（save_layout 读 CreateLayoutRequest{name}；delete_layout 读 body{id}；
 // POST/PUT 与 POST/DELETE 为同 handler 双注册，四端点真实消费）。
+function portalLayoutWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function layoutOp(op: string): Promise<void> {
   try {
     if (op === 'savePost' || op === 'savePut') {
@@ -109,8 +116,13 @@ async function layoutOp(op: string): Promise<void> {
     } else {
       const id = prompt('布局 ID:', '') || ''
       if (!id || !(await confirmMsg('确定删除该布局？'))) return
-      if (op === 'deletePost') await api.post('/api/portal/assemble/surface/delete/layout', { id })
-      else await api.delete('/api/portal/assemble/surface/delete/layout', { body: { id } })
+      const lastResp: any = op === 'deletePost'
+        ? await api.post('/api/portal/assemble/surface/delete/layout', { id })
+        : await api.delete('/api/portal/assemble/surface/delete/layout', { body: { id } })
+      if (!portalLayoutWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success(`布局已删除 (${op})`)
     }
   } catch (e: any) {
