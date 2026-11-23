@@ -5854,13 +5854,24 @@ async function createProcess() {
     toast.error(`创建失败: ${e?.message ?? ''}`)
   }
 }
+function processDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function saveProcess() {
   if (!currentProcess.value?.id) return
   try {
     const definition = currentO2Definition(currentProcess.value)
-    await api.post(`/api/processplatform/assemble/designer/save/${currentProcess.value.id}`, {
+    const lastResp: any = await api.post(`/api/processplatform/assemble/designer/save/${currentProcess.value.id}`, {
       processDefinition: definition,
     })
+    if (!processDesignerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     currentProcess.value.definition = definition
     toast.info('保存成功')
   } catch (e: any) {
