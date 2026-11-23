@@ -544,51 +544,63 @@ async function loadQueryViewMore() {
   }
 }
 // rev332：queryview 表数据行/视图执行/统计/导入模型 真实写端点（用户触发，shape 已核 query crate handler；全字面量路径）
+function queryViewWriteSucceeded(resp: any): boolean {
+  if (resp === undefined || resp === null || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success' || (resp.type === undefined && resp.success !== false)) return true
+  return false
+}
+
 async function qvWrite(op: string) {
   try {
+    let lastResp: any
     if (op === 'rowInsert') {
       const tf = prompt('数据表 flag:', '') || ''
-      await api.post(`/api/queryview/table/row/insert/${encodeURIComponent(tf)}`, { data: {} })
+      lastResp = await api.post(`/api/queryview/table/row/insert/${encodeURIComponent(tf)}`, { data: {} })
     } else if (op === 'rowOneInsert') {
       const tf = prompt('数据表 flag:', '') || ''
-      await api.post(`/api/queryview/table/row/one/insert/${encodeURIComponent(tf)}`, { data: {} })
+      lastResp = await api.post(`/api/queryview/table/row/one/insert/${encodeURIComponent(tf)}`, { data: {} })
     } else if (op === 'rowDelete') {
       const tf = prompt('数据表 flag:', '') || ''
       const rid = prompt('行 ID:', '') || ''
       if (!(await confirmMsg('确定删除该数据行？'))) return
-      await api.delete(`/api/queryview/table/row/delete/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`)
+      lastResp = await api.delete(`/api/queryview/table/row/delete/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`)
     } else if (op === 'rowDeleteAll') {
       const tf = prompt('数据表 flag:', '') || ''
       if (!(await confirmMsg('确定清空该表全部数据行？'))) return
-      await api.post(`/api/queryview/table/row/delete/all/${encodeURIComponent(tf)}`, {})
+      lastResp = await api.post(`/api/queryview/table/row/delete/all/${encodeURIComponent(tf)}`, {})
     } else if (op === 'rowPartUpdate') {
       const tf = prompt('数据表 flag:', '') || ''
       const rid = prompt('行 ID:', '') || ''
-      await api.post(`/api/queryview/table/row/part/update/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`, {
+      lastResp = await api.post(`/api/queryview/table/row/part/update/${encodeURIComponent(tf)}/${encodeURIComponent(rid)}`, {
         data: {},
       })
     } else if (op === 'viewExecute') {
       const id = prompt('视图 ID:', '') || ''
-      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/execute`, {})
+      lastResp = await api.put(`/api/queryview/view/${encodeURIComponent(id)}/execute`, {})
     } else if (op === 'viewBundle') {
       const id = prompt('视图 ID:', '') || ''
-      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/bundle`, {})
+      lastResp = await api.put(`/api/queryview/view/${encodeURIComponent(id)}/bundle`, {})
     } else if (op === 'viewExcel') {
       const id = prompt('视图 ID:', '') || ''
-      await api.put(`/api/queryview/view/${encodeURIComponent(id)}/excel`, {})
+      lastResp = await api.put(`/api/queryview/view/${encodeURIComponent(id)}/excel`, {})
     } else if (op === 'statExecute') {
       const id = prompt('统计 ID:', '') || ''
-      await api.put(`/api/queryview/stat/${encodeURIComponent(id)}/execute`, {})
+      lastResp = await api.put(`/api/queryview/stat/${encodeURIComponent(id)}/execute`, {})
     } else if (op === 'importExecute') {
       const id = prompt('导入模型 ID:', '') || ''
-      await api.post(`/api/queryview/importmodel/${encodeURIComponent(id)}/execute`, {})
+      lastResp = await api.post(`/api/queryview/importmodel/${encodeURIComponent(id)}/execute`, {})
     } else if (op === 'importRecordDelete') {
       const rid = prompt('导入记录 ID:', '') || ''
       if (!(await confirmMsg('确定删除该导入记录？'))) return
-      await api.delete(`/api/queryview/importmodel/record/delete/${encodeURIComponent(rid)}`)
+      lastResp = await api.delete(`/api/queryview/importmodel/record/delete/${encodeURIComponent(rid)}`)
     } else {
       const kw = prompt('相似检索关键词:', '') || ''
-      await api.post('/api/queryview/morelikethis', { key: kw })
+      lastResp = await api.post('/api/queryview/morelikethis', { key: kw })
+    }
+    if (!queryViewWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('queryview 操作已提交')
   } catch (e: any) {
@@ -598,67 +610,68 @@ async function qvWrite(op: string) {
 // rev375：queryview 视图按应用执行/打包/Excel/v2执行 + 统计执行 + 导入模型执行/清单 + 语句执行 + 表分页/行/动态重载 + 神经计算 真实路由（全字面量含参占位；避 importmodel/record 守卫意图与 3+ 参 arity trap）
 async function qvMore(op: string) {
   try {
+    let lastResp: any
     const flag = () => encodeURIComponent(prompt('视图/表 flag:', '') || '')
     const qf = () => encodeURIComponent(prompt('查询 flag:', '') || '')
     if (op === 'viewAppExec') {
       const v = flag()
       const a = encodeURIComponent(prompt('应用 flag:', '') || '')
-      await api.get(`/api/queryview/${v}/application/${a}/execute`)
+      lastResp = await api.get(`/api/queryview/${v}/application/${a}/execute`)
     } else if (op === 'viewAppExecPage') {
       const v = flag()
       const a = encodeURIComponent(prompt('应用 flag:', '') || '')
-      await api.get(`/api/queryview/${v}/application/${a}/execute/page/1/size/20`)
-    } else if (op === 'viewBundle') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/bundle`, {})
-    else if (op === 'viewExcel') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/excel`, {})
-    else if (op === 'viewExec') await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute`, {})
+      lastResp = await api.get(`/api/queryview/${v}/application/${a}/execute/page/1/size/20`)
+    } else if (op === 'viewBundle') lastResp = await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/bundle`, {})
+    else if (op === 'viewExcel') lastResp = await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/excel`, {})
+    else if (op === 'viewExec') lastResp = await api.put(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute`, {})
     else if (op === 'viewExecV2')
-      await api.post(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute/v2/page/1/size/20`, {})
+      lastResp = await api.post(`/api/queryview/view/flag/${flag()}/query/${qf()}/execute/v2/page/1/size/20`, {})
     else if (op === 'viewBundleV2') {
       const id = flag()
-      await api.post(`/api/queryview/view/${id}/bundle/v2`, {})
+      lastResp = await api.post(`/api/queryview/view/${id}/bundle/v2`, {})
     } else if (op === 'viewExecV2Id') {
       const id = flag()
-      await api.post(`/api/queryview/view/${id}/execute/v2/page/1/size/20`, {})
-    } else if (op === 'statExec') await api.put(`/api/queryview/stat/flag/${flag()}/query/${qf()}/execute`, {})
+      lastResp = await api.post(`/api/queryview/view/${id}/execute/v2/page/1/size/20`, {})
+    } else if (op === 'statExec') lastResp = await api.put(`/api/queryview/stat/flag/${flag()}/query/${qf()}/execute`, {})
     else if (op === 'bundlePost') {
       const id = flag()
-      await api.post(`/api/queryview/bundle/v2/post/${id}`, {})
+      lastResp = await api.post(`/api/queryview/bundle/v2/post/${id}`, {})
     } else if (op === 'importRun') {
       const id = flag()
-      await api.post(`/api/queryview/importmodel/${id}`, {})
+      lastResp = await api.post(`/api/queryview/importmodel/${id}`, {})
     } else if (op === 'importExecRecPost') {
       const rid = encodeURIComponent(prompt('记录 ID:', '') || '')
-      await api.post(`/api/queryview/importmodel/execute/record/${rid}`, {})
+      lastResp = await api.post(`/api/queryview/importmodel/execute/record/${rid}`, {})
     } else if (op === 'importExecRecGet') {
       const rid = encodeURIComponent(prompt('记录 ID:', '') || '')
-      await api.get(`/api/queryview/importmodel/execute/record/${rid}`)
-    } else if (op === 'importListByQuery') await api.post(`/api/queryview/importmodel/list/${qf()}/${qf()}`, {})
-    else if (op === 'importRecPaging') await api.post('/api/queryview/importmodel/list/record/paging/1/size/20', {})
+      lastResp = await api.get(`/api/queryview/importmodel/execute/record/${rid}`)
+    } else if (op === 'importListByQuery') lastResp = await api.post(`/api/queryview/importmodel/list/${qf()}/${qf()}`, {})
+    else if (op === 'importRecPaging') lastResp = await api.post('/api/queryview/importmodel/list/record/paging/1/size/20', {})
     else if (op === 'importRecItemPaging')
-      await api.post('/api/queryview/importmodel/list/record/item/paging/1/size/20', {})
-    else if (op === 'stmtExec') await api.post(`/api/queryview/statement/execute/${flag()}/page/1/size/20`, {})
+      lastResp = await api.post('/api/queryview/importmodel/list/record/item/paging/1/size/20', {})
+    else if (op === 'stmtExec') lastResp = await api.post(`/api/queryview/statement/execute/${flag()}/page/1/size/20`, {})
     else if (op === 'stmtExecMode') {
       const f = flag()
       const mode = encodeURIComponent(prompt('模式:', 'data') || 'data')
-      await api.post(`/api/queryview/statement/execute/${f}/mode/${mode}/page/1/size/20`, {})
+      lastResp = await api.post(`/api/queryview/statement/execute/${f}/mode/${mode}/page/1/size/20`, {})
     }
     // rev447：语句执行 flag-前置变体（statement_execute Path<(flag,page,size)> / statement_execute_mode_v2 Path<(flag,mode,page,size)>，路径结构 statement/{flag}/execute/... 区别于已消费的 statement/execute/{flag}/...）
     else if (op === 'stmtExec2') {
       const f = flag()
-      await api.post(`/api/queryview/statement/${f}/execute/page/1/size/20`, { parameter: {} })
+      lastResp = await api.post(`/api/queryview/statement/${f}/execute/page/1/size/20`, { parameter: {} })
     } else if (op === 'stmtExecMode2') {
       const f = flag()
       const mode = encodeURIComponent(prompt('模式:', 'data') || 'data')
-      await api.post(`/api/queryview/statement/${f}/execute/mode/${mode}/page/1/size/20`, { parameter: {} })
+      lastResp = await api.post(`/api/queryview/statement/${f}/execute/mode/${mode}/page/1/size/20`, { parameter: {} })
     }
     // rev447：查询设计器语句执行（statement_execute_v2 / statement_execute_mode_v2，designer 前缀 Path<(flag[,mode],page,size)>+Json）
     else if (op === 'designerStmtExec') {
       const f = flag()
-      await api.post(`/api/query/assemble/designer/statement/${f}/execute/page/1/size/20`, { parameter: {} })
+      lastResp = await api.post(`/api/query/assemble/designer/statement/${f}/execute/page/1/size/20`, { parameter: {} })
     } else if (op === 'designerStmtExecMode') {
       const f = flag()
       const mode = encodeURIComponent(prompt('模式:', 'data') || 'data')
-      await api.post(`/api/query/assemble/designer/statement/${f}/execute/mode/${mode}/page/1/size/20`, {
+      lastResp = await api.post(`/api/query/assemble/designer/statement/${f}/execute/mode/${mode}/page/1/size/20`, {
         parameter: {},
       })
     }
@@ -666,27 +679,31 @@ async function qvMore(op: string) {
     else if (op === 'designerImportPerm') {
       const id = encodeURIComponent(prompt('导入模型 ID:', '') || '')
       if (!id) return
-      await api.post(`/api/query/assemble/designer/importmodel/permission/${id}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/importmodel/permission/${id}`, {})
     } else if (op === 'designerStmtExecFlagMode') {
       const f = flag()
       const mode = encodeURIComponent(prompt('模式:', 'data') || 'data')
-      await api.post(`/api/query/assemble/designer/statement/execute/${f}/mode/${mode}/page/1/size/20`, {
+      lastResp = await api.post(`/api/query/assemble/designer/statement/execute/${f}/mode/${mode}/page/1/size/20`, {
         parameter: {},
       })
-    } else if (op === 'tablePaging') await api.post('/api/queryview/table/list/paging/1/size/20', {})
+    } else if (op === 'tablePaging') lastResp = await api.post('/api/queryview/table/list/paging/1/size/20', {})
     else if (op === 'tableRowPaging') {
       const tf = flag()
-      await api.post(`/api/queryview/table/list/table/${tf}/row/paging/1/size/20`, {})
+      lastResp = await api.post(`/api/queryview/table/list/table/${tf}/row/paging/1/size/20`, {})
     } else if (op === 'tableRow') {
       const tf = flag()
       const id = encodeURIComponent(prompt('行 ID:', '') || '')
-      await api.get(`/api/queryview/table/row/${tf}/${id}`)
-    } else if (op === 'tableReload') await api.get('/api/queryview/table/reload/dynamic')
+      lastResp = await api.get(`/api/queryview/table/row/${tf}/${id}`)
+    } else if (op === 'tableReload') lastResp = await api.get('/api/queryview/table/reload/dynamic')
     else {
       const mf = encodeURIComponent(prompt('模型 flag:', '') || '')
       const w = encodeURIComponent(prompt('工作:', '') || '')
       const wi = encodeURIComponent(prompt('workId:', '') || '')
-      await api.get(`/api/queryview/neural/list/calculate/model/${mf}/${w}/${wi}`)
+      lastResp = await api.get(`/api/queryview/neural/list/calculate/model/${mf}/${w}/${wi}`)
+    }
+    if (!queryViewWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('queryview 操作已提交')
   } catch (e: any) {
@@ -696,29 +713,34 @@ async function qvMore(op: string) {
 // rev402：查询视图 数据表行 读(按表·id)/插入/单行插入/清空/按行删/部分更新 真实路由（Path arity 已核，insert/part-update Json 空体；用户触发，规避守卫禁 importmodel/record 与 query 探针）
 async function qvRows(op: string) {
   try {
+    let lastResp: any
     const flag = () => encodeURIComponent(prompt('数据表 flag:', '') || '')
     if (op === 'rowGet') {
       const f = flag()
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
-      await api.get(`/api/queryview/table/row/${f}/${rid}`)
-    } else if (op === 'rowInsert') await api.post(`/api/queryview/table/${flag()}/row`, {})
-    else if (op === 'rowInsertOne') await api.post(`/api/queryview/table/${flag()}/row/one`, {})
+      lastResp = await api.get(`/api/queryview/table/row/${f}/${rid}`)
+    } else if (op === 'rowInsert') lastResp = await api.post(`/api/queryview/table/${flag()}/row`, {})
+    else if (op === 'rowInsertOne') lastResp = await api.post(`/api/queryview/table/${flag()}/row/one`, {})
     else if (op === 'rowDeleteAll') {
       const f = flag()
       if (!(await confirmMsg('确定清空该表所有行？'))) return
-      await api.delete(`/api/queryview/table/${f}/row/delete/all`)
+      lastResp = await api.delete(`/api/queryview/table/${f}/row/delete/all`)
     } else if (op === 'rowDelete') {
       const f = flag()
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
       if (!(await confirmMsg('确定删除该行？'))) return
-      await api.delete(`/api/queryview/table/${f}/row/${rid}`)
+      lastResp = await api.delete(`/api/queryview/table/${f}/row/${rid}`)
     } else if (op === 'rowSelect') {
       const f = flag()
-      await api.post(`/api/queryview/table/list/${f}/row/select`, {})
+      lastResp = await api.post(`/api/queryview/table/list/${f}/row/select`, {})
     } else {
       const f = flag()
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
-      await api.post(`/api/queryview/table/${f}/row/${rid}/part/update`, {})
+      lastResp = await api.post(`/api/queryview/table/${f}/row/${rid}/part/update`, {})
+    }
+    if (!queryViewWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('数据表行操作已提交')
   } catch (e: any) {
@@ -728,6 +750,7 @@ async function qvRows(op: string) {
 // rev442：查询设计器动态表行 CRUD 3 条真实路由（designer 前缀，区别于已消费的 surface/queryview 表行）——insert{tableFlag}[u2 INSERT x_query_table_data，要求非空 data 避免垃圾]·update{tableFlag}/{id}[UPDATE by flag+id]·delete{tableFlag}/{id}[DELETE by flag+id]，Path arity 与路由严格一致
 async function qvDesignerRows(op: string) {
   try {
+    let lastResp: any
     const flag = encodeURIComponent(prompt('数据表 flag:', '') || '')
     if (!flag) return
     if (op === 'insert') {
@@ -740,7 +763,11 @@ async function qvDesignerRows(op: string) {
         toast.error('JSON 解析失败')
         return
       }
-      await api.post(`/api/query/assemble/designer/table/row/insert/${flag}`, data)
+      lastResp = await api.post(`/api/query/assemble/designer/table/row/insert/${flag}`, data)
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('设计器表行已插入')
     } else if (op === 'update') {
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
@@ -754,7 +781,11 @@ async function qvDesignerRows(op: string) {
         toast.error('JSON 解析失败')
         return
       }
-      await api.put(`/api/query/assemble/designer/table/row/update/${flag}/${rid}`, data)
+      lastResp = await api.put(`/api/query/assemble/designer/table/row/update/${flag}/${rid}`, data)
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('设计器表行已更新')
     } else if (op === 'save') {
       // rev443：designer 表行保存（row_save uuid INSERT x_query_table_data，要求非空 JSON）
@@ -767,22 +798,38 @@ async function qvDesignerRows(op: string) {
         toast.error('JSON 解析失败')
         return
       }
-      await api.post(`/api/query/assemble/designer/table/row/save/${flag}`, data)
+      lastResp = await api.post(`/api/query/assemble/designer/table/row/save/${flag}`, data)
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('设计器表行已保存')
     } else if (op === 'build') {
       // rev443：按 query flag 触发数据表构建（table_query_build_dispatch UPDATE x_query_table status='build'）
-      await api.get(`/api/query/assemble/designer/table/query/${flag}/build`)
+      lastResp = await api.get(`/api/query/assemble/designer/table/query/${flag}/build`)
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('数据表构建已触发')
     } else if (op === 'deleteAll') {
       // rev443：清空 designer 数据表全部行（table_tableFlag_row_delete_all）
       if (!(await confirmMsg('确定清空该设计器表所有行？'))) return
-      await api.post(`/api/query/assemble/designer/table/row/delete/all/${flag}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/table/row/delete/all/${flag}`, {})
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('设计器表已清空')
     } else {
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
       if (!rid) return
       if (!(await confirmMsg('确定删除该设计器表行？'))) return
-      await api.delete(`/api/query/assemble/designer/table/row/delete/${flag}/${rid}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/table/row/delete/${flag}/${rid}`)
+      if (!queryViewWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
       toast.success('设计器表行已删除')
     }
   } catch (e: any) {
