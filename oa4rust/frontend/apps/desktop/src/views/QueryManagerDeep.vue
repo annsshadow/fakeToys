@@ -573,15 +573,28 @@ async function loadDesignerDeepReads() {
 }
 // rev319：查询设计器 真实写端点（用户触发 prompt+确认，非造假）——查询/语句/统计/视图/数据表/导入模型/神经模型 建改删+权限+表行+输入
 // 全部完整字面量路径（前缀常量会被 extract_calls 截断）；请求体经 handler 签名核实(多为 Json<Value>)
+// R393：写响应信封判定——后端200但type:error/success:false为失败，成功不强求bool（幂等deleted:0等合法）。
+function queryManagerWriteSucceeded(resp: any): boolean {
+  if (resp == null || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type === undefined && resp.success !== false) return true
+  return false
+}
 async function qdCreate(kind: 'query' | 'statement' | 'stat' | 'importmodel' | 'neural') {
   const name = prompt(`新建${kind}名称:`, '')
   if (!name) return
   try {
-    if (kind === 'query') await api.post('/api/query/assemble/designer/query', { name })
-    else if (kind === 'statement') await api.post('/api/query/assemble/designer/statement', { name })
-    else if (kind === 'stat') await api.post('/api/query/assemble/designer/stat', { name })
-    else if (kind === 'importmodel') await api.post('/api/query/assemble/designer/importmodel', { name })
-    else await api.post('/api/query/assemble/designer/neural/model', { name })
+    let lastResp: any
+    if (kind === 'query') lastResp = await api.post('/api/query/assemble/designer/query', { name })
+    else if (kind === 'statement') lastResp = await api.post('/api/query/assemble/designer/statement', { name })
+    else if (kind === 'stat') lastResp = await api.post('/api/query/assemble/designer/stat', { name })
+    else if (kind === 'importmodel') lastResp = await api.post('/api/query/assemble/designer/importmodel', { name })
+    else lastResp = await api.post('/api/query/assemble/designer/neural/model', { name })
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 已创建`)
   } catch (e: any) {
     toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
@@ -592,14 +605,19 @@ async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
   if (!id) return
   const eid = encodeURIComponent(id)
   try {
-    if (kind === 'query') await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
-    else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
-    else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
+    let lastResp: any
+    if (kind === 'query') lastResp = await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
+    else if (kind === 'stat') lastResp = await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
+    else if (kind === 'view') lastResp = await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
     else if (kind === 'importmodel')
-      await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
+      lastResp = await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
     else if (kind === 'neural')
-      await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
-    else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
+      lastResp = await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
+    else lastResp = await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
     toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
@@ -613,14 +631,19 @@ async function qdDelete(
   if (!(await confirmMsg(`确定删除该${kind}？`))) return
   const eid = encodeURIComponent(id)
   try {
-    if (kind === 'query') await api.delete(`/api/query/assemble/designer/query/${eid}`)
-    else if (kind === 'statement') await api.delete(`/api/query/assemble/designer/statement/${eid}`)
-    else if (kind === 'stat') await api.delete(`/api/query/assemble/designer/stat/${eid}`)
-    else if (kind === 'view') await api.delete(`/api/query/assemble/designer/view/${eid}`)
-    else if (kind === 'table') await api.delete(`/api/query/assemble/designer/table/${eid}`)
-    else if (kind === 'importmodel') await api.delete(`/api/query/assemble/designer/importmodel/${eid}`)
-    else if (kind === 'neural') await api.delete(`/api/query/assemble/designer/neural/model/${eid}`)
-    else await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
+    let lastResp: any
+    if (kind === 'query') lastResp = await api.delete(`/api/query/assemble/designer/query/${eid}`)
+    else if (kind === 'statement') lastResp = await api.delete(`/api/query/assemble/designer/statement/${eid}`)
+    else if (kind === 'stat') lastResp = await api.delete(`/api/query/assemble/designer/stat/${eid}`)
+    else if (kind === 'view') lastResp = await api.delete(`/api/query/assemble/designer/view/${eid}`)
+    else if (kind === 'table') lastResp = await api.delete(`/api/query/assemble/designer/table/${eid}`)
+    else if (kind === 'importmodel') lastResp = await api.delete(`/api/query/assemble/designer/importmodel/${eid}`)
+    else if (kind === 'neural') lastResp = await api.delete(`/api/query/assemble/designer/neural/model/${eid}`)
+    else lastResp = await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 已删除`)
   } catch (e: any) {
     toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
@@ -631,12 +654,17 @@ async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
   if (!id) return
   const eid = encodeURIComponent(id)
   try {
-    if (kind === 'query') await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
-    else if (kind === 'statement') await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
-    else if (kind === 'stat') await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
-    else if (kind === 'view') await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
-    else if (kind === 'table') await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
-    else await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
+    let lastResp: any
+    if (kind === 'query') lastResp = await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
+    else if (kind === 'statement') lastResp = await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
+    else if (kind === 'stat') lastResp = await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
+    else if (kind === 'view') lastResp = await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
+    else if (kind === 'table') lastResp = await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
+    else lastResp = await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 权限已设置`)
   } catch (e: any) {
     toast.error(`设置${kind}权限失败: ${e?.message ?? ''}`)
@@ -645,26 +673,31 @@ async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
 // rev334：查询设计器 检索/表执行/统计模拟/图标/输出选择/语句列举 真实写端点（用户触发，shape 已核；避 neural/reset 双参 arity trap）
 async function qdMisc(op: string) {
   try {
-    if (op === 'search') await api.post('/api/query/assemble/designer/search', {})
-    else if (op === 'searchV2') await api.post('/api/query/assemble/designer/designer/search', { key: '' })
+    let lastResp: any
+    if (op === 'search') lastResp = await api.post('/api/query/assemble/designer/search', {})
+    else if (op === 'searchV2') lastResp = await api.post('/api/query/assemble/designer/designer/search', { key: '' })
     else if (op === 'tableExecute') {
       const flag = prompt('数据表 flag:', '') || ''
-      await api.post(`/api/query/assemble/designer/table/execute/${encodeURIComponent(flag)}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/table/execute/${encodeURIComponent(flag)}`, {})
     } else if (op === 'statSimulate') {
       const id = prompt('统计 ID:', '') || ''
-      await api.put(`/api/query/assemble/designer/stat/${encodeURIComponent(id)}/simulate`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/stat/${encodeURIComponent(id)}/simulate`, {})
     } else if (op === 'queryIcon') {
       const flag = prompt('查询 flag:', '') || ''
-      await api.put(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}/icon`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}/icon`, {})
     } else if (op === 'iconSet') {
       const flag = prompt('查询 flag:', '') || ''
-      await api.put(`/api/query/assemble/designer/icon/set/${encodeURIComponent(flag)}`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/icon/set/${encodeURIComponent(flag)}`, {})
     } else if (op === 'outputSelect') {
       const flag = prompt('输出 flag:', '') || ''
-      await api.put(`/api/query/assemble/designer/output/${encodeURIComponent(flag)}/select`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/output/${encodeURIComponent(flag)}/select`, {})
     } else {
       const qf = prompt('查询 flag:', '') || ''
-      await api.post(`/api/query/assemble/designer/statement/list/query/${encodeURIComponent(qf)}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/statement/list/query/${encodeURIComponent(qf)}`, {})
+    }
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('查询设计器操作已提交')
   } catch (e: any) {
@@ -674,47 +707,52 @@ async function qdMisc(op: string) {
 // rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
 async function qdWrite2(op: string) {
   try {
+    let lastResp: any
     if (op === 'statEdit') {
       const id = prompt('统计 ID:', '') || ''
-      await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {})
     } else if (op === 'statDelete') {
       const id = prompt('要删除的统计 ID:', '') || ''
       if (!(await confirmMsg('确定删除该统计？'))) return
-      await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`)
     } else if (op === 'importRun') {
       const id = prompt('导入模型 ID:', '') || ''
-      await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {})
     } else if (op === 'importEdit') {
       const id = prompt('导入模型 ID:', '') || ''
-      await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {})
     } else if (op === 'importDelete') {
       const id = prompt('要删除的导入模型 ID:', '') || ''
       if (!(await confirmMsg('确定删除该导入模型？'))) return
-      await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`)
     } else if (op === 'viewDelete') {
       const id = prompt('要删除的视图 ID:', '') || ''
       if (!(await confirmMsg('确定删除该视图？'))) return
-      await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`)
     } else if (op === 'tableDelete') {
       const flag = prompt('要删除的数据表 flag:', '') || ''
       if (!(await confirmMsg('确定删除该数据表？'))) return
-      await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`)
     } else if (op === 'stmtPermission') {
       const id = prompt('语句 ID:', '') || ''
-      await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
     } else if (op === 'stmtExecute') {
       const flag = prompt('语句 flag:', '') || ''
-      await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
     } else if (op === 'neuralUpdate') {
       const f = prompt('模型 flag:', '') || ''
-      await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
+      lastResp = await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
     } else if (op === 'neuralDelete') {
       const f = prompt('要删除的模型 flag:', '') || ''
       if (!(await confirmMsg('确定删除该神经网络模型？'))) return
-      await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`)
+      lastResp = await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`)
     } else {
       const f = prompt('模型 flag:', '') || ''
-      await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {})
+      lastResp = await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {})
+    }
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('查询设计器写操作已提交')
   } catch (e: any) {
@@ -768,7 +806,11 @@ async function qdDeleteDesigner() {
   if (!id) return
   if (!(await confirmMsg('确定删除该查询设计器？'))) return
   try {
-    await api.post(`/api/query/assemble/designer/delete/${id}`, {})
+    const lastResp: any = await api.post(`/api/query/assemble/designer/delete/${id}`, {})
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('查询设计器已删除')
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
@@ -776,11 +818,16 @@ async function qdDeleteDesigner() {
 }
 async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
   try {
-    if (op === 'compare') await api.put('/api/query/assemble/designer/input/compare', {})
-    else if (op === 'cover') await api.put('/api/query/assemble/designer/input/cover', {})
-    else if (op === 'create') await api.put('/api/query/assemble/designer/input/create', {})
-    else if (op === 'prepare/cover') await api.put('/api/query/assemble/designer/input/prepare/cover', {})
-    else await api.put('/api/query/assemble/designer/input/prepare/create', {})
+    let lastResp: any
+    if (op === 'compare') lastResp = await api.put('/api/query/assemble/designer/input/compare', {})
+    else if (op === 'cover') lastResp = await api.put('/api/query/assemble/designer/input/cover', {})
+    else if (op === 'create') lastResp = await api.put('/api/query/assemble/designer/input/create', {})
+    else if (op === 'prepare/cover') lastResp = await api.put('/api/query/assemble/designer/input/prepare/cover', {})
+    else lastResp = await api.put('/api/query/assemble/designer/input/prepare/create', {})
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`输入 ${op} 已提交`)
   } catch (e: any) {
     toast.error(`输入操作失败: ${e?.message ?? ''}`)
@@ -791,13 +838,18 @@ async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteA
   if (!flag) return
   const ef = encodeURIComponent(flag)
   try {
-    if (op === 'insert') await api.post(`/api/query/assemble/designer/table/${ef}/row`, {})
-    else if (op === 'save') await api.post(`/api/query/assemble/designer/table/${ef}/row/save`, {})
-    else if (op === 'deleteAll') await api.delete(`/api/query/assemble/designer/table/${ef}/row/delete/all`)
+    let lastResp: any
+    if (op === 'insert') lastResp = await api.post(`/api/query/assemble/designer/table/${ef}/row`, {})
+    else if (op === 'save') lastResp = await api.post(`/api/query/assemble/designer/table/${ef}/row/save`, {})
+    else if (op === 'deleteAll') lastResp = await api.delete(`/api/query/assemble/designer/table/${ef}/row/delete/all`)
     else {
       const rid = encodeURIComponent(prompt('行 ID:', '') || '')
-      if (op === 'update') await api.put(`/api/query/assemble/designer/table/${ef}/row/${rid}`, {})
-      else await api.delete(`/api/query/assemble/designer/table/${ef}/row/${rid}`)
+      if (op === 'update') lastResp = await api.put(`/api/query/assemble/designer/table/${ef}/row/${rid}`, {})
+      else lastResp = await api.delete(`/api/query/assemble/designer/table/${ef}/row/${rid}`)
+    }
+    if (!queryManagerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success(`表行 ${op} 已提交`)
   } catch (e: any) {
