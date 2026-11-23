@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="程序中心" subtitle="/api/program_center/* — 应用列表与详情" />
     <div class="admin-section-nav" aria-label="程序中心分区">
       <button type="button" :class="{ active: tab === 'agent' }" @click="tab = 'agent'">Agent</button>

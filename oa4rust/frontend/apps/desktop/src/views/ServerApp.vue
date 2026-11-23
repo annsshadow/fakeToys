@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="服务器管理" subtitle="系统状态、命令执行与运维操作">
       <template #actions>
         <span v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</span>

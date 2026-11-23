@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="分类管理" subtitle="管理应用下的内容分类与层级">
       <template #actions>
         <span class="stat-chip">共 {{ items.length }} 项</span>
