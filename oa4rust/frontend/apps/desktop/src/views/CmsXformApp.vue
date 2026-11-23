@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
+  <div class="crud-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="CMS XForm" subtitle="XForm 定义（assemble control）" />
     <AdminToolbar
       v-model="search"

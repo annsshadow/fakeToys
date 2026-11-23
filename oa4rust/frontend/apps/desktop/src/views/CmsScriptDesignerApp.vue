@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="CMS 脚本设计器" subtitle="脚本 CRUD 与按唯一名加载（/api/script/*）" />
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
       <div class="view-shell">

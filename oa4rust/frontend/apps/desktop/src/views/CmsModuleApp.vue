@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
+  <div class="crud-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="CMS 模块管理" subtitle="实体模块（x_cms_entity_module）" />
     <AdminToolbar
       v-model="search"
