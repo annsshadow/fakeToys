@@ -275,7 +275,7 @@ import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { businessTodayYMD } from '../utils/date'
 import { downloadBlob } from '../utils/download'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
@@ -651,7 +651,11 @@ async function runQuery() {
 async function deleteQuery(q: QueryDef) {
   if (!(await confirmMsg(`删除查询「${q.name || q.id}」？`))) return
   try {
-    await api.delete(`/api/query/assemble/designer/delete/${q.id}`)
+    const lastResp: any = await api.delete(`/api/query/assemble/designer/delete/${q.id}`)
+    if (!queryDesignerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     if (selected.value?.id === q.id) selected.value = null
     queries.value = queries.value.filter((x) => x.id !== q.id)
   } catch (e: any) {
