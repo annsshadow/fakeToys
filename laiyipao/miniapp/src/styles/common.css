@@ -1681,4 +1681,54 @@ page {
   .r10-enter { animation: none !important; }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   LYP-R12-GROWTH-PRIORITY-V1 — 跨系统成长优先级（R12 玩法实测）
+   真浏览器实测：四页各自给互相矛盾的「推荐」。此层在四页顶部呈现
+   与首页 aiInsight 同源的一条短板结论，给瓶颈 / 推荐动作 / 补分收益。
+   令牌零新增：复用 --ai-accent / --ai-ink / --ai-halo / --panel-2 / --border。
+   ───────────────────────────────────────────────────────────── */
+.r12-priority {
+  position: relative;
+  display: block;
+  margin: 0 0 20rpx;
+  padding: 20rpx 22rpx;
+  background: linear-gradient(135deg, var(--ai-halo), rgba(0,0,0,0) 62%), var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+  box-shadow: var(--ai-glow);
+}
+.r12-priority-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+.r12-priority-badge {
+  color: var(--ai-ink);
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+.r12-priority-title { color: var(--text); font-size: 26rpx; font-weight: 700; }
+.r12-priority-text { display: block; color: var(--text-2); font-size: 26rpx; line-height: 1.6; }
+.r12-priority-basis { display: block; margin-top: 8rpx; color: var(--dim); font-size: 21rpx; line-height: 1.5; }
+.r12-priority-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 14rpx;
+  border-radius: 10rpx;
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  color: var(--ai-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.r12-priority-cta:active { opacity: 0.78; }
+.r12-priority-enter { animation: r12-priority-in 240ms ease-out both; }
+@keyframes r12-priority-in { from { opacity: 0; transform: translateY(10rpx); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .r12-priority-enter { animation: none !important; }
+}
+
 

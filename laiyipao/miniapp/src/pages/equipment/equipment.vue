@@ -5,6 +5,17 @@
         <text class="section-kicker-cn">装备锻造台</text>
         <text class="section-kicker-en">EQUIPMENT FORGE</text>
       </view>
+
+      <!-- R12 跨系统成长优先级：与首页 aiInsight 同源口径，四页统一短板结论 -->
+      <view v-if="r12Priority" class="r12-priority r12-priority-enter">
+        <view class="r12-priority-head">
+          <text class="r12-priority-badge">AI</text>
+          <text class="r12-priority-title">当前最该强化 · 跨系统优先级</text>
+        </view>
+        <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
+        <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
+        <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
+      </view>
       <view class="r3-kpi r3-enter">
         <view class="r3-kpi-main">
           <text class="r3-kpi-num">{{ r3AiEquip ? r3AiEquip.name : '待配置' }}</text>
@@ -239,6 +250,7 @@
 </template>
 
 <script setup lang="ts">
+import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
 import { computed, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
@@ -249,6 +261,12 @@ import { fetchRecommendationImpact, applyEquipmentImpact, type R7ImpactView } fr
 import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView } from '@/pages/_shared/r7GameplayCausal'
 
 const store = useGameStore()
+// R12 跨系统成长优先级：口径与首页 aiInsight 一致，四页指向同一短板
+const r12Priority = computed(() => computeGrowthPriority(store.buildRating, store.config?.rating_weights))
+function r12Go() {
+  const p = r12Priority.value
+  if (p?.hint) uni.navigateTo({ url: p.hint })
+}
 
 /** 装备图鉴展示所需的字段形状（服务端 /config.equipment 元素）。 */
 interface EquipmentDef {

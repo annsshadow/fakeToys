@@ -288,6 +288,7 @@
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
       <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
+      <text v-if="settleDefeatReview" class="settle-defeat-review">{{ settleDefeatReview }}</text>
       <view v-if="!settleFailed" class="r10-growth r10-enter">
         <text class="r10-growth-title">AI · 养成前后（同一关可信差值）</text>
         <template v-if="growthCompare.available">
@@ -383,7 +384,7 @@ import {
 import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
-import { damageShareFromEvents, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
+import { damageShareFromEvents, defeatReview, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -579,6 +580,23 @@ const settleCardFeedback = computed(() => {
   const shareText = share.ratioPct === null ? '本局无完整伤害记录' : `反应伤害占比 ${share.ratioPct}%`
   return `AI 本局取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；${shareText}；依据 card_picks / hit+reaction 事件；下一局可换元素搭配对比收益。`
 })
+
+/** R12 失败复盘：把真实结算数据翻译成「为什么输 + 下一局改什么」，成功/结算失败不冒充。 */
+const settleDefeatReview = computed(() => {
+  const r = settleResult.value
+  if (!r || r.win || settleFailed.value) return null
+  const eng = engine.value
+  const level = eng?.cfg?.level
+  return defeatReview({
+    wave: eng ? Number(eng.waveIndex ?? 0) + 1 : null,
+    totalWaves: level ? Number(level.wave_count ?? level.waves?.length ?? 0) || null : null,
+    kills: Number(r.kills ?? 0),
+    leaked: Number(r.leaked ?? 0),
+    reactions: Number(r.reactions ?? 0),
+    cardPicks: settleCardPicks.value,
+  })
+})
+
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
 
@@ -2184,6 +2202,15 @@ onShareAppMessage(() =>
   color: var(--muted);
   line-height: 1.6;
   margin: -6rpx 20rpx 16rpx;
+}
+
+.settle-defeat-review {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--bad);
+  line-height: 1.55;
+  margin: 0 20rpx 16rpx;
 }
 
 .settle-card-feedback {

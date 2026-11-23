@@ -168,6 +168,10 @@
                 <text class="mono">{{ detail.shots }} / {{ detail.hits }}</text>
               </view>
               <view class="kv"><text class="muted">波次</text><text class="mono">{{ detail.wave_reached }}</text></view>
+              <view v-if="detailDefeatReview" class="defeat-review" role="status" aria-live="polite">
+                <text class="defeat-review-label">AI · 失败复盘</text>
+                <text class="defeat-review-text">{{ detailDefeatReview }}</text>
+              </view>
               <view class="kv"><text class="muted">峰值热量</text><text class="mono">{{ detail.heat_max }}</text></view>
               <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ detail.hp_left }}</text></view>
               <view class="kv">
@@ -228,6 +232,7 @@ import type { BattleHistoryItem, BattleDetail } from '@/api/client'
 import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
+import { defeatReview } from '@/game/feedback'
 
 const store = useGameStore()
 
@@ -340,6 +345,20 @@ onLoad((query) => {
 const detail = computed<BattleDetail | undefined>(() =>
   expandedId.value ? details.value[expandedId.value] : undefined,
 )
+
+/** R12 失败复盘：战报详情用服务端权威字段给出根因与下一动作；胜利不误报。 */
+const detailDefeatReview = computed(() => {
+  const d = detail.value
+  if (!d || d.result !== 'lose') return null
+  return defeatReview({
+    wave: Number(d.wave_reached ?? 0) || null,
+    kills: Number(d.kills ?? 0),
+    leaked: Number(d.leaked ?? 0),
+    reactions: Number(d.reactions ?? 0),
+    heatMax: Number(d.heat_max ?? 0) || null,
+    elementsUsed: d.elements_used,
+  })
+})
 
 /** R10 §1I.2：同关相邻两次真实结算的确定性差值；详情加载后按 level_id 从历史里配对。 */
 const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
@@ -822,6 +841,29 @@ onMounted(async () => {
   margin-top: 10rpx;
   padding-top: 8rpx;
   border-top: 1rpx dashed var(--border);
+}
+
+.defeat-review {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(255, 123, 114, 0.08);
+  border: 1rpx solid rgba(255, 123, 114, 0.3);
+  border-radius: 10rpx;
+}
+
+.defeat-review-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.defeat-review-text {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
 }
 
 

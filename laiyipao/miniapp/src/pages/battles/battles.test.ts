@@ -423,3 +423,38 @@ describe('battles.vue 切换筛选作废在飞 loadMore 后必须复位加载更
     expect(mockApi.myBattleHistory.mock.calls.length).toBe(before + 1)
   })
 })
+
+/**
+ * R12（2026-11-23 真浏览器）：失败战报详情只有波次/漏怪等数字，
+ * 玩家点开「查看本局战报」仍看不到「为什么在第几波失守、下一局改什么」。
+ */
+describe('battles.vue 失败战报详情给出失守波次与可执行复盘', () => {
+  it('败局详情显示真实波次/漏怪/元素链缺口与具体动作，胜利详情不误报', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [{
+        id: 2, result: 'lose', stars: 0, level_id: 40, score: 11812,
+        kills: 23, leaked: 24, created_at: '2026-11-23T14:42:00Z',
+      }],
+      next_cursor: 0,
+    } as any)
+    mockApi.myBattleDetail.mockResolvedValue({
+      id: 2, level_id: 40, result: 'lose', stars: 0, score: 11812,
+      kills: 23, leaked: 24, hp_left: 0, wave_reached: 7, duration_ms: 82_000,
+      shots: 219, hits: 174, reactions: 0, heat_max: 92,
+      elements_used: { fire: 351 }, reactions_used: {}, terrain_used: [],
+      loot: { coin: 660 }, replay_hash: 'r12-report', created_at: '2026-11-23T14:42:00Z',
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+
+    const review = wrapper.find('.defeat-review')
+    expect(review.exists()).toBe(true)
+    expect(review.text()).toContain('第 7 波失守')
+    expect(review.text()).toContain('漏怪 24/47')
+    expect(review.text()).toContain('仅焰 1 种元素')
+    expect(review.text()).toContain('下一局')
+    expect(review.text()).toContain('第二种元素')
+  })
+})

@@ -1,6 +1,17 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R12 跨系统成长优先级：与首页 aiInsight 同源口径，四页统一短板结论 -->
+      <view v-if="r12Priority" class="r12-priority r12-priority-enter">
+        <view class="r12-priority-head">
+          <text class="r12-priority-badge">AI</text>
+          <text class="r12-priority-title">当前最该强化 · 跨系统优先级</text>
+        </view>
+        <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
+        <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
+        <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
+      </view>
+
       <!-- R4：指标带 → 筛选 → 数据格 → 智能空态（复用 §1B 组件） -->
       <view v-if="!loading && r4AiBag" class="r3-kpi r4-kpi r4-enter">
         <view class="r3-kpi-main">
@@ -483,6 +494,7 @@
 </template>
 
 <script setup lang="ts">
+import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
 import { qualityName, affixName, gemAttrBadge, gemQualityBadge } from '@/utils/labels'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
@@ -497,6 +509,12 @@ import DefIcon from '@/components/DefIcon.vue'
 /** 加载中（2026-10-21 P6-1）。 */
 const loading = ref(false)
 const store = useGameStore()
+// R12 跨系统成长优先级：口径与首页 aiInsight 一致，四页指向同一短板
+const r12Priority = computed(() => computeGrowthPriority(store.buildRating, store.config?.rating_weights))
+function r12Go() {
+  const p = r12Priority.value
+  if (p?.hint) uni.navigateTo({ url: p.hint })
+}
 
 /**
  * 背包页签（2026-11-16）。默认页签 = 原首屏内容（出战技能），

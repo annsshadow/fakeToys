@@ -1,7 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect } from 'vitest'
-import { damageShareFromEvents, reactionCue, summarizeCardPicks } from './feedback'
+import { damageShareFromEvents, defeatReview, reactionCue, summarizeCardPicks } from './feedback'
 import { decodeDiscardCode, PICK_CODE_BASE } from './engine'
 
 describe('R9 战斗反馈归因（game/feedback）', () => {
@@ -46,5 +46,26 @@ describe('R9 战斗反馈归因（game/feedback）', () => {
     const missing = reactionCue('steam_burst', '', undefined, 0n)
     expect(missing.pair).toBe('元素组合未上报')
     expect(missing.cue).toContain('元素组合未上报')
+  })
+
+  it('失败复盘只从真实波次/击杀/漏怪/选卡数据给根因与动作，缺数据不编造', () => {
+    const review = defeatReview({
+      wave: 7, totalWaves: 8, kills: 23, leaked: 24, reactions: 0,
+      heatMax: 92, cardPicks: Array.from({ length: 6 }, () => -1),
+      elementsUsed: { fire: 351 },
+    })
+    expect(review).toContain('第 7/8 波失守')
+    expect(review).toContain('漏怪 24/47（51%）')
+    expect(review).toContain('跳过选卡 6 波')
+    expect(review).toContain('仅焰 1 种元素')
+    expect(review).toContain('峰值热量 92/100')
+    expect(review).toContain('下一局')
+    expect(review).toContain('第二种元素')
+    expect(review).toContain('依据：wave/kills/leaked/reactions/card_picks/heat_max/elements_used')
+    expect(review).not.toContain('。；')
+
+    expect(defeatReview({ wave: null, kills: null, leaked: null, reactions: null })).toBe(
+      '本局缺少失败复盘所需的波次/击杀/漏怪/反应数据，不做估算。',
+    )
   })
 })

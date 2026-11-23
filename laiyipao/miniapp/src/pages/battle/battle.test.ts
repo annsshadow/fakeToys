@@ -512,6 +512,38 @@ describe('battle.vue 战斗页', () => {
     expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
   })
 
+  it('R12 失败结算给出失守波次与可执行改进动作（不用空泛提示冒充复盘）', async () => {
+    // 2026-11-23 真浏览器：第 40 关弱构筑 8 波只推进到 7 波，
+    // 23 杀 / 24 漏 / 0 反应，结算卡只写「下一局可换元素搭配对比收益」。
+    mockApi.settleBattle.mockResolvedValue({
+      win: false, stars: 0, score: 11812, loot: { coin: 660 }, new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.endPhase = 'lost'
+    eng.winAtStep = 1
+    eng.waveIndex = 6
+    eng.cfg.level.wave_count = 8
+    eng.cardPicks = Array.from({ length: 6 }, () => -1)
+    eng.settleInput = () => ({
+      kills: 23, leaked: 24, reactions: 0,
+      card_picks: Array.from({ length: 6 }, () => -1),
+      replay_hash: 'r12-defeat',
+    })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const review = wrapper.find('.settle-defeat-review')
+    expect(review.exists()).toBe(true)
+    expect(review.text()).toContain('第 7/8 波失守')
+    expect(review.text()).toContain('漏怪 24/47')
+    expect(review.text()).toContain('跳过选卡 6 波')
+    expect(review.text()).toContain('下一局')
+    expect(review.text()).toContain('第二种元素')
+  })
+
   it('R8 战斗 HUD 实时显示免钳分倒计时并在临近锚点时提示（来自关卡波次与战斗时钟）', async () => {
     // 2026-11-22 真浏览器：第 1 关 75s 结算时分数被钳到 19708，
     // 但战斗全程没有任何提示；玩家只能事后在结算卡看到上限。
