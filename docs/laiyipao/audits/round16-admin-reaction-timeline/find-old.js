@@ -1,0 +1,1 @@
+(() => { const rows=[].slice.call(document.querySelectorAll('.el-table__row')); const r=rows.find(x=>x.textContent.indexOf('41')>=0 && x.textContent.indexOf('378')<0); if(r){ r.setAttribute('data-battle-id','41'); return 'FOUND'} return 'NOTFOUND rows='+rows.length })()
