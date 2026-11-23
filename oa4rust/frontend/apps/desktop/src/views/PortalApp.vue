@@ -333,19 +333,31 @@ async function designerCreate(kind: 'portal' | 'page' | 'widget' | 'templatepage
     toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
   }
 }
+function portalAppWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function designerUpdate(kind: 'portal' | 'page' | 'widget' | 'dict' | 'script') {
   const id = prompt(`要更新的${kind} ID:`, '')
   if (!id) return
   try {
+    let lastResp: any
     if (kind === 'portal')
-      await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`, {
+      lastResp = await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`, {
         name: '更新门户',
         description: '',
       })
     else if (kind === 'page')
-      await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
+      lastResp = await api.put(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`, { content: {} })
     else if (kind === 'widget')
-      await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
+      lastResp = await api.put(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`, { name: '更新组件' })
+    if (!portalAppWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 已更新`)
   } catch (e: any) {
     toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
@@ -356,13 +368,18 @@ async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage
   if (!id) return
   if (!(await confirmMsg(`确定删除该${kind}？`))) return
   try {
-    if (kind === 'portal') await api.delete(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)
-    else if (kind === 'page') await api.delete(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)
-    else if (kind === 'widget') await api.delete(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`)
+    let lastResp: any
+    if (kind === 'portal') lastResp = await api.delete(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}`)
+    else if (kind === 'page') lastResp = await api.delete(`/api/portal/assemble/designer/page/${encodeURIComponent(id)}`)
+    else if (kind === 'widget') lastResp = await api.delete(`/api/portal/assemble/designer/widget/${encodeURIComponent(id)}`)
     else if (kind === 'templatepage')
-      await api.delete(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(id)}`)
-    else if (kind === 'dict') await api.delete(`/api/portal/assemble/designer/dict/delete/${encodeURIComponent(id)}`)
-    else await api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
+      lastResp = await api.delete(`/api/portal/assemble/designer/templatepage/${encodeURIComponent(id)}`)
+    else if (kind === 'dict') lastResp = await api.delete(`/api/portal/assemble/designer/dict/delete/${encodeURIComponent(id)}`)
+    else lastResp = await api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
+    if (!portalAppWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success(`${kind} 已删除`)
   } catch (e: any) {
     toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
@@ -371,31 +388,36 @@ async function designerDelete(kind: 'portal' | 'page' | 'widget' | 'templatepage
 // rev335：门户设计器 图标/权限/save变体/输入/检索/汇总 真实写端点（用户触发，shape 已核；全字面量路径）
 async function designerMisc(op: string) {
   try {
+    let lastResp: any
     if (op === 'portalIcon') {
       const id = prompt('门户 ID:', '') || ''
-      await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/icon`, {})
+      lastResp = await api.put(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/icon`, {})
     } else if (op === 'portalPerm') {
       const id = prompt('门户 ID:', '') || ''
-      await api.post(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/permission`, {})
+      lastResp = await api.post(`/api/portal/assemble/designer/portal/${encodeURIComponent(id)}/permission`, {})
     } else if (op === 'pageSave') {
       const id = prompt('页面 ID:', '') || ''
-      await api.put(`/api/portal/assemble/designer/page/save/${encodeURIComponent(id)}`, { content: {} })
+      lastResp = await api.put(`/api/portal/assemble/designer/page/save/${encodeURIComponent(id)}`, { content: {} })
     } else if (op === 'search') {
-      await api.post('/api/portal/assemble/designer/designer/search', {})
+      lastResp = await api.post('/api/portal/assemble/designer/designer/search', {})
     } else if (op === 'inputCompare') {
-      await api.put('/api/portal/assemble/designer/input/compare', {})
+      lastResp = await api.put('/api/portal/assemble/designer/input/compare', {})
     } else if (op === 'inputCover') {
-      await api.put('/api/portal/assemble/designer/input/cover', {})
+      lastResp = await api.put('/api/portal/assemble/designer/input/cover', {})
     } else if (op === 'inputCreate') {
-      await api.put('/api/portal/assemble/designer/input/create', {})
+      lastResp = await api.put('/api/portal/assemble/designer/input/create', {})
     } else if (op === 'inputPrepCover') {
-      await api.put('/api/portal/assemble/designer/input/prepare/cover', {})
+      lastResp = await api.put('/api/portal/assemble/designer/input/prepare/cover', {})
     } else if (op === 'inputPrepCreate') {
-      await api.put('/api/portal/assemble/designer/input/prepare/create', {})
+      lastResp = await api.put('/api/portal/assemble/designer/input/prepare/create', {})
     } else if (op === 'summaryV2') {
-      await api.post('/api/portal/assemble/designer/portal/list/summary/v2', {})
+      lastResp = await api.post('/api/portal/assemble/designer/portal/list/summary/v2', {})
     } else {
-      await api.post('/api/portal/assemble/designer/script/list/manager', {})
+      lastResp = await api.post('/api/portal/assemble/designer/script/list/manager', {})
+    }
+    if (!portalAppWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('门户设计器操作已提交')
   } catch (e: any) {
