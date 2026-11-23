@@ -583,6 +583,14 @@ async function openEdit() {
   showModal.value = true
 }
 
+/** 查询设计器写链信封判定：type 为主不强求 bool；后端成功 saved 非统一 bool 名，严格 bool 会假阴性。 */
+function queryDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function saveQuery() {
   if (querySaving.value) return
   if (!mform.value.name.trim()) {
@@ -597,9 +605,17 @@ async function saveQuery() {
       query: mform.value.sql,
     }
     if (editingQuery.value?.id) {
-      await api.put(`/api/query/assemble/designer/save/${editingQuery.value.id}`, data)
+      const lastResp: any = await api.put(`/api/query/assemble/designer/save/${editingQuery.value.id}`, data)
+      if (!queryDesignerWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
     } else {
-      await api.post('/api/query/assemble/designer/create', data)
+      const lastResp: any = await api.post('/api/query/assemble/designer/create', data)
+      if (!queryDesignerWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
     }
     showModal.value = false
     loadQueries()
