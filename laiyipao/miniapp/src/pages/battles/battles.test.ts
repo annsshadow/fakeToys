@@ -492,3 +492,101 @@ describe('battles.vue 战报详情给出可执行的元素组合建议', () => {
     expect(box.text()).toContain('依据：reactions_used/elements_used')
   })
 })
+
+/**
+ * R15：战报详情只有聚合 reactions_used，玩家看不到「第几波对哪个敌人触发什么反应、造成多少伤害」。
+ * 服务端新增可选 reaction_timeline 后，H5 必须按波次/敌人展示逐次归因；
+ * 旧战报无该字段时走逐字诚实空态，不得拿聚合 map 反推编造。
+ */
+describe('battles.vue 战报详情 AI 反应时间线（R15）', () => {
+  const row = {
+    id: 9, result: 'win', stars: 3, level_id: 1, score: 15000,
+    kills: 39, leaked: 0, created_at: '2026-11-23T16:00:00Z',
+  }
+  function detailWith(timeline: unknown): Record<string, unknown> {
+    const d: Record<string, unknown> = {
+      id: 9, level_id: 1, result: 'win', stars: 3, score: 15000,
+      kills: 39, leaked: 0, hp_left: 300, wave_reached: 5, duration_ms: 70_000,
+      shots: 300, hits: 260, reactions: 3, heat_max: 70,
+      elements_used: { fire: 90, lightning: 80 }, reactions_used: { overheat: 2 },
+      terrain_used: [], loot: { coin: 100 }, replay_hash: 'r15-report',
+      created_at: '2026-11-23T16:00:00Z',
+    }
+    if (timeline !== undefined) d.reaction_timeline = timeline
+    return d
+  }
+  async function openDetail(timeline: unknown) {
+    mockApi.myBattleHistory.mockResolvedValue({ items: [row], next_cursor: 0 } as any)
+    mockApi.myBattleDetail.mockResolvedValue(detailWith(timeline) as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('有逐次记录时按波次/tick 升序渲染行，带波次属性/敌人uid/伤害与截断提示', async () => {
+    const wrapper = await openDetail({
+      schema_version: 'reaction-timeline-v1',
+      events: [
+        { wave: 2, tick: 9, reaction: 'overload', enemy_uid: 33, damage: 210 },
+        { wave: 1, tick: 3, reaction: 'steam', enemy_uid: 11, damage: 150 },
+        { wave: 2, tick: 5, reaction: 'overheat', enemy_uid: 22, damage: 320 },
+      ],
+      truncated: true,
+      total: 37,
+    })
+    const card = wrapper.find('.r15-reaction-timeline')
+    expect(card.exists()).toBe(true)
+    expect(card.text()).toContain('反应时间线')
+
+    const rows = wrapper.findAll('.r15-timeline-row')
+    expect(rows.length).toBe(3)
+    // 按 wave/tick 升序：wave1 → wave2 tick5 → wave2 tick9
+    expect(rows.map((r) => r.attributes('data-r15-wave'))).toEqual(['1', '2', '2'])
+    expect(rows[0]!.text()).toContain('第 1 波')
+    expect(rows[0]!.text()).toContain('steam')
+    expect(rows[0]!.text()).toContain('#11')
+    expect(rows[0]!.text()).toContain('150.0 伤害')
+    expect(rows[1]!.text()).toContain('#22')
+    expect(rows[2]!.text()).toContain('#33')
+    expect(wrapper.find('.r15-timeline-empty').exists()).toBe(false)
+
+    const note = wrapper.find('.r15-truncated-note')
+    expect(note.exists()).toBe(true)
+    expect(note.text()).toBe('已截断，仅显示前 200 条')
+  })
+
+  it('旧战报无 reaction_timeline 字段时显示逐字诚实空态，不编造行', async () => {
+    const wrapper = await openDetail(undefined)
+    const empty = wrapper.find('.r15-timeline-empty')
+    expect(empty.exists()).toBe(true)
+    expect(empty.text()).toBe('该战报无逐次反应记录（旧版本结算）')
+    expect(wrapper.findAll('.r15-timeline-row').length).toBe(0)
+    expect(wrapper.find('.r15-truncated-note').exists()).toBe(false)
+  })
+
+  it('字段为空数组或结构异常时走空态而非崩溃', async () => {
+    for (const bad of [
+      { schema_version: 'reaction-timeline-v1', events: [], truncated: false },
+      null,
+      { events: 'broken' },
+    ]) {
+      const wrapper = await openDetail(bad)
+      expect(wrapper.find('.r15-timeline-empty').exists()).toBe(true)
+      expect(wrapper.find('.r15-timeline-empty').text()).toBe('该战报无逐次反应记录（旧版本结算）')
+      expect(wrapper.findAll('.r15-timeline-row').length).toBe(0)
+    }
+  })
+
+  it('truncated=false 时不渲染截断提示', async () => {
+    const wrapper = await openDetail({
+      schema_version: 'reaction-timeline-v1',
+      events: [{ wave: 1, tick: 1, reaction: 'overheat', enemy_uid: 7, damage: 88 }],
+      truncated: false,
+      total: 1,
+    })
+    expect(wrapper.findAll('.r15-timeline-row').length).toBe(1)
+    expect(wrapper.find('.r15-truncated-note').exists()).toBe(false)
+  })
+})

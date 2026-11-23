@@ -51,6 +51,10 @@ var settleExemptions = map[string]settleExempt{
 		"（见 battle.go 的 StarsRecomputed），上报值不参与任何决策。"},
 	"Score": {"有上界：scoreCapFor(gl, sec) 裁剪；下界有夹紧（负分归零）。" +
 		"不需要独立的越界构造，所以放在豁免表而不是 fieldBounds。"},
+	"ReactionTimeline": {"R15 展示性归因：服务端在 SettleBattle 落库前用 " +
+		"NormalizeReactionTimeline 做 200 条上限截断/未知 key 丢弃/字段校验，" +
+		"并在 reaction_timeline_test.go 独立验证；绝不参与 ValidateSettle 裁决、" +
+		"score/loot/星级/replay_hash，故不放在结算边界表里。"},
 }
 
 // numericBounds 给出每个整型字段的「越界构造」与「合法基线」。
