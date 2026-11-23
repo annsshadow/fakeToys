@@ -73,6 +73,7 @@ export interface AdminBattleDetailView {
   elements_used: { [key: string]: number }
   reactions_used: { [key: string]: number }
   terrain_used: string[]
+  reaction_timeline: ReactionTimeline
   replay_hash: string
   seed: string
   power_after: number
@@ -517,6 +518,21 @@ export interface ReactionSpec {
   armor_shred_permille: number
   knockback: number
   descr: string
+}
+
+export interface ReactionTimeline {
+  schema_version: string
+  events: ReactionTimelineEvent[]
+  truncated: boolean
+  total: number
+}
+
+export interface ReactionTimelineEvent {
+  wave: number
+  tick: number
+  reaction: string
+  enemy_uid: number
+  damage: number
 }
 
 export interface RecomputeEngineCounters {

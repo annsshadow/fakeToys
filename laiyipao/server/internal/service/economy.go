@@ -1373,9 +1373,11 @@ type BattleDetail struct {
 	ElementsUsed  map[string]int `json:"elements_used"`
 	ReactionsUsed map[string]int `json:"reactions_used"`
 	TerrainUsed   []string       `json:"terrain_used"`
-	Loot          map[string]int `json:"loot"`
-	ReplayHash    string         `json:"replay_hash"`
-	CreatedAt     time.Time      `json:"created_at"`
+	// ReactionTimeline 是 R15 逐次反应归因（仅展示，非权威结算数据）。
+	ReactionTimeline domain.ReactionTimeline `json:"reaction_timeline"`
+	Loot             map[string]int          `json:"loot"`
+	ReplayHash       string                  `json:"replay_hash"`
+	CreatedAt        time.Time               `json:"created_at"`
 }
 
 // MyBattleDetail 返回当前玩家单局战报的完整详情。
@@ -1389,16 +1391,18 @@ type BattleDetail struct {
 // 「不存在」与「不是你的」返回同一个 `ErrNotFound`（避免 id 预言机）。
 func (s *Service) MyBattleDetail(ctx context.Context, userID, battleID int64) (BattleDetail, error) {
 	var d BattleDetail
-	var elementsRaw, reactionsRaw, terrainRaw, lootRaw []byte
+	var elementsRaw, reactionsRaw, terrainRaw, lootRaw, timelineRaw []byte
 	err := s.pool.QueryRow(ctx, `
 		SELECT id, level_id, result, stars, score, kills, leaked, hp_left,
 		       wave_reached, duration_ms, shots, hits, reactions, heat_max,
-		       elements_used, reactions_used, terrain_used, loot, replay_hash, created_at
+		       elements_used, reactions_used, terrain_used, reaction_timeline,
+		       loot, replay_hash, created_at
 		FROM battle_records
 		WHERE id = $1 AND user_id = $2`, battleID, userID).
 		Scan(&d.ID, &d.LevelID, &d.Result, &d.Stars, &d.Score, &d.Kills, &d.Leaked, &d.HpLeft,
 			&d.WaveReached, &d.DurationMs, &d.Shots, &d.Hits, &d.Reactions, &d.HeatMax,
-			&elementsRaw, &reactionsRaw, &terrainRaw, &lootRaw, &d.ReplayHash, &d.CreatedAt)
+			&elementsRaw, &reactionsRaw, &terrainRaw, &timelineRaw,
+			&lootRaw, &d.ReplayHash, &d.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return BattleDetail{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
 	}
@@ -1417,6 +1421,16 @@ func (s *Service) MyBattleDetail(ctx context.Context, userID, battleID int64) (B
 	}
 	if err := json.Unmarshal(lootRaw, &d.Loot); err != nil {
 		return BattleDetail{}, fmt.Errorf("battle %d loot 非法 jsonb: %w", battleID, err)
+	}
+	// R15：NULL/旧行空数组给诚实空态；坏 jsonb 必须报错。
+	if len(timelineRaw) == 0 || string(timelineRaw) == "null" {
+		timelineRaw = []byte(`[]`)
+	}
+	if err := json.Unmarshal(timelineRaw, &d.ReactionTimeline); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d reaction_timeline 非法 jsonb: %w", battleID, err)
+	}
+	if d.ReactionTimeline.Events == nil {
+		d.ReactionTimeline.Events = []domain.ReactionTimelineEvent{}
 	}
 	// 响应形状稳定：空值给 `{}` / `[]` 而不是 `null`。
 	d.ElementsUsed = orEmptyMap(d.ElementsUsed)

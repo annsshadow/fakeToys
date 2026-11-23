@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/laiyipao/server/internal/domain"
 )
 
 // AdminBattleDetailView 是后台「战报详情」抽屉的响应。
@@ -57,6 +59,9 @@ type AdminBattleDetailView struct {
 	ReactionsUsed map[string]int64 `json:"reactions_used"`
 	// TerrainUsed 是本局触发的地形（I-4）。
 	TerrainUsed []string `json:"terrain_used"`
+	// ReactionTimeline 是 R15 逐次反应归因（仅展示，非权威结算数据）。
+	// 旧行/空态为 schema_version=reaction-timeline-v1 + events=[]。
+	ReactionTimeline domain.ReactionTimeline `json:"reaction_timeline"`
 	// ReplayHash 是结算时记录的哈希（I-6 的锚点）。
 	ReplayHash string `json:"replay_hash"`
 	// Seed 是重放所需的种子（字符串下发：int64 可能超过 2^53）。
@@ -80,6 +85,7 @@ func (s *Service) AdminBattleDetail(ctx context.Context, id int64) (AdminBattleD
 		elementsRaw   []byte
 		reactionsRaw  []byte
 		terrainRaw    []byte
+		timelineRaw   []byte
 		seed          *int64
 		createdAt     time.Time
 		elementsUsed  map[string]int64
@@ -91,7 +97,7 @@ func (s *Service) AdminBattleDetail(ctx context.Context, id int64) (AdminBattleD
 		       br.score, br.kills, br.leaked, br.hp_left, br.wave_reached,
 		       br.duration_ms, br.shots, br.hits, br.reactions, br.heat_max,
 		       br.elements_used, br.reactions_used, br.terrain_used,
-		       br.replay_hash, bt.seed, br.power_after, br.created_at
+		       br.reaction_timeline, br.replay_hash, bt.seed, br.power_after, br.created_at
 		FROM battle_records br
 		JOIN users u ON u.id = br.user_id
 		LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
@@ -99,7 +105,7 @@ func (s *Service) AdminBattleDetail(ctx context.Context, id int64) (AdminBattleD
 		&b.ID, &b.UserID, &b.Nickname, &b.LevelID, &b.Result, &b.Stars,
 		&b.Score, &b.Kills, &b.Leaked, &b.HpLeft, &b.WaveReached,
 		&b.DurationMs, &b.Shots, &b.Hits, &b.Reactions, &b.HeatMax,
-		&elementsRaw, &reactionsRaw, &terrainRaw,
+		&elementsRaw, &reactionsRaw, &terrainRaw, &timelineRaw,
 		&b.ReplayHash, &seed, &b.PowerAfter, &createdAt)
 	if err != nil {
 		// 2026-10-21：**区分「不存在」与「查不了」**。
@@ -128,6 +134,18 @@ func (s *Service) AdminBattleDetail(ctx context.Context, id int64) (AdminBattleD
 	if err := json.Unmarshal(terrainRaw, &terrainUsed); err != nil {
 		return AdminBattleDetailView{}, fmt.Errorf("admin battle detail %d: terrain_used 非法 jsonb: %w", id, err)
 	}
+	// R15：NULL/空给诚实空态；坏 jsonb 必须报错（同 elements_used 口径）。
+	if len(timelineRaw) == 0 || string(timelineRaw) == "null" {
+		timelineRaw = []byte(`[]`)
+	}
+	var timeline domain.ReactionTimeline
+	if err := json.Unmarshal(timelineRaw, &timeline); err != nil {
+		return AdminBattleDetailView{}, fmt.Errorf("admin battle detail %d: reaction_timeline 非法 jsonb: %w", id, err)
+	}
+	if timeline.Events == nil {
+		timeline.Events = []domain.ReactionTimelineEvent{}
+	}
+	b.ReactionTimeline = timeline
 	b.ElementsUsed = elementsUsed
 	b.ReactionsUsed = reactionsUsed
 	b.TerrainUsed = terrainUsed

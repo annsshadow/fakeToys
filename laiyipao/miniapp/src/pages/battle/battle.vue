@@ -1045,6 +1045,11 @@ async function settle(eng: BattleEngine) {
   }
   try {
     let payload = eng.settleInput(tokenId.value)
+    // R15：逐次反应证据随结算旁路上传；不改变权威字段，不改变 replay_hash。
+    const timeline = eng.reactionTimeline?.()
+    if (timeline !== undefined) {
+      payload = { ...payload, reaction_timeline: timeline } as typeof payload
+    }
     const reportedPicks = (payload as { card_picks?: unknown }).card_picks
     settleCardPicks.value = Array.isArray(reportedPicks) ? [...reportedPicks] : []
     let res: any

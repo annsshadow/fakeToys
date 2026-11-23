@@ -111,6 +111,9 @@ var AdminRegistry = tygen.Registry{
 	{Name: "StageFunnel", Go: service.StageFunnel{}},
 	{Name: "AdminUserView", Go: service.AdminUserView{}},
 	{Name: "AdminBattleView", Go: service.AdminBattleView{}},
+	// R15 战报逐次反应时间线（展示性归因，非结算凭据）。
+	{Name: "ReactionTimelineEvent", Go: domain.ReactionTimelineEvent{}},
+	{Name: "ReactionTimeline", Go: domain.ReactionTimeline{}},
 	{Name: "AdminBattleDetailView", Go: service.AdminBattleDetailView{}},
 	{Name: "AdminBattleDetailResp", Go: service.AdminBattleDetailResp{}},
 	{Name: "RecomputeSide", Go: service.RecomputeSide{}},

@@ -377,6 +377,16 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	if err != nil {
 		return SettleResp{}, fmt.Errorf("settle: terrain_used 序列化失败: %w", err)
 	}
+	// R15 逐次反应时间线：服务端归一化（上限截断/合法 key/字段校验）后落库，
+	// 仅作战报展示；不参与结算裁决、score/loot/replay_hash。
+	timeline, err := domain.NormalizeReactionTimeline(in.ReactionTimeline)
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: reaction_timeline 非法: %w", err)
+	}
+	timelineRaw, err := marshalJSON(timeline)
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: reaction_timeline 序列化失败: %w", err)
+	}
 
 	// 选牌决策序列：I-6 重放闭环的最后一环。
 	// 逗号分隔的紧凑文本，-1 表示该波跳过。
@@ -549,12 +559,14 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO battle_records (id, user_id, level_id, battle_token_id, result, stars, score,
 				kills, leaked, hp_left, wave_reached, duration_ms, shots, hits, reactions, heat_max,
-				elements_used, reactions_used, terrain_used, build_snapshot, replay_hash, loot, card_picks)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
+				elements_used, reactions_used, terrain_used, build_snapshot, replay_hash, loot, card_picks,
+				reaction_timeline)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
 			battleID, userID, gl.ID, tokenID, resultStr(res.Win), res.Stars, res.Score,
 			in.Kills, in.Leaked, in.HPLeft, in.WaveReached, in.DurationMs,
 			in.Shots, in.Hits, in.Reactions, in.HeatMax,
 			elementsRaw, reactionsRaw, terrainRaw, buildRaw, in.ReplayHash, lootRaw, cardPicks,
+			timelineRaw,
 		); err != nil {
 			return fmt.Errorf("insert battle record: %w", err)
 		}

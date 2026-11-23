@@ -1326,6 +1326,16 @@ export interface BattleDetail {
   loot: Record<string, number>
   replay_hash: string
   created_at: string
+  /**
+   * R15：可选逐次反应归因（服务端展示性字段，不参与 replay_hash/结算）。
+   * reaction 为 AllReactionSpecs.key；最多 200 条，truncated 表示尾部还有记录。
+   */
+  reaction_timeline?: {
+    schema_version?: string
+    events?: Array<{ wave: number; tick: number; reaction: string; enemy_uid: number; damage: number }>
+    truncated?: boolean
+    total?: number
+  }
 }
 
 export function myBattleDetail(id: number): Promise<BattleDetail> {

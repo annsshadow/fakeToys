@@ -60,6 +60,20 @@ import type {
   SkillDef,
 } from './types'
 
+/** R15 逐次反应旁路记录的单条结构（展示性归因，不进 replay_hash） */
+export interface ReactionTimelineEvent {
+  wave: number
+  tick: number
+  reaction: ReactionKey
+  // R15 wire 契约：后端 ReactionTimelineEvent json tag 是 enemy_uid（snake_case）。
+  // 上报 camelCase 会被后端 fail loud 判为 enemy_uid<1 → settle 500。
+  enemy_uid: number
+  damage: number
+}
+
+/** 上限 200：超出保留最早 200 条并置 truncated */
+const REACTION_TIMELINE_LIMIT = 200
+
 /**
  * 回放前缀的 **S 段**（技能槽配置）—— 抽成纯函数。
  *
@@ -586,6 +600,12 @@ export class BattleEngine {
   kills = 0
   leaked = 0
   reactionsCount = 0
+  /**
+   * R15 逐次反应旁路采集（展示性归因，绝不进 replay_hash / settleInput 权威字段）。
+   * 仅保留最早 200 条；超出置 truncated，尾部丢弃以确保「哪一波先发生」可读。
+   */
+  private readonly reactionTimelineEvents: ReactionTimelineEvent[] = []
+  private didTruncateReactionTimeline = false
   score = 0
   heatMax = 0
 
@@ -746,6 +766,16 @@ export class BattleEngine {
    */
   hasReplayScript(): boolean {
     return this.replayScript !== null
+  }
+
+  /** R15：返回逐次反应旁路采集的快照（前 200 条，不进 replay_hash、不影响结算） */
+  reactionTimeline(): ReactionTimelineEvent[] {
+    return this.reactionTimelineEvents.slice()
+  }
+
+  /** 因超过 200 条而丢弃过尾部事件时为 true */
+  reactionTimelineTruncated(): boolean {
+    return this.didTruncateReactionTimeline
   }
 
   /** 取走并清空事件队列（渲染层调用） */
@@ -1725,6 +1755,18 @@ export class BattleEngine {
     if (res.reaction) {
       this.reactionsCount++
       this.reactionsUsed[res.reaction] = (this.reactionsUsed[res.reaction] ?? 0) + 1
+      // R15 旁路：只读事件，不触碰 emit/record/replay_hash/score。
+      if (this.reactionTimelineEvents.length < REACTION_TIMELINE_LIMIT) {
+        this.reactionTimelineEvents.push({
+          wave: this.waveIndex + 1,
+          tick: this.tick,
+          reaction: res.reaction,
+          enemy_uid: e.uid,
+          damage: Number(res.reactionDamage),
+        })
+      } else {
+        this.didTruncateReactionTimeline = true
+      }
       const resisted = res.resistAppliedPermille < PERMILLE
       this.emit({
         type: 'reaction',
