@@ -300,6 +300,13 @@ function editSurface(s: Surface): void {
   sfEditingId.value = s.id
   showSurfaceModal.value = true
 }
+function querySurfaceWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type != null) return false
+  return true
+}
 async function saveSurface(): Promise<void> {
   if (!sfForm.value.name?.trim() || sfSaving.value) return
   sfSaving.value = true
@@ -309,12 +316,17 @@ async function saveSurface(): Promise<void> {
     query: sfForm.value.content ?? '',
   }
   try {
+    let lastResp: any
     if (sfEditingId.value) {
       // POST surface/save/{id} —— 更新
-      await api.post(`/api/query/assemble/surface/save/${sfEditingId.value}`, payload)
+      lastResp = await api.post(`/api/query/assemble/surface/save/${sfEditingId.value}`, payload)
     } else {
       // POST surface/create —— 新建
-      await api.post('/api/query/assemble/surface/create', payload)
+      lastResp = await api.post('/api/query/assemble/surface/create', payload)
+    }
+    if (!querySurfaceWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('表面已保存')
     showSurfaceModal.value = false
@@ -329,7 +341,11 @@ async function deleteSurface(s: Surface): Promise<void> {
   if (!(await confirmMsg('确定删除该表面查询？'))) return
   try {
     // POST surface/delete/{id} —— 删除
-    await api.post(`/api/query/assemble/surface/delete/${s.id}`)
+    const lastResp: any = await api.post(`/api/query/assemble/surface/delete/${s.id}`)
+    if (!querySurfaceWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     surfaces.value = surfaces.value.filter((x) => x.id !== s.id)
     toast.success('表面已删除')
   } catch (e: any) {
