@@ -92,13 +92,24 @@ async function load() {
   }
 }
 
+function categoryWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function createCategory() {
   const appId = prompt('所属应用 ID (appId，必填):')
   if (!appId) return
   const name = prompt('分类名称:', '') ?? ''
   try {
     // 后端 categoryinfo_u2_create：appId 必填（owner 门禁）+ name/parentCategoryId 可选
-    await api.post('/api/categoryinfo', { appId, name })
+    const lastResp: any = await api.post('/api/categoryinfo', { appId, name })
+    if (!categoryWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     load()
   } catch (e: any) {
     toast.error(`新建失败: ${e?.message ?? ''}`)
@@ -107,7 +118,11 @@ async function createCategory() {
 async function deleteCategory(item: any) {
   if (!(await confirmMsg(`确定删除分类「${item.name || item.id}」？`))) return
   try {
-    await api.delete(`/api/categoryinfo/${item.id}`)
+    const lastResp: any = await api.delete(`/api/categoryinfo/${item.id}`)
+    if (!categoryWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     load()
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
