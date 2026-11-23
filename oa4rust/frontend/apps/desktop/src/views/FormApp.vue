@@ -308,6 +308,13 @@ function previewFormV2(f: FormItem) {
   previewForm(f as FormItem)
 }
 
+function formWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function saveForm() {
   // 在途守卫：弹窗按钮的 disabled 依赖 Vue nextTick 异步生效，快速双击或回调重入可在
   // saving=true 之前穿透到第二次 saveForm；非幂等的 POST/PUT 会创建两份表单。函数入口必须幂等拦截。
@@ -320,10 +327,15 @@ async function saveForm() {
   try {
     // 后端 form_u2 契约：name + definition（definition 兼容 JSON 字符串）
     const payload = { name: mform.value.name, definition: mform.value.schema }
+    let lastResp: any
     if (editingForm.value?.id) {
-      await api.put(`/api/form/${editingForm.value.id}`, payload)
+      lastResp = await api.put(`/api/form/${editingForm.value.id}`, payload)
     } else {
-      await api.post('/api/form', payload)
+      lastResp = await api.post('/api/form', payload)
+    }
+    if (!formWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '保存未生效，请刷新后重试')
+      return
     }
     showCreate.value = false
     loadList()
@@ -337,7 +349,11 @@ async function saveForm() {
 async function deleteForm(f: FormItem) {
   if (!(await confirmMsg(`确定删除表单「${f.name || f.id}」？`))) return
   try {
-    await api.delete(`/api/form/${f.id}`)
+    const lastResp: any = await api.delete(`/api/form/${f.id}`)
+    if (!formWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     items.value = items.value.filter((x) => x.id !== f.id)
   } catch (e: any) {
     toast.error(`删除失败: : ${e?.message ?? ''}`)
