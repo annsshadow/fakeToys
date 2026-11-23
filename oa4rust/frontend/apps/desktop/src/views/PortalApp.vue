@@ -425,14 +425,24 @@ async function designerMisc(op: string) {
   }
 }
 // rev364：门户表面 建/发布 + 分页门户/页面 + 门户字典路径数据 读写删 + 门户脚本按名建 真实路由（避开 get/layout·list/layouts 裸路由500；dict data POST/DELETE 各一 op）
+/** 门户表面操作写链信封判定：type 为主不强求 bool；后端成功权威字段非统一 bool 名。 */
+function portalSurfaceWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function surfaceOps(op: string) {
   try {
     if (op === 'create') {
       const name = prompt('门户名称:', '') || ''
-      await api.post('/api/portal/assemble/surface/create', { name })
+      const lastResp: any = await api.post('/api/portal/assemble/surface/create', { name })
+      if (!portalSurfaceWriteSucceeded(lastResp)) { toast.error(lastResp?.message || '操作未生效，请刷新后重试'); return }
     } else if (op === 'publish') {
       const id = prompt('门户 ID:', '') || ''
-      await api.post(`/api/portal/assemble/surface/publish/${encodeURIComponent(id)}`, {})
+      const lastResp: any = await api.post(`/api/portal/assemble/surface/publish/${encodeURIComponent(id)}`, {})
+      if (!portalSurfaceWriteSucceeded(lastResp)) { toast.error(lastResp?.message || '操作未生效，请刷新后重试'); return }
     } else if (op === 'portalPage') {
       const flag = prompt('门户 flag:', 'default') || 'default'
       await api.get(`/api/portal/assemble/surface/portal/1/${encodeURIComponent(flag)}/${encodeURIComponent(flag)}`)
@@ -449,25 +459,28 @@ async function surfaceOps(op: string) {
       const df = prompt('字典 flag:', '') || ''
       const pf = prompt('门户 flag:', 'default') || 'default'
       const path = prompt('路径:', 'root') || 'root'
-      await api.post(
+      const lastResp: any = await api.post(
         `/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`,
         {},
       )
+      if (!portalSurfaceWriteSucceeded(lastResp)) { toast.error(lastResp?.message || '操作未生效，请刷新后重试'); return }
     } else if (op === 'dictDel') {
       const df = prompt('字典 flag:', '') || ''
       const pf = prompt('门户 flag:', 'default') || 'default'
       const path = prompt('路径:', 'root') || 'root'
       if (!(await confirmMsg('确定删除该门户字典数据？'))) return
-      await api.delete(
+      const lastResp: any = await api.delete(
         `/api/portal/assemble/surface/dict/${encodeURIComponent(df)}/portal/${encodeURIComponent(pf)}/${encodeURIComponent(path)}/data`,
       )
+      if (!portalSurfaceWriteSucceeded(lastResp)) { toast.error(lastResp?.message || '操作未生效，请刷新后重试'); return }
     } else {
       const portal = prompt('门户 flag:', 'default') || 'default'
       const name = prompt('脚本名:', '') || ''
-      await api.post(
+      const lastResp: any = await api.post(
         `/api/portal/assemble/surface/script/portal/${encodeURIComponent(portal)}/name/${encodeURIComponent(name)}`,
         {},
       )
+      if (!portalSurfaceWriteSucceeded(lastResp)) { toast.error(lastResp?.message || '操作未生效，请刷新后重试'); return }
     }
     toast.success('门户表面操作已提交')
   } catch (e: any) {
