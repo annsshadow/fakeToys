@@ -45,7 +45,7 @@
         <view v-if="r6Rec.evidence.length" class="r6-evidence">
           <view v-for="(ev, i) in r6Rec.evidence" :key="'e' + i" class="r6-ev">
             <text class="r6-ev-metric">{{ ev.metric }}</text>
-            <text class="r6-ev-val">{{ ev.value }}{{ ev.unit }}</text>
+            <text class="r6-ev-val">{{ fmtEv(ev.value) }}{{ ev.unit }}</text>
             <text class="r6-ev-src">{{ ev.source }} · {{ ev.window }}</text>
           </view>
         </view>
@@ -388,6 +388,11 @@ const r3AiReaction = computed(() => {
 })
 function r3GoSkills() {
   uni.navigateTo({ url: '/pages/skills/skills' })
+}
+
+/** R11补丁：evidence.value 为 number|string；数字一位小数，字符串（配置版本 sha）原样。 */
+function fmtEv(v: number | string | null | undefined): string {
+  return typeof v === 'number' ? (Number.isFinite(v) ? v.toFixed(1) : '—') : (v == null ? '—' : String(v))
 }
 
 /* R6 §1E：反应链结论优先读真实战斗/配置推荐；接口缺席才用本地规则并标注。 */

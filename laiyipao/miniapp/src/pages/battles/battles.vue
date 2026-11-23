@@ -192,8 +192,8 @@
                   <view class="r10-growth-grid">
                     <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
                       <text class="r10-growth-label">{{ row.label }}</text>
-                      <text class="r10-growth-num">{{ row.before }} → {{ row.after }}</text>
-                      <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+                      <text class="r10-growth-num">{{ fmt(row.before) }} → {{ fmt(row.after) }}</text>
+                      <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ fmtSigned(row.delta) }}</text>
                     </view>
                   </view>
                   <text class="r10-hashes">hash：{{ growthHashes }}</text>
@@ -532,6 +532,14 @@ const terrainText = computed(() => {
     .map((k) => TERRAIN_NAME[k as keyof typeof TERRAIN_NAME] ?? k)
     .join('、')
 })
+
+/** R11：战报差值数值统一格式化，避免长浮点尾数；不改差值本身。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
 
 function fmtTime(iso: string): string {
   const d = new Date(iso)

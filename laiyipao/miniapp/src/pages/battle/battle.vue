@@ -295,8 +295,8 @@
           <view class="r10-growth-grid">
             <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
               <text class="r10-growth-label">{{ row.label }}</text>
-              <text class="r10-growth-num">{{ row.before }} → {{ row.after }}</text>
-              <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+              <text class="r10-growth-num">{{ fmt(row.before) }} → {{ fmt(row.after) }}</text>
+              <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ fmtSigned(row.delta) }}</text>
             </view>
           </view>
           <text class="r10-hashes">hash：{{ growthHashes }}</text>
@@ -404,6 +404,14 @@ const settleResult = ref<any>(null)
 /** R10 §1I.2：结算卡上的养成前后视图只认同关两次真实结算的确定性差值。 */
 const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
 const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
+
+/** R11：养成前后差值只改展示格式，不改差值本身或结算逻辑。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
 
 async function loadGrowthCompare(detail: import('@/api/client').BattleDetail) {
   let baseline: import('@/api/client').BattleDetail | null = null

@@ -39,8 +39,8 @@
         <template v-if="gemGain.available">
           <text class="r10-gem-text">{{ gemGain.text }}</text>
           <view v-for="row in gemGain.rows" :key="row.key" class="r10-gem-row">
-            <text class="r10-gem-key">{{ row.label }} {{ row.before }} → {{ row.after }}</text>
-            <text class="r10-gem-delta">{{ row.delta > 0 ? '+' : '' }}{{ row.delta }}</text>
+            <text class="r10-gem-key">{{ row.label }} {{ fmt(row.before) }} → {{ fmt(row.after) }}</text>
+            <text class="r10-gem-delta">{{ fmtSigned(row.delta) }}</text>
           </view>
         </template>
         <text v-else class="r10-gem-empty" aria-live="polite" role="status">佩戴收益未上报，先看词条描述</text>
@@ -174,6 +174,14 @@ function loadGemGain() {
 }
 loadGemGain()
 onShow(() => { loadGemGain() })
+
+/** R11：佩戴差分数值统一格式化，避免长浮点尾数；不改差分本身。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
 
 /** 宝石图鉴展示所需的字段形状（服务端 /config.gems 元素）。 */
 interface GemDef {

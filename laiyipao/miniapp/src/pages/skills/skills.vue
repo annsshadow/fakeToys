@@ -40,7 +40,7 @@
         <view v-if="r6Rec.evidence.length" class="r6-evidence">
           <view v-for="(ev, i) in r6Rec.evidence" :key="'e' + i" class="r6-ev">
             <text class="r6-ev-metric">{{ ev.metric }}</text>
-            <text class="r6-ev-val">{{ ev.value }}{{ ev.unit }}</text>
+            <text class="r6-ev-val">{{ fmtEv(ev.value) }}{{ ev.unit }}</text>
             <text class="r6-ev-src">{{ ev.source }} · {{ ev.window }}</text>
           </view>
         </view>
@@ -65,7 +65,7 @@
         <text class="r7-causal-title">AI 因果链 · 本局靠什么拿分 → 换上后预计提升</text>
         <text class="r7-causal-text">{{ r7Causal.text }}</text>
         <text v-if="r7Causal.hasHistory" class="r7-causal-next">
-          换上推荐：{{ r7Impact ? r7Impact.candidateName + '，预期每波伤害 ' + r7Impact.baseline.estimatedDamagePerWave + ' → ' + r7Impact.candidate.estimatedDamagePerWave + '（' + r7Impact.changes.damagePerWavePct + '%）' : '收益数据不可用：没有真实收益预估，不展示预计数值' }}
+          换上推荐：{{ r7Impact ? r7Impact.candidateName + '，预期每波伤害 ' + fmt(r7Impact.baseline.estimatedDamagePerWave) + ' → ' + fmt(r7Impact.candidate.estimatedDamagePerWave) + '（' + fmt(r7Impact.changes.damagePerWavePct) + '%）' : '收益数据不可用：没有真实收益预估，不展示预计数值' }}
         </text>
         <view v-else class="r7-causal-empty" aria-live="polite" role="status">
           <text>{{ r7Causal.text }}</text>
@@ -85,14 +85,14 @@
           <view class="r7-bar-row">
             <text class="r7-bar-label">当前每波伤害</text>
             <view class="r7-bar"><view class="r7-bar-fill" :style="{ width: r7BaseWidth + '%' }" /></view>
-            <text class="r7-bar-val">{{ r7Impact.baseline.estimatedDamagePerWave }}</text>
+            <text class="r7-bar-val">{{ fmt(r7Impact.baseline.estimatedDamagePerWave) }}</text>
           </view>
           <view class="r7-bar-row">
             <text class="r7-bar-label">推荐每波伤害</text>
             <view class="r7-bar r7-bar-next"><view class="r7-bar-fill" :style="{ width: r7NextWidth + '%' }" /></view>
-            <text class="r7-bar-val">{{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+            <text class="r7-bar-val">{{ fmt(r7Impact.candidate.estimatedDamagePerWave) }}</text>
           </view>
-          <text class="r7-delta">每波 {{ r7Impact.changes.damagePerWaveDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWaveDelta }}（{{ r7Impact.changes.damagePerWavePct >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWavePct }}%）· 战力 {{ r7Impact.changes.powerDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.powerDelta }} · 评分 {{ r7Impact.changes.ratingTotalDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.ratingTotalDelta }}</text>
+          <text class="r7-delta">每波 {{ fmtSigned(r7Impact.changes.damagePerWaveDelta) }}（{{ fmtSigned(r7Impact.changes.damagePerWavePct) }}%）· 战力 {{ fmtSigned(r7Impact.changes.powerDelta) }} · 评分 {{ fmtSigned(r7Impact.changes.ratingTotalDelta) }}</text>
         </view>
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）· {{ r7Impact.starRateNote }}</text>
         <text v-if="r7Impact" class="r7-why">为什么是它：{{ r7Impact.replacedName }} → {{ r7Impact.candidateName }} · {{ r7Impact.method }}</text>
@@ -234,10 +234,10 @@
           <text class="r7-vs-label">{{ r7Impact.candidateName }}（推荐）</text>
         </view>
         <view v-if="r7Impact" class="r7-vs-row">
-          <text class="r7-vs-label">每波伤害 {{ r7Impact.baseline.estimatedDamagePerWave }} → {{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+          <text class="r7-vs-label">每波伤害 {{ fmt(r7Impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r7Impact.candidate.estimatedDamagePerWave) }}</text>
         </view>
         <view v-if="r7Impact" class="r7-vs-row">
-          <text class="r7-vs-label">攻击 {{ r7Impact.baseline.attackPermille }}‰ → {{ r7Impact.candidate.attackPermille }}‰ · 评分 {{ r7Impact.baseline.ratingTotal }} → {{ r7Impact.candidate.ratingTotal }}</text>
+          <text class="r7-vs-label">攻击 {{ fmt(r7Impact.baseline.attackPermille) }}‰ → {{ fmt(r7Impact.candidate.attackPermille) }}‰ · 评分 {{ fmt(r7Impact.baseline.ratingTotal) }} → {{ fmt(r7Impact.candidate.ratingTotal) }}</text>
         </view>
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }}</text>
@@ -434,10 +434,18 @@ const r7NextWidth = computed(() => {
   const max = Math.max(v.baseline.estimatedDamagePerWave, v.candidate.estimatedDamagePerWave, 1)
   return Math.round(v.candidate.estimatedDamagePerWave / max * 100)
 })
-const r7StarText = computed(() => {
-  const n = r7Impact.value?.changes.starRateObserved
-  return typeof n === 'number' ? n.toFixed(1) : '—'
-})
+/** R11：收益数值统一格式化，避免 5.400000000000001 这类长浮点尾数出现在界面。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
+/** R11补丁：evidence.value 为 number|string；数字走 fmt，字符串（配置版本 sha）原样保留。 */
+function fmtEv(v: number | string | null | undefined): string {
+  return typeof v === 'number' ? fmt(v) : (v == null ? '—' : String(v))
+}
+const r7StarText = computed(() => fmt(r7Impact.value?.changes.starRateObserved))
 /** R10：无候选 id/replace 时，用服务端 insights[].basis 解释「为什么收益不可用」。 */
 const r7WhyUnavailable = computed(() => {
   if (r7Error.value) return r7Error.value
@@ -449,7 +457,7 @@ const r7WhyUnavailable = computed(() => {
 const r7BasisText = computed(() => {
   const v = r7Impact.value
   if (!v) return '服务端未提供依据'
-  const evidence = v.evidence.map((e) => e.metric + ' ' + e.value + e.unit + '（' + e.source + ' · ' + e.window + '）')
+  const evidence = v.evidence.map((e) => e.metric + ' ' + fmtEv(e.value) + e.unit + '（' + e.source + ' · ' + e.window + '）')
   return v.basis.concat(evidence).join('；')
 })
 

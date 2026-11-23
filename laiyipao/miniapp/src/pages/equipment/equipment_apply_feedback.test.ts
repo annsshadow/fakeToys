@@ -130,4 +130,82 @@ describe('R10 装备推荐应用反馈', () => {
     expect(wrapper.find('.apply-done').text()).toContain('已替换为「母核碎片」')
     expect(wrapper.find('.r7-compare .r7-btn.primary').text()).toContain('完成')
   })
+
+  it('收益预估数值显示一位小数，不再出现长浮点尾数', async () => {
+    const cfg = makeConfig({ equipment: [
+      { id: 1, name: '制式炮管', element: 'kinetic', descr: '', slot: 'weapon', tier: 1 },
+      { id: 4, name: '母核碎片', element: 'fire', descr: '', slot: 'weapon', tier: 3 },
+    ] })
+    const base = impact()
+    const weird = {
+      ...base,
+      baseline: { ...base.baseline, estimatedDamagePerWave: 5.400000000000001, armorPermille: 12.399999999999999 },
+      candidate: { ...base.candidate, estimatedDamagePerWave: 9.699999999999999, armorPermille: 20.7 },
+      changes: {
+        ...base.changes,
+        damagePerWaveDelta: 4.299999999999997,
+        damagePerWavePct: 79.62962962962963,
+        powerDelta: 0.30000000000000004,
+      },
+    }
+    vi.mocked(fetchRecommendations).mockResolvedValue(card())
+    vi.mocked(fetchRecommendationImpact).mockResolvedValue({ card: card(), impact: weird, error: '' })
+    const { wrapper } = mountPage(Equipment, (s) => {
+      s.loggedIn = true
+      s.config = cfg
+      s.equipment = [
+        { id: 1, name: '制式炮管', slot: 'weapon', equipped: true } as never,
+        { id: 4, name: '母核碎片', slot: 'weapon', equipped: false } as never,
+      ]
+    })
+    await flushPromises()
+    const text = wrapper.find('.r7-impact').text()
+    expect(text).not.toContain('5.400000000000001')
+    expect(text).not.toContain('9.699999999999999')
+    expect(text).not.toContain('79.62962962962963')
+    expect(text).not.toContain('0.30000000000000004')
+    expect(text).toContain('5.4')
+    expect(text).toContain('9.7')
+    await wrapper.find('.r7-impact .r7-btn.primary').trigger('click')
+    await flushPromises()
+    const compare = wrapper.find('.r7-compare').text()
+    expect(compare).not.toContain('5.400000000000001')
+    expect(compare).toContain('5.4')
+  })
+
+  it('equipment evidence 长浮点显示一位小数，字符串型证据原样保留', async () => {
+    const cfg = makeConfig({ equipment: [
+      { id: 1, name: '制式炮管', element: 'kinetic', descr: '', slot: 'weapon', tier: 1 },
+      { id: 4, name: '母核碎片', element: 'fire', descr: '', slot: 'weapon', tier: 3 },
+    ] })
+    const ev = {
+      ...card(),
+      evidence: [
+        { metric: '胜率', value: 79.62962962962963, unit: '%', source: 'battle_records', window: '7d' },
+        { metric: '战力增益', value: 0.30000000000000004, unit: '', source: 'battle_records', window: '7d' },
+        { metric: '配置版本', value: 'cfg-sha-abc123', unit: '', source: 'config', window: 'now' },
+      ],
+    }
+    vi.mocked(fetchRecommendations).mockResolvedValue(ev)
+    vi.mocked(fetchRecommendationImpact).mockResolvedValue({ card: ev, impact: { ...impact(), evidence: ev.evidence }, error: '' })
+    const { wrapper } = mountPage(Equipment, (s) => {
+      s.loggedIn = true
+      s.config = cfg
+      s.equipment = [
+        { id: 1, name: '制式炮管', slot: 'weapon', equipped: true } as never,
+        { id: 4, name: '母核碎片', slot: 'weapon', equipped: false } as never,
+      ]
+    })
+    await flushPromises()
+    const evText = wrapper.findAll('.r6-ev-val').map((w) => w.text()).join(' | ')
+    expect(evText).not.toContain('79.62962962962963')
+    expect(evText).not.toContain('0.30000000000000004')
+    expect(evText).toContain('79.6')
+    expect(evText).toContain('0.3')
+    expect(evText).toContain('cfg-sha-abc123')
+    const pageText = wrapper.text()
+    expect(pageText).not.toContain('79.62962962962963')
+    expect(pageText).not.toContain('0.30000000000000004')
+    expect(pageText).toContain('79.6')
+  })
 })
