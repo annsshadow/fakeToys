@@ -103,6 +103,9 @@ type RecResponse struct {
 	Insights      []RecInsight     `json:"insights"`
 	EmptyReason   *RecEmptyReason  `json:"empty_reason"`
 	Model         RecModel         `json:"model"`
+	// ColdStart 只在战报不足阈值时出现：规则候选必须显式标注来源，
+	// 不能伪装成"根据你的历史战绩"得出的结论。
+	ColdStart *RecColdStart `json:"cold_start,omitempty"`
 }
 
 func recModel() RecModel {
@@ -359,6 +362,9 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 		return RecResponse{}, err
 	}
 	resp.InputSnapshot.BattleCount = int(st.Count)
+	if st.Count < recColdStartThreshold {
+		resp.ColdStart = s.coldStartRecommendations(build, gameCfg, cfgVersion, int(st.Count))
+	}
 	winRate := float64(0)
 	avgStars := float64(0)
 	avgWaves := float64(0)

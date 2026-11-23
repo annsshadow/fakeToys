@@ -168,11 +168,13 @@ type Projectile struct {
 	ChainLeft   int
 	// HitSet 是已命中的 uid。⚠️ **只增不减** —— 这是有意的：
 	// 同一次穿透不得重复计入，所以「没有它」与「它被清空」行为不同。
-	HitSet    map[int64]bool
-	AoeRadius int64
-	Dead      bool
-	TrailLen  int
-	Slot      int
+	HitSet map[int64]bool
+	// HitCounted 是本发弹丸是否已经记过 hits：穿透多目标也只算「一次开火命中」。
+	HitCounted bool
+	AoeRadius  int64
+	Dead       bool
+	TrailLen   int
+	Slot       int
 }
 
 // FloatText 是浮动文字（纯表现层，**不进 replay**）。

@@ -603,7 +603,18 @@ func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
 	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"ok": true})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{
+		"ok":           true,
+		"power_before": nil,
+		"power_after":  nil,
+		"power_method": "not_applicable",
+		"power_snapshot": fiber.Map{
+			"applicable": false,
+			"before":     nil,
+			"after":      nil,
+			"note":       "游客转正只改账号凭据，不改变技能与专精构筑，战力不适用",
+		},
+	}))
 }
 
 // updateNickname 修改当前玩家的昵称。
@@ -659,17 +670,41 @@ func (s *Server) upgradeSkill(c *fiber.Ctx) error {
 	if err != nil || id <= 0 {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "技能 id 必须是正整数")
 	}
-	level, err := s.Svc.UpgradeSkill(c.Context(), userIDFrom(c), int64(id))
+	uid := userIDFrom(c)
+	beforeBuild, _, _, err := s.Svc.LoadMeProfile(c.Context(), uid)
 	if err != nil {
 		return err
 	}
+	beforePower := s.Svc.ComputePowerFor(beforeBuild)
+	level, err := s.Svc.UpgradeSkill(c.Context(), uid, int64(id))
+	if err != nil {
+		return err
+	}
+	afterBuild, _, _, err := s.Svc.LoadMeProfile(c.Context(), uid)
+	if err != nil {
+		return err
+	}
+	afterPower := s.Svc.ComputePowerFor(afterBuild)
 	// 余额一并回给客户端：升级必然花钱，让前端再发一次 /wallet 才能刷新余额
 	// 是个可避免的竞态（玩家连点两次会看到中间态）。
 	w, err := s.Svc.LoadWallet(c.Context(), userIDFrom(c))
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(fiber.Map{"skill_id": id, "level": level, "wallet": w}))
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{
+		"skill_id":     id,
+		"level":        level,
+		"wallet":       w,
+		"power_before": beforePower,
+		"power_after":  afterPower,
+		"power_method": "service.ComputePowerFor(build) / domain.computePower",
+		"power_snapshot": fiber.Map{
+			"applicable": true,
+			"before":     beforePower,
+			"after":      afterPower,
+			"method":     "service.ComputePowerFor(build) / domain.computePower",
+		},
+	}))
 }
 
 // synthesizeSkill 把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
