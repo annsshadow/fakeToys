@@ -163,7 +163,7 @@ func (s *Service) recOwnedIDs(ctx context.Context, userID int64, kind string) (m
 // 只下发"配置里真实存在、玩家进度已解锁、玩家已拥有、且当前确实装在身上"的关系：
 // 候选必须是同槽（装备）或同为主战（技能）且数值更优的项；任何一项不满足
 // 就不给 id/replace，让前端跳过收益卡而不是发出注定 400 的请求。
-func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[string]any, cfg GameConfig, maxStage int, context string) (map[string]any, string) {
+func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[string]any, cfg GameConfig, maxStage int, context string, element string) (map[string]any, string) {
 	if maxStage <= 0 {
 		return nil, ""
 	}
@@ -178,13 +178,16 @@ func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[stri
 		kind := map[int]string{}
 		unlock := map[int]int{}
 		name := map[int]string{}
+		elem := map[int]string{}
 		all := make([]int, 0, len(cfg.Skills)+len(cfg.Composite))
 		for _, sk := range cfg.Skills {
 			damage[sk.ID], kind[sk.ID], unlock[sk.ID], name[sk.ID] = sk.BaseDamage, sk.Kind, sk.UnlockLevel, sk.Name
+			elem[sk.ID] = string(sk.Element)
 			all = append(all, sk.ID)
 		}
 		for _, sk := range cfg.Composite {
 			damage[sk.ID], kind[sk.ID], unlock[sk.ID], name[sk.ID] = sk.BaseDamage, sk.Kind, sk.UnlockLevel, sk.Name
+			elem[sk.ID] = string(sk.Element)
 			all = append(all, sk.ID)
 		}
 		replacedID, replacedDamage := 0, int64(0)
@@ -203,6 +206,9 @@ func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[stri
 			return nil, ""
 		}
 		for _, id := range all {
+			if element != "" && elem[id] != element {
+				continue
+			}
 			if kind[id] != "active" || unlock[id] > maxStage || damage[id] <= replacedDamage {
 				continue
 			}
@@ -247,6 +253,9 @@ func (s *Service) recImpactCTA(ctx context.Context, userID int64, build map[stri
 			return nil, ""
 		}
 		for _, eq := range cfg.Equipment {
+			if element != "" && string(eq.Element) != element {
+				continue
+			}
 			if on[eq.ID] || eq.Slot != slot[replacedID] || eq.UnlockLevel > maxStage || eq.BaseBonusPct <= replacedBonus {
 				continue
 			}
@@ -405,7 +414,7 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 		}
 		params := map[string]any{"slot": 0}
 		basis := []string{fmt.Sprintf("装备协同 %d/18、元素覆盖 %d/5 来自 /me 构筑快照", rating.EquipmentSynergy, rating.ElementCoverage), fmt.Sprintf("配置版本 %s", cfgVersion)}
-		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "equipment")
+		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "equipment", "")
 		if impactBasis != "" {
 			basis = append(basis, impactBasis)
 		}
@@ -426,7 +435,7 @@ func (s *Service) UserRecommendations(ctx context.Context, userID int64, rawCont
 	case "skills":
 		params := map[string]any{"context": "skills"}
 		basis := []string{fmt.Sprintf("场均击杀来自 battle_records.kills（%d 场）", st.Count), fmt.Sprintf("元素覆盖 %d/5", rating.ElementCoverage)}
-		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "skills")
+		impactParams, impactBasis := s.recImpactCTA(ctx, userID, build, gameCfg, maxStage, "skills", "")
 		if impactBasis != "" {
 			basis = append(basis, impactBasis)
 		}

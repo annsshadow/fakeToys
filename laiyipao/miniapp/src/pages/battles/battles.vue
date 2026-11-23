@@ -188,6 +188,22 @@
                 <text class="reaction-learning-label">AI · 反应搭配建议</text>
                 <text class="reaction-learning-text">{{ reactionLearning }}</text>
               </view>
+              <!-- R14 §C.1：建议下方给服务端权威 CTA；E2E 选择器 #r14-advice-action-btn.r14-advice-cta[data-r14-source=battle]，空态 .r14-advice-empty -->
+              <view v-if="r14Advice" class="r14-advice r14-enter">
+                <text class="r14-advice-badge">{{ r14Advice.badge }} · 可执行建议</text>
+                <block v-if="r14Advice.status === 'ready'">
+                  <text class="r14-advice-text">依据 {{ r14Advice.basedOn[0] }}：一键换上「{{ r14Advice.candidateName }}」</text>
+                  <text v-if="r14Advice.impact" class="r14-advice-text">预计每波伤害 {{ fmt(r14Advice.impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r14Advice.impact.candidate.estimatedDamagePerWave) }}（服务端收益预估）</text>
+                  <text class="r14-advice-basis">依据：{{ r14Advice.basedOn.join(' · ') }} · 服务端五条件裁决（不伪造 id）</text>
+                  <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="battle" @click="r14OpenCompare()">一键替换为 {{ r14Advice.candidateName }} →</text>
+                  <text v-if="r14ApplyDone" class="apply-done r14-advice-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。</text>
+                </block>
+                <view v-else class="r14-advice-empty" data-r14-source="battle" aria-live="polite" role="status">
+                  <text class="r14-advice-empty-title">{{ r14Advice.empty?.headline }}</text>
+                  <text class="r14-advice-empty-msg">{{ r14Advice.empty?.message }}</text>
+                  <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty()">{{ r14Advice.empty?.cta }}</text>
+                </view>
+              </view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
               <view class="kv">
                 <text class="muted">回放哈希</text>
@@ -223,6 +239,28 @@
       <view v-if="hasMore" class="load-more" @click="loadMore">
         {{ loadingMore ? '加载中…' : '加载更多' }}
       </view>
+    <!-- R14 §C.3：复用 R7 两步确认浮层；首次点击只预览，确认才写入 -->
+    <view v-if="r14CompareOpen" class="r7-compare-mask" @click="r14CompareOpen = false">
+      <view class="r7-compare r7-enter" @click.stop>
+        <text class="r7-compare-title">当前 vs 推荐 · 确认替换</text>
+        <view class="r7-vs-row">
+          <text class="r7-vs-label">{{ r14Advice?.replacedName }}（当前）</text>
+          <text class="r7-vs-arrow">→</text>
+          <text class="r7-vs-label">{{ r14Advice?.candidateName }}（推荐）</text>
+        </view>
+        <view v-if="r14Advice?.impact" class="r7-vs-row">
+          <text class="r7-vs-label">每波伤害 {{ fmt(r14Advice.impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r14Advice.impact.candidate.estimatedDamagePerWave) }}</text>
+        </view>
+        <text v-if="r14Advice" class="r7-basis">依据：{{ r14Advice.basedOn.join(' · ') }}</text>
+        <text v-if="r14ApplyError" class="r7-error">{{ r14ApplyError }}</text>
+        <text v-if="r14ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
+        <view class="r7-actions">
+          <text class="r7-btn" role="button" @click="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
+        </view>
+      </view>
+    </view>
     </view>
   </view>
 </template>
@@ -237,6 +275,7 @@ import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
 import { defeatReview, reactionLearningAdvice } from '@/game/feedback'
+import { fetchAdviceAction, applyAdviceAction, type R14AdviceAction } from '@/pages/_shared/r14AdviceAction'
 
 const store = useGameStore()
 
@@ -571,6 +610,49 @@ function fmtSigned(n: number | null | undefined): string {
   return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
 }
 
+/* R14 §C.1：战报建议 → 服务端权威可执行 CTA；元素取自战报权威 elements_used。 */
+const r14Advice = ref<R14AdviceAction | null>(null)
+const r14CompareOpen = ref(false)
+const r14Applying = ref(false)
+const r14ApplyError = ref('')
+const r14ApplyDone = ref('')
+
+async function loadR14Advice(d: BattleDetail) {
+  const entries = Object.entries(d.elements_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+  if (!entries.length) { r14Advice.value = null; return }
+  const reactions = Object.entries(d.reactions_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+  r14Advice.value = await fetchAdviceAction({ element: entries[0]![0], reaction: reactions[0]?.[0], source: 'battle' })
+}
+
+function r14OpenCompare() {
+  if (!r14Advice.value || r14Advice.value.status !== 'ready') return
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  r14CompareOpen.value = true
+}
+
+function r14GoEmpty() {
+  const route = r14Advice.value?.empty?.route || '/pages/stage/stage'
+  uni.navigateTo({ url: route.startsWith('/pages/') ? route : '/pages/stage/stage' })
+}
+
+async function r14ConfirmApply() {
+  const a = r14Advice.value
+  if (!a || a.status !== 'ready' || r14Applying.value) return
+  r14Applying.value = true
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  try {
+    const res = await applyAdviceAction(a, store)
+    if (!res.ok) { r14ApplyError.value = res.error; return }
+    r14ApplyDone.value = res.doneName
+    if (detail.value) await loadR14Advice(detail.value)
+  } catch (e) {
+    r14ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原配置未改动。请重试'
+  } finally {
+    r14Applying.value = false
+  }
+}
 function fmtTime(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
@@ -601,6 +683,7 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
     const d = await api.myBattleDetail(it.id)
     details.value[it.id] = d
     await loadGrowthCompare(d)
+    void loadR14Advice(d)
   } catch {
     // 详情加载失败：保留展开态，可再次点击重试
   } finally {

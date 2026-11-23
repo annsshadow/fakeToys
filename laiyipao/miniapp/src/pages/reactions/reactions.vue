@@ -200,6 +200,22 @@
             </text>
             <text v-if="r.knockback > 0" class="stat">击退 {{ r.knockback / 1000 }}</text>
           </view>
+          <!-- R14 §C.2：按服务端权威元素取建议；E2E 选择器 #r14-advice-action-btn.r14-advice-cta[data-r14-source=reactions]，空态 .r14-advice-empty -->
+          <view v-if="r14AdviceOf(r)" class="r14-advice r14-enter">
+            <text class="r14-advice-badge">{{ r14AdviceOf(r)?.badge }} · 可执行建议</text>
+            <block v-if="r14AdviceOf(r)?.status === 'ready'">
+              <text class="r14-advice-text">换上「{{ r14AdviceOf(r)?.candidateName }}」{{ r14AdviceOf(r)?.expectedReaction ? '可指向 ' + r14AdviceOf(r)?.expectedReaction : '可提升当前构筑（服务端未给出目标反应）' }}</text>
+              <text class="r14-advice-basis">依据：{{ r14AdviceOf(r)?.basedOn.join(' · ') }}
+ · 服务端五条件裁决（不伪造 id）</text>
+              <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="reactions" @click="r14OpenCompare(r14AdviceOf(r))">一键替换为 {{ r14AdviceOf(r)?.candidateName }} →</text>
+              <text v-if="r14ApplyDone" class="apply-done r14-advice-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。</text>
+            </block>
+            <view v-else class="r14-advice-empty" data-r14-source="reactions" aria-live="polite" role="status">
+              <text class="r14-advice-empty-title">{{ r14AdviceOf(r)?.empty?.headline }}</text>
+              <text class="r14-advice-empty-msg">{{ r14AdviceOf(r)?.empty?.message }}</text>
+              <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty(r14AdviceOf(r))">{{ r14AdviceOf(r)?.empty?.cta }}</text>
+            </view>
+          </view>
         </view>
         </view>
         <text v-if="!allReactions.length" class="muted">反应表为空（配置未加载？）</text>
@@ -210,17 +226,40 @@
         </view>
       </view>
     </view>
+    <!-- R14 §C.3：复用 R7 两步确认浮层；首次点击只预览，确认才写入 -->
+    <view v-if="r14CompareOpen" class="r7-compare-mask" @click="r14CompareOpen = false">
+      <view class="r7-compare r7-enter" @click.stop>
+        <text class="r7-compare-title">当前 vs 推荐 · 确认替换</text>
+        <view class="r7-vs-row">
+          <text class="r7-vs-label">{{ r14Current?.replacedName }}（当前）</text>
+          <text class="r7-vs-arrow">→</text>
+          <text class="r7-vs-label">{{ r14Current?.candidateName }}（推荐）</text>
+        </view>
+        <view v-if="r14Current?.impact" class="r7-vs-row">
+          <text class="r7-vs-label">每波伤害 {{ fmtEv(r14Current.impact.baseline.estimatedDamagePerWave) }} → {{ fmtEv(r14Current.impact.candidate.estimatedDamagePerWave) }}</text>
+        </view>
+        <text v-if="r14Current" class="r7-basis">依据：{{ r14Current.basedOn.join(' · ') }}</text>
+        <text v-if="r14ApplyError" class="r7-error">{{ r14ApplyError }}</text>
+        <text v-if="r14ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
+        <view class="r7-actions">
+          <text class="r7-btn" role="button" @click="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, lookupReaction, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
+import { fetchAdviceAction, applyAdviceAction, type R14AdviceAction } from '@/pages/_shared/r14AdviceAction'
 
 const store = useGameStore()
 
@@ -427,6 +466,61 @@ function r6Go() {
     ? '?' + Object.entries(cta.params).map(([k, v]) => k + '=' + encodeURIComponent(String(v))).join('&')
     : ''
   uni.navigateTo({ url: cta.route + query })
+}
+
+/* R14 §C.2：图鉴条目按服务端权威元素 key 取建议，绝不拼 id/replace。 */
+const r14AdviceMap = ref<Record<string, R14AdviceAction | null>>({})
+const r14Current = ref<R14AdviceAction | null>(null)
+const r14CompareOpen = ref(false)
+const r14Applying = ref(false)
+const r14ApplyError = ref('')
+const r14ApplyDone = ref('')
+
+function r14ElementOf(r: { key: string }): string {
+  return reactionPairs(r.key)[0]?.[0] ?? ''
+}
+function r14AdviceOf(r: { key: string }): R14AdviceAction | null {
+  return r14AdviceMap.value[r14ElementOf(r)] ?? null
+}
+async function loadR14Advice(element: string) {
+  if (!element || Object.prototype.hasOwnProperty.call(r14AdviceMap.value, element)) return
+  const a = await fetchAdviceAction({ element, source: 'reactions' })
+  r14AdviceMap.value = { ...r14AdviceMap.value, [element]: a }
+}
+watch(r3FilteredReactions, (list) => {
+  for (const r of list) void loadR14Advice(r14ElementOf(r))
+}, { immediate: true })
+
+function r14OpenCompare(a: R14AdviceAction | null) {
+  if (!a || a.status !== 'ready') return
+  r14Current.value = a
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  r14CompareOpen.value = true
+}
+
+function r14GoEmpty(a: R14AdviceAction | null) {
+  const route = a?.empty?.route || '/pages/stage/stage'
+  uni.navigateTo({ url: route.startsWith('/pages/') ? route : '/pages/stage/stage' })
+}
+
+async function r14ConfirmApply() {
+  const a = r14Current.value
+  if (!a || a.status !== 'ready' || r14Applying.value) return
+  r14Applying.value = true
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  try {
+    const res = await applyAdviceAction(a, store)
+    if (!res.ok) { r14ApplyError.value = res.error; return }
+    r14ApplyDone.value = res.doneName
+    const fresh = await fetchAdviceAction({ element: a.element, source: 'reactions' })
+    r14AdviceMap.value = { ...r14AdviceMap.value, [a.element]: fresh }
+  } catch (e) {
+    r14ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原配置未改动。请重试'
+  } finally {
+    r14Applying.value = false
+  }
 }
 
 void loadR6Recommendation()

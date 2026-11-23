@@ -118,6 +118,10 @@ func (s *Server) Register(app *fiber.App) {
 	// 与 `/config`、`/leaderboard` 同级。
 	v1.Get("/announcements", s.announcements)
 
+	// R14：权威一键替换建议。游客也要拿到诚实空态而不是 401 中断页面，
+	// 因此挂在 /me 路径下但只做可选鉴权；id/replace 仍完全由服务端裁决。
+	v1.Get("/me/advice/action", optionalUser(s.Svc), s.meAdviceAction)
+
 	me := v1.Group("/me", requireUser(s.Svc))
 	me.Get("/", s.me)
 	// R6 §1E：真实数据驱动的个性化推荐（用户侧），沿用同一登录态。
