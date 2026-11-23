@@ -121,11 +121,23 @@ async function viewDetail(v: ViewItem) {
   detail.value.fieldCount = Array.isArray(fd) ? fd.length : 0
   detail.value.loading = false
 }
+// 删除视图响应信封守卫：type 为主、不强求 named bool
+function viewDeleteWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 // 删除视图：DELETE view/{id}（owner/admin 门禁）
 async function removeView(v: ViewItem) {
   if (!(await confirmMsg('确认删除该视图？'))) return
   try {
-    await api.delete(`/api/view/${v.id}`)
+    const lastResp: any = await api.delete(`/api/view/${v.id}`)
+    if (!viewDeleteWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('已删除')
     loadViews()
   } catch (e: any) {
