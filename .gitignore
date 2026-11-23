@@ -270,3 +270,8 @@ site/
 # DSH 会话产物：agent 工作树与团队状态目录，只留在本机，不入库。
 .agents/
 .agent-teams/
+
+# laiyipao R15 审计运行时产物：数据库 dump 含真实用户 guest_token，探针 token 由
+# mint-token.sh 运行时注入（模板 auth-init.tpl.js 用 __LYP_TOKEN__ 占位）。一律不入库。
+docs/laiyipao/audits/round15-reaction-timeline/data/
+docs/laiyipao/audits/round15-reaction-timeline/auth-init.js
