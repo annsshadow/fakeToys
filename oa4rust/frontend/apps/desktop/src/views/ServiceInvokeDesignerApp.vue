@@ -170,13 +170,26 @@ async function deleteItem(item: Item) {
   delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 
+/** 服务调用执行响应信封守卫：type 为主不强求 bool；后端成功 executed 非统一 bool 名。 */
+function serviceInvokeWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
+
 // 执行服务调用（POST /invoke/{flag}/execute；后端按 id/name/alias 三者命中）
 const runM = useMutation({
   mutationFn: async (item: Item) => {
     const flag = item.alias || item.name || item.id
     return api.post(`/api/program_center/invoke/${encodeURIComponent(flag)}/execute`, {})
   },
-  onSuccess: () => {
+  onSuccess: (lastData: any) => {
+    if (!serviceInvokeWriteSucceeded(lastData)) {
+      toast.error(lastData?.message || '执行未生效，请刷新后重试')
+      return
+    }
     toast.success('服务调用已执行')
   },
   onError: (e: unknown) => {
