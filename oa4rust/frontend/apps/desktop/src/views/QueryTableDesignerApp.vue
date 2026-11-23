@@ -119,6 +119,12 @@ async function loadTables() {
     loading.value = false
   }
 }
+// R399：写端点失败信封(HTTP200+type:error/success:false)统一判定，type为主不强求bool(对齐R390-R397)
+function queryTableWriteSucceeded(resp: any): boolean {
+  if (resp === null || resp === undefined || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
 async function saveTable() {
   if (!canSave.value) return
   saving.value = true
@@ -127,6 +133,10 @@ async function saveTable() {
     const response = activeFlag.value
       ? await api.put<any>(designerPaths.tableSave(activeFlag.value), payload)
       : await api.post<any>(designerPaths.tableCreate, payload)
+    if (!queryTableWriteSucceeded(response)) {
+      toast.error((response as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     activeFlag.value = response.data?.tableFlag ?? activeFlag.value
     toast.success('表定义已保存为草稿')
     await loadTables()
@@ -142,7 +152,11 @@ async function editTableStructure() {
   saving.value = true
   const payload = tablePayload(form.value.name, form.value.queryFlag, form.value.columns)
   try {
-    await api.put(`/api/query/assemble/designer/table/edit/${encodeURIComponent(activeFlag.value)}`, payload)
+    const r = await api.put(`/api/query/assemble/designer/table/edit/${encodeURIComponent(activeFlag.value)}`, payload)
+    if (!queryTableWriteSucceeded(r)) {
+      toast.error((r as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('表结构编辑已提交')
     await loadTables()
   } catch (error: any) {
@@ -156,6 +170,10 @@ async function executeTable() {
   executing.value = true
   try {
     const response = await api.post<unknown>(designerPaths.tableExecute(activeFlag.value), {})
+    if (!queryTableWriteSucceeded(response)) {
+      toast.error((response as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     executeResult.value = response.data
     toast.success('受限 DDL 已执行')
     await loadTables()
