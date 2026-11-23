@@ -22,6 +22,13 @@ import { makeConfig, makeLevel, makeSkill } from '../../test/fixtures'
 import type { ChallengeOutcome, DefenseView } from '@/game/defense'
 import { skillBaseDamageAtLevel, skillRulesFromServer } from '@/game/skill'
 
+// R13 音效开关语义：用可控 mock 钉住"开关 checked=true 表示音效开启"。
+const { isMutedMock, setMutedMock } = vi.hoisted(() => ({
+  isMutedMock: vi.fn(),
+  setMutedMock: vi.fn(),
+}))
+vi.mock('@/audio/sfx', () => ({ isMuted: isMutedMock, setMuted: setMutedMock }))
+
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
   fetchConfigIfVersion: vi.fn(),
@@ -97,6 +104,8 @@ function outcome(over: Partial<ChallengeOutcome> = {}): ChallengeOutcome {
 
 beforeEach(() => {
   um = installUniMock()
+  isMutedMock.mockReturnValue(false)
+  setMutedMock.mockClear()
   mockApi.guestLogin.mockResolvedValue({
     access_token: 'a',
     refresh_token: 'r',
@@ -153,6 +162,26 @@ afterEach(() => {
 })
 
 describe('me.vue 我的页', () => {
+  it('R13 战斗音效开关 checked=true 表示音效开启：默认开启，关闭开关才 setMuted(true)', async () => {
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+
+    const sw = wrapper.find('switch')
+    expect(sw.attributes('checked')).toBe('true')
+    expect((wrapper.vm as any).sfxEnabled).toBe(true)
+    expect(setMutedMock).not.toHaveBeenCalled()
+
+    // 用户关闭"战斗音效"开关 → 静音开启（setMuted(true)）
+    ;(wrapper.vm as any).onSfxToggle({ detail: { value: false } })
+    expect(setMutedMock).toHaveBeenCalledWith(true)
+    expect((wrapper.vm as any).sfxEnabled).toBe(false)
+
+    // 用户重新打开开关 → 取消静音（setMuted(false)）
+    ;(wrapper.vm as any).onSfxToggle({ detail: { value: true } })
+    expect(setMutedMock).toHaveBeenLastCalledWith(false)
+    expect((wrapper.vm as any).sfxEnabled).toBe(true)
+  })
+
   it('挂载后加载防线：渲染我的防线、候选列表与今日剩余次数', async () => {
     const { wrapper } = mountPage(Me)
     await flushPromises()

@@ -101,6 +101,26 @@ function reactionFixturesWithAmplify() {
   ]
 }
 
+function reactionFixturesWithSpread() {
+  return [
+    ...reactionFixtures(),
+    {
+      key: 'corrosion_spread',
+      name: '腐蚀扩散',
+      base_coef: 35,
+      attack_weight_pct: 200,
+      status_duration_ms: 0,
+      aoe_radius: 120,
+      spread_stacks: 1,
+      dispel_shield: false,
+      amplify_pct: 0,
+      armor_shred_permille: 0,
+      knockback: 0,
+      descr: '造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应）',
+    },
+  ]
+}
+
 async function mountReactions(
   elements: 'fire_ice' | 'fire_only' = 'fire_ice',
   reactions = reactionFixtures(),
@@ -227,5 +247,21 @@ describe('reactions.vue 反应图鉴', () => {
     expect(evText).toContain('79.6')
     expect(evText).toContain('0.3')
     expect(evText).toContain('3/7')
+  })
+
+  it('R13 反应图鉴把传播半径与伤害溅射区分开，速查表也有对应列', async () => {
+    const wrapper = await mountReactions('fire_ice', reactionFixturesWithSpread())
+    const text = wrapper.text()
+    expect(text).toContain('传播半径 120')
+    expect(text).not.toContain('腐蚀扩散 当前不可达 电 + 毒 毒 + 电 造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应） 系数 35 攻击力权重 20% 溅射半径 120')
+    const rows = wrapper.findAll('.mech-row')
+    expect(rows[0]!.text()).toContain('传播')
+    expect(rows[0]!.text()).toContain('溅射')
+    const spread = rows.find((r) => r.find('.mech-name')?.text() === '腐蚀扩散')
+    expect(spread?.findAll('.mech-cell')[5]?.classes()).toContain('on')
+    expect(spread?.findAll('.mech-cell')[6]?.classes()).not.toContain('on')
+    const steam = rows.find((r) => r.find('.mech-name')?.text() === '蒸汽爆发')
+    expect(steam?.findAll('.mech-cell')[6]?.classes()).toContain('on')
+    wrapper.unmount()
   })
 })

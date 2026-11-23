@@ -1428,6 +1428,7 @@ export class BattleEngine {
       pierceLeft: s.pierce + this.buffs.pierceBonus,
       chainLeft: s.chain + this.buffs.chainBonus,
       hitSet: new Set(),
+      hitCounted: false,
       aoeRadius: s.aoeRadius + this.buffs.aoeBonus,
       dead: false,
       trailLen: 0,
@@ -1518,12 +1519,19 @@ export class BattleEngine {
       if (p.hitSet.has(e.uid)) continue
       if (!this.hitEnemy(p, e)) continue
 
-      this.hits++
+      // 穿透弹丸一发可命中多只敌人；hits 口径是「有多少次开火命中了东西」，
+      // 所以只在首次主目标命中记一次，后续穿透 / 溅射 / 弹射都不再记。
+      // 旧实现每个被穿透的敌人都 hits++，高穿透局稳定产出 hits > shots，
+      // 服务端 ValidateSettle 以 ErrInvalidHitRate 拒掉合法战绩。
+      if (!p.hitCounted) {
+        this.hits++
+        p.hitCounted = true
+      }
       p.hitSet.add(e.uid)
 
       // 溅射
       //
-      // `this.hits` 只在**主目标**这里自增，applyAoe / 弹射内部**不**加。
+      // `this.hits` 只在**首次主目标**命中时自增一次，applyAoe / 弹射 / 后续穿透都不加。
       //
       // hits 的语义是「有多少次开火命中了东西」，不是「总共造成了几次伤害结算」。
       // 理由是一条跨端强约束：服务端 ValidateSettle 拒 in.Hits > in.Shots

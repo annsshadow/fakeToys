@@ -458,3 +458,37 @@ describe('battles.vue 失败战报详情给出失守波次与可执行复盘', (
     expect(review.text()).toContain('第二种元素')
   })
 })
+
+/**
+ * R13：战报详情的反应行只列「过热 ×N」，玩家不知道该换成什么元素组合。
+ */
+describe('battles.vue 战报详情给出可执行的元素组合建议', () => {
+  it('胜利详情按权威 reactions_used/elements_used 给出下一局补哪元素', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [{
+        id: 3, result: 'win', stars: 2, level_id: 1, score: 15000,
+        kills: 39, leaked: 0, created_at: '2026-11-23T15:30:00Z',
+      }],
+      next_cursor: 0,
+    } as any)
+    mockApi.myBattleDetail.mockResolvedValue({
+      id: 3, level_id: 1, result: 'win', stars: 2, score: 15000,
+      kills: 39, leaked: 0, hp_left: 300, wave_reached: 5, duration_ms: 70_000,
+      shots: 300, hits: 260, reactions: 4, heat_max: 70,
+      elements_used: { fire: 90, lightning: 80 }, reactions_used: { overheat: 4 },
+      terrain_used: [], loot: { coin: 100 }, replay_hash: 'r13-report',
+      created_at: '2026-11-23T15:30:00Z',
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+    const box = wrapper.find('.reaction-learning')
+    expect(box.exists()).toBe(true)
+    expect(box.text()).toContain('AI · 反应搭配建议')
+    expect(box.text()).toContain('焰+电')
+    expect(box.text()).toContain('补 冰')
+    expect(box.text()).toContain('蒸汽爆发')
+    expect(box.text()).toContain('依据：reactions_used/elements_used')
+  })
+})

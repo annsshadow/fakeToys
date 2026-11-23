@@ -158,7 +158,7 @@
         <text class="card-title">设置</text>
         <view class="row" style="justify-content: space-between; align-items: center">
           <text>战斗音效</text>
-          <switch :checked="sfxMuted" color="#ff6b35" @change="onSfxToggle" />
+          <switch :checked="sfxEnabled" color="#ff6b35" @change="onSfxToggle" />
         </view>
         <text class="muted" style="display: block; margin-top: 8rpx">
           关闭后战斗中的射击/反应/胜利等音效将静音，偏好会保存在本机。
@@ -658,12 +658,13 @@ const store = useGameStore()
  * 战斗音效开关（2026-11-01 新一轮第 79 轮）。
  * 音效系统支持静音持久化（lyp_sfx_muted），但此前没有任何 UI 入口。
  */
-const sfxMuted = ref(isMuted())
+const sfxEnabled = ref(!isMuted())
 
 function onSfxToggle(e: { detail?: { value?: boolean } }) {
+  // 开关表达的是"音效开启"；音频模块保存的是"静音"，两者必须取反。
   const next = e.detail?.value === true
-  setMuted(next)
-  sfxMuted.value = next
+  setMuted(!next)
+  sfxEnabled.value = next
 }
 
 /**

@@ -132,7 +132,7 @@
         <text class="card-title">反应机制对照</text>
         <view class="mech-row mech-head">
           <text class="dim mech-name">反应</text>
-          <text v-for="h in ['驱散','削甲','击退','增幅','持续']" :key="h" class="dim mech-cell">{{ h }}</text>
+          <text v-for="h in ['驱散','削甲','击退','增幅','持续','传播','溅射']" :key="h" class="dim mech-cell">{{ h }}</text>
         </view>
         <view v-for="m in mechanismTable" :key="m.key" class="mech-row">
           <text class="mech-name">{{ m.name }}</text>
@@ -191,7 +191,7 @@
             <text v-if="r.status_duration_ms > 0" class="stat">
               持续 {{ (r.status_duration_ms / 1000).toFixed(1) }}s
             </text>
-            <text v-if="r.aoe_radius > 0" class="stat">溅射半径 {{ r.aoe_radius }}</text>
+            <text v-if="r.aoe_radius > 0" class="stat">{{ r.spread_stacks > 0 ? '传播半径' : '溅射半径' }} {{ r.aoe_radius }}</text>
             <text v-if="r.spread_stacks > 0" class="stat">层数传播 {{ r.spread_stacks }}</text>
             <text v-if="r.dispel_shield" class="stat">驱散护盾</text>
             <text v-if="r.amplify_pct > 0" class="stat">增幅 {{ r.amplify_pct / 10 }}%</text>
@@ -294,6 +294,8 @@ const mechanismTable = computed(() =>
       { on: Number(r.knockback ?? 0) > 0, label: '击退' },
       { on: Number(r.amplify_pct ?? 0) > 0, label: '增幅' },
       { on: Number(r.status_duration_ms ?? 0) > 0, label: '持续' },
+      { on: Number(r.spread_stacks ?? 0) > 0, label: '传播' },
+      { on: Number(r.aoe_radius ?? 0) > 0 && Number(r.spread_stacks ?? 0) === 0, label: '溅射' },
     ],
   })),
 )

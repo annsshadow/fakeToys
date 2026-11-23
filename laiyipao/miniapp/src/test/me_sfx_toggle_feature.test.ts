@@ -26,9 +26,12 @@ describe('我的页面战斗音效开关守卫', () => {
     expect(src).toContain('<switch')
   })
 
-  it('必须读取 isMuted 初始状态并通过 setMuted 切换', () => {
+  it('R13 开关语义：checked 绑定"音效开启"而非静音，切换时取反传给 setMuted', () => {
     const src = readFileSync(ME_VUE, 'utf-8')
-    expect(src).toContain('ref(isMuted())')
-    expect(src).toContain('setMuted(next)')
+    expect(src).toContain(':checked="sfxEnabled"')
+    expect(src).not.toContain(':checked="sfxMuted"')
+    expect(src).toContain('const sfxEnabled = ref(!isMuted())')
+    expect(src).toContain('setMuted(!next)')
+    expect(src).toContain('sfxEnabled.value = next')
   })
 })

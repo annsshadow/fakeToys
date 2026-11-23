@@ -184,6 +184,10 @@
                 <view v-for="(m, i) in elementMix" :key="i" class="mix-seg" :style="{ width: m.pct + '%' }" :title="m.name" />
               </view>
               <view v-if="reactionText" class="kv"><text class="muted">反应</text><text class="flex-1">{{ reactionText }}</text></view>
+              <view v-if="reactionLearning" class="reaction-learning" role="status" aria-live="polite">
+                <text class="reaction-learning-label">AI · 反应搭配建议</text>
+                <text class="reaction-learning-text">{{ reactionLearning }}</text>
+              </view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
               <view class="kv">
                 <text class="muted">回放哈希</text>
@@ -232,7 +236,7 @@ import type { BattleHistoryItem, BattleDetail } from '@/api/client'
 import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
-import { defeatReview } from '@/game/feedback'
+import { defeatReview, reactionLearningAdvice } from '@/game/feedback'
 
 const store = useGameStore()
 
@@ -542,6 +546,13 @@ const reactionText = computed(() => {
   return Object.entries(d.reactions_used)
     .map(([k, v]) => `${reactionNameMap.value.get(k) ?? k} ×${v}`)
     .join('、')
+})
+
+/** R13：反应次数不是教学，必须把权威使用记录翻译成下一局补哪种元素。 */
+const reactionLearning = computed(() => {
+  const d = detail.value
+  if (!d) return ''
+  return reactionLearningAdvice({ reactionsUsed: d.reactions_used, elementsUsed: d.elements_used })
 })
 
 const terrainText = computed(() => {
@@ -859,6 +870,29 @@ onMounted(async () => {
 }
 
 .defeat-review-text {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.reaction-learning {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(88, 166, 255, 0.08);
+  border: 1rpx solid rgba(88, 166, 255, 0.28);
+  border-radius: 10rpx;
+}
+
+.reaction-learning-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.reaction-learning-text {
   display: block;
   margin-top: 6rpx;
   font-size: 21rpx;
