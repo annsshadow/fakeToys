@@ -511,7 +511,7 @@ export const cmsApi = {
 export const recycleApi = {
   list: () => list(mapi.get<Record<string, unknown>[]>('/api/recycle/list')),
   detail: (id: string) => mapi.get<Record<string, unknown>>(`/api/recycle/${id}`),
-  remove: (id: string) => mapi.delete<never>(`/api/recycle/delete/${id}`, { discardResponse: true }),
+  remove: (id: string) => mapi.delete<Record<string, unknown>>(`/api/recycle/delete/${id}`),
   /** 清空回收站（后端此路由仅注册 DELETE）。 */
   empty: () => mapi.delete<never>('/api/recycle/empty', { discardResponse: true }),
 }

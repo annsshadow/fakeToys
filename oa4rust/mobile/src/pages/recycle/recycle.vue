@@ -48,6 +48,14 @@ function metaOf(r: Row): string {
   return t ? String(t) : ''
 }
 
+/** 彻底删除写链信封判定：type 为主不强求 bool；后端成功字段为 id/deleted:true 无统一权威 bool 名。 */
+function recycleDeleteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function remove(r: Row): Promise<void> {
   const id = String(r.id ?? '')
   if (!id || busy.value) return
@@ -62,7 +70,11 @@ async function remove(r: Row): Promise<void> {
       })
     })
     if (!res) return
-    await recycleApi.remove(id)
+    const lastResp: any = await recycleApi.remove(id)
+    if (!recycleDeleteSucceeded(lastResp)) {
+      uni.showToast({ title: lastResp?.message || '删除失败，请刷新后重试', icon: 'none' })
+      return
+    }
     uni.showToast({ title: '已删除', icon: 'success' })
     // 刷新失败时 loadList 回退 previousRows；排除已删行，避免"已删除"提示后条目重现。
     await load(rows.value.filter((r) => String(r.id ?? '') !== id))
