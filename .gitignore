@@ -275,3 +275,6 @@ site/
 # mint-token.sh 运行时注入（模板 auth-init.tpl.js 用 __LYP_TOKEN__ 占位）。一律不入库。
 docs/laiyipao/audits/round15-reaction-timeline/data/
 docs/laiyipao/audits/round15-reaction-timeline/auth-init.js
+
+# laiyipao R16 审计运行时产物：数据库 dump 含真实用户 guest_token，一律不入库。
+docs/laiyipao/audits/round16-admin-reaction-timeline/data/
