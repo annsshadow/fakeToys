@@ -188,6 +188,22 @@
                 <text class="reaction-learning-label">AI · 反应搭配建议</text>
                 <text class="reaction-learning-text">{{ reactionLearning }}</text>
               </view>
+              <!-- R15：逐次反应归因（服务端展示性字段，不是结算输入）；旧战报显示诚实空态 -->
+              <view class="r15-reaction-timeline" role="status" aria-live="polite">
+                <text class="r15-timeline-label">AI · 反应时间线</text>
+                <template v-if="reactionTimeline.length">
+                  <view
+                    v-for="(ev, i) in reactionTimeline"
+                    :key="i"
+                    class="r15-timeline-row"
+                    :data-r15-wave="ev.wave"
+                  >
+                    <text class="r15-timeline-text">第 {{ ev.wave }} 波 · {{ ev.reactionName }} · #{{ ev.enemy_uid }} · {{ fmt(ev.damage) }} 伤害</text>
+                  </view>
+                  <text v-if="reactionTimelineTruncated" class="r15-truncated-note">已截断，仅显示前 200 条</text>
+                </template>
+                <text v-else class="r15-timeline-empty">该战报无逐次反应记录（旧版本结算）</text>
+              </view>
               <!-- R14 §C.1：建议下方给服务端权威 CTA；E2E 选择器 #r14-advice-action-btn.r14-advice-cta[data-r14-source=battle]，空态 .r14-advice-empty -->
               <view v-if="r14Advice" class="r14-advice r14-enter">
                 <text class="r14-advice-badge">{{ r14Advice.badge }} · 可执行建议</text>
@@ -594,6 +610,32 @@ const reactionLearning = computed(() => {
   return reactionLearningAdvice({ reactionsUsed: d.reactions_used, elementsUsed: d.elements_used })
 })
 
+/**
+ * R15：服务端可选逐次反应归因；旧战报无字段/结构异常时一律空态，
+ * 不用聚合 reactions_used 反推波次与敌人（那是编造）。只做展示，不参与任何结算。
+ */
+const reactionTimeline = computed(() => {
+  const raw = detail.value?.reaction_timeline
+  const events = raw && Array.isArray(raw.events) ? raw.events : []
+  const valid = events.filter((ev) =>
+    ev && Number.isInteger(ev.wave) && ev.wave >= 1 &&
+    Number.isInteger(ev.tick) && ev.tick >= 0 &&
+    typeof ev.reaction === 'string' && ev.reaction.length > 0 &&
+    Number.isInteger(ev.enemy_uid) &&
+    typeof ev.damage === 'number' && Number.isFinite(ev.damage),
+  )
+  return valid
+    .sort((a, b) => a.wave - b.wave || a.tick - b.tick)
+    .map((ev) => ({
+      wave: ev.wave,
+      enemy_uid: ev.enemy_uid,
+      damage: ev.damage,
+      reactionName: reactionNameMap.value.get(ev.reaction) ?? ev.reaction,
+    }))
+})
+
+const reactionTimelineTruncated = computed(() => detail.value?.reaction_timeline?.truncated === true)
+
 const terrainText = computed(() => {
   const d = detail.value
   if (!d) return ''
@@ -981,6 +1023,51 @@ onMounted(async () => {
   font-size: 21rpx;
   line-height: 1.55;
   color: var(--text);
+}
+
+/* R15 · 逐次反应时间线：沿用 AI 卡令牌，不新增视觉变量 */
+.r15-reaction-timeline {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(88, 166, 255, 0.08);
+  border: 1rpx solid rgba(88, 166, 255, 0.28);
+  border-radius: 10rpx;
+}
+
+.r15-timeline-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.r15-timeline-row {
+  display: block;
+  margin-top: 6rpx;
+  padding: 6rpx 8rpx;
+  border-left: 3rpx solid var(--accent);
+  background: rgba(88, 166, 255, 0.05);
+  border-radius: 6rpx;
+}
+
+.r15-timeline-text {
+  display: block;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.r15-timeline-empty,
+.r15-truncated-note {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.r15-truncated-note {
+  color: var(--bad);
 }
 
 
