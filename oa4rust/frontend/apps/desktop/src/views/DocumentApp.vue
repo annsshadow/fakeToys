@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="文档管理" subtitle="文档发布 / 草稿 / 权限（/api/document/*）" />
     <div class="content-panel glass-card">
       <div class="tabs">

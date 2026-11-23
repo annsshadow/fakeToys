@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
+  <div class="crud-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="收集管理" subtitle="收集记录（x_program_collect）" />
     <AdminToolbar
       v-model="search"

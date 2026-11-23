@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>  <div class="mod-view">
+<template>  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="流程应用管理" subtitle="/api/program_center/application/* — 流程应用 CRUD 与设计器读取" />
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="search" search-placeholder="搜索名称 / 应用 ID..." :error="loadError" />

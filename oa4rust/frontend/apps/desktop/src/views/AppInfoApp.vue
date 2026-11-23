@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="应用管理" subtitle="应用、权限与文档入口（/api/appinfo/*）" />
     <div class="content-panel glass-card">
       <div class="stats-row">

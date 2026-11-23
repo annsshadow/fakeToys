@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="热帖管理" subtitle="热帖 / 组件 / 控制配置（/api/hotpic/*）" />
     <div class="content-panel glass-card">
       <div class="stats-row">
