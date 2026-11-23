@@ -1079,6 +1079,13 @@ function resetForm() {
   currentForm.value = { name: '', flag: '', appId: routeAppId.value, fields: [] }
   selectedField.value = null
 }
+function formDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function saveForm() {
   if (!currentForm.value?.name.trim()) {
     toast.info('请输入表单名称')
@@ -1108,8 +1115,13 @@ async function saveForm() {
       appId,
       status: currentForm.value.status,
     })
-    if (currentForm.value.id) await api.put(`/api/form/${currentForm.value.id}`, payload)
-    else {
+    if (currentForm.value.id) {
+      const lastResp: any = await api.put(`/api/form/${currentForm.value.id}`, payload)
+      if (!formDesignerWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
+    } else {
       const created: any = await api.post('/api/form', payload)
       currentForm.value.id = created?.data?.id
     }
