@@ -169,30 +169,37 @@ async function loadJpushEntities() {
   entitiesText.value = `设备详情 ${hit(dGet)}（原生）/ ${hit(coreDevGet)}（实体）· 模板详情 ${hit(tGet)}（原生）/ ${hit(coreTplGet)}（实体）· 设备清单 ${n(devList)} · 推送清单 ${n(jpushList)} · 推送详情 ${hit(jpushGet)}`
 }
 // rev339：JPush 推送/设备/消息 真实写端点（用户触发，shape 已核；避 autoquery-guards 禁的 update/control/config 路径）
+// R395：写端点失败信封(HTTP200+type:error/success:false)统一判定，type为主不强求bool(对齐R391/R393)
+function jpushWriteSucceeded(resp: any): boolean {
+  if (resp === null || resp === undefined || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
 async function jpushWrite(op: string) {
   try {
+    let lastResp: any
     if (op === 'jpushCreate') {
       const title = prompt('推送标题:', '') || ''
       const content = prompt('推送内容:', '') || ''
-      await api.post('/api/jpush/create', { title, content })
+      lastResp = await api.post('/api/jpush/create', { title, content })
     } else if (op === 'jpushSave') {
       const id = prompt('推送 ID:', '') || ''
-      await api.post(`/api/jpush/save/${encodeURIComponent(id)}`, { title: '更新推送' })
+      lastResp = await api.post(`/api/jpush/save/${encodeURIComponent(id)}`, { title: '更新推送' })
     } else if (op === 'jpushDelete') {
       const id = prompt('要删除的推送 ID:', '') || ''
       if (!(await confirmMsg('确定删除该推送？'))) return
-      await api.post(`/api/jpush/delete/${encodeURIComponent(id)}`, {})
+      lastResp = await api.post(`/api/jpush/delete/${encodeURIComponent(id)}`, {})
     } else if (op === 'deviceBind') {
       const name = prompt('绑定设备名:', '') || ''
-      await api.post('/api/jpush_assemble_control/device/bind', { deviceName: name })
+      lastResp = await api.post('/api/jpush_assemble_control/device/bind', { deviceName: name })
     } else if (op === 'deviceUnbindAll') {
       if (!(await confirmMsg('确定解绑该人全部设备？'))) return
-      await api.post('/api/jpush_assemble_control/device/admin/unbind/all/person', {})
+      lastResp = await api.post('/api/jpush_assemble_control/device/admin/unbind/all/person', {})
     } else if (op === 'deviceUnbind') {
       const dn = prompt('设备名:', '') || ''
       const dt = prompt('设备类型:', '') || ''
       if (!(await confirmMsg('确定解绑该设备？'))) return
-      await api.delete(`/api/jpush_assemble_control/device/unbind/${encodeURIComponent(dn)}/${encodeURIComponent(dt)}`)
+      lastResp = await api.delete(`/api/jpush_assemble_control/device/unbind/${encodeURIComponent(dn)}/${encodeURIComponent(dt)}`)
     } else if (op === 'deviceRegister') {
       const userId = prompt('归属用户 unique:', '') || ''
       const platform = prompt('平台(h5/mp-weixin/app):', 'h5') || 'h5'
@@ -201,15 +208,19 @@ async function jpushWrite(op: string) {
         toast.info('用户与 Token 必填')
         return
       }
-      await api.post('/api/jpush/core/entity/device/create', { userId, platform, token })
+      lastResp = await api.post('/api/jpush/core/entity/device/create', { userId, platform, token })
     } else if (op === 'messageSend') {
-      await api.post('/api/jpush_assemble_control/message/send', {})
+      lastResp = await api.post('/api/jpush_assemble_control/message/send', {})
     } else if (op === 'messageTest') {
-      await api.post('/api/jpush_assemble_control/message/test/send', {})
+      lastResp = await api.post('/api/jpush_assemble_control/message/test/send', {})
     } else {
       const id = prompt('要删除的实体设备 ID:', '') || ''
       if (!(await confirmMsg('确定删除该实体设备？'))) return
-      await api.delete(`/api/jpush/core/entity/device/${encodeURIComponent(id)}`)
+      lastResp = await api.delete(`/api/jpush/core/entity/device/${encodeURIComponent(id)}`)
+    }
+    if (!jpushWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
     }
     toast.success('推送操作已提交')
   } catch (e: any) {
@@ -222,7 +233,11 @@ async function jpushUnbindNew() {
   const dt = encodeURIComponent(prompt('设备类型:', '') || '')
   const pt = encodeURIComponent(prompt('推送类型:', '') || '')
   try {
-    await api.get(`/api/jpush_assemble_control/device/unbind/new/${dn}/${dt}/${pt}`)
+    const r = await api.get(`/api/jpush_assemble_control/device/unbind/new/${dn}/${dt}/${pt}`)
+    if (!jpushWriteSucceeded(r)) {
+      toast.error((r as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('设备已解绑')
   } catch (e: any) {
     toast.error(`解绑失败: ${e?.message ?? ''}`)
@@ -255,6 +270,10 @@ async function sendWxTest() {
       template_id: wxForm.value.templateId.trim(),
       content: wxForm.value.content,
     })
+    if (!jpushWriteSucceeded(r)) {
+      toast.error((r as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     const d = (r.data ?? {}) as any
     if (d.accepted || d.queued) toast.success('已入队，等 worker 投递')
     else toast.success('微信模板消息已受理')
@@ -272,7 +291,11 @@ async function jpushCtrlWrite(_op: string) {
     if (!deviceName) return
     const deviceType = prompt('设备类型(android/ios):', 'android') || 'android'
     const pushType = prompt('推送类型:', 'jpush') || 'jpush'
-    await api.post('/api/jpush/assemble/control/device/bind', { deviceName, deviceType, pushType })
+    const r = await api.post('/api/jpush/assemble/control/device/bind', { deviceName, deviceType, pushType })
+    if (!jpushWriteSucceeded(r)) {
+      toast.error((r as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('控制操作已提交')
   } catch (e: any) {
     toast.error(`控制操作失败: ${e?.message ?? ''}`)
@@ -282,7 +305,11 @@ async function jpushCtrlWrite(_op: string) {
 async function delDevice(d: any) {
   if (!(await confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`))) return
   try {
-    await api.delete(`/api/jpush/core/entity/device/${d.id}`)
+    const r = await api.delete(`/api/jpush/core/entity/device/${d.id}`)
+    if (!jpushWriteSucceeded(r)) {
+      toast.error((r as any)?.message || '操作未生效，请刷新后重试')
+      return
+    }
     devices.value = devices.value.filter((x) => x.id !== d.id)
   } catch (e: any) {
     toast.error(`删除失败: : ${e?.message ?? ''}`)
