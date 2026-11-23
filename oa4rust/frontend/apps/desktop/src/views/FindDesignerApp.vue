@@ -52,7 +52,7 @@ const loading = ref(false),
   config = ref('')
 // 后端无 find 族；查询设计器真实列表端点为 designer/list/all。
 const ep = '/api/query/assemble/designer/list/all'
-const { data, isError, error } = useQuery({
+const { data, isError, error, refetch } = useQuery({
   queryKey: ['FindDesigner', 'list'],
   queryFn: async () => {
     loading.value = true
@@ -89,6 +89,13 @@ function createNew() {
 function preview() {
   toast.info(`配置预览: ${config.value}`)
 }
+function findDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 function save() {
   const item = selected.value
   if (!item || !config.value) return
@@ -103,7 +110,14 @@ function save() {
       ...item,
       query: config.value,
     })
-    .then(() => toast.info('保存成功'))
+    .then((r: any) => {
+      if (!findDesignerWriteSucceeded(r)) {
+        toast.error(r?.message || '保存未生效，请刷新后重试')
+        return
+      }
+      toast.info('保存成功')
+      refetch()
+    })
     .catch((e: any) => toast.error(`保存失败: ${e?.message ?? ''}`))
 }
 </script>
