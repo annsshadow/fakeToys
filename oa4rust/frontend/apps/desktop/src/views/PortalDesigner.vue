@@ -352,11 +352,22 @@ async function createDesign() {
     toast.error(`创建失败: ${error?.message ?? '未知错误'}`)
   }
 }
+function portalDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
 async function saveDesign() {
   if (!activeId.value) return
   saving.value = true
   try {
-    await api.put(designerPaths.portalSave(activeId.value), { content: serializePortalContent(widgets.value) })
+    const lastResp: any = await api.put(designerPaths.portalSave(activeId.value), { content: serializePortalContent(widgets.value) })
+    if (!portalDesignerWriteSucceeded(lastResp)) {
+      toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('门户布局已保存')
   } catch (error: any) {
     toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
@@ -369,7 +380,11 @@ async function pdDesignerOps(op: string) {
   try {
     if (op === 'saveById') {
       const id = encodeURIComponent(prompt('设计 ID:', activeId.value || '') || '')
-      await api.post(`/api/portal/assemble/designer/save/${id}`, {})
+      const lastResp: any = await api.post(`/api/portal/assemble/designer/save/${id}`, {})
+      if (!portalDesignerWriteSucceeded(lastResp)) {
+        toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+        return
+      }
     } else if (op === 'pageVersions') {
       const pid = encodeURIComponent(prompt('页面 ID:', '') || '')
       await api.get(`/api/portal/assemble/designer/pageversion/list/1/${pid}`)
@@ -392,7 +407,11 @@ async function pdDesignerOps(op: string) {
         const file = input.files?.[0]
         if (!file) return
         const content = await file.text()
-        await api.post(`/api/portal/assemble/designer/file/upload/${encodeURIComponent(fid)}`, { content })
+        const lastResp: any = await api.post(`/api/portal/assemble/designer/file/upload/${encodeURIComponent(fid)}`, { content })
+        if (!portalDesignerWriteSucceeded(lastResp)) {
+          toast.error(lastResp?.message || '操作未生效，请刷新后重试')
+          return
+        }
         toast.success('资源内容已上传')
       }
       input.click()
