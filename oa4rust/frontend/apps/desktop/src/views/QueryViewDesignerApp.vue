@@ -102,6 +102,14 @@ async function openView(id: string) {
     toast.error(`加载视图失败: ${error?.message ?? '未知错误'}`)
   }
 }
+function queryViewDesignerWriteSucceeded(resp: any): boolean {
+  if (!resp || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  if (resp.type === 'success') return true
+  if (resp.type) return false
+  return true
+}
+
 async function saveView() {
   if (!canSave.value) return
   saving.value = true
@@ -111,9 +119,13 @@ async function saveView() {
     data: serializeViewDefinition(form.value.definition),
   }
   try {
-    const response = activeId.value
+    const response: any = activeId.value
       ? await api.put<any>(designerPaths.viewSave(activeId.value), payload)
       : await api.post<any>(designerPaths.viewCreate, payload)
+    if (!queryViewDesignerWriteSucceeded(response)) {
+      toast.error(response?.message || '操作未生效，请刷新后重试')
+      return
+    }
     activeId.value = response.data?.id ?? activeId.value
     form.value.viewFlag = response.data?.viewFlag ?? form.value.viewFlag
     toast.success('视图已保存')
