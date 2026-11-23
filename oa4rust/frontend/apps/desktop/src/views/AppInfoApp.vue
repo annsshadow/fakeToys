@@ -219,6 +219,12 @@ async function createFile(item: any) {
     toast.error(`创建文件失败: ${e?.message ?? ''}`)
   }
 }
+// R397：写端点失败信封(HTTP200+type:error/success:false)统一判定，type为主不强求bool(对齐R391/R393/R395)
+function appinfoWriteSucceeded(resp: any): boolean {
+  if (resp === null || resp === undefined || typeof resp !== 'object') return false
+  if (resp.type === 'error' || resp.success === false) return false
+  return resp.type === 'success' || (resp.type === undefined && resp.success !== false)
+}
 async function writePerms(item: any) {
   const id = encodeURIComponent(item.id)
   const readers = (prompt('查看者(逗号分隔标识，可空):', '') || '')
@@ -227,7 +233,11 @@ async function writePerms(item: any) {
     .filter(Boolean)
   if (!(await confirmMsg('确定写入该应用权限？'))) return
   try {
-    await api.post(`/api/appinfo/${id}/permission`, { personIds: readers })
+    const r: any = await api.post(`/api/appinfo/${id}/permission`, { personIds: readers })
+    if (!appinfoWriteSucceeded(r)) {
+      toast.error(r?.message || '操作未生效，请刷新后重试')
+      return
+    }
     toast.success('应用权限已写入')
   } catch (e: any) {
     toast.error(`写入权限失败: ${e?.message ?? ''}`)
