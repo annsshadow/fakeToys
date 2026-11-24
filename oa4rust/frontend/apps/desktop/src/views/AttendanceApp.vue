@@ -151,19 +151,19 @@
         <div class="sl">{{s.label}}</div>
       </div>
     </section>
-    <section class="modern-section glass-card content-panel">
-      <div class="pt"><span class="th">姓名</span><span class="th">日期</span><span class="th">上班</span><span class="th">下班</span><span class="th">工时</span><span class="th">状态</span></div>
+    <section class="modern-section glass-card content-panel" role="table">
+      <div class="pt" role="row"><span class="th" role="columnheader">姓名</span><span class="th" role="columnheader">日期</span><span class="th" role="columnheader">上班</span><span class="th" role="columnheader">下班</span><span class="th" role="columnheader">工时</span><span class="th" role="columnheader">状态</span></div>
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 8" :key="i"></div></div>
       <div v-else-if="records.length===0" class="es" data-testid="attendance-empty-cta"><div class="ei">📋</div><p>暂无考勤记录，可刷新后查看最新数据</p><button class="eb eb-primary" @click="loadData">刷新记录</button></div>
       <template v-else>
-        <div v-for="r in records" :key="r.id" class="tr" :class="{late:r.isLate}">
-          <span class="td">{{r.personName||r.name||'—'}}</span>
-          <span class="td">{{fmtDate(r.date)}}</span>
-          <span class="td cit">{{r.checkInTime||'—'}}</span>
-          <span class="td cot">{{r.checkOutTime||'—'}}</span>
-          <span class="td hw">{{r.workHours??'—'}}</span>
-          <span class="td"><span class="badge" :class="statusClass(r.status)">{{statusTxt(r.status)}}</span></span>
-          <span class="td rec-act">
+        <div v-for="r in records" :key="r.id" class="tr" :class="{late:r.isLate}" role="row">
+          <span class="td" role="cell">{{r.personName||r.name||'—'}}</span>
+          <span class="td" role="cell">{{fmtDate(r.date)}}</span>
+          <span class="td cit" role="cell">{{r.checkInTime||'—'}}</span>
+          <span class="td cot" role="cell">{{r.checkOutTime||'—'}}</span>
+          <span class="td hw" role="cell">{{r.workHours??'—'}}</span>
+          <span class="td" role="cell"><span class="badge" :class="statusClass(r.status)">{{statusTxt(r.status)}}</span></span>
+          <span class="td rec-act" role="cell">
             <button class="cfg-mini" @click="detailInfo(r)">详情</button>
             <button class="cfg-mini" @click="analyseOne(r)">分析</button>
             <button class="cfg-mini" @click="archiveOne(r)">归档</button>
