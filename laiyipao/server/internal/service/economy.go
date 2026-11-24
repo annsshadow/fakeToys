@@ -1219,6 +1219,48 @@ type ReplayInfo struct {
 	// ⚠️ 没有它就复现不出原局：选牌会改变后续战斗（技能升格/属性加成/机制词条）。
 	// 服务端存的是逗号分隔的紧凑文本，这里解析成数组下发。
 	CardPicks []int `json:"card_picks"`
+	// ReactionTimeline 是 R15 逐次反应归因，仅作验真辅助对照线索。
+	// 它不参与、不覆盖 replay_hash；权威裁定仍只看 replay_hash matched。
+	ReactionTimeline domain.ReactionTimeline `json:"reaction_timeline"`
+}
+
+// parseReplayReactionTimeline 把 battle_records.reaction_timeline JSONB 转成验真辅助线索。
+// R17 诚实空态：NULL / 空字节 / 非法 JSON / events 形状错误 / schema 不符
+// 一律返回 schema_version=reaction-timeline-v1 + events=[]，不报错、不反推编造。
+// 合法包装对象逐字段读取；截断标记保留原值但仅作展示，不参与验真结论。
+func parseReplayReactionTimeline(raw []byte) domain.ReactionTimeline {
+	empty := domain.ReactionTimeline{
+		SchemaVersion: domain.ReactionTimelineSchemaVersion,
+		Events:        []domain.ReactionTimelineEvent{},
+	}
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" {
+		return empty
+	}
+	var obj struct {
+		SchemaVersion string                         `json:"schema_version"`
+		Events        []domain.ReactionTimelineEvent `json:"events"`
+		Truncated     bool                           `json:"truncated"`
+		Total         int                            `json:"total"`
+	}
+	if err := json.Unmarshal(raw, &obj); err != nil || obj.SchemaVersion != domain.ReactionTimelineSchemaVersion {
+		return empty
+	}
+	if obj.Events == nil {
+		obj.Events = []domain.ReactionTimelineEvent{}
+	}
+	for _, ev := range obj.Events {
+		// 结构异常（缺字段/非法值）按空态处理：不把半截数据当线索。
+		if ev.Wave < 1 || ev.Tick < 0 || ev.Reaction == "" || ev.EnemyUID < 1 || ev.Damage < 0 {
+			return empty
+		}
+	}
+	return domain.ReactionTimeline{
+		SchemaVersion: obj.SchemaVersion,
+		Events:        obj.Events,
+		Truncated:     obj.Truncated,
+		Total:         obj.Total,
+	}
 }
 
 // parseCardPicks 解析逗号分隔的选牌序列。空串表示旧记录没有该字段。
@@ -1554,8 +1596,9 @@ func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforce
 	var createdAt time.Time
 	var seed int64
 	var cardPicks string
+	var timelineRaw []byte
 	sql := `SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at,
-	              br.build_snapshot, COALESCE(br.card_picks, '')
+	              br.build_snapshot, COALESCE(br.card_picks, ''), br.reaction_timeline
 	       FROM battle_records br
 	       LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
 	       WHERE br.id = $1`
@@ -1565,7 +1608,7 @@ func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforce
 		args = append(args, userID)
 	}
 	err := s.pool.QueryRow(ctx, sql, args...).
-		Scan(&r.LevelID, &seed, &r.ReplayHash, &createdAt, &r.Build, &cardPicks)
+		Scan(&r.LevelID, &seed, &r.ReplayHash, &createdAt, &r.Build, &cardPicks, &timelineRaw)
 	if err != nil {
 		// 「不存在」与「不是你的」返回**同一个**错误（第 75 轮）。
 		//
@@ -1579,6 +1622,8 @@ func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforce
 	r.BattleID = battleID
 	r.Seed = strconv.FormatInt(seed, 10)
 	r.CardPicks = parseCardPicks(cardPicks)
+	// R17：辅助对照线索；结构异常走诚实空态，绝不让 replay 失败。
+	r.ReactionTimeline = parseReplayReactionTimeline(timelineRaw)
 	r.CreatedAt = createdAt.UTC().Format(timeFormat)
 	r.Level = NewLevelResp(domain.CachedLevel(r.LevelID))
 

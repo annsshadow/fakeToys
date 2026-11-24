@@ -157,7 +157,24 @@
         </text>
       </view>
 
-      <view v-if="result" class="card pop-in" :style="{ borderColor: result.matched ? 'var(--ok)' : 'var(--bad)' }">
+      <view v-if="replayInfo" class="card r17-reaction-diff" role="region">
+  <text class="card-title">AI · 逐次反应序列对照</text>
+  <block v-if="r17Diff.available">
+    <view class="r17-diff-summary">{{ r17Diff.summary }}</view>
+    <view v-if="r17Diff.truncated" class="r17-truncated">已截断，仅显示前 200 条</view>
+    <view v-if="r17Diff.firstDiff !== null" class="r17-first-diff">首处差异：第 {{ r17Diff.firstDiff + 1 }} 条</view>
+    <view v-for="row in r17Diff.rows" :key="row.index" class="r17-diff-row" :data-r17-index="row.index">
+      <text class="r17-row-idx">第 {{ row.index + 1 }} 条</text>
+      <text class="r17-row-line">本地：{{ row.localText }}</text>
+      <text class="r17-row-line">服务端：{{ row.serverText }}</text>
+    </view>
+  </block>
+  <view v-else class="r17-diff-empty">该战报无逐次反应记录，暂无法对照（旧版本结算）</view>
+  <text class="r17-diff-basis">依据：本地重放 reaction_timeline.events 与服务端 reaction_timeline.events 逐条比对，辅助对照线索</text>
+  <text class="r17-diff-note">辅助对照线索，非验真判据；权威裁定仍以 replay_hash 为准</text>
+  <view class="btn r17-diff-cta" role="button" @click="r17GoAuthority">查看权威裁定 ↑</view>
+</view>
+<view v-if="result" id="r17-authority-card" class="card pop-in" :style="{ borderColor: result.matched ? 'var(--ok)' : 'var(--bad)' }">
         <text class="card-title">服务端裁定</text>
         <view class="kv">
           <text class="muted">你提交的哈希</text>
@@ -207,6 +224,7 @@ import {
   type ReplayInfo,
 } from '@/game/replay'
 import { scoreRulesFromServer } from '@/game/score'
+import { REACTIONS } from '@/game/elements'
 
 const store = useGameStore()
 /**
@@ -344,6 +362,66 @@ const hashSegments = computed(() => {
   const sb = seg(String(b))
   return sa.map((part, i) => ({ i, part, match: part === sb[i] }))
 })
+
+// R17：逐次反应序列对照（辅助线索，不参与/不覆盖 replay_hash，也不冒充验真通过/失败）。
+const R17_TL_SCHEMA = 'reaction-timeline-v1'
+const r17Fields = ['wave', 'tick', 'reaction', 'enemy_uid', 'damage'] as const
+type R17Event = { wave: number; tick: number; reaction: string; enemy_uid: number; damage: number }
+function r17Valid(e: unknown): e is R17Event {
+  if (!e || typeof e !== 'object') return false
+  const o = e as Record<string, unknown>
+  return Number.isInteger(o.wave) && (o.wave as number) >= 1
+    && Number.isInteger(o.tick) && (o.tick as number) >= 0
+    && typeof o.reaction === 'string' && o.reaction.length > 0
+    && Number.isInteger(o.enemy_uid)
+    && typeof o.damage === 'number' && Number.isFinite(o.damage)
+}
+function r17Sanitize(list: unknown): R17Event[] | null {
+  if (!Array.isArray(list)) return null
+  return list.filter(r17Valid).map((e) => ({
+    wave: e.wave, tick: e.tick, reaction: e.reaction,
+    enemy_uid: e.enemy_uid, damage: e.damage,
+  }))
+}
+function r17Same(a: R17Event, b: R17Event): boolean {
+  return r17Fields.every((k) => a[k] === b[k])
+}
+function r17Line(e: R17Event): string {
+  const name = (REACTIONS as Record<string, { name?: string }>)[e.reaction]?.name ?? e.reaction
+  return `第 ${e.wave} 波 · ${e.tick} tick · ${name} · #${e.enemy_uid} · ${e.damage.toFixed(1)}伤害`
+}
+const r17Diff = computed(() => {
+  const local = r17Sanitize(outcome.value?.reactionTimeline)
+  const svc = replayInfo.value?.reaction_timeline
+  const server = svc && svc.schema_version === R17_TL_SCHEMA ? r17Sanitize(svc.events) : null
+  const truncated = outcome.value?.reactionTimelineTruncated === true || svc?.truncated === true
+  if (!local || !server) {
+    return { available: false, summary: '', rows: [] as Array<{ index: number; localText: string; serverText: string }>, firstDiff: null as number | null, truncated }
+  }
+  const min = Math.min(local.length, server.length)
+  const max = Math.max(local.length, server.length)
+  const diffIndexes: number[] = []
+  let sameCount = 0
+  for (let i = 0; i < min; i++) {
+    if (r17Same(local[i], server[i])) sameCount++
+    else diffIndexes.push(i)
+  }
+  for (let i = min; i < max; i++) diffIndexes.push(i)
+  return {
+    available: true,
+    summary: `一致 ${sameCount} 条 · 差异 ${diffIndexes.length} 条`,
+    rows: diffIndexes.map((i) => ({
+      index: i,
+      localText: i < local.length ? r17Line(local[i]) : '（无此条）',
+      serverText: i < server.length ? r17Line(server[i]) : '（无此条）',
+    })),
+    firstDiff: diffIndexes.length ? diffIndexes[0] : null,
+    truncated,
+  }
+})
+function r17GoAuthority(): void {
+  uni.pageScrollTo({ selector: '#r17-authority-card', duration: 240 })
+}
 
 function pretty(h: string): string {
   return prettyHash(h)
@@ -595,4 +673,15 @@ onUnload(() => {
   padding: 14rpx 16rpx;
   border-radius: 8rpx;
 }
+.r17-reaction-diff { border-left: 6rpx solid var(--fire); }
+.r17-diff-summary { font-size: 26rpx; font-weight: 700; color: var(--text); margin: 10rpx 0; }
+.r17-truncated { font-size: 22rpx; color: var(--warn); margin-bottom: 8rpx; }
+.r17-first-diff { font-size: 22rpx; color: var(--fire); margin-bottom: 8rpx; }
+.r17-diff-row { display: flex; flex-direction: column; gap: 6rpx; background: var(--panel-2); border: 1rpx solid var(--border-soft); border-radius: 8rpx; padding: 12rpx; margin-bottom: 8rpx; }
+.r17-row-idx { font-size: 20rpx; color: var(--text-2); }
+.r17-row-line { font-size: 22rpx; color: var(--text-2); word-break: break-all; }
+.r17-diff-empty { font-size: 24rpx; color: var(--text-2); background: var(--panel-2); padding: 16rpx; border-radius: 8rpx; margin: 10rpx 0; }
+.r17-diff-basis { display: block; font-size: 20rpx; color: var(--text-2); margin-top: 12rpx; }
+.r17-diff-note { display: block; font-size: 20rpx; color: var(--warn); margin-top: 8rpx; }
+.r17-diff-cta { margin-top: 14rpx; }
 </style>
