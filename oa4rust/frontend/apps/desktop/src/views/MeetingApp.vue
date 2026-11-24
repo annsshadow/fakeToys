@@ -48,7 +48,7 @@
         <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
         <div v-else-if="meetings.length===0" class="es modern-empty"><div class="ei">👥</div><p>暂无会议，点击「新建会议」预订第一场</p></div>
         <ul v-else class="ml">
-          <li v-for="m in meetings" :key="m.id" class="mc modern-card" @click="viewMeeting(m)">
+          <li v-for="m in meetings" :key="m.id" class="mc modern-card" role="button" tabindex="0" @click="viewMeeting(m)" @keydown.enter="viewMeeting(m)" @keydown.space.prevent="viewMeeting(m)">
             <div class="ms modern-chip" :class="statusCls(m)">{{statusTxt(m)}}</div>
             <div class="mi"><div class="mt">{{m.title||m.name||'未命名会议'}}</div><div class="mm">
               <span v-if="m.buildingName">🏢{{m.buildingName}}</span>
@@ -76,7 +76,7 @@
       <div class="calendar-grid">
         <div v-for="day in calendarDays" :key="day.key" class="calendar-day modern-card">
           <div class="calendar-day-head"><span class="modern-stat">{{ day.label }}</span><span class="modern-chip">{{ day.meetings.length }} 场</span></div>
-          <div v-for="m in day.meetings" :key="m.id" class="calendar-event" @click="viewMeeting(m)">{{ m.title || m.name || '未命名会议' }}</div>
+          <div v-for="m in day.meetings" :key="m.id" class="calendar-event" role="button" tabindex="0" @click="viewMeeting(m)" @keydown.enter="viewMeeting(m)" @keydown.space.prevent="viewMeeting(m)">{{ m.title || m.name || '未命名会议' }}</div>
           <div v-if="!day.meetings.length" class="calendar-empty">—</div>
         </div>
       </div>
