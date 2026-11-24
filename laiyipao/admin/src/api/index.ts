@@ -65,6 +65,7 @@ import type {
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
+  ReactionDamageImpactResp,
   RecomputeLevelStat,
   RecomputeModeState,
   RecomputeSummary,
@@ -121,6 +122,7 @@ export type {
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
+  ReactionDamageImpactResp,
   RecomputeLevelStat,
   RecomputeModeState,
   RecomputeSummary,
@@ -190,6 +192,14 @@ export function adminLogout() {
 
 export function fetchDashboard() {
   return api.get<Dashboard>('/admin/dashboard')
+}
+
+/**
+ * R18：近 30 天反应伤害贡献聚合（辅助分析，非权威结算）。
+ * 次数权威仍取 dashboard_reaction_counts，伤害来自 reaction_timeline.events。
+ */
+export function fetchReactionDamageImpact() {
+  return api.get<ReactionDamageImpactResp>('/admin/reaction-damage-impact')
 }
 
 /**

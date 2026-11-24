@@ -331,6 +331,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Post("/logout", s.adminLogout)
 	adm.Get("/me", s.adminMe)
 	adm.Get("/dashboard", s.adminDashboard)
+	// R18：反应伤害贡献聚合（辅助分析，管理员鉴权；次数权威仍看 dashboard）。
+	adm.Get("/reaction-damage-impact", s.adminReactionDamageImpact)
 	// R6 §1E：管理侧聚合洞察；读端点，readonly 角色也允许查看。
 	adm.Get("/recommendations/:scope", s.adminRecommendations)
 	adm.Get("/levels", s.adminLevels)

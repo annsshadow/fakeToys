@@ -505,6 +505,22 @@ export interface ReactionCount {
   count: number
 }
 
+export interface ReactionDamageImpactItem {
+  reaction: string
+  total_damage: number
+  damage_share_pct: number
+  events: number
+  count: number
+}
+
+export interface ReactionDamageImpactResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  excluded_old_battles: number
+  items: ReactionDamageImpactItem[]
+}
+
 export interface ReactionSpec {
   key: string
   name: string

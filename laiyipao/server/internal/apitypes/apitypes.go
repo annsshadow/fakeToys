@@ -107,6 +107,9 @@ var AdminRegistry = tygen.Registry{
 	{Name: "GameConfig", Go: service.GameConfig{}},
 	{Name: "Dashboard", Go: service.Dashboard{}},
 	{Name: "ReactionCount", Go: service.ReactionCount{}},
+	// R18 反应伤害贡献聚合（次数仍以 ReactionCount/物化视图为准）。
+	{Name: "ReactionDamageImpactItem", Go: service.ReactionDamageImpactItem{}},
+	{Name: "ReactionDamageImpactResp", Go: service.ReactionDamageImpactResp{}},
 	{Name: "DauPoint", Go: service.DauPoint{}},
 	{Name: "StageFunnel", Go: service.StageFunnel{}},
 	{Name: "AdminUserView", Go: service.AdminUserView{}},
