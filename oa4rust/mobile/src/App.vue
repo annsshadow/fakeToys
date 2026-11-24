@@ -318,6 +318,12 @@ body .ai-brand-fill.ai-brand-fill {
 .ai-surface-gradient {
   background: var(--ai-gradient-surface);
 }
+/* R452 H5 实测：scoped 规则 .page[data-v] (0,2,0) 覆盖全局类致 bgImage=none；
+   仿 brand-fill 用容器前缀+重复类 (0,2,1) 压过，恢复根容器柔和渐变。 */
+uni-page-body .ai-surface-gradient.ai-surface-gradient,
+body .ai-surface-gradient.ai-surface-gradient {
+  background: var(--ai-gradient-surface);
+}
 .ai-skeleton-line {
   height: 12px;
   border-radius: var(--radius-sm);
