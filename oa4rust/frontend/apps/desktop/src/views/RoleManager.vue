@@ -233,7 +233,7 @@ const api_permission_manag_444_data = ref<any[]>([])
 .member-tag { padding: 2px 8px; border-radius: var(--radius-sm); background: var(--color-primary-soft); color: var(--color-primary); font-size: 11px }
 /* R300 B5: AI 令牌统一视觉，仅覆盖样式，不改变数据绑定与接口。 */
 .ai-page-b5.ai-page-b5, .ai-page-b5 .ai-page-b5 {
-  background: var(--ai-surface-gradient);
+  background: var(--ai-gradient-surface);
   border: 1px solid var(--ai-glass-border);
   box-shadow: var(--ai-shadow-2);
   border-radius: var(--ai-radius-lg, 12px);

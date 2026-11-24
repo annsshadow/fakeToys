@@ -218,7 +218,7 @@ void AdminToolbar
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 /* R300 B5: AI 令牌统一视觉，仅覆盖样式，不改变数据绑定与接口。 */
 .ai-page-b5.ai-page-b5, .ai-page-b5 .ai-page-b5 {
-  background: var(--ai-surface-gradient);
+  background: var(--ai-gradient-surface);
   border: 1px solid var(--ai-glass-border);
   box-shadow: var(--ai-shadow-2);
   border-radius: var(--ai-radius-lg, 12px);
