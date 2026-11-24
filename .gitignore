@@ -310,3 +310,7 @@ docs/laiyipao/audits/round21-player-level-coach/auth-init.js
 # R22 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
 docs/laiyipao/audits/round22-card-reaction-synergy/data/
 docs/laiyipao/audits/round22-card-reaction-synergy/auth-init.js
+
+# R23 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round23-loadout-reaction-coverage/data/
+docs/laiyipao/audits/round23-loadout-reaction-coverage/auth-init.js
