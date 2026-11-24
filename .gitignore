@@ -201,6 +201,10 @@ docs/laiyipao/audits/round20-combat-efficiency-trends/data/
 docs/laiyipao/audits/round20-combat-efficiency-trends/auth-init.js
 docs/laiyipao/audits/round20-combat-efficiency-trends/admin-probe.js
 
+# R21 E2E 复查审计临时真值（guest_token / dump / 注入脚本）不入库
+docs/laiyipao/audits/round21-player-level-coach/data/
+docs/laiyipao/audits/round21-player-level-coach/auth-init.js
+
 # OpenCode
 .backups/
 .opencode/
@@ -295,3 +299,10 @@ docs/laiyipao/audits/round18-reaction-damage-impact/probe.js
 # R19 E2E 复查审计临时真值（guest_token / dump / 注入脚本）不入库
 docs/laiyipao/audits/round19-player-reaction-impact/data/
 docs/laiyipao/audits/round19-player-reaction-impact/auth-init.js
+
+# R20/R21 E2E 复查审计临时真值不入库
+docs/laiyipao/audits/round20-combat-efficiency-trends/data/
+docs/laiyipao/audits/round20-combat-efficiency-trends/auth-init.js
+docs/laiyipao/audits/round20-combat-efficiency-trends/admin-probe.js
+docs/laiyipao/audits/round21-player-level-coach/data/
+docs/laiyipao/audits/round21-player-level-coach/auth-init.js
