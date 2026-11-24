@@ -46,3 +46,11 @@ PASS。部署后另起独立真实 Chromium 会话（agent-browser 0.41.1，无�
 - admin-auth-init.js 为本地令牌注入临时文件，已被 .gitignore 排除；收尾删除。data/ 下 config.json、probe*.json、config 快照等均被 .gitignore 排除，零入库。
 - QA 库收尾 pg_restore qa-before.dump 还原 battle_records=104 / max_id=477（与部署前一致）。
 - 局限：视口由浏览器模拟，非物理真机；屏幕截图 SHA 受渲染环境影响，仅用于区分会话与状态，不作为产品判据；TestNoRealSecretsInRepo 本机 SKIP 已如实标注。
+
+## 8. 第六批更正：.gitignore 截断回归与修复
+
+- 第五批 f8d00139 追加 R31 postdeploy 忽略规则时，误将根 .gitignore 从父提交 367 行截断为 12 行，丢失 .env、*.local.keys、.agents/、node_modules/ 等通用 secrets/构建规则及 R15–R30 历史审计真值规则。
+- 产品功能、三视口对账证据与部署证据不受影响（产物哈希未变，无需重新部署）；但零真值防线出现回归，必须如实记录。
+- 新增 laiyipao/admin/tests/GitignoreSafety.test.ts：读取根 .gitignore 并断言行数不少于 360、通用规则与 R15/R30/R31 审计真值规则齐备。在截断版本上运行 3/3 RED（缺 .env 与 R15 data 规则等），恢复后 3/3 GREEN。
+- 修复：从父提交 f8d00139^ 恢复完整 .gitignore（367 行），再追加 R31 postdeploy 的 data/ 与 admin-auth-init.js 两条规则，合计 371 行；git check-ignore 对 R15/R30/R31 临时 data 与 auth-init 路径全部命中。
+- 第六批仅提交 .gitignore、防回归测试与本报告；本报告不含任何真值。TestNoRealSecretsInRepo 本机 SKIP 的口径不变。
