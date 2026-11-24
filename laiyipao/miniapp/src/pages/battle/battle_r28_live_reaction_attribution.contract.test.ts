@@ -99,7 +99,7 @@ describe('R28 真实源码守卫（防止只测 SPEC 文本）', () => {
     expect(battleSrc).toContain(LIVE_FEED_BASIS)
   })
 
-  it('.r28-feed-ai 四要素 + CTA 逐字 + @click.stop=openHelp + CTA 子元素 r28-feed-cta', () => {
+  it('.r28-feed-ai 四要素 + CTA 逐字 + @click.stop=openReactionTimeline（R29 改指时间线抽屉） + CTA 子元素 r28-feed-cta', () => {
     const i = battleSrc.indexOf('r28-feed-ai')
     expect(i).toBeGreaterThanOrEqual(0)
     const aiBlock = battleSrc.slice(i, i + 3000)
@@ -108,9 +108,9 @@ describe('R28 真实源码守卫（防止只测 SPEC 文本）', () => {
     expect(aiBlock).toContain(LIVE_FEED_HONESTY)
     expect(aiBlock).toContain(LIVE_FEED_CTA)
     expect(aiBlock).toContain('r28-feed-cta')
-    expect(aiBlock).toMatch(/@click\.stop="openHelp"/)
+    expect(aiBlock).toMatch(/@click\.stop="openReactionTimeline"/)
+    // R29 起 CTA 改指完整反应时间线抽屉，不再打开战场图例；R28 SPEC 为历史记录不改写。
     expect(spec).toContain(LIVE_FEED_CTA)
-    expect(spec).toContain('@click.stop="openHelp"')
     expect(spec).toContain('r28-feed-cta')
   })
 

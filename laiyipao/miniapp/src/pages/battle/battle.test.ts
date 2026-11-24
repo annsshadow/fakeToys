@@ -1472,3 +1472,117 @@ describe('battle.vue R9 战斗反馈与连连贯性（2026-11-22）', () => {
     expect(css, '窄屏下 spacer 不应把胶囊挤出可视宽度').toMatch(/@media\s*\(max-width:\s*430px\)[\s\S]*\.hud-spacer\s*\{\s*display:\s*none/)
   })
 })
+
+describe('battle.vue R29 完整反应时间线抽屉（2026-11-24）', () => {
+  /** 造一条合法 timeline 事件；reaction 用 fixtures 中存在的 steam_burst */
+  function event(wave: number, uid: number, damage: number) {
+    return { wave, tick: wave * 10 + uid, reaction: 'steam_burst', enemy_uid: uid, damage }
+  }
+  /** 造一个 R9 reaction 事件（让 CTA 所在的 .reaction-feed 出现） */
+  function reactionEvent(damage: number) {
+    return { type: 'reaction', reaction: 'steam_burst', damage: BigInt(damage), resisted: false, x: 0n, y: 0n }
+  }
+  async function mountWithFeed() {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Number.POSITIVE_INFINITY
+    eng.winAtStep = Number.POSITIVE_INFINITY
+    eng.events = [reactionEvent(1234)]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+    expect(wrapper.find('.r28-feed-cta').exists()).toBe(true)
+    return { wrapper, eng, renderer: FakeRenderer.instances[0]! }
+  }
+
+  it('未暂停打开抽屉会暂停并记账；关闭只恢复自己的暂停', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(2, 7, 1234)]
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.find('.r29-timeline-row').exists()).toBe(true)
+    expect(wrapper.text()).toContain('第2波')
+    expect(wrapper.text()).toContain('#7')
+    expect(wrapper.text()).toContain('1234.0')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+  })
+
+  it('玩家原有暂停不被抽屉夺取；关闭后仍保持暂停', async () => {
+    const { wrapper, renderer } = await mountWithFeed()
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(wrapper.text(), '手动暂停原因不被抽屉覆盖').not.toContain('切到后台时自动暂停了')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(renderer.paused).toBe(true)
+  })
+
+  it('图例与抽屉互斥：开抽屉自动关图例，开图例自动关抽屉', async () => {
+    const { wrapper } = await mountWithFeed()
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+  })
+
+  it('截断标记只在有数据时显示；空态走独立分支不编造记录', async () => {
+    const { wrapper, eng } = await mountWithFeed()
+    eng.truncatedFlag = true
+    eng.timeline = []
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-empty').exists()).toBe(true)
+    expect(wrapper.find('.r29-timeline-truncated').exists()).toBe(false)
+    expect(wrapper.text()).toContain('本局暂无逐次反应记录')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    eng.timeline = [event(1, 3, 55)]
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-truncated').exists()).toBe(true)
+    expect(wrapper.text()).toContain('已截断，仅显示前 200 条')
+  })
+
+  it('结算结果页时间线入口可见可点：点击打开抽屉、关闭保持结算态不误 resume', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(1, 9, 77)]
+    eng.winAtStep = 1
+    renderer.loop!(TICK)
+    await flushPromises()
+    // 结果 sheet 必须渲染出独立入口（非战斗 feed CTA）
+    const resultCta = wrapper.find('.r29-result-timeline-cta')
+    expect(resultCta.exists()).toBe(true)
+    expect(resultCta.text()).toContain('查看完整反应时间线 →')
+    expect(renderer.paused).toBe(false)
+    await resultCta.trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(wrapper.find('.r29-timeline-row').exists()).toBe(true)
+    expect(wrapper.text()).toContain('77.0')
+    // 结算态打开不得暂停，关闭不得 resume
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+  })
+
+  it('结算后仍可打开抽屉，关闭时不误恢复战斗', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(1, 9, 77)]
+    eng.winAtStep = 1
+    renderer.loop!(TICK)
+    await flushPromises()
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(renderer.paused).toBe(false)
+  })
+})
