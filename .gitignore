@@ -281,3 +281,9 @@ docs/laiyipao/audits/round16-admin-reaction-timeline/data/
 # laiyipao R17 审计运行时产物：dump 含真实 guest_token，探针 token 运行时注入，不入库。
 docs/laiyipao/audits/round17-verify-reaction-diff/data/
 docs/laiyipao/audits/round17-verify-reaction-diff/auth-init.js
+
+docs/laiyipao/audits/round18-reaction-damage-impact/data/
+docs/laiyipao/audits/round18-reaction-damage-impact/auth-init.js
+
+docs/laiyipao/audits/round18-reaction-damage-impact/mint-probe.sh
+docs/laiyipao/audits/round18-reaction-damage-impact/probe.js
