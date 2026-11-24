@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view modern-page ai-page">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <div class="content-panel glass-card ai-page ai-panel">
       <div class="tabs">
         <button :class="{active:tab==='device'}" @click="tab='device'">设备管理</button>
