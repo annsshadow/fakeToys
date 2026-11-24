@@ -52,7 +52,12 @@
           <div v-else-if="filtered.length===0" class="sb-empty">暂无语句定义</div>
           <div v-for="s in filtered" :key="s.id" class="sb-item"
             :class="{active: currentStatement?.id===s.id}"
-            @click="selectStatement(s)">
+            @click="selectStatement(s)"
+            role="button"
+            tabindex="0"
+            :aria-pressed="currentStatement?.id===s.id"
+            @keydown.enter="selectStatement(s)"
+            @keydown.space.prevent="selectStatement(s)">
             <div class="si-icon">{{ s.icon || '📄' }}</div>
             <div class="si-info">
               <div class="si-name">{{ s.name||s.statementName||'未命名' }}</div>
