@@ -246,6 +246,32 @@
                 </template>
                 <text v-else class="r15-timeline-empty">该战报无逐次反应记录（旧版本结算）</text>
               </view>
+              <!-- R25：单局反应伤害主力聚合（纯前端派生，count 取权威 reactions_used，events 不冒充次数） -->
+              <view class="r25-reaction-impact" role="status" aria-live="polite">
+                <text class="r25-impact-label">AI · 反应伤害主力</text>
+                <view v-if="reactionImpact.length" class="r25-impact-rows">
+                  <view
+                    v-for="row in reactionImpact"
+                    :key="row.reaction"
+                    class="r25-impact-row"
+                    :data-r25-reaction="row.reaction"
+                  >
+                    <text class="r25-impact-name">{{ row.reactionName }}</text>
+                    <text class="r25-impact-damage">{{ fmt(row.total_damage) }} 伤害</text>
+                    <text class="r25-impact-share">{{ row.damage_share_pct.toFixed(1) }}%</text>
+                    <text class="r25-impact-count">权威{{ row.count }}次</text>
+                    <text class="r25-impact-events">事件{{ row.events }}条</text>
+                  </view>
+                  <text v-if="reactionTimelineTruncated" class="r25-truncated-note">已截断，仅统计前 200 条</text>
+                </view>
+                <text v-else class="r25-impact-empty">本局无逐次反应伤害记录</text>
+                <view class="r25-ai-note">
+                  <text class="r25-ai-conclusion">{{ r25Conclusion }}</text>
+                  <text class="r25-ai-basis">依据：本局 reaction_timeline.events 的 damage 聚合；触发次数以 reactions_used 为准</text>
+                  <text class="r25-ai-cta">下一局优先凑齐该元素组合 →</text>
+                  <text class="r25-ai-honesty">辅助展示非伤害权威,权威以 replay_hash 为准</text>
+                </view>
+              </view>
               <!-- R14 §C.1：建议下方给服务端权威 CTA；E2E 选择器 #r14-advice-action-btn.r14-advice-cta[data-r14-source=battle]，空态 .r14-advice-empty -->
               <view v-if="r14Advice" class="r14-advice r14-enter">
                 <text class="r14-advice-badge">{{ r14Advice.badge }} · 可执行建议</text>
@@ -669,6 +695,7 @@ const reactionTimeline = computed(() => {
   return valid
     .sort((a, b) => a.wave - b.wave || a.tick - b.tick)
     .map((ev) => ({
+      reaction: ev.reaction,
       wave: ev.wave,
       enemy_uid: ev.enemy_uid,
       damage: ev.damage,
@@ -677,6 +704,42 @@ const reactionTimeline = computed(() => {
 })
 
 const reactionTimelineTruncated = computed(() => detail.value?.reaction_timeline?.truncated === true)
+
+/** R25：单局反应伤害主力聚合。只读派生，count 取权威 reactions_used，绝不用 events 条数冒充。 */
+const reactionImpact = computed(() => {
+  const events = reactionTimeline.value
+  if (!events.length) return []
+  const groups = new Map<string, { total: number; events: number }>()
+  for (const ev of events) {
+    if (typeof ev.reaction !== 'string' || !ev.reaction || typeof ev.damage !== 'number' || !Number.isFinite(ev.damage)) continue
+    const g = groups.get(ev.reaction) ?? { total: 0, events: 0 }
+    g.total += ev.damage
+    g.events += 1
+    groups.set(ev.reaction, g)
+  }
+  if (!groups.size) return []
+  let sum = 0
+  for (const g of groups.values()) sum += g.total
+  const used = detail.value?.reactions_used ?? {}
+  const rows = [...groups.entries()].map(([reaction, g]) => ({
+    reaction,
+    reactionName: reactionNameMap.value.get(reaction) ?? reaction,
+    total_damage: g.total,
+    damage_share_pct: Number((sum > 0 ? (g.total / sum) * 100 : 0).toFixed(1)),
+    events: g.events,
+    count: typeof used[reaction] === 'number' ? used[reaction] : 0,
+  }))
+  rows.sort((a, b) => b.total_damage - a.total_damage || a.reaction.localeCompare(b.reaction))
+  return rows
+})
+const r25Conclusion = computed(() => {
+  const rows = reactionImpact.value
+  if (!rows.length) return '本局无逐次反应伤害记录，不编造主力'
+  const top = rows[0]!
+  if (top.total_damage <= 0) return 'AI：本局反应伤害为 0，无可归因主力'
+  const leaders = rows.filter(r => r.damage_share_pct === top.damage_share_pct)
+  return 'AI：本局' + leaders.map(r => r.reactionName).join('、') + '造成 ' + top.damage_share_pct.toFixed(1) + '% 反应伤害，是伤害主力'
+})
 
 const terrainText = computed(() => {
   const d = detail.value
@@ -1254,4 +1317,25 @@ onMounted(async () => {
   border-color: var(--fire);
   color: var(--fire);
 }
+
+/* R25 单局反应伤害主力聚合：沿用既有 token，零新增视觉令牌 */
+.r25-reaction-impact {
+  margin-top: 12rpx;
+  padding: 10rpx 12rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+}
+.r25-impact-label { color: var(--accent); font-size: 22rpx; font-weight: 700; }
+.r25-impact-rows { display: flex; flex-direction: column; gap: 6rpx; margin-top: 8rpx; }
+.r25-impact-row { display: flex; flex-wrap: wrap; gap: 10rpx; font-size: 21rpx; }
+.r25-impact-name { color: var(--text); font-weight: 700; }
+.r25-impact-damage, .r25-impact-events { color: var(--muted); }
+.r25-impact-share { color: var(--fire); font-weight: 700; }
+.r25-impact-count { color: var(--accent); }
+.r25-truncated-note, .r25-impact-empty { color: var(--muted); font-size: 20rpx; }
+.r25-ai-note { display: flex; flex-direction: column; gap: 4rpx; margin-top: 10rpx; padding-top: 8rpx; border-top: 1rpx solid var(--border); }
+.r25-ai-conclusion { color: var(--text); font-size: 21rpx; }
+.r25-ai-basis, .r25-ai-honesty { color: var(--muted); font-size: 19rpx; }
+.r25-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
 </style>
