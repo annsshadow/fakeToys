@@ -44,6 +44,7 @@ var KNOWN_UNSERVED = map[string]string{
 		"（见 docs/laiyipao/OPERATIONS.md §2 环境变量表）——接上它需要外部抓取基础设施，" +
 		"不在本仓验证面内。",
 	"GET /api/v1/admin/reaction-damage-impact": "R18 后端聚合端点。按 SPEC §6 backend/admin 分工，消费方由后续 admin 实施任务在 DashboardView.vue 反应分布卡 .r18-damage-impact 接入；后端先行落地时前端尚未调用，待前端接上后必须删除本豁免。锚点：docs/laiyipao/specs/round18-reaction-damage-impact/SPEC.md §6。",
+	"GET /api/v1/me/reaction-damage-impact":    "R19 玩家反应伤害贡献聚合端点。按 SPEC §6 backend/H5 分工，消费方由后续 miniapp 实施任务在成长页反应伤害卡接入；后端先行落地时前端尚未调用，待前端接上后必须删除本豁免。锚点：docs/laiyipao/specs/round19-player-reaction-impact/SPEC.md §6。",
 }
 
 var routeRe = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\.(Get|Post|Put|Patch|Delete)\("([^"]*)"`)
