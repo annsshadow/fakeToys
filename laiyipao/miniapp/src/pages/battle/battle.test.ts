@@ -96,6 +96,11 @@ class FakeEngine {
   /** step() 返回的事件（音效接线的判据：页面必须把它们交给 playBattleEvents） */
   events: unknown[] = []
   settleToken = 0
+  /** R28 归因：只读 timeline 旁路（测试按步设置，模拟引擎 engine.reactionTimeline()） */
+  timeline: Array<{ wave: number; enemy_uid: number; reaction: string; damage: number }> = []
+  truncatedFlag = false
+  reactionTimeline() { return this.timeline as any }
+  reactionTimelineTruncated() { return this.truncatedFlag }
 
   constructor(options: any) {
     this.options = options
@@ -1266,6 +1271,44 @@ describe('battle.vue 倍速档位', () => {
 
 
 describe('battle.vue R9 战斗反馈与连连贯性（2026-11-22）', () => {
+  it('R28 归因汇总分母覆盖最终显示的三条记录（非当前步反应数）', async () => {
+    // 队长复核：本步只有 1 条反应时页面显示 3 条（2 旧 + 1 新），
+    // AI 却按当前步 1 条算分母 → "已归因 1/1"，与显示不一致。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Number.POSITIVE_INFINITY
+    eng.winAtStep = Number.POSITIVE_INFINITY
+
+    // 第一步：2 条已归因反应
+    eng.timeline = [
+      { wave: 1, enemy_uid: 5, reaction: 'overheat', damage: 100 },
+      { wave: 1, enemy_uid: 6, reaction: 'steam_burst', damage: 200 },
+    ]
+    eng.events = [
+      { type: 'reaction', reaction: 'overheat', damage: 100n, resisted: false, existingElement: 'fire', incomingElement: 'lightning' },
+      { type: 'reaction', reaction: 'steam_burst', damage: 200n, resisted: false, existingElement: 'fire', incomingElement: 'ice' },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.reaction-line').length).toBe(2)
+
+    // 第二步：1 条已归因反应，页面最终显示 3 条
+    eng.timeline = [
+      ...eng.timeline,
+      { wave: 1, enemy_uid: 7, reaction: 'superconduct', damage: 300 },
+    ]
+    eng.events = [
+      { type: 'reaction', reaction: 'superconduct', damage: 300n, resisted: false, existingElement: 'lightning', incomingElement: 'ice' },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('.reaction-line').length).toBe(3)
+    expect(wrapper.find('.r28-feed-ai-conclusion').text()).toBe('已归因 3/3 条最近反应')
+  })
+
   it('R9 反应事件在 HUD 留下可读的最近反应记录，而不只是瞬时粒子', async () => {
     // 真浏览器第 1 关 8× 连拍：反应只在 canvas 上闪一下，HUD 没有任何
     // 「刚触发了什么」的可读记录。高层速下玩家根本看不清，事后只能看结算计数。
