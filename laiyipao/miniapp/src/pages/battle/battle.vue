@@ -37,6 +37,26 @@
         >
           <text class="time-budget-text">{{ timeBudget.text }}</text>
         </view>
+        <!-- R27 实时波次推进：只读快照派生，紧凑单行不挤压既有胶囊 -->
+        <view v-if="r27Progress" class="r27-wave-progress" :data-r27-progress="r27Progress.waveIndex">
+          <view v-if="r27Progress.empty" class="r27-progress-body">
+            <text class="r27-progress-empty">本波暂无敌人进度数据</text>
+          </view>
+          <view v-else class="r27-progress-body">
+            <view class="r27-progress-track">
+              <view class="r27-progress-fill" :style="{ width: r27Progress.clearedPct + '%' }" />
+            </view>
+            <text class="r27-progress-text">本波 {{ r27Progress.resolved }}/{{ r27Progress.waveTotal }} · {{ r27Progress.clearedPct.toFixed(1) }}%</text>
+          </view>
+        </view>
+      </view>
+      <!-- R27 AI 波次推进解读：同源只读快照；只读展示不拦截点击 -->
+      <view v-if="r27Progress && !r27Progress.empty" class="r27-ai-note">
+        <text class="r27-ai-title">AI · 波次推进</text>
+        <text class="r27-ai-conclusion">{{ r27Progress.ai }}</text>
+        <text class="r27-ai-basis">依据：引擎 waveProgressHud() 只读快照（当前波 spawns 总数 − 场上存活 − 待出场）；只读派生不进 replay_hash</text>
+        <text class="r27-ai-cta" @click="openHelp">继续清理场上敌人 →</text>
+        <text class="r27-ai-honesty">辅助进度提示非权威战斗判定，已处理含击败与漏怪（漏怪已扣防线）；权威以 replay_hash 为准</text>
       </view>
       <!-- R9：最近反应记录。与星级/钳分胶囊同属顶部浮层，不拦截点击。 -->
       <view v-if="recentReactions.length" class="reaction-feed" aria-live="polite">
@@ -428,6 +448,7 @@ import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/
 import { BattleEngine, type ElementLayerHudRow } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { buildNextWaveBrief } from './nextWaveBrief'
+import { buildWaveProgress } from './waveProgressHud'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
 // 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
@@ -470,6 +491,14 @@ function refreshElementHud(eng: BattleEngine): void {
   const rows = typeof eng.elementLayerHud === 'function' ? eng.elementLayerHud() : []
   r24ElementHud.value = Array.isArray(rows) ? rows : []
 }
+
+/** R27：引擎只读波次推进快照，step 后刷新；纯展示，不写回引擎。 */
+const r27ProgressRaw = ref<{ waveIndex: number; waveTotal: number; onField: number; pending: number } | null>(null)
+function refreshWaveProgress(eng: BattleEngine): void {
+  r27ProgressRaw.value = typeof eng.waveProgressHud === 'function' ? eng.waveProgressHud() : null
+}
+const r27Progress = computed(() => r27ProgressRaw.value ? buildWaveProgress(r27ProgressRaw.value) : null)
+
 const r24ElementRows = computed(() => r24ElementHud.value.map(row => {
   const elements = (Object.keys(row.stacks) as Element[]).filter(el => (row.stacks[el] ?? 0) > 0)
   const hints: R24Hint[] = []
@@ -1047,6 +1076,7 @@ function fallbackTick(): void {
   playBattleEvents(events)
   noteReactions(events)
   refreshElementHud(eng)
+  refreshWaveProgress(eng)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -1193,6 +1223,7 @@ async function setup() {
         playBattleEvents(events)
         noteReactions(events)
         refreshElementHud(eng)
+        refreshWaveProgress(eng)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -2608,4 +2639,30 @@ onShareAppMessage(() =>
 .r24-ai-conclusion { color: var(--text); font-size: 19rpx; }
 .r24-ai-basis, .r24-ai-honesty { color: var(--text-2); font-size: 18rpx; }
 .r24-ai-cta { color: var(--accent); font-size: 19rpx; font-weight: 700; pointer-events: auto; }
+
+/* R27 波次推进：容器自身单行紧凑、不抢占既有胶囊；hud-row 仍保留 flex-wrap: wrap */
+.r27-wave-progress {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex-shrink: 0;
+  max-height: 52rpx;
+  overflow: hidden;
+  padding: 0 12rpx;
+  border-radius: 999rpx;
+  background: var(--panel-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.r27-progress-body { display: inline-flex; flex-direction: row; align-items: center; gap: 8rpx; flex-shrink: 0; }
+.r27-progress-track { width: 90rpx; height: 6rpx; border-radius: 999rpx; background: rgba(88,166,255,.16); overflow: hidden; flex-shrink: 0; }
+.r27-progress-fill { height: 100%; background: var(--accent); }
+.r27-progress-text, .r27-progress-empty { color: var(--text); font-size: 19rpx; flex-shrink: 0; }
+.r27-progress-empty { color: var(--text-2); }
+.r27-ai-note { display: flex; flex-direction: column; gap: 2rpx; margin-top: 6rpx; padding: 6rpx 10rpx; background: var(--panel-2); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
+.r27-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
+.r27-ai-conclusion { color: var(--text); font-size: 18rpx; }
+.r27-ai-basis, .r27-ai-honesty { color: var(--text-2); font-size: 17rpx; }
+.r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
 </style>

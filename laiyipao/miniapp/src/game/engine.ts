@@ -808,6 +808,18 @@ export class BattleEngine {
     })
   }
 
+  /** R27：本波推进只读快照（波次总数 / 场上存活 / 待出场）。纯展示派生，不进 replay_hash。 */
+  waveProgressHud(): { waveIndex: number; waveTotal: number; onField: number; pending: number } {
+    const spawns = this.cfg.level.waves?.[this.waveIndex]?.spawns ?? []
+    const waveTotal = spawns.reduce((sum, sp) => sum + (Number(sp?.count) > 0 ? Number(sp.count) : 0), 0)
+    return {
+      waveIndex: this.waveIndex,
+      waveTotal,
+      onField: this.enemies.filter(e => !e.dead).length,
+      pending: this.spawnQueue.length,
+    }
+  }
+
   /** 因超过 200 条而丢弃过尾部事件时为 true */
   reactionTimelineTruncated(): boolean {
     return this.didTruncateReactionTimeline
