@@ -74,6 +74,17 @@ export interface ReactionTimelineEvent {
 /** 上限 200：超出保留最早 200 条并置 truncated */
 const REACTION_TIMELINE_LIMIT = 200
 
+/** R24 只读敌人元素层快照的单条结构（展示性预判，不进 replay_hash、不写回引擎） */
+export interface ElementLayerHudRow {
+  uid: number
+  defId: number
+  name: string
+  hp: number
+  maxHp: number
+  stacks: Partial<Record<Element, number>>
+  elementCap: number
+}
+
 /**
  * 回放前缀的 **S 段**（技能槽配置）—— 抽成纯函数。
  *
@@ -771,6 +782,30 @@ export class BattleEngine {
   /** R15：返回逐次反应旁路采集的快照（前 200 条，不进 replay_hash、不影响结算） */
   reactionTimeline(): ReactionTimelineEvent[] {
     return this.reactionTimelineEvents.slice()
+  }
+
+  /**
+   * R24：当前场上存活敌人的元素层只读快照（展示性预判，不进 replay_hash）。
+   * 只读取 this.enemies 与 stacks，返回深拷贝；层数 clamp 到当前 element_cap。
+   */
+  elementLayerHud(): ElementLayerHudRow[] {
+    const cap = Number(this.currentAttacker().elementCap)
+    return this.enemies.filter(e => !e.dead).map(e => {
+      const stacks: Partial<Record<Element, number>> = {}
+      for (const el of ELEMENT_ORDER) {
+        const n = e.stacks.get(el) ?? 0n
+        if (n > 0n) stacks[el] = Math.min(Number(n), cap)
+      }
+      return {
+        uid: e.uid,
+        defId: e.defId,
+        name: e.name,
+        hp: Number(e.hp),
+        maxHp: Number(e.maxHp),
+        stacks,
+        elementCap: cap,
+      }
+    })
   }
 
   /** 因超过 200 条而丢弃过尾部事件时为 true */

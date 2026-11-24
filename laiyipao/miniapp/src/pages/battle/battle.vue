@@ -48,6 +48,25 @@
           <text class="reaction-cue">AI {{ r.cue }}</text>
         </view>
       </view>
+      <!-- R24 实时元素层与反应触发预判：只读快照派生，纯展示不拦截点击 -->
+      <view class="r24-element-hud">
+        <view v-if="r24ElementRows.length" class="r24-hud-rows">
+          <view v-for="row in r24ElementRows" :key="row.uid" class="r24-enemy-row" :data-r24-uid="row.uid">
+            <text class="r24-enemy-name">{{ row.name }}</text>
+            <text class="r24-enemy-stacks">{{ row.elements.length ? row.elements.map(el => r24StackText(el, row.stackCounts[el])).join('·') : '无元素层' }}</text>
+            <text v-for="h in row.hints" :key="row.uid + '-' + h.reaction + '-' + h.incoming" class="r24-reaction-hint">{{ r24HintText(h) }}</text>
+          </view>
+          <text v-if="!r24HasHints" class="r24-hud-empty">当前场上无可预判的元素反应</text>
+        </view>
+        <text v-else class="r24-hud-empty">当前场上无可预判的元素反应</text>
+        <view class="r24-ai-note">
+          <text class="r24-ai-title">AI · 实时元素层预判</text>
+          <text class="r24-ai-conclusion">{{ r24Conclusion }}</text>
+          <text class="r24-ai-basis">依据：敌人 stacks 元素层 × REACTION_PAIRS(源自引擎 lookupReaction) 派生；只读快照不进 replay_hash</text>
+          <text class="r24-ai-cta" @click="openHelp">去释放对应元素技能 →</text>
+          <text class="r24-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
+        </view>
+      </view>
       <view class="hud-row">
         <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
              的时刻几乎总是"正在打"，让他退出战斗去找设置等于把开关藏起来。 -->
@@ -386,7 +405,7 @@ import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/u
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
-import { BattleEngine } from '@/game/engine'
+import { BattleEngine, type ElementLayerHudRow } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
@@ -405,7 +424,7 @@ import {
   logicIntervalMs,
   normalizeSpeed,
 } from '@/render/canvas'
-import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
+import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, lookupReaction, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
 import { damageShareFromEvents, defeatReview, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
@@ -422,6 +441,51 @@ const inst = getCurrentInstance()
 const canvasW = ref(375)
 const canvasH = ref(667)
 const engine = ref<BattleEngine | null>(null)
+
+/** R24：引擎只读元素层快照，tick 后刷新；纯展示，不写回引擎。 */
+const r24ElementHud = ref<ElementLayerHudRow[]>([])
+interface R24Hint { reaction: ReactionKey; existing: Element; incoming: Element }
+function refreshElementHud(eng: BattleEngine): void {
+  const rows = typeof eng.elementLayerHud === 'function' ? eng.elementLayerHud() : []
+  r24ElementHud.value = Array.isArray(rows) ? rows : []
+}
+const r24ElementRows = computed(() => r24ElementHud.value.map(row => {
+  const elements = (Object.keys(row.stacks) as Element[]).filter(el => (row.stacks[el] ?? 0) > 0)
+  const hints: R24Hint[] = []
+  const seen = new Set<string>()
+  for (const reaction of Object.keys(REACTION_PAIRS) as ReactionKey[]) {
+    for (const [existing, incoming] of REACTION_PAIRS[reaction]) {
+      if (!elements.includes(existing) || elements.includes(incoming)) continue
+      if (lookupReaction(existing, incoming) !== reaction) continue
+      const id = reaction + '|' + existing + '|' + incoming
+      if (seen.has(id)) continue
+      seen.add(id)
+      hints.push({ reaction, existing, incoming })
+    }
+  }
+  const stackCounts: Partial<Record<Element, number>> = {}
+  for (const el of elements) stackCounts[el] = row.stacks[el] ?? 0
+  return { ...row, elements, stackCounts, hints }
+}))
+const r24HasHints = computed(() => r24ElementRows.value.some(row => row.hints.length > 0))
+function r24StackText(el: Element, count: number | undefined): string {
+  const name: Record<Element, string> = ELEMENT_NAME
+  return String(name[el]) + String(count ?? 0)
+}
+function r24HintText(h: R24Hint): string {
+  return '已附着 ' + ELEMENT_NAME[h.existing] + ' + 再补 ' + ELEMENT_NAME[h.incoming] + ' → ' + REACTIONS[h.reaction].name + ' 反应'
+}
+const r24Conclusion = computed(() => {
+  const first = r24ElementRows.value.find(row => row.hints.length > 0)
+  if (!first) return '当前场上无可预判的元素反应，不编造建议'
+  const priority = ['superconduct', 'overheat', 'steam_burst'] as ReactionKey[]
+  const sorted = [...first.hints].sort((a, b) => {
+    const ia = priority.indexOf(a.reaction), ib = priority.indexOf(b.reaction)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+  const actions = sorted.slice(0, 2).map(h => '再补 ' + ELEMENT_NAME[h.incoming] + ' 可触发' + REACTIONS[h.reaction].name).join('、')
+  return 'AI 提示：' + first.name + '已附着' + ELEMENT_NAME[first.hints[0]!.existing] + '，' + actions
+})
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
@@ -955,6 +1019,7 @@ function fallbackTick(): void {
   const events = eng.step()
   playBattleEvents(events)
   noteReactions(events)
+  refreshElementHud(eng)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -1100,6 +1165,7 @@ async function setup() {
         // 音效与视觉同源：都从同一批事件来，不另算一份状态
         playBattleEvents(events)
         noteReactions(events)
+        refreshElementHud(eng)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -2467,4 +2533,26 @@ onShareAppMessage(() =>
 .r22-ai-conclusion { color: var(--text); font-size: 20rpx; }
 .r22-ai-basis, .r22-ai-honesty { color: var(--text-2); font-size: 19rpx; }
 .r22-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
+
+/* R24 实时元素层 HUD：沿用既有 token，零新增视觉令牌；顶部浮层不拦截点击 */
+.r24-element-hud {
+  margin-top: 8rpx;
+  padding: 8rpx 10rpx;
+  background: var(--panel-2);
+  border-left: 4rpx solid var(--accent);
+  border-radius: 8rpx;
+  font-size: 19rpx;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.r24-enemy-row { display: flex; flex-wrap: wrap; gap: 6rpx; margin-bottom: 4rpx; }
+.r24-enemy-name { color: var(--text); font-weight: 700; }
+.r24-enemy-stacks { color: var(--fire); }
+.r24-reaction-hint { color: var(--accent); flex-basis: 100%; }
+.r24-hud-empty { color: var(--text-2); }
+.r24-ai-note { display: flex; flex-direction: column; gap: 3rpx; margin-top: 6rpx; }
+.r24-ai-title { color: var(--accent); font-weight: 700; font-size: 20rpx; }
+.r24-ai-conclusion { color: var(--text); font-size: 19rpx; }
+.r24-ai-basis, .r24-ai-honesty { color: var(--text-2); font-size: 18rpx; }
+.r24-ai-cta { color: var(--accent); font-size: 19rpx; font-weight: 700; pointer-events: auto; }
 </style>
