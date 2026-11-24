@@ -235,6 +235,26 @@
         </text>
         <text v-if="cardChoiceFeedback" class="card-choice-feedback">{{ cardChoiceFeedback }}</text>
       </view>
+      <!-- R26 下一波敌情简报：只读派生展示，先看敌情再选卡；不碰引擎/结算/replay_hash -->
+      <view v-if="r26Brief" class="r26-wave-brief" role="region">
+        <text class="r26-brief-head">下一波 · 第 {{ r26Brief.waveIndex + 1 }} 波</text>
+        <view v-if="r26Brief.empty" class="r26-brief-empty">暂无下一波敌情信息</view>
+        <view v-else class="r26-enemy-list">
+          <view v-for="row in r26Brief.rows" :key="row.enemy_id" class="r26-enemy-row" :data-r26-enemy="row.enemy_id">
+            <text class="r26-enemy-name">{{ row.name }}</text>
+            <text v-if="row.unknown" class="r26-unknown-tag">[未知敌种]</text>
+            <text class="r26-enemy-count">×{{ row.count }}</text>
+            <text v-if="row.threat" class="r26-enemy-threat">{{ row.threat }}</text>
+          </view>
+        </view>
+        <view v-if="!r26Brief.empty" class="r26-ai-note" role="note">
+          <text class="r26-ai-title">AI · 下一波敌情</text>
+          <text class="r26-ai-conclusion">{{ r26Brief.ai }}</text>
+          <text class="r26-ai-basis">依据：当前关卡 waves[waveIndex+1].spawns 按 enemy_id 聚合；敌种名与威胁标签来自 /config.enemies</text>
+          <text class="r26-ai-cta">结合本波威胁与手牌元素协同选卡</text>
+          <text class="r26-ai-honesty">辅助简报非权威战斗数据，实际敌情以引擎波次为准；权威回放以 replay_hash 为准</text>
+        </view>
+      </view>
       <view class="cards">
         <view
           v-for="c in hand"
@@ -407,6 +427,7 @@ import * as api from '@/api/client'
 import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { BattleEngine, type ElementLayerHudRow } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
+import { buildNextWaveBrief } from './nextWaveBrief'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
 // 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
@@ -778,6 +799,12 @@ const levelTitle = computed(() => {
   return `第 ${lv.id} 关 · ${lv.name}`
 })
 const showCards = computed(() => engine.value?.phase === 'card_select' && !settleResult.value)
+/** R26 下一波敌情简报：只读派生自 eng.cfg.level.waves 与 store.config.enemies，不写回引擎。 */
+const r26Brief = computed(() => {
+  const eng = engine.value
+  if (!eng) return null
+  return buildNextWaveBrief(eng.cfg.level.waves, eng.waveIndex, store.enemyMap)
+})
 const deck = computed(() => engine.value?.deck ?? { discardsLeft: 0, size: 0 } as any)
 
 function elementName(e: Element): string {
@@ -2220,6 +2247,32 @@ onShareAppMessage(() =>
   line-height: 1.6;
   color: var(--dim);
 }
+
+/* R26 下一波敌情简报：限制高度可滚动，390×844 下手卡与按钮始终可见可点 */
+.r26-wave-brief {
+  max-height: 160rpx;
+  overflow-y: auto;
+  margin-bottom: 14rpx;
+  padding: 8rpx 12rpx;
+  border: 1rpx solid var(--border-soft);
+  background: var(--panel-2);
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  line-height: 1.4;
+}
+.r26-brief-head { display: block; font-weight: 700; color: var(--accent); margin-bottom: 4rpx; }
+.r26-enemy-list { display: flex; flex-direction: column; gap: 2rpx; }
+.r26-enemy-row { display: flex; flex-direction: row; align-items: center; gap: 8rpx; white-space: nowrap; overflow: hidden; }
+.r26-enemy-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.r26-enemy-count { color: var(--text); }
+.r26-enemy-threat { color: var(--warn); }
+.r26-unknown-tag { color: var(--muted); border: 1rpx solid var(--border-soft); border-radius: 6rpx; padding: 0 4rpx; }
+.r26-brief-empty { color: var(--muted); }
+.r26-ai-note { display: flex; flex-direction: column; gap: 2rpx; margin-top: 6rpx; padding-left: 8rpx; border-left: 3rpx solid var(--accent); }
+.r26-ai-title { color: var(--accent); font-weight: 700; }
+.r26-ai-conclusion { color: var(--text); }
+.r26-ai-basis, .r26-ai-honesty { color: var(--text-2); }
+.r26-ai-cta { color: var(--accent); }
 
 .cards {
   display: flex;
