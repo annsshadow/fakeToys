@@ -26,11 +26,12 @@ import AiInsightCard from "@/components/AiInsightCard.vue"
 import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
 import type { AiInsight } from '@/utils/aiInsight'
 import { spreadStacksText, armorShredText, knockbackText } from '@/reactionMechanicsText'
+import { kindText, cooldownText, pierceText, aoeRadiusText, chainText, buildSkillMechanicsAi, SKILL_AI_CTA } from '@/skillMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
   enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; descr: string }>
-  skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; apply_stacks: number; descr: string }>
+  skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; chain: number; apply_stacks: number; descr: string }>
   composite_skills: Array<{ id: number; name: string; element: string; descr: string }>
   // 装备目录（2026-10-21 P6-12）。
   //
@@ -911,33 +912,55 @@ onUnmounted(() => {
 
         <!-- 技能 -->
         <section v-show="activeTab === 'skills'" class="wiki-section">
-          <div id="skill-table">
-            <el-table
-              :data="cfg?.skills ?? []"
-              size="small"
-              border
-              stripe
-              :row-class-name="rowFocusClass('skill')"
-            >
-              <el-table-column prop="id" label="ID" width="55" />
-              <el-table-column prop="name" label="名称" min-width="120" />
-              <el-table-column label="元素" width="80">
-                <template #default="{ row }">
-                  <span :style="{ color: ELEMENT_COLOR[row.element], fontWeight: 600 }">
-                    {{ ELEMENT_LABEL[row.element] ?? row.element }}
-                  </span>
+          <div id="skill-table" class="r32-skill-mechanics">
+            <div class="r32-skill-table-scroll">
+              <el-table
+                :data="cfg?.skills ?? []"
+                size="small"
+                border
+                stripe
+                :row-class-name="rowFocusClass('skill')"
+              >
+                <el-table-column prop="id" label="ID" width="55" />
+                <el-table-column prop="name" label="名称" min-width="120" />
+                <el-table-column label="元素" width="80">
+                  <template #default="{ row }">
+                    <span :style="{ color: ELEMENT_COLOR[row.element], fontWeight: 600 }">
+                      {{ ELEMENT_LABEL[row.element] ?? row.element }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="family" label="系别" width="90" />
+                <el-table-column prop="base_damage" label="伤害" width="76" />
+                <el-table-column prop="heat_cost" label="热量" width="70" />
+                <el-table-column label="冷却" width="86">
+                  <template #default="{ row }">{{ cooldownText(row.cooldown_ms) }}</template>
+                </el-table-column>
+                <el-table-column label="类型" width="80">
+                  <template #default="{ row }">{{ kindText(row.kind) }}</template>
+                </el-table-column>
+                <el-table-column label="穿透" width="80">
+                  <template #default="{ row }">{{ pierceText(row.pierce) }}</template>
+                </el-table-column>
+                <el-table-column label="范围" width="90">
+                  <template #default="{ row }">{{ aoeRadiusText(row.aoe_radius) }}</template>
+                </el-table-column>
+                <el-table-column label="连锁" width="80">
+                  <template #default="{ row }">{{ chainText(row.chain) }}</template>
+                </el-table-column>
+                <el-table-column prop="apply_stacks" label="层数" width="66" />
+                <el-table-column prop="descr" label="说明" min-width="180" />
+                <template #empty>
+                  <el-empty :description="emptyText" :image-size="60" />
                 </template>
-              </el-table-column>
-              <el-table-column prop="family" label="系别" width="90" />
-              <el-table-column prop="base_damage" label="伤害" width="76" />
-              <el-table-column prop="heat_cost" label="热量" width="70" />
-              <el-table-column prop="cooldown_ms" label="冷却" width="86" />
-              <el-table-column prop="apply_stacks" label="层数" width="66" />
-              <el-table-column prop="descr" label="说明" min-width="180" />
-              <template #empty>
-                <el-empty :description="emptyText" :image-size="60" />
-              </template>
-            </el-table>
+              </el-table>
+            </div>
+            <div class="r32-ai-note">
+              <p class="r32-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildSkillMechanicsAi(cfg?.skills ?? []) }}</p>
+              <p class="r32-ai-basis">依据：公开 /api/v1/config 的 skills（与 H5 引擎同源 SeedSkill）；格式化仅展示，不改结算</p>
+              <p class="r32-ai-cta" :data-r32-cta="SKILL_AI_CTA"><a :href="urlFor('skills', 'composite')" @click.prevent="goTo({ tab: 'skills', anchor: 'composite' })">查看合成技能 →</a></p>
+              <p class="r32-ai-honesty">辅助展示非权威战斗数据，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+            </div>
           </div>
 
           <h4 id="composite" style="margin-top: 16px">合成技能</h4>
@@ -1519,5 +1542,29 @@ h4 {
   .nav-sub {
     display: none;
   }
+}
+
+/* R32：技能机制表表内横向滚动，不造成页面级溢出 */
+.r32-skill-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r32-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r32-ai-note p {
+  margin: 2px 0;
+}
+.r32-ai-basis,
+.r32-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r32-ai-cta a {
+  color: var(--lyp-accent);
 }
 </style>
