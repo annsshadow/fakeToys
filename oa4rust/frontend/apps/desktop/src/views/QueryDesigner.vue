@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="query-designer modern-page ai-page">
+  <div class="query-designer modern-page ai-page-b5 ai-panel">
     <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-create" @click="openCreate">+ 新建查询</button>
       <button class="btn-outline" @click="showSqlEditor=true">📝 SQL编辑</button>

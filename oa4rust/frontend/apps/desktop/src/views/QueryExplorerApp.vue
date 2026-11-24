@@ -6,7 +6,7 @@
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="search" search-placeholder="搜索视图 / 类型..." />
 
-  <div class="crud-view modern-page ai-page">
+  <div class="crud-view modern-page ai-page-b5 ai-panel">
     <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>

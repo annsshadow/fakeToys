@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view modern-page ai-page" data-testid="form-page">
+  <div class="mod-view modern-page ai-page-b5 ai-panel" data-testid="form-page">
     <!-- Main content -->
     <section class="modern-section glass-card content-panel ai-page ai-panel">
       <!-- Tabs -->

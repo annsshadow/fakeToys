@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>  <div class="mod-view modern-page ai-page">
+<template>  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="查询视图" subtitle="/api/queryview/* — 执行查询视图、导出 Excel" />
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="keyword" search-placeholder="搜索视图..." />

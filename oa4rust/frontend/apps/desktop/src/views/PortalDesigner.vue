@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="designer-shell modern-page ai-page">
+  <div class="designer-shell modern-page ai-page-b5 ai-panel">
     <header class="designer-header glass-card ai-page ai-panel">
       <div class="header-actions">
         <button class="btn" @click="showCreate = true">新建设计</button>

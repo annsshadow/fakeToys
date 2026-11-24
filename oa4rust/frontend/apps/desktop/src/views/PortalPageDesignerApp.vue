@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view modern-page ai-page">
+  <div class="crud-view modern-page ai-page-b5 ai-panel">
     <div class="view-header glass-card ai-page ai-panel">
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>

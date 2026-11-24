@@ -5,7 +5,7 @@
     <AdminPageHeader title="查询视图设计器" subtitle="/api/query/assemble/designer/view/* — 可视化过滤、排序、分页（原操作入口完整保留）" />
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
 
-  <div class="designer-shell modern-page ai-page">
+  <div class="designer-shell modern-page ai-page-b5 ai-panel">
     <header class="designer-header glass-card ai-page ai-panel"><div class="actions"><button class="btn" @click="newView">新建视图</button><button class="btn primary" :disabled="!canSave||saving" @click="saveView">{{saving?'保存中…':'保存'}}</button><button class="btn" :disabled="!activeId" @click="simulate">模拟</button><button class="btn" :disabled="!activeId" @click="bundle">Bundle</button></div></header>
     <div class="query-picker glass-card"><label>Query Flag<input v-model="queryFlag" placeholder="输入后加载视图" @change="loadViews" /></label><button class="btn" :disabled="!queryFlag.trim()" @click="loadViews">加载</button><span>后端只提供按 Query Flag 列表，未提供全量视图列表。</span></div>
     <main class="main-grid"><aside class="list glass-card"><h2>视图</h2><button v-for="item in views" :key="item.id" class="view-item" :class="{active:item.id===activeId}" @click="openView(item.id)"><strong>{{item.name}}</strong><span>{{item.viewFlag}}</span></button><p v-if="!views.length" class="muted">该 Query 下暂无视图</p></aside>
