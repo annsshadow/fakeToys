@@ -74,7 +74,7 @@
           <text class="r28-feed-ai-conclusion">{{ r28Ai.conclusion }}</text>
           <text class="r28-feed-ai-basis">依据：R15 reactionTimeline 逐次事件（wave/enemy_uid/reaction/damage）按事件发射顺序配对；截断或不匹配如实标注归因不可用</text>
           <text class="r28-feed-ai-honesty">辅助归因非权威判据，权威以 replay_hash 为准</text>
-          <text class="r28-feed-cta" @click.stop="openHelp">查看完整反应时间线 →</text>
+          <text class="r28-feed-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</text>
         </view>
       </view>
       <!-- R24 实时元素层与反应触发预判：只读快照派生，纯展示不拦截点击 -->
@@ -253,6 +253,33 @@
       </view>
     </view>
 
+    <!-- R29：完整反应时间线抽屉（R28 CTA 打开；只读派生，不改引擎权威） -->
+    <view v-if="reactionTimelineVisible" class="r29-timeline-overlay" @click="closeReactionTimeline">
+      <view class="r29-timeline-box" @click.stop>
+        <view class="r29-timeline-head">
+          <text class="r29-timeline-title">AI · 完整反应时间线</text>
+          <view class="r29-timeline-close" @click="closeReactionTimeline"><text>×</text></view>
+        </view>
+        <text v-if="r29Timeline.empty" class="r29-timeline-empty">本局暂无逐次反应记录</text>
+        <block v-else>
+          <text v-if="!r29Timeline.empty" class="r29-timeline-conclusion">本局显示 {{ rows.length }} 条逐次反应记录</text>
+          <text v-if="r29Timeline.truncated" class="r29-timeline-truncated">已截断，仅显示前 200 条</text>
+          <scroll-view scroll-y class="r29-timeline-scroll">
+            <view
+              v-for="row in rows"
+              :key="row.index"
+              class="r29-timeline-row"
+              :data-r29-index="row.index"
+              :data-r29-wave="row.wave"
+              :data-r29-enemy="row.enemy_uid"
+            >第{{ row.wave }}波 · {{ row.tick }} · {{ row.reactionName }} · #{{ row.enemy_uid }} · {{ row.damage.toFixed(1) }} 伤害</view>
+          </scroll-view>
+        </block>
+        <text class="r29-timeline-basis">依据：引擎 reactionTimeline() 只读旁路（前 200 条，不进 replay_hash）；反应名以服务端 config.reactions 为准</text>
+        <text class="r29-timeline-honesty">辅助展示非权威判据，权威以 replay_hash 为准</text>
+      </view>
+    </view>
+
     <!-- 选牌界面（I-2） -->
     <view v-if="showCards" class="sheet">
       <view class="card-header">
@@ -414,6 +441,8 @@
       </view>
       <text v-if="settleFailed" class="hash-note">本地回放哈希 {{ settleResult.replay_hash }}（未入账，仅供排障）</text>
       <text v-else class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
+      <!-- t227：结算 sheet 遮挡战斗态 R28 feed CTA，结果页提供真实可见可点的时间线入口 -->
+      <view class="r29-result-timeline-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</view>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
            跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
       <view
@@ -459,6 +488,7 @@ import { equippedFromSnapshot } from '@/game/replay'
 import { buildNextWaveBrief } from './nextWaveBrief'
 import { buildWaveProgress } from './waveProgressHud'
 import { attributeLiveReactions, attributionText, buildLiveFeedAi } from './liveReactionFeed'
+import { buildReactionTimelineView } from './reactionTimelineView'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
 // 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
@@ -582,6 +612,12 @@ interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string
 const recentReactions = ref<ReactionLog[]>([])
 /** R28：最近三条反应的归因 AI 说明（来自真实匹配计数，纯只读派生）。 */
 const r28Ai = ref(buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 }))
+/** R29：完整反应时间线抽屉的只读展示快照（打开时从引擎只读旁路派生一次）。 */
+const reactionTimelineVisible = ref(false)
+let timelinePausedByDrawer = false
+const r29Timeline = ref(buildReactionTimelineView(null, false, []))
+/** 抽屉列表行；模板逐字用 {{ rows.length }} 显示过滤后的真实条数。 */
+const rows = computed(() => r29Timeline.value.rows)
 let reactionSeq = 0
 /** R9：累计本局真实 hit/reaction 事件金额，只用于展示「反应伤害占比」，不进回放哈希。 */
 const damageShare = ref<DamageShare>({ reactionDamage: 0, totalDamage: 0, ratioPct: null })
@@ -944,6 +980,8 @@ const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
 let helpPausedByPage = false
 
 function openHelp() {
+  // R29 互斥：打开图例前无条件关闭时间线抽屉（函数声明 hoisting 可用）
+  closeReactionTimeline()
   if (helpVisible.value) {
     closeHelp()
     return
@@ -964,6 +1002,44 @@ function closeHelp() {
   helpVisible.value = false
   if (helpPausedByPage) {
     helpPausedByPage = false
+    doResume()
+  }
+}
+
+/**
+ * R29：打开完整反应时间线抽屉。
+ *
+ * 先无条件 closeHelp() 保证与图例互斥（图例暂停会被它自己恢复）；
+ * 再从引擎只读旁路 + 服务端反应名构建展示快照；仅当当前未暂停且未结算时
+ * 才代为暂停，并只记「由本抽屉暂停」，绝不碰图例/倍速的记账。
+ */
+function openReactionTimeline() {
+  closeHelp()
+  if (reactionTimelineVisible.value) {
+    closeReactionTimeline()
+    return
+  }
+  const eng = engine.value as BattleEngine | null
+  const reactionDefs = store.config ? store.config.reactions : []
+  const events = eng ? eng.reactionTimeline() : []
+  const truncated = eng ? eng.reactionTimelineTruncated() : false
+  r29Timeline.value = buildReactionTimelineView(
+    events,
+    Boolean(truncated),
+    reactionDefs,
+  )
+  reactionTimelineVisible.value = true
+  if (!paused.value && !settled.value) {
+    doPause()
+    timelinePausedByDrawer = true
+  }
+}
+
+/** R29：关闭抽屉；只恢复本抽屉造成的暂停，不覆盖玩家原有暂停/图例/倍速。 */
+function closeReactionTimeline() {
+  reactionTimelineVisible.value = false
+  if (timelinePausedByDrawer) {
+    timelinePausedByDrawer = false
     doResume()
   }
 }
@@ -1225,6 +1301,9 @@ async function setup() {
     })
     recentReactions.value = []
     r28Ai.value = buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 })
+    reactionTimelineVisible.value = false
+    timelinePausedByDrawer = false
+    r29Timeline.value = buildReactionTimelineView(null, false, [])
     damageShare.value = { reactionDamage: 0, totalDamage: 0, ratioPct: null }
     settleCardPicks.value = []
     cardChoiceVersion.value++
@@ -2712,4 +2791,40 @@ onShareAppMessage(() =>
 .r28-feed-ai-conclusion { color: var(--text); font-size: 18rpx; }
 .r28-feed-ai-basis, .r28-feed-ai-honesty { color: var(--text-2); font-size: 17rpx; }
 .r28-feed-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
+/* R29 完整反应时间线抽屉：z-index 40 高于图例/暂停(30)与结算 sheet(auto) */
+.r29-timeline-overlay {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.r29-timeline-box {
+  width: 90%;
+  max-height: 84vh;
+  padding: 24rpx 24rpx 18rpx;
+  border-radius: 20rpx;
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  box-shadow: var(--shadow-2);
+  pointer-events: auto;
+}
+.r29-timeline-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.r29-timeline-title { color: var(--accent); font-weight: 700; font-size: 30rpx; }
+.r29-timeline-close { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--panel-2); color: var(--muted); font-size: 34rpx; }
+.r29-timeline-conclusion { color: var(--text); font-size: 20rpx; }
+.r29-timeline-empty { color: var(--text-2); font-size: 20rpx; padding: 20rpx 0; }
+.r29-timeline-truncated { color: var(--warn); font-size: 18rpx; }
+.r29-timeline-scroll { max-height: 70vh; overflow-y: auto; width: 100%; }
+.r29-timeline-row { display: block; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); color: var(--text); font-size: 19rpx; line-height: 1.35; }
+.r29-timeline-basis, .r29-timeline-honesty { color: var(--text-2); font-size: 17rpx; line-height: 1.35; }
+/* t227 结算结果页时间线入口：可见可点，沿用现有 token，不新增 --r29- */
+.r29-result-timeline-cta { margin-top: 20rpx; padding: 18rpx 24rpx; border-radius: 14rpx; background: var(--panel-2); border: 1rpx solid var(--glass-border); color: var(--accent); font-size: 20rpx; font-weight: 700; text-align: center; pointer-events: auto; }
 </style>
