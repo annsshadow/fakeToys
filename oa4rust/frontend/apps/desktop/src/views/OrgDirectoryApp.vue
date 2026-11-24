@@ -681,19 +681,19 @@ async function orgAuth(op: string): Promise<void> {
 .manage-row { display: flex; flex-wrap: wrap; gap: 8px }
 /* R300 B3：通讯录域 AI 令牌覆盖。 */
 .ai-page.dir-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
-.ai-page .modern-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .modern-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: var(--ai-glass-blur); }
 .ai-page .modern-hero h1 { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .ai-page .search-form { display: grid; grid-template-columns: 1fr auto; gap: var(--ai-grid-2); align-items: center; }
 .ai-page .search-section,
 .ai-page .tree-section,
-.ai-page .person-section { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
+.ai-page .person-section { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: var(--ai-glass-blur); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
 .ai-page .tree-node { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: calc(var(--ai-grid-1) + 2px); transition: background var(--ai-motion-fast) var(--ai-ease-spring), transform var(--ai-motion-fast) var(--ai-ease-spring); }
 .ai-page .tree-node:hover { transform: translateX(2px); border-color: var(--ai-indigo); }
 .ai-page .run-btn { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); }
 .ai-page .person-avatar { background: var(--ai-gradient-brand); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; transition: transform var(--ai-motion-fast) var(--ai-ease-spring); }
 .ai-page .person-item:hover .person-avatar { transform: scale(1.08); }
 .ai-page .person-item { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); }
-.ai-page .dept-tree-panel { margin-top: var(--ai-grid-2); padding: var(--ai-grid-2); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .dept-tree-panel { margin-top: var(--ai-grid-2); padding: var(--ai-grid-2); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); backdrop-filter: var(--ai-glass-blur); }
 .ai-page .dept-tree-panel .panel-header { display: flex; align-items: center; justify-content: space-between; gap: var(--ai-grid-2); }
 .ai-page .dept-tree-panel .panel-header h3 { margin: 0; font-size: 14px; }
 .ai-page .dept-tree-loading { padding: var(--ai-grid-2); color: var(--text-muted); }

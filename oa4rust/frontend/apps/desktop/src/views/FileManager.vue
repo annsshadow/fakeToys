@@ -1503,8 +1503,8 @@ async function loadFileTwin3() {
 .btn-sm{padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;font-size:12px;background:var(--bg-elevated);color:var(--text-primary)}
 .btn-primary{padding:6px 14px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);cursor:pointer;font-size:13px;font-weight:500}
 .loading-state,.empty-state{display:flex;flex-direction:column;align-items:center;padding:40px;color:var(--text-muted);gap:12px}
-.skeleton-row{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.skeleton-row{height:40px;border-radius:var(--radius-md);background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.sk{height:40px;border-radius:var(--radius-md);background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 .empty-icon{font-size:48px;opacity:.4}
 .empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}

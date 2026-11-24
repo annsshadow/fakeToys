@@ -3247,7 +3247,7 @@ function fmtTime(value: unknown): string {
 .ai-page.work-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
 .ai-page.work-view.ai-panel { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-2); }
 .ai-gradient-text { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.ai-page .work-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: blur(var(--ai-glass-blur)); }
+.ai-page .work-hero { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); backdrop-filter: var(--ai-glass-blur); }
 .ai-page .work-hero .admin-title { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .ai-page .tabs { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-2); }
 .ai-page .tab-btn.active { background: var(--ai-gradient-brand); color: #fff; border-radius: calc(var(--ai-grid-1) + 2px); }
