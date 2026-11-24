@@ -1515,4 +1515,5 @@ async function loadFileTwin3() {
 .ref-chip{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);font-size:12px}
 .detail-line{font-size:13px;color:var(--text-secondary);margin:6px 0}
 .detail-preview{max-width:100%;max-height:320px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-top:8px}
+.icon-action{min-width:24px;min-height:24px}
 </style>
