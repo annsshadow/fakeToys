@@ -196,6 +196,11 @@ augmentor/up.json
 augmentor/checkpoints/
 
 
+# R20 audit evidence (temporary credentials/dumps; never commit)
+docs/laiyipao/audits/round20-combat-efficiency-trends/data/
+docs/laiyipao/audits/round20-combat-efficiency-trends/auth-init.js
+docs/laiyipao/audits/round20-combat-efficiency-trends/admin-probe.js
+
 # OpenCode
 .backups/
 .opencode/
