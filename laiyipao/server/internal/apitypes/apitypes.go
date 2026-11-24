@@ -110,6 +110,9 @@ var AdminRegistry = tygen.Registry{
 	// R18 反应伤害贡献聚合（次数仍以 ReactionCount/物化视图为准）。
 	{Name: "ReactionDamageImpactItem", Go: service.ReactionDamageImpactItem{}},
 	{Name: "ReactionDamageImpactResp", Go: service.ReactionDamageImpactResp{}},
+	// R19 玩家反应伤害贡献（次数取 reactions_used，按当前 user + 30 天窗口）。
+	{Name: "MeReactionDamageImpactItem", Go: service.MeReactionDamageImpactItem{}},
+	{Name: "MeReactionDamageImpactResp", Go: service.MeReactionDamageImpactResp{}},
 	{Name: "DauPoint", Go: service.DauPoint{}},
 	{Name: "StageFunnel", Go: service.StageFunnel{}},
 	{Name: "AdminUserView", Go: service.AdminUserView{}},

@@ -31,6 +31,34 @@
           {{ ELEMENT_NAME[el] }}
         </text>
       </view>
+
+      <!-- R19：玩家逐次反应伤害贡献（辅助分析，非权威结算） -->
+      <view class="card r19-my-reaction-impact r3-enter" role="region" aria-label="我的反应伤害贡献">
+        <view class="r19-rdi-head">
+          <text class="r19-rdi-title">我的反应伤害贡献</text>
+          <text class="r19-rdi-window">{{ rdiWindowText }}</text>
+        </view>
+        <view class="r19-view-toggle" aria-label="贡献视图切换">
+          <text class="r19-toggle-btn" :class="{ active: rdiView === 'count' }" @click="rdiView = 'count'">次数</text>
+          <text class="r19-toggle-btn" :class="{ active: rdiView === 'damage' }" @click="rdiView = 'damage'">伤害</text>
+        </view>
+        <view v-if="!rdiAvailable || rdiItems.length === 0" class="r19-rdi-empty">近 30 天无逐次反应伤害记录</view>
+        <view v-else class="r19-rdi-list">
+          <view v-for="row in rdiRows" :key="row.reaction" class="r19-rdi-row" :data-r19-reaction="row.reaction">
+            <text class="r19-rdi-name">{{ row.name }}</text>
+            <text v-if="rdiView === 'count'" class="r19-rdi-metric">权威 {{ row.count }} 次 · 事件 {{ row.events }} 条</text>
+            <text v-else class="r19-rdi-metric">占比 {{ rdiPct(row.damage_share_pct) }} · 总伤害 {{ rdiDamage(row.total_damage) }}</text>
+          </view>
+        </view>
+        <view class="r19-rdi-meta">已排除 {{ rdiExcluded }} 条无逐次记录的旧战报</view>
+        <view class="r19-ai-note">
+          <text class="r19-ai-title">AI · 我的反应伤害洞察</text>
+          <text class="r19-ai-conclusion">{{ rdiAiConclusion }}</text>
+          <text class="r19-ai-basis">依据：近 30 天 reaction_timeline.events 的 damage 聚合；触发次数以 reactions_used 为准</text>
+          <text class="r19-ai-cta" @click="rdiGoAuthority">查看权威结算 →</text>
+        </view>
+        <view class="r19-rdi-honesty">辅助分析非权威结算依据，权威请看 replay_hash</view>
+      </view>
       <view v-if="r6Loading" class="r6-skeleton r6-enter" aria-hidden="true">
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 42%" /></view>
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 86%" /></view>
@@ -260,6 +288,7 @@ import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
 import { fetchAdviceAction, applyAdviceAction, type R14AdviceAction } from '@/pages/_shared/r14AdviceAction'
+import { fetchMyReactionDamageImpact, type ReactionDamageImpact, type ReactionImpactItem } from '@/api/client'
 
 const store = useGameStore()
 
@@ -392,11 +421,13 @@ async function loadPage(): Promise<void> {
 
 onLoad(() => {
   void loadPage()
+  void loadRdiImpact()
 })
 
 onMounted(() => {
-  // onLoad 在 H5 上可能早于组件挂载，这里补一次（loadPage 本身幂等）。
+  // onLoad 在 H5 上可能早于组件挂载，这里补一次（loadPage/loadRdiImpact 本身幂等）。
   void loadPage()
+  void loadRdiImpact()
 })
 
 /** R3 FilterBar：在既有搜索结果上按元素二次筛选，不改动原搜索 computed。 */
@@ -434,6 +465,66 @@ function r3GoSkills() {
 /** R11补丁：evidence.value 为 number|string；数字一位小数，字符串（配置版本 sha）原样。 */
 function fmtEv(v: number | string | null | undefined): string {
   return typeof v === 'number' ? (Number.isFinite(v) ? v.toFixed(1) : '—') : (v == null ? '—' : String(v))
+}
+
+/* R19：玩家反应伤害贡献卡。辅助分析，绝不参与/冒充权威结算。 */
+const rdiImpact = ref<ReactionDamageImpact | null>(null)
+const rdiAvailable = ref(false)
+const rdiView = ref<'count' | 'damage'>('count')
+
+function rdiNum(v: unknown): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0
+}
+function rdiPct(v: number): string {
+  return rdiNum(v).toFixed(1) + '%'
+}
+function rdiDamage(v: number): string {
+  return rdiNum(v).toFixed(1)
+}
+
+async function loadRdiImpact() {
+  try {
+    const data = await fetchMyReactionDamageImpact()
+    const items = Array.isArray(data?.items) ? data.items.filter((it): it is ReactionImpactItem =>
+      !!it && typeof it.reaction === 'string' && Number.isFinite(Number(it.count))) : []
+    rdiImpact.value = {
+      window_days: rdiNum(data?.window_days),
+      window_from: String(data?.window_from ?? ''),
+      window_to: String(data?.window_to ?? ''),
+      excluded_old_battles: rdiNum(data?.excluded_old_battles),
+      items,
+    }
+    rdiAvailable.value = true
+  } catch {
+    // 端点尚未全量铺开或网络失败：走诚实空态，不编造数据。
+    rdiImpact.value = null
+    rdiAvailable.value = false
+  }
+}
+
+const rdiItems = computed<ReactionImpactItem[]>(() => rdiImpact.value?.items ?? [])
+const rdiExcluded = computed(() => rdiNum(rdiImpact.value?.excluded_old_battles))
+const rdiWindowText = computed(() => {
+  const d = rdiImpact.value
+  return d && d.window_from && d.window_to ? d.window_from + ' ~ ' + d.window_to + '（' + rdiNum(d.window_days) + ' 天）' : '近 30 天'
+})
+const rdiRows = computed(() => {
+  const list = [...rdiItems.value].map((it) => ({ ...it, name: reactionName(it.reaction) }))
+  if (rdiView.value === 'damage') list.sort((a, b) => rdiNum(b.damage_share_pct) - rdiNum(a.damage_share_pct))
+  return list
+})
+const rdiAiConclusion = computed(() => {
+  const sorted = [...rdiItems.value].sort((a, b) => rdiNum(b.count) - rdiNum(a.count))
+  const top = sorted[0]
+  if (!top) return '暂无可用数据'
+  const damageTop = [...rdiItems.value].sort((a, b) => rdiNum(b.damage_share_pct) - rdiNum(a.damage_share_pct))[0]
+  if (damageTop && damageTop.reaction !== top.reaction) {
+    return reactionName(top.reaction) + ' 触发 ' + rdiNum(top.count) + ' 次但伤害贡献仅 ' + rdiPct(top.damage_share_pct) + '，伤害主力是 ' + reactionName(damageTop.reaction) + '（' + rdiPct(damageTop.damage_share_pct) + '），疑似高频低伤'
+  }
+  return reactionName(top.reaction) + ' 触发 ' + rdiNum(top.count) + ' 次，贡献 ' + rdiPct(top.damage_share_pct) + ' 的伤害，是当前主力反应'
+})
+function rdiGoAuthority() {
+  uni.navigateTo({ url: '/pages/battles/battles' })
 }
 
 /* R6 §1E：反应链结论优先读真实战斗/配置推荐；接口缺席才用本地规则并标注。 */
@@ -588,4 +679,24 @@ void loadR6Recommendation()
   border-radius: 999rpx;
   background: rgba(127, 127, 127, 0.12);
 }
+/* R19：玩家反应伤害贡献卡（沿用既有 token，零新增视觉令牌） */
+.r19-my-reaction-impact { margin: 24rpx 0; padding: 24rpx; background: var(--panel-2); border: 1px solid var(--border-soft); border-radius: 18rpx; }
+.r19-rdi-head { display: flex; flex-direction: row; justify-content: space-between; align-items: center; }
+.r19-rdi-title { font-size: 30rpx; font-weight: 700; color: var(--text); }
+.r19-rdi-window { font-size: 20rpx; color: var(--text-2); }
+.r19-view-toggle { display: inline-flex; gap: 8rpx; margin: 18rpx 0 12rpx; }
+.r19-toggle-btn { padding: 8rpx 22rpx; border-radius: 999rpx; font-size: 22rpx; color: var(--text-2); background: rgba(127,127,127,.12); }
+.r19-toggle-btn.active { color: var(--text); background: var(--accent); }
+.r19-rdi-list { display: flex; flex-direction: column; gap: 8rpx; }
+.r19-rdi-row { display: flex; flex-direction: row; justify-content: space-between; gap: 12rpx; padding: 12rpx 16rpx; border-radius: 10rpx; background: rgba(127,127,127,.08); }
+.r19-rdi-name { font-size: 24rpx; color: var(--text); }
+.r19-rdi-metric { font-size: 22rpx; color: var(--text-2); text-align: right; }
+.r19-rdi-empty { padding: 24rpx 0; font-size: 24rpx; color: var(--text-2); text-align: center; }
+.r19-rdi-meta { margin-top: 12rpx; font-size: 20rpx; color: var(--warn); }
+.r19-ai-note { margin-top: 18rpx; padding: 16rpx; border-left: 4rpx solid var(--accent); background: rgba(88,166,255,.08); border-radius: 0 10rpx 10rpx 0; display: flex; flex-direction: column; gap: 8rpx; }
+.r19-ai-title { font-size: 24rpx; font-weight: 700; color: var(--text); }
+.r19-ai-conclusion { font-size: 22rpx; color: var(--text); }
+.r19-ai-basis { font-size: 19rpx; color: var(--text-2); }
+.r19-ai-cta { margin-top: 4rpx; font-size: 22rpx; color: var(--accent); text-decoration: underline; }
+.r19-rdi-honesty { margin-top: 10rpx; font-size: 19rpx; color: var(--text-2); }
 </style>

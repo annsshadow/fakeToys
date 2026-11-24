@@ -486,6 +486,22 @@ export interface MasteryNode {
   prereq_layer: number
 }
 
+export interface MeReactionDamageImpactItem {
+  reaction: string
+  total_damage: number
+  damage_share_pct: number
+  events: number
+  count: number
+}
+
+export interface MeReactionDamageImpactResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  excluded_old_battles: number
+  items: MeReactionDamageImpactItem[]
+}
+
 export interface QualityInfo {
   name: string
   affix_count: number

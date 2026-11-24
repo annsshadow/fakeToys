@@ -1343,6 +1343,29 @@ export function myBattleDetail(id: number): Promise<BattleDetail> {
 }
 
 /**
+ * R19：当前玩家的近 30 天逐次反应伤害贡献（鉴权端点，仅按 user_id 过滤）。
+ * count 为权威触发次数（reactions_used），events 仅为时间线事件条数，
+ * 二者不可混用；旧战报无逐次记录时次数仍入 count 但伤害不计。
+ */
+export interface ReactionImpactItem {
+  reaction: string
+  total_damage: number
+  damage_share_pct: number
+  events: number
+  count: number
+}
+export interface ReactionDamageImpact {
+  window_days: number
+  window_from: string
+  window_to: string
+  excluded_old_battles: number
+  items: ReactionImpactItem[]
+}
+export function fetchMyReactionDamageImpact(): Promise<ReactionDamageImpact> {
+  return request<ReactionDamageImpact>('/me/reaction-damage-impact')
+}
+
+/**
  * 我的购买记录（2026-10-30 实质优化第 20 轮）。
  *
  * 服务端 `GET /me/purchases` 返回最近 20 条商城购买记录

@@ -128,6 +128,8 @@ func (s *Server) Register(app *fiber.App) {
 	me.Get("/recommendations", s.meRecommendations)
 	// R7 缺口3：推荐落地收益预估（只读，参数 kind/id/replace 缺一不可）。
 	me.Get("/recommendations/impact", s.meRecommendationImpact)
+	// R19 玩家反应伤害贡献聚合（辅助分析，非权威结算凭据）。
+	me.Get("/reaction-damage-impact", s.meReactionDamageImpact)
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
