@@ -242,9 +242,33 @@
             >{{ elementName(c.element) }}</text>
             <text class="dim" @click.stop="discardCard(c.id)">弃</text>
           </view>
+          <!-- R22 选卡反应协同预判：纯展示派生，不改卡牌点击/弃牌行为 -->
+          <view class="r22-synergy-card">
+            <template v-if="synergyOf(c).kind === 'added'">
+              <text class="r22-synergy-line">AI · 新增【{{ synergyOf(c).addedNames[0] }}】等{{ synergyOf(c).added.length }}种反应</text>
+              <view class="r22-synergy-tags">
+                <text v-for="k in synergyOf(c).added" :key="k" class="r22-synergy-tag" :data-r22-reaction="k">{{ reactionName(k) }}</text>
+              </view>
+              <text class="r22-synergy-match">可搭配 {{ synergyOf(c).partners.map(elementName).join('·') }}</text>
+            </template>
+            <template v-else-if="synergyOf(c).kind === 'reinforced'">
+              <text class="r22-synergy-line">AI · 强化已有【{{ synergyOf(c).reinforcedNames[0] }}】</text>
+              <view class="r22-synergy-tags">
+                <text v-for="k in synergyOf(c).reinforced" :key="k" class="r22-synergy-tag" :data-r22-reaction="k">{{ reactionName(k) }}</text>
+              </view>
+            </template>
+            <text v-else class="r22-synergy-empty">{{ synergyOf(c).emptyText }}</text>
+          </view>
         </view>
       </view>
       <view class="btn" @click="skipCards">全部不要了，直接下一波</view>
+      <view class="r22-ai-note" role="note">
+        <text class="r22-ai-title">AI · 协同预判</text>
+        <text class="r22-ai-conclusion">{{ synergyNoteConclusion }}</text>
+        <text class="r22-ai-basis">依据：已装备元素 × 手牌元素，经 REACTION_PAIRS(源自引擎 lookupReaction)派生</text>
+        <text class="r22-ai-cta">去装备/选它</text>
+        <text class="r22-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
+      </view>
     </view>
 
     <!-- 结算界面 -->
@@ -696,6 +720,86 @@ function elementName(e: Element): string {
   return ELEMENT_NAME[e]
 }
 
+/** R22：反应名只取引擎真源 REACTIONS，禁止硬编码。 */
+function reactionName(k: ReactionKey): string {
+  return REACTIONS[k].name
+}
+
+/**
+ * R22 选卡反应协同预判（纯展示派生，不落库/不进 replay_hash/不改结算）。
+ * 覆盖集 C(E)：以 REACTION_PAIRS（源自引擎 lookupReaction）为唯一真源，
+ * 对元素集两两查表，非空者收入集合；新卡 e 的差集 A = C(E∪{e}) − C(E)
+ * 按 REACTION_ORDER 稳定排序；B = E 中与 e 组合产生 A 的元素。
+ */
+type R22Synergy = {
+  kind: 'added' | 'reinforced' | 'empty'
+  added: ReactionKey[]
+  addedNames: string[]
+  reinforced: ReactionKey[]
+  reinforcedNames: string[]
+  partners: Element[]
+  emptyText: string
+}
+const equippedElements = ref<Element[]>([])
+
+function r22Covered(elements: Element[]): Set<ReactionKey> {
+  const out = new Set<ReactionKey>()
+  for (const a of elements) {
+    for (const b of elements) {
+      if (a === b) continue
+      for (const k of REACTION_ORDER) {
+        if (REACTION_PAIRS[k].some(([x, y]) => x === a && y === b)) out.add(k)
+      }
+    }
+  }
+  return out
+}
+
+function r22Partners(e: Element, added: Set<ReactionKey>): Element[] {
+  return equippedElements.value.filter((a) =>
+    REACTION_ORDER.some((k) => added.has(k) && REACTION_PAIRS[k].some(([x, y]) => x === a && y === e)),
+  )
+}
+
+function r22Synergy(c: Card): R22Synergy {
+  const empty = (emptyText: string): R22Synergy => ({
+    kind: 'empty', added: [], addedNames: [], reinforced: [], reinforcedNames: [], partners: [], emptyText,
+  })
+  if (equippedElements.value.length === 0) return empty('当前构筑还没有元素技能，无法预判反应')
+  if (c.kind !== 'skill' || !c.element) return empty('该卡无元素，无法预判反应（属性/机制卡）')
+  const before = r22Covered(equippedElements.value)
+  const after = r22Covered([...equippedElements.value, c.element])
+  const added = REACTION_ORDER.filter((k) => after.has(k) && !before.has(k))
+  const reinforced = REACTION_ORDER.filter((k) => after.has(k) && before.has(k))
+  if (added.length > 0) {
+    return {
+      kind: 'added', added, addedNames: added.map(reactionName),
+      reinforced: [], reinforcedNames: [], partners: r22Partners(c.element, new Set(added)), emptyText: '',
+    }
+  }
+  if (reinforced.length > 0) {
+    return {
+      kind: 'reinforced', added: [], addedNames: [], reinforced, reinforcedNames: reinforced.map(reactionName),
+      partners: [], emptyText: '',
+    }
+  }
+  return empty('该卡无元素，无法预判反应（属性/机制卡）')
+}
+
+function synergyOf(c: Card): R22Synergy {
+  return r22Synergy(c)
+}
+
+/** AI 结论取当前手牌首张有预判的卡，真实来自差集，不虚构夸张结论。 */
+const synergyNoteConclusion = computed(() => {
+  for (const c of hand.value) {
+    const s = r22Synergy(c)
+    if (s.kind === 'added') return `当前手牌「${c.name}」可新增【${s.addedNames[0]}】等${s.added.length}种反应`
+    if (s.kind === 'reinforced') return `当前手牌「${c.name}」可强化已有【${s.reinforcedNames[0]}】`
+  }
+  return '当前手牌暂无可预判的新反应，去装备元素技能或换一张卡'
+})
+
 function kindLabel(k: string): string {
   return k === 'skill' ? '技能' : k === 'attribute' ? '属性' : '机制'
 }
@@ -923,6 +1027,11 @@ async function setup() {
       return
     }
     store.setEquippedSkills(equipped.map((e) => e.skillId))
+    // R22：已装备元素集合 E 直接取同一份权威快照的 applyElement，过滤空串去重；
+    // 绝不凭卡牌 optimistic UI 重拼（与伤害/哈希同源，预判才可信）。
+    equippedElements.value = Array.from(new Set(
+      equipped.map((e) => e.applyElement).filter((e): e is Element => e !== ''),
+    ))
     // 攻方属性以服务端下发为准（I-6 的前提）
     store.setBuild(bt.build)
 
@@ -2326,4 +2435,36 @@ onShareAppMessage(() =>
   color: var(--text-2);
   white-space: nowrap;
 }
+
+/* R22 选卡反应协同预判：沿用既有 token，零新增视觉令牌 */
+.r22-synergy-card {
+  margin-top: 8rpx;
+  padding-top: 6rpx;
+  border-top: 1rpx solid var(--border-soft);
+  font-size: 19rpx;
+  line-height: 1.4;
+}
+.r22-synergy-line { color: var(--accent); font-weight: 700; }
+.r22-synergy-tags { display: flex; flex-wrap: wrap; gap: 4rpx; margin: 3rpx 0; }
+.r22-synergy-tag {
+  padding: 2rpx 6rpx;
+  border: 1rpx solid var(--fire);
+  border-radius: 8rpx;
+  color: var(--fire);
+}
+.r22-synergy-match, .r22-synergy-empty { color: var(--text-2); }
+.r22-ai-note {
+  margin-top: 14rpx;
+  padding: 10rpx 12rpx;
+  border-left: 4rpx solid var(--accent);
+  background: var(--panel-2);
+  border-radius: 8rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.r22-ai-title { color: var(--accent); font-weight: 700; font-size: 21rpx; }
+.r22-ai-conclusion { color: var(--text); font-size: 20rpx; }
+.r22-ai-basis, .r22-ai-honesty { color: var(--text-2); font-size: 19rpx; }
+.r22-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
 </style>
