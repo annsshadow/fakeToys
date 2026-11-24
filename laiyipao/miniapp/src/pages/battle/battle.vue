@@ -2275,6 +2275,9 @@ onShareAppMessage(() =>
   font-weight: 600;
 }
 
+/* R28 归因：行内紧凑不换行；说明块可换行且不拦截画布点击，CTA 单独放行 */
+.r28-attribution { font-size: 18rpx; color: #ffd33d; white-space: nowrap; }
+
 /* t95：390×844 移动视口是 H5 主场景。让 HUD 行换行、胶囊内文字保持单行，
    并给反应因果链留出宽度；pointer-events 仍由 .overlay-top 关闭，不挡战场。 */
 @media (max-width: 430px) {
@@ -2305,17 +2308,32 @@ onShareAppMessage(() =>
     row-gap: 2rpx;
     padding: 4rpx 10rpx;
     width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
   }
   .reaction-line-main {
     gap: 8rpx;
+    min-width: 0;
+    flex-wrap: wrap;
   }
   .reaction-name,
   .reaction-damage {
     font-size: 20rpx;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .r28-attribution {
+    font-size: 18rpx;
+    color: #ffd33d;
+    white-space: normal;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
   .reaction-cue {
     font-size: 18rpx;
     max-width: 100%;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -2784,8 +2802,6 @@ onShareAppMessage(() =>
 .r27-ai-conclusion { color: var(--text); font-size: 18rpx; }
 .r27-ai-basis, .r27-ai-honesty { color: var(--text-2); font-size: 17rpx; }
 .r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
-/* R28 归因：行内紧凑不换行；说明块可换行且不拦截画布点击，CTA 单独放行 */
-.r28-attribution { font-size: 18rpx; color: #ffd33d; white-space: nowrap; }
 .r28-feed-ai { display: flex; flex-direction: column; gap: 2rpx; max-width: 100%; margin-top: 4rpx; padding: 6rpx 10rpx; background: rgba(13, 17, 23, 0.82); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
 .r28-feed-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
 .r28-feed-ai-conclusion { color: var(--text); font-size: 18rpx; }
