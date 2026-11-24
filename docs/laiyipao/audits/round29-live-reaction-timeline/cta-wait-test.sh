@@ -1,0 +1,34 @@
+#!/bin/bash
+AB=agent-browser
+D=docs/laiyipao/audits/round29-live-reaction-timeline
+S=lyp-r29-cta
+E="$PWD/$D"
+SH="$PWD/$D/screenshots"
+"$AB" --session $S close >/dev/null 2>&1 || true
+"$AB" --session $S open about:blank >/dev/null 2>&1; sleep 1
+"$AB" --session $S set viewport 390 844 >/dev/null 2>&1
+"$AB" --session $S --init-script "$PWD/$D/auth-init.js" open "http://127.0.0.1:5174/#/pages/battle/battle?level=5" >/dev/null 2>&1
+sleep 8
+"$AB" --session $S set viewport 390 844 >/dev/null 2>&1; "$AB" --session $S reload >/dev/null 2>&1; sleep 8
+echo '=== WAIT FEED ==='
+for i in $(seq 1 40); do
+  ST=$("$AB" --session $S eval --stdin < "$E/tick-eval.js" 2>&1 | tr -d '"')
+  echo "[$i] $ST"
+  LINES=$(echo "$ST" | cut -d'|' -f2)
+  if [ "$LINES" -ge 1 ] 2>/dev/null; then echo FEED_READY; break; fi
+  sleep 0.3
+done
+"$AB" --session $S eval --stdin < "$E/probe-eval.js" > "$D/data/cta-wait-pre.json" 2>&1
+"$AB" --session $S eval --stdin < "$E/diag-eval.js" > "$D/data/cta-wait-diag.json" 2>&1
+echo '=== CLICK CTA ==='
+"$AB" --session $S click '.r28-feed-cta' 2>&1
+sleep 1
+"$AB" --session $S eval --stdin < "$E/probe-eval.js" > "$D/data/cta-wait-post.json" 2>&1
+"$AB" --session $S eval --stdin < "$E/timeline-eval.js" > "$D/data/cta-wait-geometry.json" 2>&1
+"$AB" --session $S screenshot "$SH/r29-06-drawer-live.png" >/dev/null 2>&1
+echo SHOT_LIVE_DRAWER
+echo '=== CLOSE ==='
+"$AB" --session $S click '.r29-timeline-close' 2>&1
+sleep 1
+"$AB" --session $S eval --stdin < "$E/probe-eval.js" > "$D/data/cta-wait-closed.json" 2>&1
+echo '=== DONE ==='
