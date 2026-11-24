@@ -1376,7 +1376,7 @@ const api_control_list_top_720_data = ref<any[]>([])
 .bbs-view { display: flex; flex-direction: column; gap: 16px; height: 100%; }
 .bbs-header { background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border) }
 .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
-.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ai-gradient-text.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 .topic-avatar{background:var(--ai-gradient-brand)}
 .new-topic-btn{gap:var(--ai-grid-1);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .new-topic-btn:hover{transform:translateY(-1px)}
@@ -1488,6 +1488,7 @@ const api_control_list_top_720_data = ref<any[]>([])
 .empty-icon { font-size: 48px; opacity: 0.4; }
 .skeleton-row { height: 56px; border-radius: var(--radius-md); margin-bottom: 8px; background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); }
 .ai-page .bbs-header{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);padding:var(--ai-grid-2)}
+.ai-page .bbs-header.bbs-header{background:var(--ai-gradient-surface)}
 .ai-page .topic-card{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
 
 /* 弹窗 */

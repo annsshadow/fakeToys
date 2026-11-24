@@ -145,7 +145,7 @@ function save() {
 .ec-title{font-size:14px;font-weight:600;color:var(--text-primary)}
 .code-editor{flex:1;min-height:300px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'Fira Code',monospace;font-size:13px;outline:none;resize:none;tab-size:2}
 .loading-sm{padding:var(--ai-grid-2);color:var(--text-muted);font-size:12px}
-.ai-skeleton-line{height:16px;border-radius:var(--radius-sm);background:var(--ai-skeleton-base);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.ai-skeleton-line{height:16px;border-radius:var(--radius-sm);background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .empty-hint{margin-top:var(--ai-grid-1);color:var(--text-secondary);font-size:12px}
 
 /* R306 C 组：AI 令牌深度消费（玻璃/渐变/栅格/骨架/动效），不触碰业务与接口。 */

@@ -652,7 +652,7 @@ function statusCls(s?: string) {
 .ai-page .content-panel{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border)}
 .view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
 .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
-.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ai-gradient-text.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 .btn-primary{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .stat-card{border:1px solid var(--ai-glass-border);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .stat-card:hover{transform:translateY(-2px)}

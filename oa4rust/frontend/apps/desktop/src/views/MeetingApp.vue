@@ -1122,7 +1122,7 @@ async function loadMeetingTwin() {
 .meeting-view .calendar-day-head .modern-stat { font-size: 13px; font-weight: 600; }
 /* R300 B3：会议域 AI 令牌覆盖，仅改视觉，不动业务结构。 */
 .ai-page.meeting-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring), color var(--ai-motion-fast) var(--ai-ease-spring); }
-.ai-page .meeting-hero { position: relative; overflow: hidden; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
+.ai-page .meeting-hero { position: relative; overflow: hidden; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); backdrop-filter: var(--ai-glass-blur); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
 .ai-page .meeting-hero .admin-title { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .ai-page .new-btn,
 .ai-page .bs { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
@@ -1130,7 +1130,7 @@ async function loadMeetingTwin() {
 .ai-page .bs:hover { transform: translateY(-2px); box-shadow: var(--ai-shadow-2); }
 .ai-page .booking,
 .ai-page .mine,
-.ai-page .content-panel { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
+.ai-page .content-panel { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: var(--ai-glass-blur); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
 .ai-page .sk { background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); background-size: 200% 100%; animation: ai-shimmer 1.4s ease-in-out infinite; }
 @keyframes ai-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .ai-page .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--ai-grid-1); }

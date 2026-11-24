@@ -797,7 +797,7 @@ async function loadCalTwin() {
 }
 /* R300 B3：日程域 AI 令牌覆盖。 */
 .ai-page.calendar-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
-.ai-page .view-header { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
+.ai-page .view-header { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: var(--ai-glass-blur); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
 .ai-page .view-header h1 { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 20px; font-weight: 700; }
 .ai-page .days-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--ai-grid-1); }
 .ai-page .day-cell { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); min-height: 72px; transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
@@ -806,7 +806,7 @@ async function loadCalTwin() {
 .ai-page .cal-scope,
 .ai-page .calendar-grid,
 .ai-page .event-panel,
-.ai-page .event-mgr { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); }
+.ai-page .event-mgr { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: var(--ai-glass-blur); border-radius: var(--ai-grid-2); }
 .ai-page .cll-tab.on,
 .ai-page .today-btn { background: var(--ai-gradient-brand); color: #fff; border-color: transparent; }
 .ai-page .cal-create-wrap { margin-top: var(--ai-grid-2); display: flex; flex-wrap: wrap; align-items: center; gap: var(--ai-grid-2); }
