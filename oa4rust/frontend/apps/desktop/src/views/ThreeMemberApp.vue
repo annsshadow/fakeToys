@@ -36,7 +36,7 @@
     <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
         <h3>{{ showEdit?'编辑':'新建' }}三方成员</h3>
-        <div class="form-group"><label>姓名</label><input v-model="form.name" placeholder="姓名" class="form-input" /></div>
+        <div class="form-group"><label>姓名<span class="required" aria-hidden="true">*</span></label><input v-model="form.name" placeholder="姓名" class="form-input" required /></div>
         <div class="form-group"><label>手机</label><input v-model="form.mobile" placeholder="手机号" class="form-input mono" /></div>
         <div class="form-group"><label>邮箱</label><input v-model="form.email" placeholder="邮箱" class="form-input mono" /></div>
         <div class="form-group"><label>所属单位</label><input v-model="form.unitId" data-testid="three-unit-input" placeholder="单位名称或编号" class="form-input" /></div>
@@ -239,6 +239,7 @@ function loadData() {
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.required{color:var(--color-error)}
 .form-input{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
