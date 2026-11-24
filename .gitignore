@@ -354,3 +354,6 @@ docs/laiyipao/audits/round29-postfix-recheck/auth-init.js
 # R29 部署后独立回归审计临时真值不入库（guest_token / dump / 注入脚本）
 docs/laiyipao/audits/round29-postdeploy/data/
 docs/laiyipao/audits/round29-postdeploy/auth-init.js
+
+docs/laiyipao/audits/round30-reaction-feed-mobile-fit/data/
+docs/laiyipao/audits/round30-reaction-feed-mobile-fit/auth-init.js
