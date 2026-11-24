@@ -25,6 +25,7 @@ import { fetchDashboardSoft } from '@/api'
 import AiInsightCard from "@/components/AiInsightCard.vue"
 import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
 import type { AiInsight } from '@/utils/aiInsight'
+import { spreadStacksText, armorShredText, knockbackText } from '@/reactionMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
@@ -54,7 +55,7 @@ interface ConfigResp {
   // ⚠️ 字段名必须与 Go 侧 json tag 逐字一致（snake_case）。
   // 这两行曾经写成 PascalCase，而服务端一直下发 snake_case，
   // 于是反应表整列为空、章节下拉框没有选项 —— 且不报任何错。
-  reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number; descr: string }>
+  reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number; descr: string; spread_stacks: number; armor_shred_permille: number; knockback: number }>
   chapters: Array<{ id: number; name: string; start_level: number; end_level: number; terrain_kind: string; boss_enemy_id: number }>
   rating_weights: Record<string, number>
   // ⚠️ 字段名与 Go 的 json tag 一律 snake_case（PascalCase 那些是笔误，
@@ -815,6 +816,17 @@ onUnmounted(() => {
             <el-table-column label="溅射半径" width="90">
               <template #default="{ row }">{{ row.aoe_radius || '单体' }}</template>
             </el-table-column>
+            <!-- R31：服务端 /config 已下发、引擎已消费的三个机制字段，
+                 此处只做真实展示；单位口径见 @/reactionMechanicsText，零值显示破折号。 -->
+            <el-table-column label="层数传播" width="90">
+              <template #default="{ row }">{{ spreadStacksText(row.spread_stacks) }}</template>
+            </el-table-column>
+            <el-table-column label="削甲" width="80">
+              <template #default="{ row }">{{ armorShredText(row.armor_shred_permille) }}</template>
+            </el-table-column>
+            <el-table-column label="击退" width="80">
+              <template #default="{ row }">{{ knockbackText(row.knockback) }}</template>
+            </el-table-column>
             <!-- 第 87 轮新增：说明列。
                  敌人 / 技能 / 复合技能三张表都有这一列，只有反应表没有 ——
                  于是 `descr` 字段（服务端 `ReactionSpec.Descr` 的注释写着
@@ -828,9 +840,10 @@ onUnmounted(() => {
           <p class="note">
             「溅射半径」一栏显示各反应**实际生效**的溅射半径
             （蒸汽爆发 120 / 过热 90 已接上真实范围伤害）；显示「单体」
-            表示该反应没有溅射。仍**没有特殊效果**的只剩两条
-            （燃烧云的火区 / 腐蚀扩散的层数传播）—— 具体缺什么见
-            README 已知边界第 19 条。
+            表示该反应没有溅射。腐蚀扩散的**层数传播已实现**（传播 1 层、
+            半径 120px、不造成伤害、不触发新反应）；「层数传播 / 削甲 / 击退」
+            三列显示的是已实现机制的真实参数。**燃烧云 burn_cloud 的火区仍未实现**
+            （C1 产品阻塞，本轮不实现），Wiki 不暗示其已生效。
             <br />
             「攻击力权重」就是这一条反应里由面板攻击力贡献的比例上限。全部 ≤30% ——
             这是保证低养成玩家能靠技巧翻盘的结构性约束，不是可以随数值膨胀绕过的软性限制。
