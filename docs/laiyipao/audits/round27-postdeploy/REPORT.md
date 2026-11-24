@@ -1,6 +1,8 @@
 # R27 线上回归报告：实时波次推进 HUD 发布后验证
 任务：t211（R27 提交部署）。基线 HEAD=4f1a7045（R26）；四批本地提交 bee61666 / b0ad7737b / d9a0c4cea / 本报告。域名统一占位 <YOUR_TEST_DOMAIN>；真值零入库零回显。
 
+> **证据口径补充说明（t213 追加，勿删原历史）：** 本报告第 5、6 节所列 r27-01…r27-05 五图（SHA 1747bcd7… / 0816cb98… / 73ca5f4c… / 2ab01640… / 06ea3c75…）为**部署前 QA 批 2 的截图**，仓库文件在 t211 部署后经 git checkout HEAD 恢复为入库版，故 SHA 与批 2 一致。t212 已在真实部署后从零重跑 E2E 并独立补采五张**部署后**截图 screenshots/postdeploy-r27-01-first-wave.png 至 05-settle.png（SHA b1f82c45… / b1dffd32… / a092e160… / 7e0cf3f7… / ad439fe5…），两套 SHA 完全不同。独立部署后证据以 EVIDENCE.md 与 postdeploy-r27-01…05 为准；第 5、6 节文字与 SHA 仅作部署前 QA 历史保留，部署后新图 SHA 不冒充旧图。
+
 ## 1. 部署产物与三端健康
 - 后端：laiyipao/deploy/bin/lyp-server-amd64 sha256=3d82635fd07eef5565cd9dd7a8cfa62e056104ee5b59b624398ad4111ddfbdf6（R21 产物沿用，R27 无后端业务改动）。
 - H5：重建 laiyipao/miniapp/dist/build/h5/assets/index-BLjjQbiy.js sha256=08b98caf6335f5f3cd73c277f9402fb83ba4966932d57ab97129894e61f3e0c0；bundle 命中 r27-wave-progress / waveProgressHud / 波次推进（battle-B87B4c2K.css、engine.tGp3KrGv.js、pages-battle-battle.Lh-7ynyH.js）。
