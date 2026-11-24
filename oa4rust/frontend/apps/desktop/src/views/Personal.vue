@@ -47,7 +47,7 @@
             <input id="confirmPwd" v-model="pwdForm.confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="请再次输入" />
           </div>
         </div>
-        <div v-if="pwdError" class="error-msg">{{ pwdError }}</div>
+        <div v-if="pwdError" class="error-msg" data-oa-field-error>{{ pwdError }}</div>
         <button type="submit" class="save-btn modern-btn primary" :disabled="pwdSaving">{{ pwdSaving ? '保存中...' : '保存修改' }}</button>
       </form>
     </section>
