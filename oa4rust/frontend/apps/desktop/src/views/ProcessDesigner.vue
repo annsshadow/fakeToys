@@ -9,15 +9,15 @@
     <!-- Header -->
     <div class="pd-header glass-card">
       <div class="pd-actions">
-        <button class="btn" @click="undo" :disabled="!canUndo" title="撤销">↩</button>
-        <button class="btn" @click="redo" :disabled="!canRedo" title="重做">↪</button>
+        <button class="btn" @click="undo" :disabled="!canUndo" title="撤销" aria-label="撤销">↩</button>
+        <button class="btn" @click="redo" :disabled="!canRedo" title="重做" aria-label="重做">↪</button>
         <button class="btn" @click="autoLayout" title="网格排列">⊞ 排列</button>
         <button class="btn" @click="autoLayoutTopo" title="拓扑排列">⊞ 拓扑</button>
         <button class="btn" :class="{active: showEdgeAnim}" @click="showEdgeAnim=!showEdgeAnim; showEdgeAnim?startEdgeAnimation():stopEdgeAnimation()" title="连线动画">✨ 动画</button>
         <button class="btn" @click="zoomIn" title="放大">🔍+</button>
         <button class="btn" @click="zoomOut" title="缩小">🔍-</button>
         <button class="btn" @click="zoomToFit" title="适配内容">⊞ 适配</button>
-        <button class="btn" @click="clearCanvas" title="清空">🗑</button>
+        <button class="btn" @click="clearCanvas" title="清空" aria-label="清空">🗑</button>
         <button class="btn" @click="createVersion()" title="创建版本快照">📌 快照</button>
         <button class="btn btn-outline" @click="showVersionPanel=!showVersionPanel">📜 版本</button>
         <button class="btn btn-outline" @click="showCompareModal=true" title="版本对比">🔀 对比</button>

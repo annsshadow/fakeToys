@@ -40,6 +40,7 @@
           :class="{on: activeCal?.id === c.id}"
           :style="{borderColor:c.color||'var(--color-primary)'}"
           @click="selectCalendar(c)"
+          :aria-label="c.name || '选择日历'"
         >{{ c.name }}</button>
       </div>
       <div class="cal-create-wrap">

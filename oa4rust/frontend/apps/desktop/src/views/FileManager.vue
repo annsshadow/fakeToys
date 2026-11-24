@@ -61,7 +61,7 @@
                   <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
                   <button class="icon-action" @click.stop="downloadFile(f)" title="下载">⬇</button>
                   <button class="icon-action" @click.stop="shareFile(f)" title="分享">↗</button>
-                  <button class="icon-action danger" :disabled="deletingId === f.id" @click.stop="deleteFile(f)" title="删除">🗑</button>
+                  <button class="icon-action danger" :disabled="deletingId === f.id" @click.stop="deleteFile(f)" title="删除" aria-label="删除文件">🗑</button>
                 </span>
               </li>
             </ul>
@@ -82,7 +82,7 @@
         <ul class="item-list" data-testid="files-recyclable-list">
           <li v-for="f in recyclableFiles" :key="f.id" class="item-body">
             <span class="item-title">{{ f.name }}</span>
-            <button class="icon-action danger" :disabled="deletingId === f.id" @click="deleteFile(f)" title="删除（进入回收站）">🗑</button>
+            <button class="icon-action danger" :disabled="deletingId === f.id" @click="deleteFile(f)" title="删除（进入回收站）" aria-label="删除可清理文件">🗑</button>
           </li>
         </ul>
         <p v-if="!recyclableFiles.length" class="muted modern-empty">尚未新建文件</p>

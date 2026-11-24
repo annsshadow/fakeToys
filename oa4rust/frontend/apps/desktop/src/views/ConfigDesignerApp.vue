@@ -63,8 +63,8 @@
                 <div class="si-meta">{{ item.category||'通用' }}</div>
               </div>
               <div class="si-actions">
-                <button class="si-btn" @click.stop="editItem(item)" title="编辑">✏</button>
-                <button class="si-btn si-del" @click.stop="deleteItem(item)" title="删除">🗑</button>
+                <button class="si-btn" @click.stop="editItem(item)" title="编辑" aria-label="编辑">✏</button>
+                <button class="si-btn si-del" @click.stop="deleteItem(item)" title="删除" aria-label="删除">🗑</button>
               </div>
             </div>
             <ListLoadError v-if="filteredItems.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
@@ -127,7 +127,7 @@
             <pre class="hist-preview">{{h.snapshot.substring(0,80)}}</pre>
             <div class="hist-actions">
               <button class="btn-sm" @click="restoreHistory(hi)">↩ 恢复</button>
-              <button class="btn-sm btn-del" @click="configHistory.splice(hi,1)">🗑</button>
+              <button class="btn-sm btn-del" @click="configHistory.splice(hi,1)" aria-label="删除历史记录">🗑</button>
             </div>
           </div>
           <div v-if="configHistory.length===0" class="hist-empty">暂无历史记录</div>

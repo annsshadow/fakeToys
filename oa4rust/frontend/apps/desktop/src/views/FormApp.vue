@@ -30,7 +30,7 @@
             <div class="ia">
               <button class="btn-sm" @click.stop="editForm(f)">✏ 编辑</button>
               <button class="btn-sm" @click.stop="previewForm(f)">👁 预览</button>
-              <button class="btn-sm btn-del" @click.stop="deleteForm(f)">🗑</button>
+              <button class="btn-sm btn-del" @click.stop="deleteForm(f)" aria-label="删除表单">🗑</button>
             </div>
           </div>
         </div>
