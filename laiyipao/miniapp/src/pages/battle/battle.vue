@@ -65,7 +65,16 @@
             <text class="reaction-name">{{ r.pair }} → {{ r.name }}</text>
             <text class="reaction-damage">{{ r.resisted ? '抗性削减 ' : '' }}-{{ r.damage }}</text>
           </view>
+          <text class="r28-attribution" :data-r28-wave="r.available ? r.wave : 'unknown'" :data-r28-enemy="r.available ? r.enemy_uid : 'unknown'">{{ r.attribution }}</text>
           <text class="reaction-cue">AI {{ r.cue }}</text>
+        </view>
+        <!-- R28：每条反应附波次/敌人归因，截断或不匹配诚实标注；AI 说明不拦截点击 -->
+        <view class="r28-feed-ai">
+          <text class="r28-feed-ai-title">AI · 反应归因</text>
+          <text class="r28-feed-ai-conclusion">{{ r28Ai.conclusion }}</text>
+          <text class="r28-feed-ai-basis">依据：R15 reactionTimeline 逐次事件（wave/enemy_uid/reaction/damage）按事件发射顺序配对；截断或不匹配如实标注归因不可用</text>
+          <text class="r28-feed-ai-honesty">辅助归因非权威判据，权威以 replay_hash 为准</text>
+          <text class="r28-feed-cta" @click.stop="openHelp">查看完整反应时间线 →</text>
         </view>
       </view>
       <!-- R24 实时元素层与反应触发预判：只读快照派生，纯展示不拦截点击 -->
@@ -449,6 +458,7 @@ import { BattleEngine, type ElementLayerHudRow } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { buildNextWaveBrief } from './nextWaveBrief'
 import { buildWaveProgress } from './waveProgressHud'
+import { attributeLiveReactions, attributionText, buildLiveFeedAi } from './liveReactionFeed'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
 // 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
@@ -568,8 +578,10 @@ async function loadGrowthCompare(detail: import('@/api/client').BattleDetail) {
  * R9：最近反应的可读记录。canvas 粒子只在几帧内闪现，8× 下几乎看不清；
  * HUD 这三条短记录不拦截点击、不盖住战场，让玩家知道「刚刚打出了什么」。
  */
-interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean }
+interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean; wave: number | null; enemy_uid: number | null; available: boolean; attribution: string }
 const recentReactions = ref<ReactionLog[]>([])
+/** R28：最近三条反应的归因 AI 说明（来自真实匹配计数，纯只读派生）。 */
+const r28Ai = ref(buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 }))
 let reactionSeq = 0
 /** R9：累计本局真实 hit/reaction 事件金额，只用于展示「反应伤害占比」，不进回放哈希。 */
 const damageShare = ref<DamageShare>({ reactionDamage: 0, totalDamage: 0, ratioPct: null })
@@ -1031,7 +1043,7 @@ function getCanvas(): Promise<any | null> {
  * 抽成具名函数是为了换挡时能重建定时器 —— 此前它是 setup() 里的一个
  * 内联闭包，倍速改不到它，于是「兼容模式」下档位是个摆设。
  */
-function noteReactions(events: unknown[]): void {
+function noteReactions(events: unknown[], eng: BattleEngine | null): void {
   const d = damageShareFromEvents(events as Array<{ type?: string; damage?: bigint | number }>)
   if (d.reactionDamage > 0 || d.totalDamage > 0) {
     const prev = damageShare.value
@@ -1048,8 +1060,15 @@ function noteReactions(events: unknown[]): void {
       (e as { type?: string })?.type === 'reaction',
   )
   if (!reactions.length) return
-  const fresh = reactions.slice(-3).map((e) => {
+  const recent = reactions.slice(-3)
+  const attribution = attributeLiveReactions(
+    recent,
+    eng?.reactionTimeline?.(),
+    Boolean(eng?.reactionTimelineTruncated?.()),
+  )
+  const fresh = recent.map((e, idx) => {
     const cue = reactionCue(e.reaction, e.existingElement, e.incomingElement, e.damage)
+    const row = attribution.rows[idx]
     return {
       id: ++reactionSeq,
       key: e.reaction,
@@ -1058,9 +1077,29 @@ function noteReactions(events: unknown[]): void {
       cue: cue.cue,
       damage: Math.max(0, Number(e.damage)),
       resisted: Boolean(e.resisted),
+      wave: row?.wave ?? null,
+      enemy_uid: row?.enemy_uid ?? null,
+      available: Boolean(row?.available),
+      attribution: attributionText(row),
     }
   })
-  recentReactions.value = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+  // R28 修复：AI 汇总分母必须与页面最终显示的记录一致，
+  // 而不是当前 step 的反应数（否则本步只有 1 条时误报「已归因 1/1」）。
+  const merged = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+  recentReactions.value = merged
+  const mergedRows = merged.map(r => ({
+    reaction: String(r.key),
+    damage: r.damage,
+    wave: r.available ? r.wave : null,
+    enemy_uid: r.available ? r.enemy_uid : null,
+    available: Boolean(r.available),
+  }))
+  const matchedCount = mergedRows.filter(r => r.available).length
+  r28Ai.value = buildLiveFeedAi({
+    rows: mergedRows,
+    matchedCount,
+    unavailableCount: mergedRows.length - matchedCount,
+  })
 }
 
 function fallbackTick(): void {
@@ -1074,7 +1113,7 @@ function fallbackTick(): void {
   if (paused.value) return
   const events = eng.step()
   playBattleEvents(events)
-  noteReactions(events)
+  noteReactions(events, eng)
   refreshElementHud(eng)
   refreshWaveProgress(eng)
   // 同上：step() 的内部写不走响应式代理，需手动触发
@@ -1185,6 +1224,7 @@ async function setup() {
         : undefined,
     })
     recentReactions.value = []
+    r28Ai.value = buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 })
     damageShare.value = { reactionDamage: 0, totalDamage: 0, ratioPct: null }
     settleCardPicks.value = []
     cardChoiceVersion.value++
@@ -1221,7 +1261,7 @@ async function setup() {
         const events = eng.step()
         // 音效与视觉同源：都从同一批事件来，不另算一份状态
         playBattleEvents(events)
-        noteReactions(events)
+        noteReactions(events, eng)
         refreshElementHud(eng)
         refreshWaveProgress(eng)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
@@ -2665,4 +2705,11 @@ onShareAppMessage(() =>
 .r27-ai-conclusion { color: var(--text); font-size: 18rpx; }
 .r27-ai-basis, .r27-ai-honesty { color: var(--text-2); font-size: 17rpx; }
 .r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
+/* R28 归因：行内紧凑不换行；说明块可换行且不拦截画布点击，CTA 单独放行 */
+.r28-attribution { font-size: 18rpx; color: #ffd33d; white-space: nowrap; }
+.r28-feed-ai { display: flex; flex-direction: column; gap: 2rpx; max-width: 100%; margin-top: 4rpx; padding: 6rpx 10rpx; background: rgba(13, 17, 23, 0.82); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
+.r28-feed-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
+.r28-feed-ai-conclusion { color: var(--text); font-size: 18rpx; }
+.r28-feed-ai-basis, .r28-feed-ai-honesty { color: var(--text-2); font-size: 17rpx; }
+.r28-feed-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
 </style>
