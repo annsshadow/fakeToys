@@ -60,6 +60,8 @@ PC 8 页 × 双主题（dashboard/org/file/bbs/calendar/meeting/attendance/commo
 
 **决定性结论**：骨架 shimmer 虽迭代无限（infinite），但在真实网络下随数据到达（4200ms 采样前）即随骨架节点一同卸载，生命周期 **<5s**，属 WCAG 2.2.2 明确排除的临时加载态。5s 以上的 API 延迟是人为构造的极端场景；即便该极端下骨架常驻，其信息由加载完成后的真实内容承载、shimmer 纯视觉提示，且属"加载过程"而非"与其他内容并列的信息动画"，仍不构成 2.2.2 缺陷。errors=0。
 
+**证据补正（t326）**：早期探针原截图 early-skeleton-with-api-delay.png 经独立复核发现实为"公共组件库"加载完成态（sha 与 pc-common-light-r466.png 相同），不能佐证骨架运行态。已用补采脚本 r466-early-fixed.cjs 在 page.route 延迟业务 API 6s 期间、骨架节点数=5 且 5 条 ai-shimmer playState=running 的 600ms 时点真实抓取 early-skeleton-running-fixed.png（sha256 83681e49…，目视 5 条灰色骨架占位条 + "加载中..." 清晰可见），名实相符；WAAPI 时间序列测量与上表数值不变。
+
 ## 4. CDP / WAAPI 根因坐实
 
 - Web Animations API（document.getAnimations()）在第一手采样中直接读出动画 name/duration/iterations/playState，均来自浏览器渲染引擎真实状态，非源码推断。
@@ -74,7 +76,7 @@ PC 8 页 × 双主题（dashboard/org/file/bbs/calendar/meeting/attendance/commo
 
 ## 6. 截图证据（sha256 命令行原始值）
 
-source：Playwright Chromium headless 真浏览器（非物理真机）。稳定态 21 张 + 早期骨架 1 张，共 22 张，全部位于 gitignored 证据目录。
+source：Playwright Chromium headless 真浏览器（非物理真机）。原稳定态 21 张 + 原早期骨架 1 张，另 t326 补采 6 张（骨架运行态 1 + H5 五页各 1），合计 28 张，全部位于 gitignored 证据目录。原 h5-*-r466.png 五张因导航 URL 双 # 缺陷停留同一视图（sha 全同）、原 early-skeleton-with-api-delay.png 实为加载完成态，均已由补正图取代，详见 6.1。
 
 | 截图 | sha256 |
 | --- | --- |
@@ -94,14 +96,29 @@ source：Playwright Chromium headless 真浏览器（非物理真机）。稳定
 | pc-attendance-dark-r466.png | 85e665fc7e5fad10eae3b95d83cf41381eb3dc24858cdf2ee5c4cb972f582df7 |
 | pc-common-light-r466.png | 33f73040fdde480b96841e417ee4fee1d06884845ba16e4303365e3d9b0db073 |
 | pc-common-dark-r466.png | afe79b29a25873e32fabc99ddcb7729ec6aab8faffcec317d88c0adfaca33424 |
-| h5-index-r466.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
-| h5-mine-r466.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
-| h5-message-r466.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
-| h5-calendar-r466.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
-| h5-collect-r466.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
-| early-skeleton-with-api-delay.png | 33f73040fdde480b96841e417ee4fee1d06884845ba16e4303365e3d9b0db073 |
+| h5-index-r466-fixed.png | c531e964b3ac9378572318159b21821f8d155dda18b916a6efabcc503f068c96 |
+| h5-mine-r466-fixed.png | cf939600d8b263fc01f5d09a73d2f24fa3f3877929c019aaaf5072c3ad025385 |
+| h5-message-r466-fixed.png | 170482f3818cb89f3b3fd21adf4971b65a72ef834b2b270a600c1e736800b3d4 |
+| h5-calendar-r466-fixed.png | 95af2b84a08af75e603a927b7e757e5cf132f6a848c2cd26b82b9fd1e6f6f1fc |
+| h5-collect-r466-fixed.png | cbae5e3d08c81c9b2276a9f3c103d6b0094494f6dbda229b8a1f66a2276f0ed6 |
+| early-skeleton-running-fixed.png | 83681e49761e73fdbfb5bdc8f5f2033128185232d4a7ec71132748876a6ec7b2 |
 
-目视核对：pc-dashboard-light（浅色工作台，统计卡/待办完整、无可见动效残留）、pc-dashboard-dark（暗色工作台一致）、h5-index（品牌渐变卡"8 待办审批/1 今日出勤"清晰）、early-skeleton-with-api-delay（API 延迟下公共组件库页骨架 shimmer 运行态，5 条骨架占位可见）。
+目视核对：pc-dashboard-light（浅色工作台，统计卡/待办完整、无可见动效残留）、pc-dashboard-dark（暗色工作台一致）、h5-index-r466-fixed（品牌渐变卡"8 待办审批/1 今日出勤"清晰）、early-skeleton-running-fixed（骨架 shimmer 运行态，5 条灰色骨架占位条 + 加载中提示清晰）。
+
+### 6.1 t326 证据补正对照（补采前后 sha256）
+
+队长独立复核发现原证据两处名实不符，已用真浏览器补采修正（脚本 r466-early-fixed.cjs / r466-h5-fixed.cjs，凭据运行时注入，gitignored）：
+
+| 项目 | 补采前（名实不符） | 补采后（据实） | 依据 |
+| --- | --- | --- | --- |
+| 骨架运行态 | early-skeleton-with-api-delay.png = 33f73040…（与 pc-common-light 相同，实为加载完成态） | early-skeleton-running-fixed.png = 83681e49… | 600ms 时点 skel=5、5×ai-shimmer running，目视 5 条骨架占位条 |
+| H5 index | c531e964…（工作台，本身正确） | h5-index-r466-fixed.png = c531e964…（不变） | bodyText=工作台/你好admin/8待办审批 |
+| H5 mine | c531e964…（误停留工作台） | h5-mine-r466-fixed.png = cf939600… | bodyText=我的/admin/修改密码 |
+| H5 message | c531e964…（误停留工作台） | h5-message-r466-fixed.png = 170482f3… | bodyText=消息/单聊会话列表 |
+| H5 calendar | c531e964…（误停留工作台） | h5-calendar-r466-fixed.png = 95af2b84… | bodyText=日历/今日暂无日程 |
+| H5 collect | c531e964…（误停留工作台） | h5-collect-r466-fixed.png = cbae5e3d… | bodyText=我的收藏/暂无收藏 |
+
+根因：原 r466-e2e.cjs H5 段 route 已含 # 前缀，拼接时再补 # 形成双 #（##/pages/...），uni-app 路由失效停留工作台；补采脚本改用单 # 正确路由 #/pages/{page}，单 context 逐页导航，五页 bodyText 与 sha 均各异。核心结论（稳定态 21 组 count=0、骨架 <5s WAAPI 时间序列、badge-pulse 不可达）不因证据补正改变，仍为 0 可达真缺陷。
 
 ## 7. 真值纪律
 
