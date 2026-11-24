@@ -402,6 +402,36 @@ export interface AdminWavesResp {
   waves: AdminLevelWaveView[]
 }
 
+export interface BattleEfficiencyAIInsight {
+  title?: string
+  conclusion?: string
+  evidence?: string
+  cta?: string
+}
+
+export interface BattleEfficiencyBucket {
+  bucket: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+}
+
+export interface BattleEfficiencyResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+  avg_heat_max: number
+  leaked_per_battle: number
+  avg_duration_ms: number
+  buckets: BattleEfficiencyBucket[]
+  ai_insight: BattleEfficiencyAIInsight
+}
+
 export interface ChapterInfo {
   id: number
   name: string

@@ -119,6 +119,48 @@
         <text class="dim">点开任意战报后，这里会统计命中率与热量效率。</text>
       </view>
 
+      <!-- R20 服务端全量效率趋势卡（G132 本地即时卡保留，两者口径不同） -->
+      <view v-if="r20Efficiency" class="r20-efficiency-trend" role="region">
+        <view class="r20-eff-head">
+          <text class="r20-eff-title">战斗效率趋势 · 全量战报</text>
+          <text class="r20-eff-window">窗口 {{ r20Efficiency.window_from }} ~ {{ r20Efficiency.window_to }}（近 {{ r20Efficiency.window_days }} 天）</text>
+        </view>
+        <template v-if="r20Efficiency.battles > 0">
+          <view class="r20-efficiency-row">
+            <text>命中率 {{ r20Accuracy }}%</text>
+            <text>平均峰值热量 {{ r20Heat }}</text>
+            <text>场均漏怪 {{ r20Leak }}</text>
+            <text>场均时长 {{ r20Duration }}ms</text>
+          </view>
+          <view class="r20-trend-list">
+            <view
+              v-for="b in r20Efficiency.buckets"
+              :key="b.bucket"
+              class="r20-trend-bar"
+              :data-r20-bucket="b.bucket"
+            >
+              <text class="r20-trend-bucket">{{ b.bucket }}</text>
+              <view class="r20-trend-track"><view class="r20-trend-fill" :style="{ width: b.accuracy_pct + '%' }" /></view>
+              <text class="r20-trend-value">{{ b.accuracy_pct.toFixed(1) }}% · {{ b.battles }} 场</text>
+            </view>
+          </view>
+          <view v-if="r20Ai" class="r20-ai-note">
+            <text class="r20-ai-title">AI · 战斗效率诊断</text>
+            <text class="r20-ai-conclusion">{{ r20Ai.conclusion }}</text>
+            <text class="r20-ai-basis">依据：数据来自全量battle_records近30天；近 30 天 battle_records 的 shots/hits/heat_max 聚合；场次以 battle_records 行数为准</text>
+            <text class="r20-ai-cta" data-r20-cta role="button" @click="goStage()">去战斗→</text>
+          </view>
+          <text class="r20-honest-note">辅助诊断非权威结算依据，权威请看 replay_hash</text>
+        </template>
+        <view v-else class="r20-efficiency-empty" role="status" aria-live="polite">
+          <text>近 30 天无战斗记录</text>
+          <text class="r20-eff-window">窗口 {{ r20Efficiency.window_from }} ~ {{ r20Efficiency.window_to }}（近 {{ r20Efficiency.window_days }} 天）</text>
+        </view>
+      </view>
+      <view v-else-if="r20Error" class="r20-efficiency-empty" role="status" aria-live="polite">
+        <text>效率数据加载失败，稍后重试</text>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -286,7 +328,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import type { BattleHistoryItem, BattleDetail } from '@/api/client'
+import type { BattleHistoryItem, BattleDetail, BattleEfficiency, BattleEfficiencyBucket } from '@/api/client'
 import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
@@ -815,9 +857,76 @@ async function loadMore() {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* R20 全量效率趋势：服务端 battle_records 聚合，G132 本地即时卡继续保留。       */
+/* -------------------------------------------------------------------------- */
+const r20Efficiency = ref<BattleEfficiency | null>(null)
+const r20Error = ref(false)
+
+function r20Num(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+async function loadR20Efficiency(): Promise<void> {
+  try {
+    // 老测试可能只 mock 了部分 api 导出；缺函数时诚实不渲染，绝不本地造数。
+    if (typeof api.fetchBattleEfficiency !== 'function') return
+    const raw = await api.fetchBattleEfficiency(30)
+    if (!raw || typeof raw !== 'object') return
+    const rawBuckets = Array.isArray(raw.buckets) ? raw.buckets : []
+    const buckets: BattleEfficiencyBucket[] = rawBuckets
+      .filter((b) => b && typeof b.bucket === 'string' && b.bucket.length > 0)
+      .map((b) => ({
+        bucket: b.bucket,
+        battles: r20Num(b.battles),
+        shots: r20Num(b.shots),
+        hits: r20Num(b.hits),
+        accuracy_pct: r20Num(b.accuracy_pct),
+      }))
+      .sort((a, b) => a.bucket.localeCompare(b.bucket))
+    r20Efficiency.value = {
+      window_days: 30,
+      window_from: typeof raw.window_from === 'string' ? raw.window_from : '',
+      window_to: typeof raw.window_to === 'string' ? raw.window_to : '',
+      battles: r20Num(raw.battles),
+      shots: r20Num(raw.shots),
+      hits: r20Num(raw.hits),
+      accuracy_pct: r20Num(raw.accuracy_pct),
+      avg_heat_max: r20Num(raw.avg_heat_max),
+      leaked_per_battle: r20Num(raw.leaked_per_battle),
+      avg_duration_ms: r20Num(raw.avg_duration_ms),
+      buckets,
+      ai_insight: raw.ai_insight && typeof raw.ai_insight === 'object' ? raw.ai_insight : {},
+    }
+  } catch {
+    r20Error.value = true
+  }
+}
+
+const r20Accuracy = computed(() => r20Num(r20Efficiency.value?.accuracy_pct).toFixed(1))
+const r20Heat = computed(() => r20Num(r20Efficiency.value?.avg_heat_max).toFixed(1))
+const r20Leak = computed(() => r20Num(r20Efficiency.value?.leaked_per_battle).toFixed(1))
+const r20Duration = computed(() => r20Num(r20Efficiency.value?.avg_duration_ms).toFixed(1))
+
+/** 结论只由服务端真实字段与趋势桶推导；空数据不产出结论。 */
+const r20Ai = computed(() => {
+  const d = r20Efficiency.value
+  if (!d || d.battles <= 0) return null
+  const acc = r20Num(d.accuracy_pct)
+  const heat = r20Num(d.avg_heat_max)
+  const leak = r20Num(d.leaked_per_battle)
+  const first = d.buckets.length ? d.buckets[0]!.accuracy_pct : acc
+  const last = d.buckets.length ? d.buckets[d.buckets.length - 1]!.accuracy_pct : acc
+  const trend = last > first ? '命中率呈上升趋势' : last < first ? '命中率呈下降趋势' : '命中率保持稳定'
+  const advice = acc < 70 ? '建议优先提升命中与清漏效率' : '保持当前节奏，继续关注热量管理'
+  return { conclusion: `近 30 天命中率 ${acc.toFixed(1)}%，场均漏怪 ${leak.toFixed(1)}，平均峰值热量 ${heat.toFixed(1)}；${trend}，${advice}。` }
+})
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
   await reload()
+  void loadR20Efficiency()
 })
 </script>
 
@@ -1071,6 +1180,25 @@ onMounted(async () => {
 }
 
 
+
+/* R20 服务端全量效率趋势卡：沿用现有令牌，不新增视觉变量 */
+.r20-efficiency-trend { margin: 16rpx 0; padding: 16rpx; background: var(--panel); border: 1rpx solid var(--border); border-radius: 14rpx; }
+.r20-eff-head { display: flex; flex-direction: column; gap: 4rpx; }
+.r20-eff-title { font-size: 26rpx; font-weight: 700; color: var(--fire); }
+.r20-eff-window { font-size: 20rpx; color: var(--dim); }
+.r20-efficiency-row { display: flex; flex-wrap: wrap; gap: 8rpx 16rpx; margin: 12rpx 0; font-size: 22rpx; color: var(--text); }
+.r20-trend-list { display: flex; flex-direction: column; gap: 8rpx; }
+.r20-trend-bar { display: flex; flex-direction: row; align-items: center; gap: 10rpx; font-size: 20rpx; }
+.r20-trend-bucket { width: 150rpx; color: var(--dim); }
+.r20-trend-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.r20-trend-fill { height: 100%; background: var(--ice); border-radius: 999rpx; }
+.r20-trend-value { width: 170rpx; text-align: right; color: var(--text); }
+.r20-ai-note { margin-top: 14rpx; padding: 12rpx 14rpx; background: rgba(88, 166, 255, 0.08); border: 1rpx solid rgba(88, 166, 255, 0.28); border-radius: 10rpx; display: flex; flex-direction: column; gap: 6rpx; }
+.r20-ai-title { font-size: 22rpx; font-weight: 700; color: var(--accent); }
+.r20-ai-conclusion, .r20-ai-basis { font-size: 21rpx; line-height: 1.5; color: var(--text); }
+.r20-ai-cta { font-size: 22rpx; color: var(--fire); }
+.r20-honest-note { display: block; margin-top: 10rpx; font-size: 20rpx; color: var(--dim); }
+.r20-efficiency-empty { display: flex; flex-direction: column; gap: 6rpx; margin: 16rpx 0; padding: 16rpx; font-size: 22rpx; color: var(--dim); background: var(--panel); border: 1rpx dashed var(--border); border-radius: 14rpx; }
 
 /* 复制回放哈希（2026-11-01 新一轮第 87 轮） */
 .copy-hash-btn {

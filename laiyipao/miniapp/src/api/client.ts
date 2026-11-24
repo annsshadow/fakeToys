@@ -1343,6 +1343,36 @@ export function myBattleDetail(id: number): Promise<BattleDetail> {
 }
 
 /**
+ * R20：近 30 天全量战斗效率聚合（鉴权端点，服务端按当前 user_id 过滤）。
+ * 命中率/热量/漏怪/时长均来自 battle_records 全量窗口，不依赖本地 details 缓存；
+ * 仅辅助诊断，不参与结算与 replay_hash。
+ */
+export interface BattleEfficiencyBucket {
+  bucket: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+}
+export interface BattleEfficiency {
+  window_days: number
+  window_from: string
+  window_to: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+  avg_heat_max: number
+  leaked_per_battle: number
+  avg_duration_ms: number
+  buckets: BattleEfficiencyBucket[]
+  ai_insight: Record<string, unknown>
+}
+export function fetchBattleEfficiency(windowDays = 30): Promise<BattleEfficiency> {
+  return request<BattleEfficiency>('/me/battle-efficiency?window_days=' + encodeURIComponent(String(windowDays)))
+}
+
+/**
  * R19：当前玩家的近 30 天逐次反应伤害贡献（鉴权端点，仅按 user_id 过滤）。
  * count 为权威触发次数（reactions_used），events 仅为时间线事件条数，
  * 二者不可混用；旧战报无逐次记录时次数仍入 count 但伤害不计。

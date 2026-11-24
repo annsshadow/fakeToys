@@ -130,6 +130,8 @@ func (s *Server) Register(app *fiber.App) {
 	me.Get("/recommendations/impact", s.meRecommendationImpact)
 	// R19 玩家反应伤害贡献聚合（辅助分析，非权威结算凭据）。
 	me.Get("/reaction-damage-impact", s.meReactionDamageImpact)
+	// R20 战斗效率趋势（辅助诊断，30 天 battle_records 全量聚合）。
+	me.Get("/battle-efficiency", s.meBattleEfficiency)
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
@@ -335,6 +337,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/dashboard", s.adminDashboard)
 	// R18：反应伤害贡献聚合（辅助分析，管理员鉴权；次数权威仍看 dashboard）。
 	adm.Get("/reaction-damage-impact", s.adminReactionDamageImpact)
+	// R20 全平台战斗效率趋势（与 me 端点同口径）。
+	adm.Get("/battle-efficiency", s.adminBattleEfficiency)
 	// R6 §1E：管理侧聚合洞察；读端点，readonly 角色也允许查看。
 	adm.Get("/recommendations/:scope", s.adminRecommendations)
 	adm.Get("/levels", s.adminLevels)
