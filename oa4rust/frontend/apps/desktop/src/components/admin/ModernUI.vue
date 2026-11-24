@@ -7,7 +7,7 @@
 </template>
 <style scoped>
 .ai-b5-surface {
-  background: var(--ai-surface-gradient);
+  background: var(--ai-gradient-surface);
   border-radius: var(--ai-radius-lg, 12px);
 }
 </style>

@@ -81,4 +81,13 @@ describe('R298 ModernUI 共享组件与 AdminLayout 标题开关契约', () => {
     expect(src).toMatch(/v-if="!hideTitle"/)
     expect(src).toMatch(/<h1[^>]*class="[^"]*admin-title/)
   })
+
+  it('R450 .ai-b5-surface 的 background 使用正确令牌 --ai-gradient-surface，不含错误词序 --ai-surface-gradient', () => {
+    const src = adminRead('ModernUI.vue')
+    const rule = src.match(/\.ai-b5-surface\s*\{([\s\S]*?)\}/)
+    expect(rule, '存在 .ai-b5-surface scoped 规则块').not.toBeNull()
+    const body = rule?.[1] ?? ''
+    expect(body).toMatch(/background:\s*var\(--ai-gradient-surface\)/)
+    expect(body).not.toContain('--ai-surface-gradient')
+  })
 })

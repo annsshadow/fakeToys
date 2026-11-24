@@ -80,4 +80,19 @@ describe('R300 B5 管理区 AI 风格契约', () => {
       expect(tpl, p).not.toContain('{{ item.personId }}')
     }
   })
+
+  it('R450 shared 原语中无 fallback 的 var(--ai-*) 引用必须在 ai-tokens.css 定义集内', () => {
+    const aiTokens = read('../../../../packages/ui/src/theme/ai-tokens.css')
+    const defined = new Set(Array.from(aiTokens.matchAll(/(--ai-[a-z0-9-]+)\s*:/g), (m) => m[1]))
+    expect(defined.size, 'ai-tokens.css 应定义若干 --ai-* 令牌').toBeGreaterThan(0)
+    const bad: string[] = []
+    for (const p of shared) {
+      const src = read(p)
+      // 仅检查无 fallback 的严格 var(--ai-NAME)；带 fallback 的降级用法（如 var(--ai-radius-lg, 12px)）属合法设计，跳过
+      for (const m of src.matchAll(/var\((--ai-[a-z0-9-]+)\)/g)) {
+        if (!defined.has(m[1])) bad.push(p + ': ' + m[1])
+      }
+    }
+    expect(bad, '无 fallback 的 --ai-* 引用必须都在定义集内；--ai-radius-lg 等带 fallback 令牌不算').toEqual([])
+  })
 })
