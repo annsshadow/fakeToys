@@ -480,6 +480,31 @@ export interface GameConfig {
   server_time: string
 }
 
+export interface LevelCoachAdvice {
+  title: string
+  detail: string
+  suggestions: string[]
+  confidence: number
+}
+
+export interface LevelCoachItem {
+  level_id: number
+  attempts: number
+  wins: number
+  best_wave: number
+  avg_wave: number
+  last_result: string
+  stuck: boolean
+  coach: LevelCoachAdvice
+}
+
+export interface LevelCoachResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  items: LevelCoachItem[]
+}
+
 export interface LevelSummary {
   id: number
   chapter: number

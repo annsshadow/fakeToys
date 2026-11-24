@@ -1396,6 +1396,37 @@ export function fetchMyReactionDamageImpact(): Promise<ReactionDamageImpact> {
 }
 
 /**
+ * R21：近 30 天个人关卡卡点教练数据（鉴权端点，服务端按会话 user_id 过滤）。
+ * 前端不传 user_id；端点是辅助诊断，权威仍看 replay_hash。
+ */
+export interface LevelCoachItem {
+  level_id: number
+  attempts: number
+  wins: number
+  best_wave: number
+  avg_wave: number
+  last_result: string
+  stuck: boolean
+  coach: {
+    title: string
+    detail: string
+    suggestions: string[]
+    confidence: number
+  }
+}
+export interface LevelCoachResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  items: LevelCoachItem[]
+}
+export function fetchMyLevelCoach(windowDays = 30): Promise<LevelCoachResp> {
+  return request<LevelCoachResp>('/me/level-coach?window_days=' + encodeURIComponent(String(windowDays)))
+}
+/** 兼容任务命名；语义与 fetchMyLevelCoach 完全相同。 */
+export const fetchLevelCoach = fetchMyLevelCoach
+
+/**
  * 我的购买记录（2026-10-30 实质优化第 20 轮）。
  *
  * 服务端 `GET /me/purchases` 返回最近 20 条商城购买记录

@@ -117,6 +117,10 @@ var AdminRegistry = tygen.Registry{
 	{Name: "BattleEfficiencyBucket", Go: service.BattleEfficiencyBucket{}},
 	{Name: "BattleEfficiencyAIInsight", Go: service.BattleEfficiencyAIInsight{}},
 	{Name: "BattleEfficiencyResp", Go: service.BattleEfficiencyResp{}},
+	// R21 玩家卡点教练（跨局真实数据聚合，辅助非权威）。
+	{Name: "LevelCoachAdvice", Go: service.LevelCoachAdvice{}},
+	{Name: "LevelCoachItem", Go: service.LevelCoachItem{}},
+	{Name: "LevelCoachResp", Go: service.LevelCoachResp{}},
 	{Name: "DauPoint", Go: service.DauPoint{}},
 	{Name: "StageFunnel", Go: service.StageFunnel{}},
 	{Name: "AdminUserView", Go: service.AdminUserView{}},

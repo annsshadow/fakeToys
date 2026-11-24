@@ -132,6 +132,8 @@ func (s *Server) Register(app *fiber.App) {
 	me.Get("/reaction-damage-impact", s.meReactionDamageImpact)
 	// R20 战斗效率趋势（辅助诊断，30 天 battle_records 全量聚合）。
 	me.Get("/battle-efficiency", s.meBattleEfficiency)
+	// R21 玩家卡点教练（近 30 天跨局诊断，辅助非权威）。
+	me.Get("/level-coach", s.meLevelCoach)
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
