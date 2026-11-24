@@ -183,7 +183,7 @@ function fmtTime(t?: string) {
 .btn-primary,.btn-save{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .skel{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:transparent;margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .content-panel{padding:16px}
