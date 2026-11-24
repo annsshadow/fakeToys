@@ -1,0 +1,1 @@
+(() => { const b=document.querySelector('.r26-wave-brief'); if(b)b.scrollTop=b.scrollHeight; return 'SCROLLED' })()
