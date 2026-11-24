@@ -200,7 +200,6 @@ provide(ADMIN_HIDE_PAGE_TITLE, ref(true))
   margin: var(--space-2) 0 0;
   font-size: 20px;
   font-weight: 600;
-  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {
