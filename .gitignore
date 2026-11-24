@@ -278,3 +278,6 @@ docs/laiyipao/audits/round15-reaction-timeline/auth-init.js
 
 # laiyipao R16 审计运行时产物：数据库 dump 含真实用户 guest_token，一律不入库。
 docs/laiyipao/audits/round16-admin-reaction-timeline/data/
+# laiyipao R17 审计运行时产物：dump 含真实 guest_token，探针 token 运行时注入，不入库。
+docs/laiyipao/audits/round17-verify-reaction-diff/data/
+docs/laiyipao/audits/round17-verify-reaction-diff/auth-init.js
