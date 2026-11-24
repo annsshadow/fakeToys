@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="app-shell" :class="{ 'collapsed': sidebarCollapsed, 'mobile': isMobile }">
+  <div class="app-shell" :class="{ 'collapsed': sidebarCollapsed, 'mobile': isMobile, 'drawer-open': mobileDrawerOpen }">
     <!-- 侧边栏 -->
     <aside class="sidebar" :style="{ width: sidebarCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }">
       <div class="sidebar-header">
@@ -255,6 +255,7 @@ const showUserMenu = ref(false)
 const searchQuery = ref('')
 const unreadCount = ref(0)
 const isMobile = ref(false)
+const mobileDrawerOpen = ref(false)
 const openTabPaths = ref<string[]>([])
 const showCommandPalette = ref(false)
 const commandPaletteRoot = ref<HTMLElement | null>(null)
@@ -365,6 +366,10 @@ function navigate(item: NavItem): void {
 }
 
 function toggleSidebar(): void {
+  if (isMobile.value) {
+    mobileDrawerOpen.value = !mobileDrawerOpen.value
+    return
+  }
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
@@ -1190,7 +1195,7 @@ function onDocClick(e: Event): void {
     width: 280px !important;
   }
 
-  .app-shell.mobile .sidebar {
+  .app-shell.mobile.drawer-open .sidebar {
     transform: translateX(0);
   }
 
@@ -1198,10 +1203,10 @@ function onDocClick(e: Event): void {
     margin-left: 0 !important;
   }
 
-  /* 移动端侧栏仍以固定宽度可见：topbar/content 沿用与桌面同源的偏移令牌 */
+  /* R469 移动端侧栏改为抽屉态：默认隐藏、内容回流占满，不保留侧栏占位偏移 */
   .topbar,
   .content {
-    margin-left: var(--sidebar-width);
+    margin-left: 0;
   }
 
   .content {

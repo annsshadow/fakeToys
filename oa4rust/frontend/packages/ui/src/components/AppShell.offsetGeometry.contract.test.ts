@@ -13,7 +13,7 @@
  *   1) 模板不得再用内联 marginLeft 为 topbar/content 让位；
  *   2) .main-area 是唯一的桌面偏移来源，折叠态由
  *      .app-shell.collapsed .main-area 收窄到 --sidebar-collapsed；
- *   3) 移动端媒体查询需为 .topbar/.content 提供与桌面同源的偏移令牌；
+ *   3) 移动端媒体查询不得再为 .topbar/.content 提供侧栏偏移（R469 改为抽屉态，内容回流占满）；
  *   4) 顶层 .content 不再自带 margin-left（避免第三条偏移链路）。
  */
 import { readFileSync } from 'node:fs'
@@ -38,9 +38,12 @@ describe('AppShell 侧栏偏移几何（R293）', () => {
     )
   })
 
-  it('移动端媒体查询为 topbar/content 提供侧栏偏移补偿', () => {
-    expect(source).toMatch(
+  it('移动端媒体查询无侧栏偏移补偿（内容回流占满，侧栏走抽屉态）', () => {
+    expect(source, '移动端 .topbar/.content 不得再加 --sidebar-width 偏移，否则 320px 仅剩 80px 窄缝').not.toMatch(
       /@media \(max-width: 768px\)\s*\{[\s\S]*?\.topbar,\s*\.content\s*\{[^}]*margin-left:\s*var\(--sidebar-width\)/,
+    )
+    expect(source, '移动端 .topbar/.content 必须 margin-left:0').toMatch(
+      /@media \(max-width: 768px\)\s*\{[\s\S]*?\.topbar,\s*\.content\s*\{[^}]*margin-left:\s*0/,
     )
   })
 
