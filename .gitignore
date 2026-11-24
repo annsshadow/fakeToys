@@ -287,3 +287,6 @@ docs/laiyipao/audits/round18-reaction-damage-impact/auth-init.js
 
 docs/laiyipao/audits/round18-reaction-damage-impact/mint-probe.sh
 docs/laiyipao/audits/round18-reaction-damage-impact/probe.js
+# R19 E2E 复查审计临时真值（guest_token / dump / 注入脚本）不入库
+docs/laiyipao/audits/round19-player-reaction-impact/data/
+docs/laiyipao/audits/round19-player-reaction-impact/auth-init.js
