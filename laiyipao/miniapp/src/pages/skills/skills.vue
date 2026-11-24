@@ -16,6 +16,24 @@
         <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
         <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
       </view>
+      <!-- R23 备战态构筑反应覆盖诊断：纯客户端派生，只读不写构筑 -->
+      <view class="r23-coverage-card">
+        <view v-if="r23Coverage.status === 'ok'">
+          <text class="r23-coverage-head">当前构筑可触发反应</text>
+          <view class="r23-coverage-tags">
+            <text v-for="k in r23Coverage.covered" :key="k" class="r23-coverage-tag" :data-r23-reaction="k">{{ r23ReactionName(k) }}</text>
+          </view>
+          <text class="r23-gap-suggest" v-if="r23Coverage.gap">{{ r23Coverage.gap }}</text>
+        </view>
+        <text v-else class="r23-coverage-empty" role="status" aria-live="polite">{{ r23Coverage.emptyText }}</text>
+        <view class="r23-ai-note">
+          <text class="r23-ai-badge">AI · 构筑反应诊断</text>
+          <text class="r23-ai-conclusion">{{ r23Coverage.aiConclusion }}</text>
+          <text class="r23-ai-basis">依据：构筑槽元素 × REACTION_PAIRS(源自引擎 lookupReaction)派生</text>
+          <text class="r23-ai-cta" @click="r23GoLoadout">去调整出战配置 →</text>
+          <text class="r23-ai-honesty">辅助诊断非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
+        </view>
+      </view>
       <view class="r3-kpi r3-enter">
         <view class="r3-kpi-main">
           <text class="r3-kpi-num">{{ r3AiSkill ? r3AiSkill.name : '待配置' }}</text>
@@ -269,7 +287,8 @@ import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
 import { computed, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
+import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
 import { fetchRecommendationImpact, type R7ImpactView } from '@/pages/_shared/r7ImpactApply'
@@ -326,6 +345,72 @@ const allSkillDefs = computed(() => [
   ...(store.config?.skills ?? []),
   ...(store.config?.composite_skills ?? []),
 ])
+
+/* -------------------------------------------------------------------------- */
+/* R23 备战态构筑反应覆盖诊断（纯客户端派生，只读不写 loadout）                  */
+/* -------------------------------------------------------------------------- */
+function r23ReactionName(k: ReactionKey): string {
+  return REACTIONS[k].name
+}
+
+function r23Covered(elements: Element[]): ReactionKey[] {
+  const set = new Set<ReactionKey>()
+  for (const a of elements) {
+    for (const b of elements) {
+      if (a === b) continue
+      for (const k of REACTION_ORDER) {
+        if (REACTION_PAIRS[k].some(([x, y]) => x === a && y === b)) set.add(k)
+      }
+    }
+  }
+  return REACTION_ORDER.filter((k) => set.has(k))
+}
+
+function r23BestGap(elements: Element[]): { element: Element; added: ReactionKey[] } | null {
+  if (elements.length === 0) return null
+  const before = r23Covered(elements)
+  let best: { element: Element; added: ReactionKey[] } | null = null
+  for (const e of ELEMENT_ORDER) {
+    const added = r23Covered([...elements, e]).filter((k) => !before.includes(k))
+    if (added.length === 0) continue
+    if (!best || added.length > best.added.length) best = { element: e, added }
+  }
+  return best
+}
+
+const r23Coverage = computed(() => {
+  const byId = new Map(allSkillDefs.value.map((s) => [s.id, s]))
+  // captain 口径：apply_element 是引擎 applyElement 实际施加元素，与 R22 battle.vue 同源；
+  // element 与之同源但 apply_element 才是引擎真值，空串过滤。
+  const elements = Array.from(new Set(
+    store.loadout.slice(0, 4)
+      .map((id) => byId.get(id)?.apply_element)
+      .filter((e): e is Element => !!e && ELEMENT_ORDER.includes(e as Element)),
+  ))
+  const covered = r23Covered(elements)
+  const gap = r23BestGap(elements)
+  const base = { covered, gap: null as string | null, status: 'ok' as 'ok' | 'empty', emptyText: '' }
+  if (elements.length === 0) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑没有元素技能，无法诊断反应覆盖', aiConclusion: '当前构筑还没有元素技能，无法诊断反应覆盖' }
+  }
+  if (!gap && covered.length && covered.length >= 5) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑已覆盖全部可触发反应，无需补齐', aiConclusion: '本套构筑已覆盖全部可触发反应，无需补齐' }
+  }
+  if (!gap) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑已覆盖全部可触发反应，无需补齐', aiConclusion: '本套构筑已覆盖全部可触发反应，无需补齐' }
+  }
+  const gapText = `补【${ELEMENT_NAME[gap.element]}】可新增【${r23ReactionName(gap.added[0]!)}】等${gap.added.length}种反应`
+  return {
+    ...base,
+    gap: gapText,
+    aiConclusion: `本套构筑覆盖 ${covered.length} 种反应（${covered.map(r23ReactionName).join('、')}）；${gapText}`,
+  }
+})
+
+function r23GoLoadout() {
+  // 本页即出战构筑页，CTA 只做聚焦提示，不写入任何 store 状态。
+  uni.showToast?.({ title: '调整下方出战槽位即可切换元素', icon: 'none' })
+}
 const compositeSkills = computed(() => {
   const byId = new Map(allSkillDefs.value.map((s) => [s.id, s]))
   const recipes = store.config?.recipes ?? []
@@ -591,6 +676,10 @@ async function doLoadPage(): Promise<void> {
       return
     }
   }
+  // R23-BUG：深链接/刷新直入时 loadout 仍是默认 [0,0,0,0]，
+  // 诊断卡会把「尚未加载权威构筑」谎报成空构筑。必须同幂等路径拉一次权威槽位。
+  // loadLoadout 自带序号守卫且失败回退本地值，幂等安全。
+  await store.loadLoadout()
   pageLoaded = true
 }
 
@@ -637,4 +726,32 @@ onShow(() => { void loadPage() })
 
 /* R10 写入成功反馈：与错误色区分，保持遮罩内可见直到玩家关闭 */
 .apply-done { display: block; margin-top: 10rpx; font-size: 22rpx; line-height: 1.5; color: var(--ok); }
+
+/* R23 构筑反应覆盖诊断：沿用既有 token，零新增视觉令牌 */
+.r23-coverage-card {
+  margin: 12rpx 0;
+  padding: 12rpx;
+  border-left: 4rpx solid var(--accent);
+  border-radius: 10rpx;
+  background: var(--panel-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.r23-coverage-head { font-size: 22rpx; font-weight: 700; color: var(--accent); }
+.r23-coverage-tags { display: flex; flex-wrap: wrap; gap: 6rpx; }
+.r23-coverage-tag {
+  padding: 3rpx 8rpx;
+  border: 1rpx solid var(--fire);
+  border-radius: 8rpx;
+  color: var(--fire);
+  font-size: 20rpx;
+}
+.r23-gap-suggest { color: var(--warn); font-size: 21rpx; }
+.r23-coverage-empty { color: var(--text-2); font-size: 21rpx; }
+.r23-ai-note { display: flex; flex-direction: column; gap: 3rpx; margin-top: 6rpx; }
+.r23-ai-badge { color: var(--accent); font-weight: 700; font-size: 21rpx; }
+.r23-ai-conclusion { color: var(--text); font-size: 21rpx; }
+.r23-ai-basis, .r23-ai-honesty { color: var(--text-2); font-size: 19rpx; }
+.r23-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
 </style>
