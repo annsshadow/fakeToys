@@ -21,7 +21,7 @@ echo "=== BATTLES 378 (HAS TIMELINE) ==="
 run open "$BASE/admin/battles" >/dev/null 2>&1; sleep 4
 run screenshot "$SH/r16-01-battles-list.png" >/dev/null 2>&1
 echo "FIND378: $(run eval --stdin < "$D/find-row.js" 2>&1 | head -1)"
-echo "CLICK378: $(run click '[data-battle-id="378"] .el-button' 2>&1 | head -2 | tail -1)"
+echo "CLICK378: $(run click '[data-detail-id="378"]' 2>&1 | head -2 | tail -1)"
 sleep 4
 echo "DOM378: $(j probe.js)"
 run screenshot "$SH/r16-02-timeline-top.png" >/dev/null 2>&1
@@ -31,7 +31,7 @@ run screenshot "$SH/r16-03-timeline-scroll.png" >/dev/null 2>&1
 echo "=== OLD BATTLE 41 (EMPTY) ==="
 run eval "document.querySelector('.el-drawer__close-btn')?.click()" >/dev/null 2>&1; sleep 1
 run eval --stdin < "$D/find-old.js" >/dev/null 2>&1
-echo "CLICK41: $(run click '[data-battle-id="41"] .el-button' 2>&1 | head -2 | tail -1)"
+echo "CLICK41: $(run click '[data-detail-id="41"]' 2>&1 | head -2 | tail -1)"
 sleep 4
 echo "DOM41: $(j probe.js)"
 run screenshot "$SH/r16-04-old-empty.png" >/dev/null 2>&1
