@@ -322,3 +322,7 @@ docs/laiyipao/audits/round24-live-element-hud/auth-init.js
 # R25 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
 docs/laiyipao/audits/round25-battle-reaction-impact/data/
 docs/laiyipao/audits/round25-battle-reaction-impact/auth-init.js
+
+# R26 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round26-next-wave-brief/data/
+docs/laiyipao/audits/round26-next-wave-brief/auth-init.js
