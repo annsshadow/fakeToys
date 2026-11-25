@@ -28,9 +28,12 @@ import type { AiInsight } from '@/utils/aiInsight'
 import { spreadStacksText, armorShredText, knockbackText } from '@/reactionMechanicsText'
 import { kindText, cooldownText, pierceText, aoeRadiusText, chainText, buildSkillMechanicsAi, SKILL_AI_CTA } from '@/skillMechanicsText'
 import { speedText, armorText, shieldHpText, attackText, attackRangeText, attackIntervalText, flyHeightText, boolText, MECHANISM_EMPTY, buildEnemyMechanicsAi, ENEMY_AI_CTA } from '@/enemyMechanicsText'
+// R34 关卡机制导入锚点：bossText, terrainText, armorPermilleText, maxScoreText, MECHANISM_EMPTY, buildLevelMechanicsAi, LEVEL_AI_CTA
+// MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
+import { bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMechanicsAi, LEVEL_AI_CTA } from '@/levelMechanicsText'
 
 interface ConfigResp {
-  levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
+  levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
   enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; speed: number; armor: number; shield_hp: number; attack: number; attack_range: number; attack_interval: number; fly_height: number; burrow: boolean; is_boss: boolean; descr: string }>
   skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; chain: number; apply_stacks: number; descr: string }>
   composite_skills: Array<{ id: number; name: string; element: string; descr: string }>
@@ -1163,32 +1166,52 @@ onUnmounted(() => {
         </section>
 
         <!-- 关卡 -->
-        <section v-show="activeTab === 'levels'" class="wiki-section">
+        <section v-show="activeTab === 'levels'" class="wiki-section r34-level-mechanics">
           <el-select v-model="activeChapter" style="width: 160px; margin-bottom: 12px">
             <el-option v-for="c in cfg?.chapters ?? []" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
-          <el-table
-            :data="chapterLevels"
-            size="small"
-            border
-            stripe
-            :row-class-name="rowFocusClass('level')"
-          >
-            <el-table-column prop="id" label="关" width="60" />
-            <el-table-column prop="name" label="名称" min-width="140" />
-            <el-table-column prop="difficulty" label="难度" width="80" />
-            <el-table-column prop="base_hp" label="防线血量" width="100" />
-            <el-table-column prop="wave_count" label="波次" width="70" />
-            <el-table-column prop="energy_cost" label="体力" width="70" />
-            <el-table-column prop="element_cap" label="层数上限" width="94" />
-            <el-table-column prop="max_reaction_tier" label="反应阶" width="86" />
-            <el-table-column label="星级门槛" min-width="160">
-              <template #default="{ row }">{{ row.star_targets.join(' / ') }}</template>
-            </el-table-column>
-            <template #empty>
-              <el-empty :description="emptyText" :image-size="60" />
-            </template>
-          </el-table>
+          <div class="r34-level-table-scroll">
+            <el-table
+              :data="chapterLevels"
+              size="small"
+              border
+              stripe
+              :row-class-name="rowFocusClass('level')"
+            >
+              <el-table-column prop="id" label="关" width="60" />
+              <el-table-column prop="name" label="名称" min-width="140" />
+              <el-table-column prop="difficulty" label="难度" width="80" />
+              <el-table-column prop="base_hp" label="防线血量" width="100" />
+              <el-table-column prop="wave_count" label="波次" width="70" />
+              <el-table-column prop="energy_cost" label="体力" width="70" />
+              <el-table-column prop="element_cap" label="层数上限" width="94" />
+              <el-table-column prop="max_reaction_tier" label="反应阶" width="86" />
+              <el-table-column label="星级门槛" min-width="160">
+                <template #default="{ row }">{{ row.star_targets.join(' / ') }}</template>
+              </el-table-column>
+              <el-table-column label="首领" width="70">
+                <template #default="{ row }">{{ bossText(row.is_boss) }}</template>
+              </el-table-column>
+              <el-table-column label="地形（配置基值）" min-width="180">
+                <template #default="{ row }">{{ terrainText(row.terrain) }}</template>
+              </el-table-column>
+              <el-table-column label="护甲‰" width="82">
+                <template #default="{ row }">{{ armorPermilleText(row.armor_permille) }}</template>
+              </el-table-column>
+              <el-table-column label="满分" width="78">
+                <template #default="{ row }">{{ maxScoreText(row.max_score) }}</template>
+              </el-table-column>
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
+          <div class="r34-ai-note">
+            <p><strong>AI 机制概览：</strong>{{ buildLevelMechanicsAi(cfg?.levels ?? []) }}</p>
+            <p class="r34-ai-basis">依据：公开 /api/v1/config 的 levels（与 H5/Go 引擎同源 SeedLevel）；地形实际触发以结算 terrain_used 为准</p>
+            <p class="r34-ai-cta"><a data-r34-cta :href="urlFor('levels')" @click.prevent="goTo({ tab: 'levels' })">{{ LEVEL_AI_CTA }}</a></p>
+            <p class="r34-ai-honesty">辅助展示非权威战斗数据，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+          </div>
         </section>
 
         <!-- 实战统计 -->
@@ -1625,6 +1648,29 @@ h4 {
   color: var(--lyp-muted);
 }
 .r33-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R34：关卡机制表表内横向滚动，不造成页面级溢出 */
+.r34-level-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r34-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r34-ai-note p {
+  margin: 2px 0;
+}
+.r34-ai-basis,
+.r34-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r34-ai-cta a {
   color: var(--lyp-accent);
 }
 </style>
