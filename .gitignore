@@ -453,3 +453,11 @@ docs/laiyipao/audits/round41-wiki-chapters/admin-auth-init.js
 # R41 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round41-postdeploy/data/
 docs/laiyipao/audits/round41-postdeploy/admin-auth-init.js
+
+# R42 Wiki关卡所属章节审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round42-wiki-level-chapter/data/
+docs/laiyipao/audits/round42-wiki-level-chapter/admin-auth-init.js
+
+# R42 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round42-postdeploy/data/
+docs/laiyipao/audits/round42-postdeploy/admin-auth-init.js
