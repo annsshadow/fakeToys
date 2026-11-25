@@ -501,3 +501,11 @@ docs/laiyipao/audits/round51-me-radar-growth/admin-auth-init.js
 # R51 me页五维雷达部署后审计临时真值不入库
 docs/laiyipao/audits/round51-postdeploy/data/
 docs/laiyipao/audits/round51-postdeploy/admin-auth-init.js
+
+# R53 首页pct取整审计临时真值不入库
+docs/laiyipao/audits/round53-home-pct-rounding/data/
+docs/laiyipao/audits/round53-home-pct-rounding/admin-auth-init.js
+
+# R53 首页pct取整部署后审计临时真值不入库
+docs/laiyipao/audits/round53-postdeploy/data/
+docs/laiyipao/audits/round53-postdeploy/admin-auth-init.js
