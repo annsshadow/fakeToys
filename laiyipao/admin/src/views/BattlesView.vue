@@ -280,6 +280,15 @@ async function submitVerify() {
   }
 }
 
+/**
+ * R47：验真 CTA 只定位到同抽屉已有验真区，不自动提交/不自动填哈希。
+ */
+function scrollToVerify() {
+  const el = document.querySelector<HTMLElement>('.verify-row')
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 function fmtDur(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
@@ -676,7 +685,7 @@ const asRow = (r: unknown) => r as AdminBattleView
             </span>
           </div>
           <p class="r16-timeline-basis">依据：reaction_timeline.events（wave/tick/reaction/enemy_uid/damage），展示性归因、非权威结算</p>
-          <div v-if="reactionTimeline.ok" class="r16-timeline-cta">发起验真 →</div>
+          <div v-if="reactionTimeline.ok" class="r16-timeline-cta" @click="scrollToVerify">发起验真 →</div>
           <div v-if="!reactionTimeline.ok" class="r16-timeline-empty">{{ TIMELINE_EMPTY_TEXT }}</div>
           <template v-else>
             <div
@@ -738,7 +747,7 @@ const asRow = (r: unknown) => r as AdminBattleView
 .r16-timeline-title { font-weight: 600; color: #7ee787; }
 .r16-timeline-summary { font-size: 12px; }
 .r16-timeline-basis { margin: 6px 0; font-size: 11px; opacity: 0.75; line-height: 1.5; }
-.r16-timeline-cta { font-size: 12px; color: var(--el-color-primary, #409eff); margin-bottom: 4px; }
+.r16-timeline-cta { font-size: 12px; color: var(--el-color-primary, #409eff); margin-bottom: 4px; cursor: pointer; }
 .r16-timeline-empty { font-size: 12px; opacity: 0.75; padding: 4px 0; }
 .r16-timeline-row { font-size: 12px; padding: 3px 0; border-top: 1px solid var(--lyp-border); font-variant-numeric: tabular-nums; }
 .r16-truncated-note { font-size: 11px; opacity: 0.8; margin-top: 6px; }
