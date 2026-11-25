@@ -1,0 +1,1 @@
+(() => { const sec=document.querySelector('.r41-chapter-mechanics'); const rows=sec?sec.querySelectorAll('.el-table__body tbody tr').length:null; return JSON.stringify({hash:location.hash,dashboardJump:location.hash.indexOf('dashboard')>=0,chapterRows:rows,onWikiPath:location.hash.indexOf('/wiki')>=0}); })()
