@@ -197,7 +197,7 @@
             <input id="bbs-section-name" v-model="sectionName" class="form-input" placeholder="版块名称"
               maxlength="30" data-testid="bbs-section-name" />
           </div>
-          <div v-if="sectionError" class="error-msg">{{ sectionError }}</div>
+          <div v-if="sectionError" class="error-msg" data-oa-field-error>{{ sectionError }}</div>
           <div class="modal-footer">
             <button type="button" class="btn-cancel" @click="closeSectionModal">取消</button>
             <button type="submit" class="btn-submit" :disabled="!sectionName.trim() || sectionBusy" data-testid="bbs-section-save">
