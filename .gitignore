@@ -397,3 +397,11 @@ docs/laiyipao/audits/round34-wiki-level-mechanics/admin-auth-init.js
 # R34 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round34-postdeploy/data/
 docs/laiyipao/audits/round34-postdeploy/admin-auth-init.js
+
+# R35 Wiki 宝石图鉴审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round35-wiki-gem-mechanics/data/
+docs/laiyipao/audits/round35-wiki-gem-mechanics/admin-auth-init.js
+
+# R35 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round35-postdeploy/data/
+docs/laiyipao/audits/round35-postdeploy/admin-auth-init.js
