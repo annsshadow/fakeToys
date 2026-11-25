@@ -1,0 +1,1 @@
+(() => { const tr=document.querySelector('.r41-chapter-table-scroll .el-table__body tbody tr'); if(!tr)return JSON.stringify({err:'no tr'}); return JSON.stringify({html:tr.outerHTML.slice(0,2500),tds:Array.from(tr.children).map(td=>({tag:td.tagName,cls:td.className,txt:(td.innerText||td.textContent||'').trim(),h:td.outerHTML.slice(0,200)}))}); })()
