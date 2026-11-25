@@ -47,6 +47,8 @@ import { rarityText, passiveText, dropRatesText, buildSkinDropMechanicsAi, SKIN_
 import { RATING_KEYS, ratingLabel, ratingValue, buildRatingMechanicsAi, RATING_AI_BASIS, RATING_AI_HONESTY, RATING_AI_CTA } from '@/ratingMechanicsText'
 // R41：章节六字段表导入锚点。bossText 与 R34 同名，用小写后缀别名，模板调用仍逐字可读。
 import { rangeText, terrainKindText, bossText, buildChapterMechanicsAi, CHAPTER_AI_BASIS, CHAPTER_AI_HONESTY, CHAPTER_AI_CTA } from '@/chapterMechanicsText'
+// R42：关卡所属章节交叉引用；MECHANISM_EMPTY 与 @/enemyMechanicsText 同源同值，别名避免重复声明。
+import { MECHANISM_EMPTY as LEVEL_CHAPTER_MECHANISM_EMPTY, levelChapterText, buildLevelChapterAi, LEVEL_CHAPTER_AI_BASIS, LEVEL_CHAPTER_AI_HONESTY, LEVEL_CHAPTER_AI_CTA } from '@/levelChapterText'
 
 // R40：评分表行键类型；el-table 槽位的 row 是 any，收窄后才能索引封闭五字段类型。
 type RatingWeightKey = (typeof RATING_KEYS)[number]
@@ -1559,10 +1561,21 @@ onUnmounted(() => {
               <el-table-column label="满分" width="78">
                 <template #default="{ row }">{{ maxScoreText(row.max_score) }}</template>
               </el-table-column>
+              <el-table-column label="所属章节" min-width="120">
+                <template #default="{ row }">
+                  <a :href="urlFor('levels', 'chapter-mechanics')" @click.prevent="goTo({ tab: 'levels', anchor: 'chapter-mechanics' })">{{ levelChapterText(row.chapter, cfg?.chapters ?? []) }}</a>
+                </template>
+              </el-table-column>
               <template #empty>
                 <el-empty :description="emptyText" :image-size="60" />
               </template>
             </el-table>
+          </div>
+          <div class="r42-level-chapter-note" :data-empty="LEVEL_CHAPTER_MECHANISM_EMPTY">
+            <p><strong>AI 章节交叉概览：</strong>{{ buildLevelChapterAi(cfg?.levels ?? [], cfg?.chapters ?? []) }}</p>
+            <p class="r42-ai-basis" :title="LEVEL_CHAPTER_AI_BASIS" :data-ai-basis="LEVEL_CHAPTER_AI_BASIS">依据：公开 /api/v1/config 的 levels.chapter 与 chapters（与服务端 LevelSummary.chapter / domain.ChapterOf 同源）</p>
+            <p class="r42-ai-cta" :data-r42-cta="LEVEL_CHAPTER_AI_CTA"><a :href="urlFor('levels')" @click.prevent="goTo({ tab: 'levels', anchor: 'chapter-mechanics' })">查看章节一览 →</a></p>
+            <p class="r42-ai-honesty" :title="LEVEL_CHAPTER_AI_HONESTY" :data-ai-honesty="LEVEL_CHAPTER_AI_HONESTY">章节是配置归属，不是地形使用 terrain_used，也不参与 replay_hash；实际战斗数据以结算为准，差异以公开 /api/v1/config 为准</p>
           </div>
           <div class="r34-ai-note">
             <p><strong>AI 机制概览：</strong>{{ buildLevelMechanicsAi(cfg?.levels ?? []) }}</p>
@@ -2091,6 +2104,25 @@ h4 {
 .r34-level-table-scroll {
   overflow-x: auto;
   max-width: 100%;
+}
+/* R42：关卡×章节交叉概览；表内横滚，不造成页面级溢出 */
+.r42-level-chapter-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r42-level-chapter-note p {
+  margin: 2px 0;
+}
+.r42-ai-basis,
+.r42-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r42-ai-cta a {
+  color: var(--lyp-accent);
 }
 .r34-ai-note {
   margin-top: 12px;
