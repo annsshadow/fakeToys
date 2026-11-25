@@ -1,7 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Button, Space, Select, Switch, message, Progress, Tag, Input } from 'antd'
+import { Card, Button, Space, Select, Switch, message, Progress, Tag, Input, Modal } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   apiErrorDetail,
@@ -63,13 +63,19 @@ export default function Augmentation() {
 
   // 第 56 轮：删除断点（从头重跑的前置能力）。删除后刷新列表。
   const doDeleteCheckpoint = async (taskId: string) => {
-    try {
-      await deleteCheckpoint(taskId)
-      message.success('断点已删除')
-      await loadCheckpoints()
-    } catch (err) {
-      message.error(apiErrorDetail(err, '删除断点失败'))
-    }
+    Modal.confirm({
+      title: '确认删除断点',
+      content: '删除后该任务须从头重跑，确定继续？',
+      onOk: async () => {
+        try {
+          await deleteCheckpoint(taskId)
+          message.success('断点已删除')
+          await loadCheckpoints()
+        } catch (err) {
+          message.error(apiErrorDetail(err, '删除断点失败'))
+        }
+      },
+    })
   }
 
   const loadCheckpoints = async () => {

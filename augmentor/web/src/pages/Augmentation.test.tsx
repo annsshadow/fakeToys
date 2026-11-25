@@ -15,7 +15,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { message } from 'antd'
+import { Modal, message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
@@ -87,6 +87,7 @@ import Augmentation from './Augmentation'
 
 afterEach(() => {
   cleanup()
+  Modal.destroyAll()
   message.destroy()
   vi.clearAllMocks()
   vi.useRealTimers()
@@ -320,17 +321,39 @@ describe('Augmentation 断点列表（L211 接线）', () => {
     expect(await screen.findByText('暂无断点')).toBeInTheDocument()
   })
 
-  it('第 56 轮：点断点 Tag 关闭按钮 → 调删除接口并刷新列表', async () => {
+  it('第 56 轮（R503）：点断点 Tag 关闭按钮 → 先弹二次确认，取消不删，确定才调删除接口并刷新列表', async () => {
     spies.getCheckpoints.mockResolvedValue({ checkpoints: ['ck-a', 'ck-b'] })
     spies.deleteCheckpoint.mockResolvedValue({ success: true, message: '断点已删除' })
 
     render(<Augmentation />)
     await waitFor(() => expect(screen.getByText('ck-a')).toBeInTheDocument())
 
-    const tags = document.querySelectorAll('.ant-tag')
-    expect(tags.length).toBe(2)
-    const closeBtn = tags[0].querySelector('.ant-tag-close-icon') as HTMLElement
-    fireEvent.click(closeBtn)
+    const closeAndConfirm = () => {
+      const closeBtn = document.querySelectorAll('.ant-tag')[0].querySelector('.ant-tag-close-icon') as HTMLElement
+      fireEvent.click(closeBtn)
+    }
+
+    // R503：点关闭只弹确认框，删除接口此时不得被调用
+    closeAndConfirm()
+    await waitFor(() => expect(document.querySelector('.ant-modal-confirm')).toBeTruthy())
+    expect(document.body.textContent).toContain('删除后该任务须从头重跑')
+    expect(spies.deleteCheckpoint).not.toHaveBeenCalled()
+
+    // 取消：删除接口仍不得被调用，断点仍在。antd 确认框是静态 DOM、关闭动画不卸载，
+    // 主动 destroyAll 清理后再进入下一段，避免残留旧框干扰
+    const cancelBtn = document.querySelectorAll('.ant-modal-confirm-btns button')[0] as HTMLElement
+    expect(cancelBtn && cancelBtn.textContent).toContain('Cancel')
+    fireEvent.click(cancelBtn)
+    expect(spies.deleteCheckpoint).not.toHaveBeenCalled()
+    expect(screen.getByText('ck-a')).toBeInTheDocument()
+    Modal.destroyAll()
+
+    // 再次点关闭 → 点确定才真正删除并刷新列表
+    closeAndConfirm()
+    await waitFor(() => expect(document.querySelector('.ant-modal-confirm')).toBeTruthy())
+    const okBtn = document.querySelector('.ant-modal-confirm-btns .ant-btn-primary') as HTMLElement
+    expect(okBtn && okBtn.textContent).toContain('OK')
+    fireEvent.click(okBtn)
 
     await waitFor(() => expect(spies.deleteCheckpoint).toHaveBeenCalledWith('ck-a'))
     // 删除后刷新列表
