@@ -18,12 +18,12 @@
     <!-- Toolbar -->
     <div class="toolbar glass-card">
       <div class="toolbar-left">
-        <select v-model="editorLang" class="tb-select">
+        <select v-model="editorLang" class="tb-select" aria-label="配置格式">
           <option value="json">JSON</option>
           <option value="yaml">YAML</option>
           <option value="properties">Properties</option>
         </select>
-        <select v-model="editorTheme" class="tb-select">
+        <select v-model="editorTheme" class="tb-select" aria-label="编辑器主题">
           <option value="dark">暗色主题</option>
           <option value="light">亮色主题</option>
         </select>
