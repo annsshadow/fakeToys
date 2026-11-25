@@ -69,7 +69,7 @@
             <button type="button" class="run-btn" data-testid="dept-tree-retry" @click="loadDeptTree">加载部门树</button>
           </div>
           <div class="org-create-unit" data-testid="org-create-unit-form">
-            <button type="button" class="org-create-toggle" data-testid="org-create-unit-btn" @click="showUnitCreate = !showUnitCreate">{{ showUnitCreate ? '收起' : '新建部门' }}</button>
+            <button type="button" class="org-create-toggle" data-testid="org-create-unit-btn" :aria-expanded="showUnitCreate" @click="showUnitCreate = !showUnitCreate">{{ showUnitCreate ? '收起' : '新建部门' }}</button>
             <form v-if="showUnitCreate" @submit.prevent="createUnitFromForm">
               <input v-model="newDeptName" class="org-create-input" data-testid="org-create-unit-name" placeholder="部门名称" aria-label="部门名称" />
               <input v-model="newDeptParent" class="org-create-input" data-testid="org-create-unit-parent" placeholder="父级部门 ID / 名称（可选）" aria-label="父级部门" />

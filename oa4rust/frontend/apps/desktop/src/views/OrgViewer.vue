@@ -125,7 +125,7 @@
           <input v-model="keyword" @input="handleSearch" placeholder="搜索部门或人员" class="si2" />
         </div>
         <div class="org-create-form" data-testid="org-create-group-form">
-          <button type="button" class="org-create-toggle" data-testid="org-create-group-btn" @click="showGroupCreate = !showGroupCreate">{{ showGroupCreate ? '收起' : '新建组织组' }}</button>
+          <button type="button" class="org-create-toggle" data-testid="org-create-group-btn" :aria-expanded="showGroupCreate" @click="showGroupCreate = !showGroupCreate">{{ showGroupCreate ? '收起' : '新建组织组' }}</button>
           <form v-if="showGroupCreate" @submit.prevent="createGroupFromForm">
             <input v-model="newGroupName" class="org-create-input" data-testid="org-create-group-name" placeholder="输入组织组名称" aria-label="组织组名称" />
             <button type="submit" class="org-create-submit" data-testid="org-create-group-submit" :disabled="groupCreating">{{ groupCreating ? '创建中…' : '提交创建' }}</button>
