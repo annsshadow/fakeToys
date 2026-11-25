@@ -30,7 +30,7 @@ import { kindText, cooldownText, pierceText, aoeRadiusText, chainText, buildSkil
 import { speedText, armorText, shieldHpText, attackText, attackRangeText, attackIntervalText, flyHeightText, boolText, MECHANISM_EMPTY, buildEnemyMechanicsAi, ENEMY_AI_CTA } from '@/enemyMechanicsText'
 // R34 关卡机制导入锚点：bossText, terrainText, armorPermilleText, maxScoreText, MECHANISM_EMPTY, buildLevelMechanicsAi, LEVEL_AI_CTA
 // MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
-import { bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMechanicsAi, LEVEL_AI_CTA } from '@/levelMechanicsText'
+import { bossText as level_bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMechanicsAi, LEVEL_AI_CTA } from '@/levelMechanicsText'
 // R35 宝石图鉴导入锚点：attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA
 // MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
 import { attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA } from '@/gemMechanicsText'
@@ -45,6 +45,8 @@ import { MECHANISM_EMPTY as RECIPE_EMPTY, recipeMaterialsText as recipeTextFromH
 import { rarityText, passiveText, dropRatesText, buildSkinDropMechanicsAi, SKIN_DROP_AI_BASIS, SKIN_DROP_AI_HONESTY, SKIN_DROP_AI_CTA } from '@/skinDropMechanicsText'
 // R40：评分权重表；MECHANISM_EMPTY 复用上方导入（与 @/enemyMechanicsText 同源同值），避免重复声明。
 import { RATING_KEYS, ratingLabel, ratingValue, buildRatingMechanicsAi, RATING_AI_BASIS, RATING_AI_HONESTY, RATING_AI_CTA } from '@/ratingMechanicsText'
+// R41：章节六字段表导入锚点。bossText 与 R34 同名，用小写后缀别名，模板调用仍逐字可读。
+import { rangeText, terrainKindText, bossText, buildChapterMechanicsAi, CHAPTER_AI_BASIS, CHAPTER_AI_HONESTY, CHAPTER_AI_CTA } from '@/chapterMechanicsText'
 
 // R40：评分表行键类型；el-table 槽位的 row 是 any，收窄后才能索引封闭五字段类型。
 type RatingWeightKey = (typeof RATING_KEYS)[number]
@@ -195,9 +197,9 @@ function isSectionKey(v: string): v is SectionKey {
 // ---------- 深链 ----------
 
 /** 搜索命中的实体类型。`focus` 参数的前缀就是它。 */
-type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe' | 'skin' | 'rating'
+type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe' | 'skin' | 'rating' | 'chapter'
 
-const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe', 'skin', 'rating']
+const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe', 'skin', 'rating', 'chapter']
 
 const KIND_LABEL: Record<HitKind, string> = {
   level: '关卡',
@@ -213,6 +215,8 @@ const KIND_LABEL: Record<HitKind, string> = {
   skin: '皮肤',
   // t29：评分权重五维度也纳入全站搜索
   rating: '评分',
+  // R41：章节六字段（terrain_kind / boss_enemy_id 等）纳入全站搜索
+  chapter: '章节',
 }
 
 /** 导航目标：一个 section，可选页内锚点 / 可选高亮某一行。 */
@@ -598,6 +602,18 @@ const searchIndex = computed<SearchHit[]>(() => {
       meta: `评分 · ${key}`,
       body: `${key} ${ratingLabel(key)} 权重 ${ratingValue(c?.rating_weights?.[key])} 评分权重`,
       section: 'rating',
+    })
+  }
+  // R41：章节六字段纳入全站搜索；点击后跳关卡 tab 的章节表并按 id 高亮。
+  for (const ch of c.chapters ?? []) {
+    hits.push({
+      kind: 'chapter',
+      id: String(ch.id),
+      title: ch.name,
+      meta: `${rangeText(ch.start_level, ch.end_level)} · 章节 ${ch.id}`,
+      body: `${ch.name} ${ch.id} ${terrainKindText(ch.terrain_kind)} ${ch.terrain_kind} 章节`,
+      section: 'levels',
+      anchor: 'chapter-mechanics',
     })
   }
   return hits
@@ -1473,6 +1489,45 @@ onUnmounted(() => {
           <el-select v-model="activeChapter" style="width: 160px; margin-bottom: 12px">
             <el-option v-for="c in cfg?.chapters ?? []" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
+
+          <!-- R41：章节元数据六字段表（配置基值，非权威结算） -->
+          <div class="r41-chapter-mechanics" id="chapter-mechanics">
+            <h3 class="r41-chapter-title">章节一览（六字段 · 配置基值）</h3>
+            <div class="r41-chapter-table-scroll">
+              <el-table
+                :data="cfg?.chapters ?? []"
+                size="small"
+                border
+                stripe
+                :row-class-name="rowFocusClass('chapter')"
+              >
+                <el-table-column prop="id" label="ID" width="60" />
+                <el-table-column prop="name" label="名称" min-width="140" />
+                <el-table-column label="关卡区间" min-width="110">
+                  <template #default="{ row }">{{ rangeText(row.start_level, row.end_level) }}</template>
+                </el-table-column>
+                <el-table-column label="地形（配置基值）" min-width="150">
+                  <template #default="{ row }">{{ terrainKindText(row.terrain_kind) }}</template>
+                </el-table-column>
+                <el-table-column label="首领敌人" min-width="100">
+                  <template #default="{ row }">{{ bossText(row.boss_enemy_id) }}</template>
+                </el-table-column>
+                <el-table-column label="说明" min-width="180">
+                  <template #default="{ row }">{{ rangeText(row.start_level, row.end_level) }} · {{ terrainKindText(row.terrain_kind) }}（配置基值）</template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty :description="emptyText" :image-size="60" />
+                </template>
+              </el-table>
+            </div>
+            <div class="r41-ai-note">
+              <p class="r41-ai-conclusion"><strong>AI 章节概览：</strong>{{ buildChapterMechanicsAi(cfg?.chapters ?? []) }}</p>
+              <p class="r41-ai-basis" :title="CHAPTER_AI_BASIS" :data-ai-basis="CHAPTER_AI_BASIS">依据：公开 /api/v1/config 的 chapters（与服务端 domain.AllChapters 同源）；章节 terrain_kind 为配置基值，实际地形触发以结算 terrain_used 为准</p>
+              <p class="r41-ai-cta" :data-r41-cta="CHAPTER_AI_CTA"><a :href="urlFor('levels')" @click.prevent="goTo({ tab: 'levels' })">查看章节一览 →</a></p>
+              <p class="r41-ai-honesty" :title="CHAPTER_AI_HONESTY" :data-ai-honesty="CHAPTER_AI_HONESTY">章节 terrain_kind 是配置基值，与关卡 terrain_used（参与 replay_hash）不同概念，不得混同权威战斗数据；示例值不硬编码，差异以公开 /api/v1/config 为准</p>
+            </div>
+          </div>
+
           <div class="r34-level-table-scroll">
             <el-table
               :data="chapterLevels"
@@ -1493,7 +1548,7 @@ onUnmounted(() => {
                 <template #default="{ row }">{{ row.star_targets.join(' / ') }}</template>
               </el-table-column>
               <el-table-column label="首领" width="70">
-                <template #default="{ row }">{{ bossText(row.is_boss) }}</template>
+                <template #default="{ row }">{{ level_bossText(row.is_boss) }}</template>
               </el-table-column>
               <el-table-column label="地形（配置基值）" min-width="180">
                 <template #default="{ row }">{{ terrainText(row.terrain) }}</template>
@@ -2003,6 +2058,33 @@ h4 {
   color: var(--lyp-muted);
 }
 .r33-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R41：章节六字段表表内横向滚动，不造成页面级溢出 */
+.r41-chapter-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r41-chapter-title {
+  font-size: 13px;
+  margin: 4px 0 8px;
+}
+.r41-ai-note {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r41-ai-note p {
+  margin: 2px 0;
+}
+.r41-ai-basis,
+.r41-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r41-ai-cta a {
   color: var(--lyp-accent);
 }
 /* R34：关卡机制表表内横向滚动，不造成页面级溢出 */
