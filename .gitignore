@@ -485,3 +485,7 @@ docs/laiyipao/audits/round47-r16-verify-cta/admin-auth-init.js
 # R47 部署后独立回归审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
 docs/laiyipao/audits/round47-postdeploy/data/
 docs/laiyipao/audits/round47-postdeploy/admin-auth-init.js
+
+# R48 R12成长CTA审计临时真值不入库
+docs/laiyipao/audits/round48-r12-growth-cta/data/
+docs/laiyipao/audits/round48-r12-growth-cta/admin-auth-init.js
