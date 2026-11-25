@@ -34,12 +34,13 @@ import { bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMecha
 // R35 宝石图鉴导入锚点：attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA
 // MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
 import { attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA } from '@/gemMechanicsText'
+import { compositeUnlockText, buildCompositeMechanicsAi, COMPOSITE_AI_BASIS, COMPOSITE_AI_HONESTY, COMPOSITE_AI_CTA } from '@/compositeMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
   enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; speed: number; armor: number; shield_hp: number; attack: number; attack_range: number; attack_interval: number; fly_height: number; burrow: boolean; is_boss: boolean; descr: string }>
   skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; chain: number; apply_stacks: number; descr: string }>
-  composite_skills: Array<{ id: number; name: string; element: string; descr: string }>
+  composite_skills: Array<{ id: number; name: string; element: string; family?: string; descr: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; apply_stacks: number; chain: number; unlock_level: number }>
   // 装备目录（2026-10-21 P6-12）。
   //
   // ⚠️ 此前这个字段**全仓库零消费** —— 小程序端改从 `/me/equipment` 读
@@ -1035,26 +1036,61 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <h4 id="composite" style="margin-top: 16px">合成技能</h4>
-          <el-table
-            :data="cfg?.composite_skills ?? []"
-            size="small"
-            border
-            stripe
-            :row-class-name="rowFocusClass('composite')"
-          >
-            <el-table-column prop="id" label="ID" width="55" />
-            <el-table-column prop="name" label="名称" min-width="140" />
-            <el-table-column label="元素" width="80">
-              <template #default="{ row }">
-                <span :style="{ color: ELEMENT_COLOR[row.element] }">{{ ELEMENT_LABEL[row.element] }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="descr" label="说明" min-width="220" />
-            <template #empty>
-              <el-empty :description="emptyText" :image-size="60" />
-            </template>
-          </el-table>
+          <div id="composite" class="r36-composite-mechanics" style="margin-top: 16px">
+            <h4>合成技能</h4>
+            <div class="r36-composite-table-scroll">
+              <el-table
+                :data="cfg?.composite_skills ?? []"
+                size="small"
+                border
+                stripe
+                :row-class-name="rowFocusClass('composite')"
+              >
+                <el-table-column prop="id" label="ID" width="55" />
+                <el-table-column prop="name" label="名称" min-width="140" />
+                <el-table-column label="元素" width="80">
+                  <template #default="{ row }">
+                    <span :style="{ color: ELEMENT_COLOR[row.element] }">{{ ELEMENT_LABEL[row.element] ?? row.element }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="descr" label="说明" min-width="220" />
+                <el-table-column label="类型" width="80">
+                  <template #default="{ row }">{{ kindText(row.kind) }}</template>
+                </el-table-column>
+                <el-table-column label="冷却" width="86">
+                  <template #default="{ row }">{{ cooldownText(row.cooldown_ms) }}</template>
+                </el-table-column>
+                <el-table-column prop="base_damage" label="伤害" width="76" />
+                <el-table-column prop="heat_cost" label="热量" width="70" />
+                <el-table-column label="穿透" width="80">
+                  <template #default="{ row }">{{ pierceText(row.pierce) }}</template>
+                </el-table-column>
+                <el-table-column label="范围" width="90">
+                  <template #default="{ row }">{{ aoeRadiusText(row.aoe_radius) }}</template>
+                </el-table-column>
+                <el-table-column label="连锁" width="80">
+                  <template #default="{ row }">{{ chainText(row.chain) }}</template>
+                </el-table-column>
+                <el-table-column label="层数" width="66">
+                  <template #default="{ row }">
+                    {{ typeof row.apply_stacks === 'number' && Number.isInteger(row.apply_stacks) && row.apply_stacks > 0 ? row.apply_stacks : MECHANISM_EMPTY }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="解锁等级" width="90">
+                  <template #default="{ row }">{{ compositeUnlockText(row.unlock_level) }}</template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty :description="emptyText" :image-size="60" />
+                </template>
+              </el-table>
+            </div>
+            <div class="r36-ai-note">
+              <p class="r36-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildCompositeMechanicsAi(cfg?.composite_skills ?? []) }}</p>
+              <p class="r36-ai-basis" :title="COMPOSITE_AI_BASIS" :data-ai-basis="COMPOSITE_AI_BASIS">依据：公开 /api/v1/config 的 composite_skills（与服务端 SeedSkill / SeedCompositeSkills 同源）；格式化仅展示，不改结算</p>
+              <p class="r36-ai-cta" :data-r36-cta="COMPOSITE_AI_CTA"><a :href="urlFor('skills', 'composite')" @click.prevent="goTo({ tab: 'skills', anchor: 'composite' })">查看合成技能 →</a></p>
+              <p class="r36-ai-honesty" :title="COMPOSITE_AI_HONESTY" :data-ai-honesty="COMPOSITE_AI_HONESTY">辅助展示非权威战斗数据，展示为配置基值，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+            </div>
+          </div>
         </section>
 
         <!-- 装备（P6-12）-->
@@ -1761,6 +1797,29 @@ h4 {
 .r35-gem-table-scroll {
   overflow-x: auto;
   max-width: 100%;
+}
+/* R36：合成技能表表内横向滚动，不造成页面级溢出 */
+.r36-composite-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r36-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r36-ai-note p {
+  margin: 2px 0;
+}
+.r36-ai-basis,
+.r36-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r36-ai-cta a {
+  color: var(--lyp-accent);
 }
 .r35-ai-note {
   margin-top: 12px;
