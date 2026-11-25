@@ -816,6 +816,6 @@ async function loadCalTwin() {
 .ai-page .cal-create-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--ai-grid-2); padding: var(--ai-grid-2); border-radius: var(--ai-grid-2); background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); }
 .ai-page .cal-create-label { display: flex; flex-direction: column; gap: var(--ai-grid-1); font-size: 12px; color: var(--text-secondary); }
 .ai-page .cal-create-input,
-.ai-page .cal-create-color { border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); padding: 6px 10px; background: var(--ai-glass-bg); color: var(--text-primary); }
-.ai-page .cal-create-cancel { border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); padding: 7px 12px; background: transparent; color: var(--text-secondary); }
+.ai-page .cal-create-color { border: 1px solid var(--border-subtle); border-radius: var(--ai-grid-1); padding: 6px 10px; background: var(--ai-glass-bg); color: var(--text-primary); }
+.ai-page .cal-create-cancel { border: 1px solid var(--border-subtle); border-radius: var(--ai-grid-1); padding: 7px 12px; background: transparent; color: var(--text-secondary); }
 </style>
