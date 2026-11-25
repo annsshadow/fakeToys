@@ -38,6 +38,9 @@ import { compositeUnlockText, buildCompositeMechanicsAi, COMPOSITE_AI_BASIS, COM
 // R37：专精树节点复用上方 MECHANISM_EMPTY（与 @/enemyMechanicsText 同源同值），避免重复声明。
 // R37：以命名空间导入专精格式化，避免与 R32 技能表的 kindText 同名冲突；模板调用仍逐字可读。
 import * as masteryMechanics from '@/masteryMechanicsText'
+// R38：配方表复用上方 MECHANISM_EMPTY（与 @/enemyMechanicsText 同源同值），避免重复声明。
+// 单参包装只在模板里出现，底层格式化调用 recipeTextFromHelper(row, nameById.value)。
+import { MECHANISM_EMPTY as RECIPE_EMPTY, recipeMaterialsText as recipeTextFromHelper, tierText, buildRecipeMechanicsAi, RECIPE_AI_BASIS, RECIPE_AI_HONESTY, RECIPE_AI_CTA } from '@/recipeMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
@@ -87,6 +90,7 @@ interface ConfigResp {
     base_cost: number
   }
   mastery_families: Array<{ family: string; name: string; nodes: Array<{ id: number; family: string; layer: number; slot: number; name: string; kind: string; value: number; prereq_family: string; prereq_layer: number }> }>
+  recipes: Array<{ output: number; a: number; b: number; out_tier: number }>
 }
 
 // ---------- 章节与目录 ----------
@@ -163,9 +167,9 @@ function isSectionKey(v: string): v is SectionKey {
 // ---------- 深链 ----------
 
 /** 搜索命中的实体类型。`focus` 参数的前缀就是它。 */
-type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality'
+type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe'
 
-const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality']
+const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe']
 
 const KIND_LABEL: Record<HitKind, string> = {
   level: '关卡',
@@ -177,6 +181,7 @@ const KIND_LABEL: Record<HitKind, string> = {
   mastery: '专精',
   gem: '宝石',
   quality: '宝石品质',
+  recipe: '配方',
 }
 
 /** 导航目标：一个 section，可选页内锚点 / 可选高亮某一行。 */
@@ -515,6 +520,20 @@ const searchIndex = computed<SearchHit[]>(() => {
       section: 'gems',
     })
   }
+  for (const r of c.recipes ?? []) {
+    const map = nameById.value
+    const output = recipeOutputText(r.output)
+    const materials = recipeTextFromHelper(r, map)
+    hits.push({
+      kind: 'recipe',
+      id: String(r.output),
+      title: output,
+      meta: '合成配方',
+      body: `${materials} ${tierText(r.out_tier)} 合成配方${output}`,
+      section: 'skills',
+      anchor: 'composite',
+    })
+  }
   for (const f of c.mastery_families ?? []) {
     for (const n of f.nodes ?? []) {
       hits.push({
@@ -593,6 +612,27 @@ function amplifyPctText(v: number): number {
 const emptyText = '暂无数据'
 const loading = ref(false)
 const cfg = ref<ConfigResp | null>(null)
+
+// R38：技能 id → 名称映射。技能表与合成技能表都是公开 /config 的一部分，
+// 合并进同一张 Map 后，材料/产物列能显示真实技能名而不是 #id。
+const nameById = computed<Map<number, string>>(() => {
+  const m = new Map<number, string>()
+  for (const s of cfg.value?.skills ?? []) m.set(s.id, s.name)
+  for (const s of cfg.value?.composite_skills ?? []) m.set(s.id, s.name)
+  return m
+})
+
+/** 配方材料列的单参包装：底层 helper 仍是可测的纯二参函数。 */
+function recipeMaterialsText(row: unknown): string {
+  return recipeTextFromHelper(row, nameById.value)
+}
+
+/** 产物列复用同一张映射，未知 id 逐字标注，绝不猜测技能名。 */
+function recipeOutputText(output: unknown): string {
+  if (typeof output !== 'number' || !Number.isInteger(output) || output <= 0) return RECIPE_EMPTY
+  const name = nameById.value.get(output)
+  return typeof name === 'string' && name.length > 0 ? name : `（未知技能#${output}）`
+}
 const reactUsage = ref<Array<{ reaction: string; count: number }>>([])
 
 /** R6 §1E：知识缺口建议（接口优先，未上线回退 /config 真实数据）。 */
@@ -1092,6 +1132,38 @@ onUnmounted(() => {
               <p class="r36-ai-basis" :title="COMPOSITE_AI_BASIS" :data-ai-basis="COMPOSITE_AI_BASIS">依据：公开 /api/v1/config 的 composite_skills（与服务端 SeedSkill / SeedCompositeSkills 同源）；格式化仅展示，不改结算</p>
               <p class="r36-ai-cta" :data-r36-cta="COMPOSITE_AI_CTA"><a :href="urlFor('skills', 'composite')" @click.prevent="goTo({ tab: 'skills', anchor: 'composite' })">查看合成技能 →</a></p>
               <p class="r36-ai-honesty" :title="COMPOSITE_AI_HONESTY" :data-ai-honesty="COMPOSITE_AI_HONESTY">辅助展示非权威战斗数据，展示为配置基值，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+            </div>
+            <div class="r38-recipe-mechanics" style="margin-top: 16px">
+              <h4>合成配方</h4>
+              <p class="note">
+                配方只说明「由哪两个技能熔炼、产物几阶」：<strong>能否熔炼以游戏内材料拥有状态为准</strong>；
+                这里不展示战斗数值或词条范围，配置基值非权威战斗数据。
+              </p>
+              <div class="r38-recipe-table-scroll">
+                <el-table :data="cfg?.recipes ?? []" size="small" border stripe :row-class-name="rowFocusClass('recipe')">
+                  <el-table-column label="产物" min-width="140">
+                    <template #default="{ row }">{{ recipeOutputText(row.output) }}</template>
+                  </el-table-column>
+                  <el-table-column label="材料A" min-width="140">
+                    <template #default="{ row }">{{ recipeMaterialsText(row).split(' + ')[0] ?? RECIPE_EMPTY }}</template>
+                  </el-table-column>
+                  <el-table-column label="材料B" min-width="140">
+                    <template #default="{ row }">{{ recipeMaterialsText(row).split(' + ')[1] ?? RECIPE_EMPTY }}</template>
+                  </el-table-column>
+                  <el-table-column label="阶数" width="90">
+                    <template #default="{ row }">{{ tierText(row.out_tier) }}</template>
+                  </el-table-column>
+                  <template #empty>
+                    <el-empty :description="emptyText" :image-size="60" />
+                  </template>
+                </el-table>
+              </div>
+              <div class="r38-ai-note">
+                <p class="r38-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildRecipeMechanicsAi(cfg?.recipes ?? [], cfg?.skills ?? [], cfg?.composite_skills ?? []) }}</p>
+                <p class="r38-ai-basis" :title="RECIPE_AI_BASIS" :data-ai-basis="RECIPE_AI_BASIS">依据：公开 /api/v1/config 的 recipes（与服务端 SeedRecipe / SeedRecipes 同源）；仅展示配方，不改熔炼结算</p>
+                <p class="r38-ai-cta" :data-r38-cta="RECIPE_AI_CTA"><a :href="urlFor('skills', 'composite')" @click.prevent="goTo({ tab: 'skills', anchor: 'composite' })">查看合成配方 →</a></p>
+                <p class="r38-ai-honesty" :title="RECIPE_AI_HONESTY" :data-ai-honesty="RECIPE_AI_HONESTY">能否熔炼以游戏内材料拥有状态为准；配置基值非权威战斗数据，实际效果以引擎结算为准，权威回放以 replay_hash 为准</p>
+              </div>
             </div>
           </div>
         </section>
@@ -1878,6 +1950,29 @@ h4 {
   color: var(--lyp-muted);
 }
 .r37-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R38：合成配方表表内横向滚动，不造成页面级溢出 */
+.r38-recipe-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r38-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r38-ai-note p {
+  margin: 2px 0;
+}
+.r38-ai-basis,
+.r38-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r38-ai-cta a {
   color: var(--lyp-accent);
 }
 .r35-ai-note {
