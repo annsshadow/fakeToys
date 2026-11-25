@@ -191,7 +191,7 @@ function pickFromFilePicker(): void {
         </view>
         <view v-else-if="attachView === 'error'" class="tip tip-error">
           <view class="error-text">{{ attachError }}</view>
-          <view class="retry-btn" @tap="load()">重试</view>
+          <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
         </view>
         <view v-else-if="attachView === 'empty'" class="empty-guide ai-brand-fill">
           <view class="empty-guide-emoji" aria-hidden="true">📎</view>
@@ -200,15 +200,15 @@ function pickFromFilePicker(): void {
           <view class="empty-guide-actions">
             <button class="o2-btn" size="mini" @tap="pickFromAlbumOrCamera">拍照 / 相册</button>
             <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
-            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+            <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">刷新</view>
           </view>
         </view>
         <view v-if="attachError && attachRows.length > 0" class="tip-error error-banner">
           <text class="error-text">{{ attachError }}</text>
-          <view class="retry-btn" @tap="load()">重试</view>
+          <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
         </view>
         <view v-if="attachRows.length > 0" class="list">
-          <view v-for="(row, i) in attachRows" :key="'att' + i" class="item" @tap="downloadAttachment(row)">
+          <view v-for="(row, i) in attachRows" :key="'att' + i" class="item" role="button" tabindex="0" :aria-label="'查看' + nameOf(row) + '附件'" @tap="downloadAttachment(row)" @keydown.enter="downloadAttachment(row)" @keydown.space.prevent="downloadAttachment(row)">
             <text class="icon">📎</text>
             <view class="body">
               <view class="title">{{ nameOf(row) }}</view>
@@ -225,7 +225,7 @@ function pickFromFilePicker(): void {
         </view>
         <view v-else-if="filesView === 'error'" class="tip tip-error">
           <view class="error-text">{{ filesError }}</view>
-          <view class="retry-btn" @tap="load()">重试</view>
+          <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
         </view>
         <view v-else-if="filesView === 'empty'" class="empty-guide">
           <view class="empty-guide-emoji" aria-hidden="true">📄</view>
@@ -233,15 +233,15 @@ function pickFromFilePicker(): void {
           <text class="empty-guide-hint">上传一份文件，或刷新查看最新文档</text>
           <view class="empty-guide-actions">
             <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
-            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+            <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">刷新</view>
           </view>
         </view>
         <view v-if="filesError && rows.length > 0" class="tip-error error-banner">
           <text class="error-text">{{ filesError }}</text>
-          <view class="retry-btn" @tap="load()">重试</view>
+          <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
         </view>
         <view v-if="rows.length > 0" class="list">
-          <view v-for="(row, i) in rows" :key="i" class="item" @tap="downloadAndOpen(row)">
+          <view v-for="(row, i) in rows" :key="i" class="item" role="button" tabindex="0" :aria-label="'查看' + nameOf(row) + '文档'" @tap="downloadAndOpen(row)" @keydown.enter="downloadAndOpen(row)" @keydown.space.prevent="downloadAndOpen(row)">
             <text class="icon">📄</text>
             <view class="body">
               <view class="title">{{ nameOf(row) }}</view>
