@@ -5,6 +5,8 @@
  * 验证「已装备元素 × 手牌元素 → 新增/强化反应」纯展示卡。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { flushPromises } from '@vue/test-utils'
 import * as api from '@/api/client'
 import { installUniMock } from '../../test/uni-mock'
@@ -193,7 +195,7 @@ describe('battle.vue R22 选卡反应协同预判', () => {
     wrapper2.unmount()
   })
 
-  it('AI四判据：.r22-ai-note 含可见AI/真实结论/逐字依据行/可执行CTA，并含诚实红线', async () => {
+  it('AI四判据：.r22-ai-note 含可见AI/真实结论/逐字依据行/只读操作指引，并含诚实红线', async () => {
     const wrapper = await open(['fire', 'ice'], [
       { id: 'c1', name: '闪电卡', kind: 'skill', rarity: 'rare', descr: 'd', element: 'lightning' },
       { id: 'c2', name: '铁壁', kind: 'attribute', rarity: 'common', descr: 'd', element: '' },
@@ -203,8 +205,37 @@ describe('battle.vue R22 选卡反应协同预判', () => {
     expect(note.text()).toMatch(/AI/)
     expect(note.text()).toContain('新增【过热】等2种反应')
     expect(note.text()).toContain('依据：已装备元素 × 手牌元素，经 REACTION_PAIRS(源自引擎 lookupReaction)派生')
-    expect(note.text()).toContain('去装备/选它')
+    expect(note.text()).toContain('↑ 点上方卡牌即可装备它 →')
     expect(note.text()).toContain('辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准')
     wrapper.unmount()
+  })
+})
+
+// R44：R22 协同预判 CTA 文案-行为一致性（真实源码守卫，复用 R43 范式）
+describe('R44 R22 协同预判 CTA 文案-行为一致性（真实 battle.vue）', () => {
+  const battleSrc = readFileSync(join(__dirname, './battle.vue'), 'utf-8')
+  const ctaLine = (cls: string): string => {
+    const line = battleSrc.split('\n').find(l => l.includes('class="' + cls + '"'))
+    expect(line, '未找到 class="' + cls + '" 的模板行').toBeTruthy()
+    return line ?? ''
+  }
+  const cssRule = (sel: string): string => {
+    const start = battleSrc.indexOf(sel + ' {')
+    if (start < 0) return ''
+    const end = battleSrc.indexOf('}', start)
+    return end < 0 ? '' : battleSrc.slice(start, end)
+  }
+
+  it('R44 r22-ai-cta 是只读操作指引：须含新指引逐字文案，不得保留按钮措辞或 @click', () => {
+    const line = ctaLine('r22-ai-cta')
+    expect(line).toContain('↑ 点上方卡牌即可装备它 →')
+    expect(line).not.toContain('去装备/选它')
+    expect(line).not.toContain('@click')
+  })
+
+  it('R44 .r22-ai-cta CSS 不得 pointer-events:auto（只读提示不拦截点击）', () => {
+    const rule = cssRule('.r22-ai-cta')
+    expect(rule).not.toContain('pointer-events: auto')
+    expect(rule).not.toContain('pointer-events:auto')
   })
 })
