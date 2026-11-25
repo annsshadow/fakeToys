@@ -73,7 +73,7 @@
 - B2 `0d994602163ea10eb229479cbbc0a321c86c531c` test：专精树机制契约 96 节点七列与诚实口径守卫。
 - B3 `f44529fac2be9371a7077c8a765c57d9e25ea46d` docs：专精树规范与独立终审报告。
 - B4 `0c790d68fb5a313285928707c67eddf0d6dd6770` audit：三视口 96 节点对账真浏览器复查与十三图证据（data/ 与令牌文件零入库）。
-- B5 `6592e82807fd19469851a971c49cae0713d227ba` postdeploy：本报告与脚本、13 张截图（DATA_IN_STAGE=0、TOKEN_IN_STAGE=0、LEAK_LINES=0、CHECK_RC=0）。
+- B5 postdeploy：本报告与脚本、13 张截图；初始提交 `6592e828…` 经 finalize 后 amend 为最终 HEAD（由 `git rev-parse HEAD` 读取，报告内不自引用提交哈希；DATA_IN_STAGE=0、TOKEN_IN_STAGE=0、LEAK_LINES=0、CHECK_RC=0）。
 - push：`git -c http.proxy=http://127.0.0.1:12450 -c https.proxy=http://127.0.0.1:12450 push origin HEAD:opt1000/laiyipao-ai-refactor`。
 - finalize：临时令牌 `data/admin-auth-init.js` 已删除；QA 库还原 `battle_records count=104, max(id)=477`；`git check-ignore` 命中 `.gitignore:422/:423`。
 
