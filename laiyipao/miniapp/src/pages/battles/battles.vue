@@ -13,6 +13,11 @@
           class="filter-chip"
           :class="{ active: filter === f.key }"
           @click="filter = f.key"
+          role="button"
+          tabindex="0"
+          :aria-label="f.label + (filter === f.key ? '，当前选中' : '，点击筛选')"
+          @keydown.enter="filter = f.key"
+          @keydown.space.prevent="filter = f.key"
         >
           {{ f.label }}
         </view>
@@ -117,7 +122,7 @@
           打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
         </text>
         <!-- 第六批 R36：此前这行看起来像链接却点不动（假入口）。接上真实跳转。 -->
-        <text class="empty-hint link" @click="goStage">去关卡页挑一关开打 →</text>
+        <text class="empty-hint link" role="button" tabindex="0" aria-label="去关卡页挑一关开打" @click="goStage" @keydown.enter="goStage" @keydown.space.prevent="goStage">去关卡页挑一关开打 →</text>
       </view>
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
@@ -127,6 +132,11 @@
           class="battle-row tap"
           :class="[it.result === 'win' ? 'win' : 'lose', { expanded: expandedId === it.id }]"
           @click="toggleDetail(it)"
+          role="button"
+          tabindex="0"
+          :aria-label="'查看战报，第' + it.level_id + '关，' + (it.result === 'win' ? '胜利' : '失败') + '，' + it.score + '分'"
+          @keydown.enter="toggleDetail(it)"
+          @keydown.space.prevent="toggleDetail(it)"
         >
           <view class="battle-head">
             <!-- R19 胜负做成实心徽章，整行再给淡色底，扫一眼就能分胜败 -->
@@ -171,17 +181,17 @@
                 <text class="mono hash">{{ detail.replay_hash }}</text>
               </view>
               <!-- 复制哈希（2026-11-01 新一轮第 87 轮）：用外部工具验真时无需手选 -->
-              <view class="btn copy-hash-btn" @click="copyHash(detail.replay_hash)">复制回放哈希</view>
+              <view class="btn copy-hash-btn" role="button" tabindex="0" aria-label="复制回放哈希" @click="copyHash(detail.replay_hash)" @keydown.enter.stop="copyHash(detail.replay_hash)" @keydown.space.stop.prevent="copyHash(detail.replay_hash)">复制回放哈希</view>
               <!-- 直达验真（2026-11-01 新一轮第 47 轮）：验真页已支持 battle_id 深链，
                    这里一键跳转，玩家无需手动复制/输入 battle_id。 -->
-              <view class="btn verify-btn" @click="goVerify(it.id)">去验真此局</view>
+              <view class="btn verify-btn" role="button" tabindex="0" aria-label="去验真此局" @click="goVerify(it.id)" @keydown.enter.stop="goVerify(it.id)" @keydown.space.stop.prevent="goVerify(it.id)">去验真此局</view>
             </template>
           </view>
         </view>
       </view>
 
       <!-- 加载更早战报（2026-11-01 新一轮第 55 轮） -->
-      <view v-if="hasMore" class="load-more" @click="loadMore">
+      <view v-if="hasMore" class="load-more" role="button" tabindex="0" aria-label="加载更多" @click="loadMore" @keydown.enter="loadMore" @keydown.space.prevent="loadMore">
         {{ loadingMore ? '加载中…' : '加载更多' }}
       </view>
     </view>
