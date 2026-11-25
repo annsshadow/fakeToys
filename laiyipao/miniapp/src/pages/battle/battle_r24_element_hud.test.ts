@@ -119,6 +119,38 @@ async function open(snapshot: any[]) {
   return { wrapper, eng }
 }
 
+// R43 CTA 文案-行为一致性守卫（R28 范式：真实源码文本断言，禁止内嵌参考实现）
+describe('R43 战斗 HUD AI 解读区 CTA 文案-行为一致性（真实 battle.vue）', () => {
+  const battleSrc = readFileSync(join(__dirname, './battle.vue'), 'utf-8')
+  const ctaLine = (cls: string): string => {
+    const line = battleSrc.split('\n').find(l => l.includes('class="' + cls + '"'))
+    expect(line, '未找到 class="' + cls + '" 的模板行').toBeTruthy()
+    return line ?? ''
+  }
+  const cssRule = (sel: string): string => {
+    const start = battleSrc.indexOf(sel + ' {')
+    if (start < 0) return ''
+    const end = battleSrc.indexOf('}', start)
+    return end < 0 ? '' : battleSrc.slice(start, end)
+  }
+
+  it('R24 r24-ai-cta 必须是只读提示：逐字文案保留，但不得绑定 openHelp/@click', () => {
+    const line = ctaLine('r24-ai-cta')
+    expect(line).toContain('去释放对应元素技能 →')
+    expect(line).not.toContain('openHelp')
+    expect(line).not.toContain('@click')
+  })
+
+  it('R24 .r24-ai-cta CSS 不得 pointer-events:auto（只读提示不拦截点击）', () => {
+    const rule = cssRule('.r24-ai-cta')
+    expect(rule).not.toContain('pointer-events: auto')
+    expect(rule).not.toContain('pointer-events:auto')
+  })
+
+  it('R26 r26-ai-cta 保持只读锚点（无 @click），作为修复对齐目标', () => {
+    expect(ctaLine('r26-ai-cta')).not.toContain('@click')
+  })
+})
 describe('battle.vue R24 实时元素层 HUD', () => {
   it('敌人行带 data-r24-uid；焰层敌人预判补冰=蒸汽爆发、补电=过热且不含超导', async () => {
     const { wrapper } = await open([
