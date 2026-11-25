@@ -27,10 +27,11 @@ import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommen
 import type { AiInsight } from '@/utils/aiInsight'
 import { spreadStacksText, armorShredText, knockbackText } from '@/reactionMechanicsText'
 import { kindText, cooldownText, pierceText, aoeRadiusText, chainText, buildSkillMechanicsAi, SKILL_AI_CTA } from '@/skillMechanicsText'
+import { speedText, armorText, shieldHpText, attackText, attackRangeText, attackIntervalText, flyHeightText, boolText, MECHANISM_EMPTY, buildEnemyMechanicsAi, ENEMY_AI_CTA } from '@/enemyMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
-  enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; descr: string }>
+  enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; speed: number; armor: number; shield_hp: number; attack: number; attack_range: number; attack_interval: number; fly_height: number; burrow: boolean; is_boss: boolean; descr: string }>
   skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; chain: number; apply_stacks: number; descr: string }>
   composite_skills: Array<{ id: number; name: string; element: string; descr: string }>
   // 装备目录（2026-10-21 P6-12）。
@@ -862,11 +863,12 @@ onUnmounted(() => {
         </section>
 
         <!-- 元素矩阵 -->
-        <section v-show="activeTab === 'enemies'" class="wiki-section">
+        <section v-show="activeTab === 'enemies'" class="wiki-section r33-enemy-mechanics">
           <p class="note">
             绿色为<strong>弱点</strong>（负抗性，伤害放大），蓝色为<strong>抗性</strong>（减伤）。
             全部 BOSS 都被设计成「必有解」：任意一只都至少有两到三种元素是弱点。
           </p>
+          <div class="r33-enemy-table-scroll">
           <el-table
             :data="cfg?.enemies ?? []"
             size="small"
@@ -903,11 +905,46 @@ onUnmounted(() => {
                 </div>
               </template>
             </el-table-column>
+            <el-table-column label="速度" width="100">
+              <template #default="{ row }">{{ speedText(row.speed) }}</template>
+            </el-table-column>
+            <el-table-column label="护甲" width="80">
+              <template #default="{ row }">{{ armorText(row.armor) }}</template>
+            </el-table-column>
+            <el-table-column label="护盾" width="80">
+              <template #default="{ row }">{{ shieldHpText(row.shield_hp) }}</template>
+            </el-table-column>
+            <el-table-column label="攻击" width="80">
+              <template #default="{ row }">{{ attackText(row.attack) }}</template>
+            </el-table-column>
+            <el-table-column label="射程" width="80">
+              <template #default="{ row }">{{ attackRangeText(row.attack_range) }}</template>
+            </el-table-column>
+            <el-table-column label="攻击间隔" width="100">
+              <template #default="{ row }">{{ attackIntervalText(row.attack_interval) }}</template>
+            </el-table-column>
+            <el-table-column label="飞行高度" width="100">
+              <template #default="{ row }">{{ flyHeightText(row.fly_height) }}</template>
+            </el-table-column>
+            <el-table-column label="潜地" width="70">
+              <template #header>潜地<span class="r33-empty-hint">（{{ MECHANISM_EMPTY }} = 无此机制）</span></template>
+              <template #default="{ row }">{{ boolText(row.burrow) }}</template>
+            </el-table-column>
+            <el-table-column label="首领" width="70">
+              <template #default="{ row }">{{ boolText(row.is_boss) }}</template>
+            </el-table-column>
             <el-table-column prop="descr" label="说明" min-width="150" />
             <template #empty>
               <el-empty :description="emptyText" :image-size="60" />
             </template>
           </el-table>
+          </div>
+          <div class="r33-ai-note">
+            <p class="r33-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildEnemyMechanicsAi(cfg?.enemies ?? []) }}</p>
+            <p class="r33-ai-basis">依据：公开 /api/v1/config 的 enemies（与 H5/Go 引擎同源 SeedEnemy）；展示为配置基值，实际效果以引擎结算为准</p>
+            <p class="r33-ai-cta" :data-r33-cta="ENEMY_AI_CTA"><a :href="urlFor('enemies')" @click.prevent="goTo({ tab: 'enemies' })">查看敌人列表 →</a></p>
+            <p class="r33-ai-honesty">辅助展示非权威战斗数据，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+          </div>
         </section>
 
         <!-- 技能 -->
@@ -1565,6 +1602,29 @@ h4 {
   color: var(--lyp-muted);
 }
 .r32-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R33：敌人机制表表内横向滚动，不造成页面级溢出 */
+.r33-enemy-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r33-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r33-ai-note p {
+  margin: 2px 0;
+}
+.r33-ai-basis,
+.r33-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r33-ai-cta a {
   color: var(--lyp-accent);
 }
 </style>
