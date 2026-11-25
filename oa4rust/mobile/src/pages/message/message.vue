@@ -86,20 +86,20 @@ function openConversation(row: Record<string, unknown>) {
     </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
     </view>
     <view v-else-if="rows.length === 0" class="o2-empty empty-guide">
       <view class="o2-empty-icon" aria-hidden="true"></view>
       <text class="o2-empty-text">暂无会话，还没有聊天记录</text>
       <text class="empty-guide-hint">去发起一条聊天，或刷新后再看看</text>
-      <view class="empty-guide-link" @tap="load">刷新会话</view>
+      <view class="empty-guide-link" role="button" tabindex="0" aria-label="刷新会话" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">刷新会话</view>
     </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>
-        <view class="retry-btn" @tap="load">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
       </view>
-      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openConversation(row)">
+      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" role="button" tabindex="0" :aria-label="conversationTitle(row)" @tap="openConversation(row)" @keydown.enter="openConversation(row)" @keydown.space.prevent="openConversation(row)">
         <view class="title">{{ conversationTitle(row) }}</view>
         <view class="meta">{{ (row.lastMessage as string) || ' ' }}</view>
       </view>

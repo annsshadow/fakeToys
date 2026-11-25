@@ -45,7 +45,10 @@ describe('R305 H5 品牌渐变实心深度消费', () => {
   it('不回退 t29 会话标题可读遮蔽', () => {
     const source = read('message/message.vue')
     expect(source).toContain("for (const k of ['id', 'conversationId', 'uuid', 'flag'])")
-    expect(source).toContain('<view class="empty-guide-link" @tap="load">刷新会话</view>')
+    // R542: a11y 属性追加后逐字字面量不再成立;保留语义意图(空态引导入口与文案仍在)
+    expect(source).toContain('class="empty-guide-link"')
+    expect(source).toContain('@tap="load"')
+    expect(source).toContain('刷新会话</view>')
   })
 
   it('不回退 t32 空态引导文案与入口', () => {
