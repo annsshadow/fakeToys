@@ -66,7 +66,8 @@ const configFixture = () => ({
     { id: 1, name: '第一章', start_level: 1, end_level: 10, terrain_kind: 'plain', boss_enemy_id: 2 },
     { id: 2, name: '第二章', start_level: 11, end_level: 20, terrain_kind: 'cave', boss_enemy_id: 2 },
   ],
-  rating_weights: { damage: 30, survival: 20, element: 25, economy: 15, tempo: 10 },
+  // R40：夹具改为权威五键（与 power.go DefaultRatingWeights 种子值一致）。
+  rating_weights: { element_coverage: 12, reaction_coverage: 15, mastery_done: 10, equipment_synergy: 12, mechanic_depth: 8 },
   score_rules: {
     per_damage_unit: 50,
     on_kill_normal: 100,
@@ -154,12 +155,17 @@ describe('WikiView 核心规则页签', () => {
     wrapper.unmount()
   })
 
-  it('评分权重表把对象展开成维度行', async () => {
+  it('评分权重表按权威五键固定行序渲染中文维度', async () => {
     const wrapper = await mountWiki()
     const text = wrapper.text()
-    expect(text).toContain('damage')
-    expect(text).toContain('30')
-    expect(text).toContain('tempo')
+    // R40：维度列是五权威键的中文标签，权重列是原始整数（不是百分比）。
+    expect(text).toContain('元素覆盖')
+    expect(text).toContain('12') // element_coverage / equipment_synergy
+    expect(text).toContain('机制深度')
+    expect(text).toContain('8') // mechanic_depth
+    // 旧键名 damage/tempo 已从夹具移除，不再作为维度出现。
+    expect(text).not.toContain('（未知维度#damage）')
+    expect(text).not.toContain('（未知维度#tempo）')
     wrapper.unmount()
   })
 
@@ -342,7 +348,7 @@ describe('WikiView 目录（2026-10-22）', () => {
   it('目录项是真链接（href 指向 #/wiki?tab=…），可复制 / 新标签打开', async () => {
     const wrapper = await mountWiki()
     const items = wrapper.findAll('.nav-item')
-    expect(items.length).toBe(9) // 9 个 section（含 R35 宝石图鉴）
+    expect(items.length).toBe(10) // 10 个 section（含 R35 宝石图鉴、R39 皮肤图鉴）
     const enemies = items.find((t) => t.text() === '敌人抗性图鉴')!
     expect(enemies.attributes('href')).toContain('/wiki?tab=enemies')
     // 默认节（basics）不带 tab 参数，链接更短
