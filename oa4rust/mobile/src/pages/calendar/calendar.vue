@@ -284,7 +284,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 <template>
   <view class="page ai-surface-gradient">
     <view class="tabs ai-brand-fill">
-      <view v-for="r in ranges" :key="r.key" class="tab ai-brand-fill" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
+      <view v-for="r in ranges" :key="r.key" class="tab ai-brand-fill" :class="{ on: range === r.key }" role="button" tabindex="0" :aria-label="r.label" @tap="switchRange(r.key)" @keydown.enter="switchRange(r.key)" @keydown.space.prevent="switchRange(r.key)">
         {{ r.label }}
       </view>
     </view>
@@ -293,13 +293,13 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <text class="sub">我的日历 {{ calendars.length }} 个</text>
       <view class="sub-actions">
         <text class="calendar-create-btn ai-brand-fill" role="button" aria-label="新建日历" @tap="toggleCalendarForm">+新建日历</text>
-        <text class="compose-btn" @tap="toggleCompose">{{ composing ? '取消' : '+ 新建' }}</text>
+        <text class="compose-btn" role="button" tabindex="0" :aria-label="composing ? '取消新建事件' : '新建事件'" @tap="toggleCompose" @keydown.enter="toggleCompose" @keydown.space.prevent="toggleCompose">{{ composing ? '取消' : '+ 新建' }}</text>
       </view>
     </view>
 
     <view v-if="showCalendarForm" class="card calendar-create-form">
       <input v-model="newCalendarName" class="c-input" placeholder="日历名称" aria-label="日历名称" />
-      <view class="c-submit" :class="{ disabled: creatingCalendar }" @tap="submitCalendar">创建日历</view>
+      <view class="c-submit" :class="{ disabled: creatingCalendar }" role="button" tabindex="0" aria-label="创建日历" @tap="submitCalendar" @keydown.enter="submitCalendar" @keydown.space.prevent="submitCalendar">创建日历</view>
     </view>
 
     <view v-if="composing" class="card compose">
@@ -315,7 +315,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <input v-model="form.startTime" class="c-input" placeholder="开始 2026-09-22 09:00" aria-label="开始时间" />
       <input v-model="form.endTime" class="c-input" placeholder="结束 2026-09-22 10:00" aria-label="结束时间" />
       <input v-model="form.location" class="c-input" placeholder="地点（可选）" aria-label="地点" />
-      <view class="c-submit" :class="{ disabled: creating }" @tap="submitEvent">保存事件</view>
+      <view class="c-submit" :class="{ disabled: creating }" role="button" tabindex="0" aria-label="保存事件" @tap="submitEvent" @keydown.enter="submitEvent" @keydown.space.prevent="submitEvent">保存事件</view>
     </view>
 
     <view v-if="eventsView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
@@ -324,15 +324,15 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
     </view>
     <view v-else-if="eventsView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重新加载日程" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
     <view v-else-if="eventsView === 'empty'" class="tip">{{ emptyText }}</view>
     <view v-if="loadError && events.length > 0" class="tip tip-error error-banner">
       <text class="error-text">{{ loadError }}</text>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重新加载日程" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
 
-    <view v-for="e in events" :key="e.id" class="card" @tap="openEvent(e)">
+    <view v-for="e in events" :key="e.id" class="card" role="button" tabindex="0" :aria-label="'查看 ' + (e.title || '未命名日程') + ' 详情'" @tap="openEvent(e)" @keydown.enter="openEvent(e)" @keydown.space.prevent="openEvent(e)">
       <view class="row">
         <text class="time">{{ fmtTime(e) }}</text>
         <text class="title">{{ e.title || '未命名日程' }}</text>
@@ -348,12 +348,12 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
     <view v-else-if="detail" class="card detail">
       <view class="detail-head">
         <text class="title">{{ detail.title || '未命名日程' }}</text>
-        <text class="detail-close" @tap="detail = null">关闭</text>
+        <text class="detail-close" role="button" tabindex="0" aria-label="关闭日程详情" @tap="detail = null" @keydown.enter="detail = null" @keydown.space.prevent="detail = null">关闭</text>
       </view>
       <view class="meta">{{ fmtTime(detail) }}</view>
       <view v-if="detail.location" class="meta">📍 {{ detail.location }}</view>
       <view v-if="detail.content" class="content">{{ detail.content }}</view>
-      <view class="c-remove" :class="{ disabled: removing }" @tap="removeEvent(detail)">删除事件</view>
+      <view class="c-remove" :class="{ disabled: removing }" role="button" tabindex="0" :aria-label="'删除 ' + (detail.title || '未命名日程')" @tap="removeEvent(detail)" @keydown.enter="removeEvent(detail)" @keydown.space.prevent="removeEvent(detail)">删除事件</view>
     </view>
   </view>
 </template>
