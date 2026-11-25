@@ -489,3 +489,7 @@ docs/laiyipao/audits/round47-postdeploy/admin-auth-init.js
 # R48 R12成长CTA审计临时真值不入库
 docs/laiyipao/audits/round48-r12-growth-cta/data/
 docs/laiyipao/audits/round48-r12-growth-cta/admin-auth-init.js
+
+# R48 R12成长CTA部署后审计临时真值不入库
+docs/laiyipao/audits/round48-postdeploy/data/
+docs/laiyipao/audits/round48-postdeploy/admin-auth-init.js
