@@ -55,7 +55,7 @@
         <text class="r27-ai-title">AI · 波次推进</text>
         <text class="r27-ai-conclusion">{{ r27Progress.ai }}</text>
         <text class="r27-ai-basis">依据：引擎 waveProgressHud() 只读快照（当前波 spawns 总数 − 场上存活 − 待出场）；只读派生不进 replay_hash</text>
-        <text class="r27-ai-cta" @click="openHelp">继续清理场上敌人 →</text>
+        <text class="r27-ai-cta">继续清理场上敌人 →</text>
         <text class="r27-ai-honesty">辅助进度提示非权威战斗判定，已处理含击败与漏怪（漏怪已扣防线）；权威以 replay_hash 为准</text>
       </view>
       <!-- R9：最近反应记录。与星级/钳分胶囊同属顶部浮层，不拦截点击。 -->
@@ -92,7 +92,7 @@
           <text class="r24-ai-title">AI · 实时元素层预判</text>
           <text class="r24-ai-conclusion">{{ r24Conclusion }}</text>
           <text class="r24-ai-basis">依据：敌人 stacks 元素层 × REACTION_PAIRS(源自引擎 lookupReaction) 派生；只读快照不进 replay_hash</text>
-          <text class="r24-ai-cta" @click="openHelp">去释放对应元素技能 →</text>
+          <text class="r24-ai-cta">去释放对应元素技能 →</text>
           <text class="r24-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
         </view>
       </view>
@@ -2775,7 +2775,7 @@ onShareAppMessage(() =>
 .r24-ai-title { color: var(--accent); font-weight: 700; font-size: 20rpx; }
 .r24-ai-conclusion { color: var(--text); font-size: 19rpx; }
 .r24-ai-basis, .r24-ai-honesty { color: var(--text-2); font-size: 18rpx; }
-.r24-ai-cta { color: var(--accent); font-size: 19rpx; font-weight: 700; pointer-events: auto; }
+.r24-ai-cta { color: var(--accent); font-size: 19rpx; font-weight: 700; }
 
 /* R27 波次推进：容器自身单行紧凑、不抢占既有胶囊；hud-row 仍保留 flex-wrap: wrap */
 .r27-wave-progress {
@@ -2801,7 +2801,7 @@ onShareAppMessage(() =>
 .r27-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
 .r27-ai-conclusion { color: var(--text); font-size: 18rpx; }
 .r27-ai-basis, .r27-ai-honesty { color: var(--text-2); font-size: 17rpx; }
-.r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
+.r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; }
 .r28-feed-ai { display: flex; flex-direction: column; gap: 2rpx; max-width: 100%; margin-top: 4rpx; padding: 6rpx 10rpx; background: rgba(13, 17, 23, 0.82); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
 .r28-feed-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
 .r28-feed-ai-conclusion { color: var(--text); font-size: 18rpx; }
