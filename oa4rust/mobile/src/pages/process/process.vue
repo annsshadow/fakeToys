@@ -256,7 +256,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 <template>
   <view class="page ai-surface-gradient">
     <view class="tabs">
-      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: active === t.key }" @tap="switchTab(t.key)">
+      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: active === t.key }" role="button" tabindex="0" :aria-label="t.label" @tap="switchTab(t.key)" @keydown.enter="switchTab(t.key)" @keydown.space.prevent="switchTab(t.key)">
         {{ t.label }}
       </view>
     </view>
@@ -266,14 +266,14 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="loadFirst">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="loadFirst" @keydown.enter="loadFirst" @keydown.space.prevent="loadFirst">重试</view>
     </view>
     <view v-else-if="rows.length === 0" class="o2-empty">
       <view class="o2-empty-icon" aria-hidden="true"></view>
       <text class="o2-empty-text">暂无{{ tabs.find((t) => t.key === active)?.label }}</text>
     </view>
     <view v-else class="list">
-      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" @tap="openDetail(row, i)">
+      <view v-for="(row, i) in rows" :key="i" class="item o2-list-item" role="button" tabindex="0" :aria-label="titleOf(row, i)" @tap="openDetail(row, i)" @keydown.enter="openDetail(row, i)" @keydown.space.prevent="openDetail(row, i)">
         <view class="title" data-testid="h5-process-title"><text class="task-title">{{ titleOf(row, i) }}</text><text v-if="taskIdOf(row)" class="task-id">{{ taskIdOf(row) }}</text></view>
         <view class="meta">{{ metaOf(row) || ' ' }}</view>
         <view v-if="active === 'pending'" class="actions">
@@ -289,18 +289,18 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     <view v-if="rows.length > 0" class="footer">
       <view v-if="loadError" class="tip-error footer-error">
         <text class="error-text">{{ loadError }}</text>
-        <view class="retry-btn" @tap="loadMore">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="loadMore" @keydown.enter="loadMore" @keydown.space.prevent="loadMore">重试</view>
       </view>
       <view v-else-if="loadingMore">加载更多…</view>
-      <view v-else-if="hasMore" class="load-more" @tap="loadMore">加载更多</view>
+      <view v-else-if="hasMore" class="load-more" role="button" tabindex="0" aria-label="加载更多" @tap="loadMore" @keydown.enter="loadMore" @keydown.space.prevent="loadMore">加载更多</view>
       <view v-else>已加载 {{ rows.length }} 条</view>
     </view>
 
-    <view v-if="detailOpen" class="mask" @tap="closeDetail">
+    <view v-if="detailOpen" class="mask" role="button" tabindex="0" aria-label="关闭详情" @tap="closeDetail" @keydown.enter="closeDetail" @keydown.space.prevent="closeDetail">
       <view class="sheet" @tap.stop>
         <view class="sheet-head">
           <text class="sheet-title" data-testid="h5-process-detail-title">{{ detailTitle }}</text>
-          <text class="sheet-close" @tap="closeDetail">✕</text>
+          <text class="sheet-close" role="button" tabindex="0" aria-label="关闭详情" @tap="closeDetail" @keydown.enter="closeDetail" @keydown.space.prevent="closeDetail">✕</text>
         </view>
         <view v-if="detailLoading" class="skeleton skeleton-compact" aria-hidden="true">
           <view v-for="i in 3" :key="i" class="o2-skeleton skeleton-row"></view>
@@ -308,7 +308,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
         <scroll-view v-else scroll-y class="sheet-body">
           <view v-if="detailError" class="tip-error error-banner">
             <text class="error-text">{{ detailError }}</text>
-            <view class="retry-btn" @tap="retryDetail">重试</view>
+            <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="retryDetail" @keydown.enter="retryDetail" @keydown.space.prevent="retryDetail">重试</view>
           </view>
           <view class="sec-title">附件 ({{ detailAttachments.length }})</view>
           <view v-if="detailAttachments.length === 0" class="sec-empty">无附件</view>
@@ -330,7 +330,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
         </scroll-view>
       </view>
     </view>
-    <view class="fab" @tap="goStart">
+    <view class="fab" role="button" tabindex="0" aria-label="发起流程" @tap="goStart" @keydown.enter="goStart" @keydown.space.prevent="goStart">
       <text class="fab-plus">＋</text>
       <text class="fab-label">发起流程</text>
     </view>
