@@ -125,7 +125,7 @@
         <div class="preview-body">
           <form @submit.prevent>
             <div v-for="(field, i) in currentForm.fields" :key="i" class="pv-field">
-              <label v-if="!['row_start','row_end'].includes(field.type)">
+              <label v-if="!['row_start','row_end'].includes(field.type)" :id="'pv-field-label-' + i">
                 {{ field.label }}<span v-if="field.required" class="req">*</span>
               </label>
               <!-- Text -->
@@ -146,7 +146,7 @@
                 <input type="checkbox" :disabled="field.disabled" class="pv-cb" />{{ field.label }}
               </label>
               <!-- Checkbox group -->
-              <div v-else-if="field.type==='checkbox_group'" class="pv-cb-group">
+              <div v-else-if="field.type==='checkbox_group'" class="pv-cb-group" role="group" :aria-labelledby="'pv-field-label-' + i">
                 <label v-for="opt in parseOptions(field.optionsStr)" :key="opt.value" class="pv-cb-label">
                   <input type="checkbox" :value="opt.value" :disabled="field.disabled" class="pv-cb" />{{ opt.label }}
                 </label>
