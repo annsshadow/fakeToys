@@ -389,3 +389,11 @@ docs/laiyipao/audits/round33-wiki-enemy-mechanics/admin-auth-init.js
 # R33 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round33-postdeploy/data/
 docs/laiyipao/audits/round33-postdeploy/admin-auth-init.js
+
+# R34 Wiki 关卡机制审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round34-wiki-level-mechanics/data/
+docs/laiyipao/audits/round34-wiki-level-mechanics/admin-auth-init.js
+
+# R34 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round34-postdeploy/data/
+docs/laiyipao/audits/round34-postdeploy/admin-auth-init.js
