@@ -46,7 +46,7 @@ Python 比对部署前审计目录 18 张图：4 张 COLLIDES_PRE=False、PAIRWI
 - TestNoRealSecretsInRepo：本机缺 `.local.keys` 真值源，该守卫打印「未执行」后 SKIP——这是**未执行、非 PASS**，不以此作为通过依据；改用上述静态零真值扫描与 git 门禁作为替代证据，并如实记录该边界。
 
 ## 8. QA 数据还原
-- finalize.sh：删除 data/admin-auth-init.js 与根令牌 → AUTH_DELETED=YES；TRUNCATE battle_records RESTART IDENTITY CASCADE 后 pg_restore qa-before.dump → DB=104|477（与发布前基线一致）。
+- finalize.sh：删除 data/admin-auth-init.js 与根令牌 → AUTH_DELETED=YES；TRUNCATE battle_records RESTART IDENTITY CASCADE 后 pg_restore qa-before.dump，独立复核 DB=104|477（与发布前基线一致）。首跑 finalize.sh 内库名写作 lyp_qa 导致脚本自身 DB 输出为空，随后诊断容器实际库名为 laiyipao 并以独立 psql/pg_restore 完成还原复核，同时已修正 finalize.sh 使用 laiyipao，该缺陷与修复过程如实记录。
 - git check-ignore -v 命中（.gitignore:398 postdeploy data/ 拦截 data/config.json 与 data/；.gitignore 共 399 行，仅追加 R34 live/postdeploy 规则未截断既有规则）。
 
 ## 9. 工具与时间边界
