@@ -195,9 +195,9 @@ function isSectionKey(v: string): v is SectionKey {
 // ---------- 深链 ----------
 
 /** 搜索命中的实体类型。`focus` 参数的前缀就是它。 */
-type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe' | 'skin'
+type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe' | 'skin' | 'rating'
 
-const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe', 'skin']
+const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe', 'skin', 'rating']
 
 const KIND_LABEL: Record<HitKind, string> = {
   level: '关卡',
@@ -211,6 +211,8 @@ const KIND_LABEL: Record<HitKind, string> = {
   quality: '宝石品质',
   recipe: '配方',
   skin: '皮肤',
+  // t29：评分权重五维度也纳入全站搜索
+  rating: '评分',
 }
 
 /** 导航目标：一个 section，可选页内锚点 / 可选高亮某一行。 */
@@ -585,6 +587,19 @@ const searchIndex = computed<SearchHit[]>(() => {
       })
     }
   }
+  // t29：评分权重五维度纳入全站搜索。key / 中文标签 / 权重整数都在 body 里，
+  // 让「反应链」「mechanic_depth」「元素覆盖」等中英文词都能命中；
+  // click 后 pick() 写入 focus=rating:<key>，评分表行按 key 高亮。
+  for (const key of RATING_KEYS) {
+    hits.push({
+      kind: 'rating',
+      id: key,
+      title: ratingLabel(key),
+      meta: `评分 · ${key}`,
+      body: `${key} ${ratingLabel(key)} 权重 ${ratingValue(c?.rating_weights?.[key])} 评分权重`,
+      section: 'rating',
+    })
+  }
   return hits
 })
 
@@ -801,7 +816,7 @@ onUnmounted(() => {
         v-model="searchText"
         class="search-input"
         type="search"
-        placeholder="搜索关卡 / 敌人 / 技能 / 装备 / 反应 / 专精（回车跳第一条）"
+        placeholder="搜索关卡 / 敌人 / 技能 / 装备 / 反应 / 专精 / 评分（回车跳第一条）"
         @focus="searchOpen = true"
         @input="searchOpen = true"
         @keydown.enter.prevent="pickFirst"
@@ -973,7 +988,7 @@ onUnmounted(() => {
             <h4 id="rating">构筑评分（I-7）</h4>
             <p>主指标不是总战力，而是这五个维度：</p>
             <div class="r40-rating-table-scroll">
-              <el-table :data="RATING_KEYS.map((key) => ({ key }))" size="small" border>
+              <el-table :data="RATING_KEYS.map((key) => ({ key }))" size="small" border :row-class-name="rowFocusClass('rating')">
                 <el-table-column label="维度">
                   <template #default="{ row }">{{ ratingLabel(row.key) }}</template>
                 </el-table-column>
