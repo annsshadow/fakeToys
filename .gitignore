@@ -429,3 +429,19 @@ docs/laiyipao/audits/round38-wiki-recipes/admin-auth-init.js
 # R38 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round38-postdeploy/data/
 docs/laiyipao/audits/round38-postdeploy/admin-auth-init.js
+
+# R39 Wiki 皮肤与掉落审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round39-wiki-skins-drop-rates/data/
+docs/laiyipao/audits/round39-wiki-skins-drop-rates/admin-auth-init.js
+
+# R39 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round39-postdeploy/data/
+docs/laiyipao/audits/round39-postdeploy/admin-auth-init.js
+
+# R40 Wiki 评分权重审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round40-wiki-rating-weights/data/
+docs/laiyipao/audits/round40-wiki-rating-weights/admin-auth-init.js
+
+# R40 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round40-postdeploy/data/
+docs/laiyipao/audits/round40-postdeploy/admin-auth-init.js
