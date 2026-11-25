@@ -108,7 +108,7 @@
 
     <!-- 发帖区：发起主题表单 -->
     <div v-if="showNewTopic" class="modal-overlay" @click.self="showNewTopic = false">
-      <section class="modal glass-card compose-panel" role="dialog" aria-label="发帖区" data-testid="bbs-compose-panel">
+      <section class="modal glass-card compose-panel" role="dialog" aria-label="发起新主题 · 发帖区" data-testid="bbs-compose-panel">
         <div class="modal-header">
           <h2 data-testid="bbs-compose-title">发起新主题</h2>
           <button class="close-btn" aria-label="关闭发帖区" @click="showNewTopic = false">✕</button>

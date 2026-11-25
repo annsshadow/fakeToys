@@ -381,7 +381,7 @@
         <div class="modal-actions"><button class="btn-cancel" @click="closeVersions">关闭</button></div>
       </div>
     </div>
-    <div v-if="selectedDetail" class="detail-drawer" role="dialog" aria-label="对象详情">
+    <div v-if="selectedDetail" class="detail-drawer" role="dialog" :aria-label="(selectedDetail.type || '') + ' · ' + (selectedDetail.name || '') + ' 详情'">
       <div class="detail-drawer-head">
         <strong>{{ selectedDetail.type }} · {{ selectedDetail.name }}</strong>
         <button type="button" @click="selectedDetail = null">关闭</button>
