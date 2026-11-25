@@ -41,6 +41,13 @@ import * as masteryMechanics from '@/masteryMechanicsText'
 // R38：配方表复用上方 MECHANISM_EMPTY（与 @/enemyMechanicsText 同源同值），避免重复声明。
 // 单参包装只在模板里出现，底层格式化调用 recipeTextFromHelper(row, nameById.value)。
 import { MECHANISM_EMPTY as RECIPE_EMPTY, recipeMaterialsText as recipeTextFromHelper, tierText, buildRecipeMechanicsAi, RECIPE_AI_BASIS, RECIPE_AI_HONESTY, RECIPE_AI_CTA } from '@/recipeMechanicsText'
+// R39：皮肤图鉴与掉落配置；MECHANISM_EMPTY 复用上方导入（与 @/enemyMechanicsText 同源同值）。
+import { rarityText, passiveText, dropRatesText, buildSkinDropMechanicsAi, SKIN_DROP_AI_BASIS, SKIN_DROP_AI_HONESTY, SKIN_DROP_AI_CTA } from '@/skinDropMechanicsText'
+// R40：评分权重表；MECHANISM_EMPTY 复用上方导入（与 @/enemyMechanicsText 同源同值），避免重复声明。
+import { RATING_KEYS, ratingLabel, ratingValue, buildRatingMechanicsAi, RATING_AI_BASIS, RATING_AI_HONESTY, RATING_AI_CTA } from '@/ratingMechanicsText'
+
+// R40：评分表行键类型；el-table 槽位的 row 是 any，收窄后才能索引封闭五字段类型。
+type RatingWeightKey = (typeof RATING_KEYS)[number]
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
@@ -74,7 +81,15 @@ interface ConfigResp {
   gems: Array<{ id: number; code: string; name: string; attr: string; descr: string }>
   gem_qualities: Array<{ name: string; affix_count: number; mult: number }>
   chapters: Array<{ id: number; name: string; start_level: number; end_level: number; terrain_kind: string; boss_enemy_id: number }>
-  rating_weights: Record<string, number>
+  // R40：评分权重与 power.go RatingWeights / types.gen.ts 逐字对齐的封闭五字段，
+  // 禁止任意字符串键（旧 Record<string, number> 会把裸英文 key 混进评分表）。
+  rating_weights: {
+    element_coverage: number
+    reaction_coverage: number
+    mastery_done: number
+    equipment_synergy: number
+    mechanic_depth: number
+  }
   // ⚠️ 字段名与 Go 的 json tag 一律 snake_case（PascalCase 那些是笔误，
   // 全链路一律走 snake_case）。
   score_rules: {
@@ -91,16 +106,28 @@ interface ConfigResp {
   }
   mastery_families: Array<{ family: string; name: string; nodes: Array<{ id: number; family: string; layer: number; slot: number; name: string; kind: string; value: number; prereq_family: string; prereq_layer: number }> }>
   recipes: Array<{ output: number; a: number; b: number; out_tier: number }>
+  skins: Array<{ id: number; code: string; name: string; rarity: string; passive: string; descr: string }>
+  drop_rates: {
+    coin_base: number
+    coin_per_star: number
+    coin_per_kill: number
+    reaction_bonus: number
+    keys_on_three_star: number
+    energy_on_win: number
+  }
 }
 
 // ---------- 章节与目录 ----------
 
 type SectionKey =
   | 'basics'
+  // R40：构筑评分仍渲染在 basics 区块内，但 CTA/深链需要独立 tab 值（?tab=rating）。
+  | 'rating'
   | 'enemies'
   | 'skills'
   | 'gems'
   | 'equipment'
+  | 'skins'
   | 'rules'
   | 'mastery'
   | 'levels'
@@ -145,6 +172,7 @@ const SECTIONS: TocSection[] = [
   },
   { key: 'gems', label: '宝石图鉴' },
   { key: 'equipment', label: '装备图鉴' },
+  { key: 'skins', label: '皮肤图鉴' },
   {
     key: 'rules',
     label: '数值规则',
@@ -167,9 +195,9 @@ function isSectionKey(v: string): v is SectionKey {
 // ---------- 深链 ----------
 
 /** 搜索命中的实体类型。`focus` 参数的前缀就是它。 */
-type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe'
+type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality' | 'recipe' | 'skin'
 
-const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe']
+const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality', 'recipe', 'skin']
 
 const KIND_LABEL: Record<HitKind, string> = {
   level: '关卡',
@@ -182,6 +210,7 @@ const KIND_LABEL: Record<HitKind, string> = {
   gem: '宝石',
   quality: '宝石品质',
   recipe: '配方',
+  skin: '皮肤',
 }
 
 /** 导航目标：一个 section，可选页内锚点 / 可选高亮某一行。 */
@@ -534,6 +563,16 @@ const searchIndex = computed<SearchHit[]>(() => {
       anchor: 'composite',
     })
   }
+  for (const s of c.skins ?? []) {
+    hits.push({
+      kind: 'skin',
+      id: String(s.id),
+      title: s.name,
+      meta: `皮肤 · ${rarityText(s.rarity)}`,
+      body: `${s.name} ${s.code} 皮肤`,
+      section: 'skins',
+    })
+  }
   for (const f of c.mastery_families ?? []) {
     for (const n of f.nodes ?? []) {
       hits.push({
@@ -823,7 +862,7 @@ onUnmounted(() => {
 
       <main class="wiki-main">
         <!-- 基础规则 -->
-        <section v-show="activeTab === 'basics'" class="wiki-section">
+        <section v-show="activeTab === 'basics' || activeTab === 'rating'" class="wiki-section">
           <el-alert
             type="warning"
             show-icon
@@ -930,15 +969,29 @@ onUnmounted(() => {
             这是保证低养成玩家能靠技巧翻盘的结构性约束，不是可以随数值膨胀绕过的软性限制。
           </p>
 
-          <h4 id="rating">构筑评分（I-7）</h4>
-          <p>主指标不是总战力，而是这五个维度：</p>
-          <el-table :data="Object.entries(cfg?.rating_weights ?? {}).map(([k, v]) => ({ k, v }))" size="small" border>
-            <el-table-column prop="k" label="维度" />
-            <el-table-column prop="v" label="权重" />
-            <template #empty>
-              <el-empty :description="emptyText" :image-size="60" />
-            </template>
-          </el-table>
+          <section class="r40-rating-mechanics">
+            <h4 id="rating">构筑评分（I-7）</h4>
+            <p>主指标不是总战力，而是这五个维度：</p>
+            <div class="r40-rating-table-scroll">
+              <el-table :data="RATING_KEYS.map((key) => ({ key }))" size="small" border>
+                <el-table-column label="维度">
+                  <template #default="{ row }">{{ ratingLabel(row.key) }}</template>
+                </el-table-column>
+                <el-table-column label="权重">
+                  <template #default="{ row }">{{ ratingValue(cfg?.rating_weights?.[row.key as RatingWeightKey]) }}</template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty :description="emptyText" :image-size="60" />
+                </template>
+              </el-table>
+            </div>
+            <div class="r40-ai-note">
+              <p class="r40-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildRatingMechanicsAi(cfg?.rating_weights ?? {}) }}</p>
+              <p class="r40-ai-basis" :title="RATING_AI_BASIS">依据：公开 /api/v1/config 的 rating_weights，与服务端 RatingWeights / DefaultRatingWeights 同源；仅展示配置基值</p>
+              <p class="r40-ai-honesty" :data-r40-honesty="RATING_AI_HONESTY">评分权重是配置基值，不是权威结算；实际收益与边界以游戏内为准；权威回放以 replay_hash 为准</p>
+              <p class="r40-ai-cta" :data-r40-cta="RATING_AI_CTA"><a :href="urlFor('rating')" @click.prevent="goTo({ tab: 'rating' })">查看构筑评分 →</a></p>
+            </div>
+          </section>
         </section>
 
         <!-- 元素矩阵 -->
@@ -1213,6 +1266,40 @@ onUnmounted(() => {
           </el-table>
         </section>
 
+        <!-- R39：皮肤图鉴（SECTIONS 顺序：equipment → skins → rules） -->
+        <section v-show="activeTab === 'skins'" class="wiki-section r39-skin-mechanics">
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            title="皮肤图鉴"
+            description="皮肤被动是机制型词条 code，原样展示不翻译；实际结算与获得以游戏内为准。"
+            class="mb-2"
+          />
+          <div class="r39-skin-table-scroll">
+            <el-table :data="cfg?.skins ?? []" size="small" border stripe :row-class-name="rowFocusClass('skin')">
+              <el-table-column prop="id" label="ID" width="60" />
+              <el-table-column prop="name" label="名称" min-width="130" />
+              <el-table-column label="稀有度" width="90">
+                <template #default="{ row }">{{ rarityText(row.rarity) }}</template>
+              </el-table-column>
+              <el-table-column label="被动" min-width="140">
+                <template #default="{ row }">{{ passiveText(row.passive) }}</template>
+              </el-table-column>
+              <el-table-column prop="descr" label="说明" min-width="220" />
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
+          <div class="r39-ai-note">
+            <p class="r39-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildSkinDropMechanicsAi(cfg?.skins ?? [], cfg?.drop_rates ?? {}) }}</p>
+            <p class="r39-ai-basis" :title="SKIN_DROP_AI_BASIS" :data-ai-basis="SKIN_DROP_AI_BASIS">依据：公开 /api/v1/config 的 skins（与服务端 SeedSkin / SeedSkins 同源）与 drop_rates（与服务端 DropRates / DefaultDropRates 同源）；仅展示配置基值</p>
+            <p class="r39-ai-cta" :data-r39-cta="SKIN_DROP_AI_CTA"><a :href="urlFor('skins')" @click.prevent="goTo({ tab: 'skins' })">查看皮肤图鉴 →</a></p>
+            <p class="r39-ai-honesty" :title="SKIN_DROP_AI_HONESTY" :data-ai-honesty="SKIN_DROP_AI_HONESTY">皮肤被动与掉落均为配置基值，实际结算与获得以游戏内为准；权威回放以 replay_hash 为准</p>
+          </div>
+        </section>
+
         <!--
           数值规则这一节展示的是**分数与升级的规则本身**，不是内容数据。
 
@@ -1266,6 +1353,31 @@ onUnmounted(() => {
             远低于实际通关时长，因此<strong>它从不生效</strong> ——
             「打得快」目前不进分数。
           </p>
+
+          <h4 id="drop-rates">结算掉落配置</h4>
+          <p class="note">
+            下列是 <code>/api/v1/config</code> 下发的<strong>配置基值</strong>（不是百分比、也不是千分比）；实际获得以游戏内结算为准。
+          </p>
+          <div class="r39-drop-table">
+            <el-table
+              :data="[
+                { label: '基础金币', value: dropRatesText(cfg?.drop_rates?.coin_base) },
+                { label: '每星金币', value: dropRatesText(cfg?.drop_rates?.coin_per_star) },
+                { label: '每次击杀金币', value: dropRatesText(cfg?.drop_rates?.coin_per_kill) },
+                { label: '反应加成', value: dropRatesText(cfg?.drop_rates?.reaction_bonus) },
+                { label: '三星钥匙', value: dropRatesText(cfg?.drop_rates?.keys_on_three_star) },
+                { label: '通关返还体力', value: dropRatesText(cfg?.drop_rates?.energy_on_win) },
+              ]"
+              size="small"
+              border
+            >
+              <el-table-column prop="label" label="规则" />
+              <el-table-column prop="value" label="数值" />
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
 
           <h4 id="upgrade">技能升级</h4>
           <el-descriptions :column="3" border size="small">
@@ -1992,6 +2104,52 @@ h4 {
   color: var(--lyp-muted);
 }
 .r35-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R39：皮肤图鉴表表内横向滚动，不造成页面级溢出 */
+.r39-skin-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r39-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r39-ai-note p {
+  margin: 2px 0;
+}
+.r39-ai-basis,
+.r39-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r39-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R40：评分权重表表内横向滚动，不造成页面级溢出；两列窄表默认不滚动 */
+.r40-rating-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r40-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r40-ai-note p {
+  margin: 2px 0;
+}
+.r40-ai-basis,
+.r40-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r40-ai-cta a {
   color: var(--lyp-accent);
 }
 </style>
