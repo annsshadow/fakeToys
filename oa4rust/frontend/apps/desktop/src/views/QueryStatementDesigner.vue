@@ -2238,6 +2238,8 @@ function copySqlWithTimestamp() {
 </script>
 
 <style scoped>
+/* R507 WCAG1.4.11: --border-color 全前端未定义致浮层控件 border 声明失效；局部回退到契约验证 ≥3:1 的双主题令牌 --border-subtle，业务零改。 */
+.mod-view{--border-color: var(--border-subtle)}
 .smd{display:flex;flex-direction:column;gap:0;height:100%}
 .smd-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;flex-shrink:0}
 .smd-title h1{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--color-primary);margin:0 0 2px;text-shadow:0 0 15px var(--color-primary-glow)}
