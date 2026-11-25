@@ -89,14 +89,14 @@ function goPage(url: string) {
       <view class="sub">OA4Rust 工作台</view>
     </view>
 
-    <view class="stat-card ai-brand-fill ai-pressable" @tap="goTab('/pages/process/process')">
+    <view class="stat-card ai-brand-fill ai-pressable" role="button" tabindex="0" aria-label="待办审批" @tap="goTab('/pages/process/process')" @keydown.enter="goTab('/pages/process/process')" @keydown.space.prevent="goTab('/pages/process/process')">
       <view class="stat-num">
         {{ loading ? '…' : pendingBadgeText }}
       </view>
       <view class="stat-label">待办审批{{ pendingOverflow ? ' · 超过 50' : '' }}</view>
     </view>
 
-    <view class="stat-card ai-brand-fill ai-pressable" @tap="goTab('/pages/attendance/attendance')">
+    <view class="stat-card ai-brand-fill ai-pressable" role="button" tabindex="0" aria-label="今日出勤" @tap="goTab('/pages/attendance/attendance')" @keydown.enter="goTab('/pages/attendance/attendance')" @keydown.space.prevent="goTab('/pages/attendance/attendance')">
       <view class="stat-num">{{ todayRecords === null ? '–' : todayRecords }}</view>
       <view class="stat-label">今日出勤</view>
     </view>
@@ -105,70 +105,70 @@ function goPage(url: string) {
       <view class="sec-title">📢 公告</view>
       <view v-if="notices.length === 0 && noticesError" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="loadNotices(true)" @keydown.enter="loadNotices(true)" @keydown.space.prevent="loadNotices(true)">重试</view>
       </view>
       <view v-else-if="notices.length === 0" class="sec-empty empty-guide">
         <text class="empty-guide-text">暂无公告</text>
         <text class="empty-guide-hint">刷新后再看看最新公告</text>
-        <view class="empty-guide-link ai-pressable" @tap="loadNotices(true)">刷新公告</view>
+        <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新公告" @tap="loadNotices(true)" @keydown.enter="loadNotices(true)" @keydown.space.prevent="loadNotices(true)">刷新公告</view>
       </view>
       <view v-if="noticesError && notices.length > 0" class="sec-error">
         <text class="error-text">{{ noticesError }}</text>
-        <view class="retry-btn" @tap="loadNotices(true)">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="loadNotices(true)" @keydown.enter="loadNotices(true)" @keydown.space.prevent="loadNotices(true)">重试</view>
       </view>
-      <view v-for="n in notices" :key="n.id" class="notice o2-list-item" @tap="viewNotice = n">
+      <view v-for="n in notices" :key="n.id" class="notice o2-list-item" role="button" tabindex="0" :aria-label="n.title || '无标题'" @tap="viewNotice = n" @keydown.enter="viewNotice = n" @keydown.space.prevent="viewNotice = n">
         <view class="notice-title">{{ n.title || '无标题' }}</view>
         <view class="notice-meta">{{ (n.createTime || '').slice(0, 10) }}</view>
       </view>
     </view>
 
     <view class="grid">
-      <view class="cell ai-pressable" @tap="goTab('/pages/message/message')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="消息" @tap="goTab('/pages/message/message')" @keydown.enter="goTab('/pages/message/message')" @keydown.space.prevent="goTab('/pages/message/message')">
         <text class="cell-emoji">💬</text>
         <text class="cell-text">消息</text>
       </view>
-      <view class="cell ai-pressable" @tap="goTab('/pages/process/process')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="审批" @tap="goTab('/pages/process/process')" @keydown.enter="goTab('/pages/process/process')" @keydown.space.prevent="goTab('/pages/process/process')">
         <text class="cell-emoji">✅</text>
         <text class="cell-text">审批</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/doc/doc')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="文档" @tap="goPage('/pages/doc/doc')" @keydown.enter="goPage('/pages/doc/doc')" @keydown.space.prevent="goPage('/pages/doc/doc')">
         <text class="cell-emoji">📄</text>
         <text class="cell-text">文档</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/contacts/contacts')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="通讯录" @tap="goPage('/pages/contacts/contacts')" @keydown.enter="goPage('/pages/contacts/contacts')" @keydown.space.prevent="goPage('/pages/contacts/contacts')">
         <text class="cell-emoji">👥</text>
         <text class="cell-text">通讯录</text>
       </view>
-      <view class="cell ai-pressable" @tap="goTab('/pages/attendance/attendance')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="考勤" @tap="goTab('/pages/attendance/attendance')" @keydown.enter="goTab('/pages/attendance/attendance')" @keydown.space.prevent="goTab('/pages/attendance/attendance')">
         <text class="cell-emoji">🕘</text>
         <text class="cell-text">考勤</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/process/start')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="发起流程" @tap="goPage('/pages/process/start')" @keydown.enter="goPage('/pages/process/start')" @keydown.space.prevent="goPage('/pages/process/start')">
         <text class="cell-emoji">🚀</text>
         <text class="cell-text">发起流程</text>
       </view>
       <!-- 阶段 G：移动端能力扩展新增入口 -->
-      <view class="cell ai-pressable" @tap="goPage('/pages/meeting/meeting')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="会议" @tap="goPage('/pages/meeting/meeting')" @keydown.enter="goPage('/pages/meeting/meeting')" @keydown.space.prevent="goPage('/pages/meeting/meeting')">
         <text class="cell-emoji">📅</text>
         <text class="cell-text">会议</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/calendar/calendar')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="日程" @tap="goPage('/pages/calendar/calendar')" @keydown.enter="goPage('/pages/calendar/calendar')" @keydown.space.prevent="goPage('/pages/calendar/calendar')">
         <text class="cell-emoji">🗓️</text>
         <text class="cell-text">日程</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/bbs/bbs')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="论坛" @tap="goPage('/pages/bbs/bbs')" @keydown.enter="goPage('/pages/bbs/bbs')" @keydown.space.prevent="goPage('/pages/bbs/bbs')">
         <text class="cell-emoji">🗣</text>
         <text class="cell-text">论坛</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/browse/browse')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="浏览" @tap="goPage('/pages/browse/browse')" @keydown.enter="goPage('/pages/browse/browse')" @keydown.space.prevent="goPage('/pages/browse/browse')">
         <text class="cell-emoji">📚</text>
         <text class="cell-text">浏览</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/search/search')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="搜索" @tap="goPage('/pages/search/search')" @keydown.enter="goPage('/pages/search/search')" @keydown.space.prevent="goPage('/pages/search/search')">
         <text class="cell-emoji">🔍</text>
         <text class="cell-text">搜索</text>
       </view>
-      <view class="cell ai-pressable" @tap="goPage('/pages/recycle/recycle')">
+      <view class="cell ai-pressable" role="button" tabindex="0" aria-label="回收站" @tap="goPage('/pages/recycle/recycle')" @keydown.enter="goPage('/pages/recycle/recycle')" @keydown.space.prevent="goPage('/pages/recycle/recycle')">
         <text class="cell-emoji">🗑️</text>
         <text class="cell-text">回收站</text>
       </view>
@@ -180,7 +180,7 @@ function goPage(url: string) {
         <view class="nd-title">{{ viewNotice.title || '无标题' }}</view>
         <view v-if="viewNotice.createTime" class="nd-meta">{{ viewNotice.createTime }}</view>
         <view class="nd-body">{{ viewNotice.content || '（无正文）' }}</view>
-        <button class="nd-close" size="mini" @tap="viewNotice = null">关闭</button>
+        <button class="nd-close" size="mini" tabindex="0" aria-label="关闭公告" @tap="viewNotice = null">关闭</button>
       </view>
     </view>
   </view>
