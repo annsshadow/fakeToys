@@ -80,7 +80,7 @@ onLoad(async () => {
     <view class="form-card">
       <view class="field">
         <text class="label">版块</text>
-        <picker class="picker" :range="forums.map((f) => f.name)" @change="onForumChange">
+        <picker class="picker" aria-label="版块" :range="forums.map((f) => f.name)" @change="onForumChange">
           <view class="picker-value" :class="{ placeholder: forumIndex < 0 }">
             {{ forumName() || '请选择版块' }}
           </view>
@@ -88,11 +88,11 @@ onLoad(async () => {
       </view>
       <view class="field">
         <text class="label">标题</text>
-        <input v-model="title" class="input" placeholder="请输入标题" maxlength="100" />
+        <input v-model="title" class="input" placeholder="请输入标题" maxlength="100" aria-label="标题" />
       </view>
       <view class="field">
         <text class="label">内容</text>
-        <textarea v-model="content" class="textarea" placeholder="请输入内容" />
+        <textarea v-model="content" class="textarea" placeholder="请输入内容" aria-label="内容" />
       </view>
     </view>
     <view class="submit ai-brand-fill" :class="{ disabled: !canSubmit() }" @tap="submit">

@@ -298,7 +298,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
     </view>
 
     <view v-if="showCalendarForm" class="card calendar-create-form">
-      <input v-model="newCalendarName" class="c-input" placeholder="日历名称" />
+      <input v-model="newCalendarName" class="c-input" placeholder="日历名称" aria-label="日历名称" />
       <view class="c-submit" :class="{ disabled: creatingCalendar }" @tap="submitCalendar">创建日历</view>
     </view>
 
@@ -306,14 +306,15 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <picker
         :range="calendars"
         range-key="name"
+        aria-label="日历选择"
         @change="(ev:any)=>{ const c = calendars[Number(ev.detail.value)]; if (c) form.calendarId = String(c.id ?? '') }"
       >
         <view class="picker">日历：{{ (calendars.find(c=>String(c.id)===form.calendarId)?.name) || '请选择' }}</view>
       </picker>
-      <input v-model="form.title" class="c-input" placeholder="事件标题" />
-      <input v-model="form.startTime" class="c-input" placeholder="开始 2026-09-22 09:00" />
-      <input v-model="form.endTime" class="c-input" placeholder="结束 2026-09-22 10:00" />
-      <input v-model="form.location" class="c-input" placeholder="地点（可选）" />
+      <input v-model="form.title" class="c-input" placeholder="事件标题" aria-label="事件标题" />
+      <input v-model="form.startTime" class="c-input" placeholder="开始 2026-09-22 09:00" aria-label="开始时间" />
+      <input v-model="form.endTime" class="c-input" placeholder="结束 2026-09-22 10:00" aria-label="结束时间" />
+      <input v-model="form.location" class="c-input" placeholder="地点（可选）" aria-label="地点" />
       <view class="c-submit" :class="{ disabled: creating }" @tap="submitEvent">保存事件</view>
     </view>
 
