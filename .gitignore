@@ -413,3 +413,11 @@ docs/laiyipao/audits/round36-wiki-composite-skills/admin-auth-init.js
 # R36 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round36-postdeploy/data/
 docs/laiyipao/audits/round36-postdeploy/admin-auth-init.js
+
+# R37 Wiki 专精树审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round37-wiki-mastery-nodes/data/
+docs/laiyipao/audits/round37-wiki-mastery-nodes/admin-auth-init.js
+
+# R37 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round37-postdeploy/data/
+docs/laiyipao/audits/round37-postdeploy/admin-auth-init.js
