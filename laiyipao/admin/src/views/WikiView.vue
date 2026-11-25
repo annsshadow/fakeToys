@@ -31,6 +31,9 @@ import { speedText, armorText, shieldHpText, attackText, attackRangeText, attack
 // R34 关卡机制导入锚点：bossText, terrainText, armorPermilleText, maxScoreText, MECHANISM_EMPTY, buildLevelMechanicsAi, LEVEL_AI_CTA
 // MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
 import { bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMechanicsAi, LEVEL_AI_CTA } from '@/levelMechanicsText'
+// R35 宝石图鉴导入锚点：attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA
+// MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
+import { attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA } from '@/gemMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
@@ -61,6 +64,8 @@ interface ConfigResp {
   // 这两行曾经写成 PascalCase，而服务端一直下发 snake_case，
   // 于是反应表整列为空、章节下拉框没有选项 —— 且不报任何错。
   reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number; descr: string; spread_stacks: number; armor_shred_permille: number; knockback: number }>
+  gems: Array<{ id: number; code: string; name: string; attr: string; descr: string }>
+  gem_qualities: Array<{ name: string; affix_count: number; mult: number }>
   chapters: Array<{ id: number; name: string; start_level: number; end_level: number; terrain_kind: string; boss_enemy_id: number }>
   rating_weights: Record<string, number>
   // ⚠️ 字段名与 Go 的 json tag 一律 snake_case（PascalCase 那些是笔误，
@@ -86,6 +91,7 @@ type SectionKey =
   | 'basics'
   | 'enemies'
   | 'skills'
+  | 'gems'
   | 'equipment'
   | 'rules'
   | 'mastery'
@@ -129,6 +135,7 @@ const SECTIONS: TocSection[] = [
       { id: 'composite', label: '合成技能' },
     ],
   },
+  { key: 'gems', label: '宝石图鉴' },
   { key: 'equipment', label: '装备图鉴' },
   {
     key: 'rules',
@@ -152,9 +159,9 @@ function isSectionKey(v: string): v is SectionKey {
 // ---------- 深链 ----------
 
 /** 搜索命中的实体类型。`focus` 参数的前缀就是它。 */
-type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery'
+type HitKind = 'level' | 'enemy' | 'skill' | 'composite' | 'equip' | 'reaction' | 'mastery' | 'gem' | 'quality'
 
-const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery']
+const HIT_KINDS: HitKind[] = ['level', 'enemy', 'skill', 'composite', 'equip', 'reaction', 'mastery', 'gem', 'quality']
 
 const KIND_LABEL: Record<HitKind, string> = {
   level: '关卡',
@@ -164,6 +171,8 @@ const KIND_LABEL: Record<HitKind, string> = {
   equip: '装备',
   reaction: '反应',
   mastery: '专精',
+  gem: '宝石',
+  quality: '宝石品质',
 }
 
 /** 导航目标：一个 section，可选页内锚点 / 可选高亮某一行。 */
@@ -348,8 +357,9 @@ function rowFocusClass(kind: HitKind) {
   return (scope: { row: Record<string, unknown> }): string => {
     const f = focus.value
     if (!f || f.kind !== kind) return ''
-    // 反应表用 key（字符串），其余表用 id（数字）
-    const id = scope.row.id ?? scope.row.key
+    // 反应表用 key（字符串），宝石品质表用 name（品质名），其余表用 id（数字）
+    // R35修复：品质名（gold/gray/...）是搜索主键，没有 id 字段，必须走 name。
+    const id = kind === 'quality' ? scope.row.name : scope.row.id ?? scope.row.key
     return String(id) === f.id ? 'row-focus' : ''
   }
 }
@@ -477,6 +487,28 @@ const searchIndex = computed<SearchHit[]>(() => {
       body: r.descr ?? '',
       section: 'basics',
       anchor: 'reactions',
+    })
+  }
+  for (const g of c.gems ?? []) {
+    hits.push({
+      kind: 'gem',
+      id: String(g.id),
+      title: g.name,
+      meta: `宝石 · ${attrText(g.attr)}`,
+      body: g.descr ?? '',
+      section: 'gems',
+    })
+  }
+  // R35修复：品质名（gold/gray/blue/purple/red）也必须是搜索域，
+  // body 带词条数/倍率文本，让「gold」与倍率词都能命中。
+  for (const q of c.gem_qualities ?? []) {
+    hits.push({
+      kind: 'quality',
+      id: q.name,
+      title: q.name,
+      meta: `宝石品质 · ${qualityText(q)}`,
+      body: `${qualityText(q)} 词条数 倍率`,
+      section: 'gems',
     })
   }
   for (const f of c.mastery_families ?? []) {
@@ -1214,6 +1246,58 @@ onUnmounted(() => {
           </div>
         </section>
 
+        <!-- 宝石图鉴 -->
+        <section v-show="activeTab === 'gems'" class="wiki-section r35-gem-mechanics">
+          <p class="note">
+            宝石属性与品质档位来自公开 /api/v1/config，与服务端 SeedGem / GemQualities 同源。
+            <strong>词条随机，具体数值以游戏内为准</strong> —— Wiki 不展示具体词条数值范围。
+            系数为千分比（1000‰ 即原始系数），不换算成百分比。
+          </p>
+          <div class="r35-gem-table-scroll">
+            <el-table
+              :data="cfg?.gems ?? []"
+              size="small"
+              border
+              stripe
+              :row-class-name="rowFocusClass('gem')"
+            >
+              <el-table-column prop="id" label="ID" width="55" />
+              <el-table-column prop="name" label="名称" min-width="120" />
+              <el-table-column label="属性" width="120">
+                <template #default="{ row }">{{ attrText(row.attr) }}</template>
+              </el-table-column>
+              <el-table-column label="说明" min-width="180">
+                <template #default="{ row }">{{ row.descr }}</template>
+              </el-table-column>
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
+          <h4 style="margin-top: 16px">宝石品质</h4>
+          <div class="r35-gem-table-scroll">
+            <el-table :data="cfg?.gem_qualities ?? []" size="small" border stripe :row-class-name="rowFocusClass('quality')">
+              <el-table-column prop="name" label="品质" width="140" />
+              <el-table-column label="词条数" width="110">
+                <template #default="{ row }">{{ qualityText(row).split(' · ')[1] ?? MECHANISM_EMPTY }}</template>
+              </el-table-column>
+              <el-table-column label="系数" width="120">
+                <template #default="{ row }">{{ qualityText(row).split(' · ')[2] ?? MECHANISM_EMPTY }}</template>
+              </el-table-column>
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
+          <div class="r35-ai-note">
+            <p class="r35-affix-note" :data-affix-note="GEM_AFFIX_NOTE">词条随机，具体数值以游戏内为准</p>
+            <p class="r35-ai-conclusion"><strong>AI 机制概览：</strong>{{ buildGemMechanicsAi(cfg?.gems ?? [], cfg?.gem_qualities ?? []) }}</p>
+            <p class="r35-ai-basis" :data-basis="GEM_AI_BASIS">依据：公开 /api/v1/config 的 gems 与 gem_qualities（与服务端 SeedGem / GemQualities 同源）；词条随机，具体数值以游戏内为准</p>
+            <p class="r35-ai-cta"><a data-r35-cta :href="urlFor('gems')" @click.prevent="goTo({ tab: 'gems' })">{{ GEM_AI_CTA }}</a></p>
+            <p class="r35-ai-honesty" :data-honesty="GEM_AI_HONESTY">辅助展示非权威战斗数据，实际效果以引擎结算为准；权威回放以 replay_hash 为准</p>
+          </div>
+        </section>
+
         <!-- 实战统计 -->
         <section v-show="activeTab === 'live'" class="wiki-section">
           <p class="note">
@@ -1671,6 +1755,30 @@ h4 {
   color: var(--lyp-muted);
 }
 .r34-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R35：宝石图鉴两表表内横向滚动，不造成页面级溢出 */
+.r35-gem-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r35-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r35-ai-note p {
+  margin: 2px 0;
+}
+.r35-affix-note,
+.r35-ai-basis,
+.r35-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r35-ai-cta a {
   color: var(--lyp-accent);
 }
 </style>

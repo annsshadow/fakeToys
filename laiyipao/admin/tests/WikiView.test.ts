@@ -342,7 +342,7 @@ describe('WikiView 目录（2026-10-22）', () => {
   it('目录项是真链接（href 指向 #/wiki?tab=…），可复制 / 新标签打开', async () => {
     const wrapper = await mountWiki()
     const items = wrapper.findAll('.nav-item')
-    expect(items.length).toBe(8) // 8 个 section
+    expect(items.length).toBe(9) // 9 个 section（含 R35 宝石图鉴）
     const enemies = items.find((t) => t.text() === '敌人抗性图鉴')!
     expect(enemies.attributes('href')).toContain('/wiki?tab=enemies')
     // 默认节（basics）不带 tab 参数，链接更短
