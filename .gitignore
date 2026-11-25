@@ -421,3 +421,11 @@ docs/laiyipao/audits/round37-wiki-mastery-nodes/admin-auth-init.js
 # R37 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round37-postdeploy/data/
 docs/laiyipao/audits/round37-postdeploy/admin-auth-init.js
+
+# R38 Wiki 合成配方审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round38-wiki-recipes/data/
+docs/laiyipao/audits/round38-wiki-recipes/admin-auth-init.js
+
+# R38 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round38-postdeploy/data/
+docs/laiyipao/audits/round38-postdeploy/admin-auth-init.js
