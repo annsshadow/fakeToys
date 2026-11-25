@@ -461,3 +461,7 @@ docs/laiyipao/audits/round42-wiki-level-chapter/admin-auth-init.js
 # R42 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round42-postdeploy/data/
 docs/laiyipao/audits/round42-postdeploy/admin-auth-init.js
+
+# R43 战斗HUD CTA只读审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round43-battle-hud-cta-honesty/data/
+docs/laiyipao/audits/round43-battle-hud-cta-honesty/admin-auth-init.js
