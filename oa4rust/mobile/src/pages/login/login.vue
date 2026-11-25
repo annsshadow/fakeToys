@@ -47,11 +47,11 @@ onShow(onShowGuard)
     <view class="form">
       <view class="field">
         <text class="label">账号</text>
-        <input v-model="credential" type="text" placeholder="工号 / 用户名" />
+        <input v-model="credential" type="text" placeholder="工号 / 用户名" aria-label="账号" />
       </view>
       <view class="field">
         <text class="label">密码</text>
-        <input v-model="password" type="password" placeholder="密码" />
+        <input v-model="password" type="password" placeholder="密码" aria-label="密码" />
       </view>
       <text v-if="error" class="error">{{ error }}</text>
       <button class="submit ai-brand-fill" :disabled="submitting" @tap="submit">

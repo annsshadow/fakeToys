@@ -263,7 +263,7 @@ async function send() {
     <view v-if="pendingCount > 0" class="new-msg" @tap="scrollToLatest">{{ pendingCount }} 条新消息</view>
 
     <view class="composer">
-      <input v-model="text" class="input" type="text" placeholder="发消息…" confirm-type="send" @confirm="send" />
+      <input v-model="text" class="input" type="text" placeholder="发消息…" aria-label="消息内容" confirm-type="send" @confirm="send" />
       <button class="send" size="mini" type="primary" :disabled="sending || !text.trim()" @tap="send">
         发送
       </button>

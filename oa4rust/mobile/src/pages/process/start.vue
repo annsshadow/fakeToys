@@ -299,7 +299,7 @@ function removeAttachment(field: MobileFormField, id: string): void {
     <view class="card">
       <view class="field">
         <text class="label">标题</text>
-        <input v-model="title" class="input" type="text" placeholder="工作标题（必填）" />
+        <input v-model="title" class="input" type="text" placeholder="工作标题（必填）" aria-label="流程标题" />
       </view>
     </view>
 

@@ -137,6 +137,7 @@ async function changePassword() {
         password
         type="text"
         placeholder="当前密码"
+        aria-label="旧密码"
       />
       <input
         v-model="pwdForm.newPassword"
@@ -144,6 +145,7 @@ async function changePassword() {
         password
         type="text"
         placeholder="新密码（至少 10 位）"
+        aria-label="新密码"
       />
       <input
         v-model="pwdForm.confirmPassword"
@@ -151,6 +153,7 @@ async function changePassword() {
         password
         type="text"
         placeholder="确认新密码"
+        aria-label="确认密码"
       />
       <button class="pwd-btn" :disabled="pwdSaving" @tap="changePassword">
         {{ pwdSaving ? '提交中…' : '保存新密码' }}

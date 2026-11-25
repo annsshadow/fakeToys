@@ -89,6 +89,7 @@ function openRow(r: Row) {
         v-model="keyword"
         class="input"
         placeholder="搜索文档、主题、数据…"
+        aria-label="搜索关键词"
         confirm-type="search"
         @confirm="doSearch"
       />

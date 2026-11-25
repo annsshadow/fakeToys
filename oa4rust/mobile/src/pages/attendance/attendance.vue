@@ -228,8 +228,8 @@ function statText(): string {
 
       <view class="section">
         <view class="section-title">假期申请</view>
-        <input v-model="leaveDate" class="leave-input" type="text" placeholder="假期日期（如 2026-10-09）" />
-        <input v-model="leaveReason" class="leave-input" type="text" placeholder="事由（选填）" />
+        <input v-model="leaveDate" class="leave-input" type="text" placeholder="假期日期（如 2026-10-09）" aria-label="假期日期" />
+        <input v-model="leaveReason" class="leave-input" type="text" placeholder="事由（选填）" aria-label="申请事由" />
         <button class="btn leave-btn ai-brand-fill" :disabled="leaveBusy" @tap="applyLeave">
           {{ leaveBusy ? '提交中…' : '提交假期申请' }}
         </button>

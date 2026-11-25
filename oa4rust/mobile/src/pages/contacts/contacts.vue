@@ -197,6 +197,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         class="input"
         type="text"
         placeholder="搜索姓名 / 手机号 / 邮箱"
+        aria-label="通讯录搜索关键词"
         confirm-type="search"
         @confirm="doSearch"
       />
