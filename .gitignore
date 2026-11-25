@@ -405,3 +405,11 @@ docs/laiyipao/audits/round35-wiki-gem-mechanics/admin-auth-init.js
 # R35 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
 docs/laiyipao/audits/round35-postdeploy/data/
 docs/laiyipao/audits/round35-postdeploy/admin-auth-init.js
+
+# R36 Wiki 合成技能审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round36-wiki-composite-skills/data/
+docs/laiyipao/audits/round36-wiki-composite-skills/admin-auth-init.js
+
+# R36 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round36-postdeploy/data/
+docs/laiyipao/audits/round36-postdeploy/admin-auth-init.js
