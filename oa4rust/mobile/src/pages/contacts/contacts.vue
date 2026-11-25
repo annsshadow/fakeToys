@@ -207,9 +207,9 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     </view>
 
     <view class="modes">
-      <view class="mode" :class="{ on: mode === 'person' }" @tap="switchMode('person')">人员</view>
-      <view class="mode" :class="{ on: mode === 'unit' }" @tap="switchMode('unit')">单位</view>
-      <view class="mode" :class="{ on: mode === 'group' }" @tap="switchMode('group')">群组</view>
+      <view class="mode" :class="{ on: mode === 'person' }" role="button" tabindex="0" aria-label="人员" @tap="switchMode('person')" @keydown.enter="switchMode('person')" @keydown.space.prevent="switchMode('person')">人员</view>
+      <view class="mode" :class="{ on: mode === 'unit' }" role="button" tabindex="0" aria-label="单位" @tap="switchMode('unit')" @keydown.enter="switchMode('unit')" @keydown.space.prevent="switchMode('unit')">单位</view>
+      <view class="mode" :class="{ on: mode === 'group' }" role="button" tabindex="0" aria-label="群组" @tap="switchMode('group')" @keydown.enter="switchMode('group')" @keydown.space.prevent="switchMode('group')">群组</view>
     </view>
 
     <template v-if="mode === 'person'">
@@ -218,7 +218,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       </view>
       <view v-else-if="listView === 'error'" class="tip tip-error">
         <view class="error-text">{{ loadError }}</view>
-        <view class="retry-btn" @tap="search()">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试加载联系人" @tap="search()" @keydown.enter="search()" @keydown.space.prevent="search()">重试</view>
       </view>
       <view v-else-if="listView === 'empty'" class="o2-empty">
         <view class="o2-empty-icon" aria-hidden="true"></view>
@@ -227,7 +227,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       <view v-else class="list">
         <view v-for="(row, i) in rows" :key="i" class="item o2-list-item">
           <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
-          <view class="body" @tap="openPerson(row)">
+          <view class="body" role="button" tabindex="0" :aria-label="'查看 ' + nameOf(row) + ' 详情'" @tap="openPerson(row)" @keydown.enter="openPerson(row)" @keydown.space.prevent="openPerson(row)">
             <view class="title">{{ nameOf(row) }}</view>
             <view class="meta">{{ subOf(row) || ' ' }}</view>
           </view>
@@ -244,7 +244,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       </view>
       <view v-else-if="orgView === 'error'" class="tip tip-error">
         <view class="error-text">{{ orgError }}</view>
-        <view class="retry-btn" @tap="loadOrg()">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" :aria-label="mode === 'unit' ? '重试加载单位' : '重试加载群组'" @tap="loadOrg()" @keydown.enter="loadOrg()" @keydown.space.prevent="loadOrg()">重试</view>
       </view>
       <view v-else-if="orgView === 'empty'" class="o2-empty">
         <view class="o2-empty-icon" aria-hidden="true"></view>
@@ -253,7 +253,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       <view v-else class="list">
         <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item o2-list-item">
           <text class="avatar">{{ mode === 'unit' ? '🏢' : '👥' }}</text>
-          <view class="body" @tap="mode === 'unit' ? openUnit(o) : undefined">
+          <view class="body" role="button" tabindex="0" :aria-label="mode === 'unit' ? '查看 ' + orgNameOf(o) + ' 人员' : orgNameOf(o)" @tap="mode === 'unit' ? openUnit(o) : undefined" @keydown.enter="mode === 'unit' ? openUnit(o) : undefined" @keydown.space.prevent="mode === 'unit' ? openUnit(o) : undefined">
             <view class="title">{{ orgNameOf(o) }}</view>
             <view class="meta">{{ o.id ? String(o.id) : ' ' }}</view>
           </view>
@@ -265,14 +265,14 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     <view v-if="unitPeopleName" class="detail">
       <view class="detail-head">
         <text class="detail-title">{{ unitPeopleName }} · 人员</text>
-        <text class="detail-close" @tap="closeUnitPeople">关闭</text>
+        <text class="detail-close" role="button" tabindex="0" aria-label="关闭单位人员详情" @tap="closeUnitPeople" @keydown.enter="closeUnitPeople" @keydown.space.prevent="closeUnitPeople">关闭</text>
       </view>
       <view v-if="unitPeopleLoading" class="skeleton" aria-hidden="true">
         <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
       </view>
       <view v-else-if="unitPeople.length === 0 && unitPeopleError" class="tip tip-error">
         <view class="error-text">{{ unitPeopleError }}</view>
-        <view v-if="unitPeopleTarget" class="retry-btn" @tap="openUnit(unitPeopleTarget)">重试</view>
+        <view v-if="unitPeopleTarget" class="retry-btn" role="button" tabindex="0" aria-label="重试加载单位人员" @tap="openUnit(unitPeopleTarget)" @keydown.enter="openUnit(unitPeopleTarget)" @keydown.space.prevent="openUnit(unitPeopleTarget)">重试</view>
       </view>
       <view v-else-if="unitPeople.length === 0" class="o2-empty">
         <view class="o2-empty-icon" aria-hidden="true"></view>
@@ -280,7 +280,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       </view>
       <view v-for="(p, i) in unitPeople" :key="i" class="item o2-list-item">
         <text class="avatar">{{ nameOf(p).slice(0, 1).toUpperCase() }}</text>
-        <view class="body" @tap="openPerson(p)">
+        <view class="body" role="button" tabindex="0" :aria-label="'查看 ' + nameOf(p) + ' 详情'" @tap="openPerson(p)" @keydown.enter="openPerson(p)" @keydown.space.prevent="openPerson(p)">
           <view class="title">{{ nameOf(p) }}</view>
           <view class="meta">{{ subOf(p) || ' ' }}</view>
         </view>
@@ -290,14 +290,14 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     <view v-if="detail" class="detail">
       <view class="detail-head">
         <text class="detail-title">{{ nameOf(detail) }}</text>
-        <text class="detail-close" @tap="detail = null">关闭</text>
+        <text class="detail-close" role="button" tabindex="0" aria-label="关闭人员详情" @tap="detail = null" @keydown.enter="detail = null" @keydown.space.prevent="detail = null">关闭</text>
       </view>
       <view class="detail-sub">{{ subOf(detail) || '—' }}</view>
       <view v-if="detailLoading" class="tip">加载身份与角色…</view>
       <template v-else>
         <view v-if="detailError" class="tip-error error-banner">
           <text class="error-text">{{ detailError }}</text>
-          <view class="retry-btn" @tap="openPerson(detail)">重试</view>
+          <view class="retry-btn" role="button" tabindex="0" aria-label="重试加载人员详情" @tap="openPerson(detail)" @keydown.enter="openPerson(detail)" @keydown.space.prevent="openPerson(detail)">重试</view>
         </view>
         <view class="detail-sec">
           <text class="detail-label">身份（{{ identities.length }}）</text>
