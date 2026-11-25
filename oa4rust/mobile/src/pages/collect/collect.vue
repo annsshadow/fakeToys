@@ -83,28 +83,28 @@ function goBrowse() {
     </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
     </view>
     <view v-else-if="loaded && rows.length === 0" class="empty-guide ai-brand-fill">
       <view class="empty-guide-emoji" aria-hidden="true">⭐</view>
       <text class="empty-guide-text">暂无收藏</text>
       <text class="empty-guide-hint">还没有收藏，浏览内容时收藏后可在这里快速找到</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link ai-pressable primary" @tap="goBrowse">去浏览内容</view>
-        <view class="empty-guide-link ai-pressable" @tap="load">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" role="button" tabindex="0" aria-label="去浏览内容" @tap="goBrowse" @keydown.enter="goBrowse" @keydown.space.prevent="goBrowse">去浏览内容</view>
+        <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">刷新</view>
       </view>
     </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>
-        <view class="retry-btn" @tap="load">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
       </view>
-      <view v-for="r in rows" :key="r.id" class="item" @tap="openUrl(r)">
+      <view v-for="r in rows" :key="r.id" class="item" role="button" tabindex="0" :aria-label="'查看' + r.title + '详情'" @tap="openUrl(r)" @keydown.enter="openUrl(r)" @keydown.space.prevent="openUrl(r)">
         <view class="item-main">
           <view class="item-title">{{ r.title }}</view>
           <view v-if="r.url" class="item-url">{{ r.url }}</view>
         </view>
-        <view class="item-del" :class="{ disabled: removingId !== '' }" @tap.stop="removeRow(r)">删除</view>
+        <view class="item-del" :class="{ disabled: removingId !== '' }" role="button" tabindex="0" :aria-label="'删除' + r.title" @tap.stop="removeRow(r)" @keydown.enter.stop="removeRow(r)" @keydown.space.stop.prevent="removeRow(r)">删除</view>
       </view>
     </view>
   </view>
