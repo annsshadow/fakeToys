@@ -35,6 +35,9 @@ import { bossText, terrainText, armorPermilleText, maxScoreText, buildLevelMecha
 // MECHANISM_EMPTY 与 R33 同源同值（'—'），复用上方标识避免重复声明。
 import { attrText, qualityText, buildGemMechanicsAi, GEM_AFFIX_NOTE, GEM_AI_BASIS, GEM_AI_HONESTY, GEM_AI_CTA } from '@/gemMechanicsText'
 import { compositeUnlockText, buildCompositeMechanicsAi, COMPOSITE_AI_BASIS, COMPOSITE_AI_HONESTY, COMPOSITE_AI_CTA } from '@/compositeMechanicsText'
+// R37：专精树节点复用上方 MECHANISM_EMPTY（与 @/enemyMechanicsText 同源同值），避免重复声明。
+// R37：以命名空间导入专精格式化，避免与 R32 技能表的 kindText 同名冲突；模板调用仍逐字可读。
+import * as masteryMechanics from '@/masteryMechanicsText'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; armor_permille: number; max_score: number; star_targets: number[] }>
@@ -83,7 +86,7 @@ interface ConfigResp {
     coef_permille: number
     base_cost: number
   }
-  mastery_families: Array<{ family: string; name: string; nodes: Array<{ name: string; layer: number }> }>
+  mastery_families: Array<{ family: string; name: string; nodes: Array<{ id: number; family: string; layer: number; slot: number; name: string; kind: string; value: number; prereq_family: string; prereq_layer: number }> }>
 }
 
 // ---------- 章节与目录 ----------
@@ -1212,24 +1215,57 @@ onUnmounted(() => {
           </p>
         </section>
 
-        <section v-show="activeTab === 'mastery'" class="wiki-section">
+        <section v-show="activeTab === 'mastery'" class="wiki-section r37-mastery-mechanics">
           <p class="note">
             每层只能选 2 个节点（4 选 2），且第 2、3 层必须先点亮前一层。
             专精点不够点满任何一系 —— <strong>必须做方向选择</strong>。
+            下表展示公开配置基值（效果口径按 power.go），实际效果以引擎结算为准。
           </p>
-          <div v-for="f in cfg?.mastery_families ?? []" :key="f.family" class="family-block">
+          <div
+            v-for="f in cfg?.mastery_families ?? []"
+            :key="f.family"
+            class="family-block r37-mastery-table-scroll"
+          >
             <div class="family-name">{{ f.name }}</div>
-            <div v-for="layer in 3" :key="layer" class="layer-row">
-              <span class="layer-label">第 {{ layer }} 层</span>
-              <span
-                v-for="n in f.nodes.filter((x) => x.layer === layer)"
-                :key="n.name"
-                class="node"
-                :class="{ 'node-focus': focus?.kind === 'mastery' && focus.id === n.name }"
-              >
-                {{ n.name }}
-              </span>
-            </div>
+            <el-table
+              :data="f.nodes ?? []"
+              size="small"
+              border
+              stripe
+            >
+              <el-table-column label="系" width="100">
+                <template #default>{{ f.name }}</template>
+              </el-table-column>
+              <el-table-column label="层" width="60">
+                <template #default="{ row: n }">{{ n.layer }}</template>
+              </el-table-column>
+              <el-table-column label="槽" width="60">
+                <template #default="{ row: n }">{{ n.slot }}</template>
+              </el-table-column>
+              <el-table-column label="节点" min-width="120">
+                <template #default="{ row: n }">
+                  <span :class="{ 'node-focus': focus?.kind === 'mastery' && focus.id === n.name }">{{ n.name }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="效果" width="110">
+                <template #default="{ row: n }">{{ masteryMechanics.kindText(n.kind) }}</template>
+              </el-table-column>
+              <el-table-column label="数值" width="140">
+                <template #default="{ row: n }">{{ masteryMechanics.valueText(n.kind, n.value) }}</template>
+              </el-table-column>
+              <el-table-column label="前置" width="150">
+                <template #default="{ row: n }">{{ masteryMechanics.prereqText(n.prereq_family, n.prereq_layer) }}</template>
+              </el-table-column>
+              <template #empty>
+                <el-empty :description="emptyText" :image-size="60" />
+              </template>
+            </el-table>
+          </div>
+          <div class="r37-ai-note">
+            <p class="r37-ai-conclusion"><strong>AI 机制概览：</strong>{{ masteryMechanics.buildMasteryMechanicsAi(cfg?.mastery_families ?? []) }}</p>
+            <p class="r37-ai-basis" :title="masteryMechanics.MASTERY_AI_BASIS" :data-ai-basis="masteryMechanics.MASTERY_AI_BASIS">依据：公开 /api/v1/config 的 mastery_families（与服务端 MasteryFamily / MasteryNode 同源）；效果按 power.go 口径展示，实际以引擎结算为准</p>
+            <p class="r37-ai-cta" :data-r37-cta="masteryMechanics.MASTERY_AI_CTA"><a :href="urlFor('mastery')" @click.prevent="goTo({ tab: 'mastery' })">查看专精树 →</a></p>
+            <p class="r37-ai-honesty" :title="masteryMechanics.MASTERY_AI_HONESTY" :data-ai-honesty="masteryMechanics.MASTERY_AI_HONESTY">辅助展示配置基值，非权威战斗数据；实际效果以引擎结算为准，权威回放以 replay_hash 为准</p>
           </div>
         </section>
 
@@ -1819,6 +1855,29 @@ h4 {
   color: var(--lyp-muted);
 }
 .r36-ai-cta a {
+  color: var(--lyp-accent);
+}
+/* R37：专精节点表表内横向滚动，不造成页面级溢出 */
+.r37-mastery-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.r37-ai-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--lyp-border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.r37-ai-note p {
+  margin: 2px 0;
+}
+.r37-ai-basis,
+.r37-ai-honesty {
+  color: var(--lyp-muted);
+}
+.r37-ai-cta a {
   color: var(--lyp-accent);
 }
 .r35-ai-note {
