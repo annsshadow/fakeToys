@@ -161,7 +161,12 @@ const emptyText = computed(() =>
         :key="t.key"
         class="tab ai-brand-fill"
         :class="{ on: tab === t.key }"
+        role="button"
+        tabindex="0"
+        :aria-label="t.label"
         @tap="switchTab(t.key)"
+        @keydown.enter="switchTab(t.key)"
+        @keydown.space.prevent="switchTab(t.key)"
       >
         {{ t.label }}
       </view>
@@ -172,15 +177,15 @@ const emptyText = computed(() =>
     </view>
     <view v-else-if="listView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
     <view v-else-if="listView === 'empty'" class="o2-empty empty-guide">
       <view class="o2-empty-icon" aria-hidden="true"></view>
       <text class="o2-empty-text">{{ emptyText }}</text>
       <text class="empty-guide-hint">换个页签看看或刷新</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
-        <view class="empty-guide-link ai-pressable primary" @tap="switchTab(tab === 'mine' ? 'wait' : 'mine')">换个页签</view>
+        <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" role="button" tabindex="0" aria-label="换个页签" @tap="switchTab(tab === 'mine' ? 'wait' : 'mine')" @keydown.enter="switchTab(tab === 'mine' ? 'wait' : 'mine')" @keydown.space.prevent="switchTab(tab === 'mine' ? 'wait' : 'mine')">换个页签</view>
       </view>
     </view>
 
@@ -208,10 +213,10 @@ const emptyText = computed(() =>
     <view v-if="tab === 'mine' && rows.length > 0" class="footer">
       <view v-if="loadError" class="tip-error footer-error">
         <text class="error-text">{{ loadError }}</text>
-        <view class="retry-btn" @tap="loadMore">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="loadMore" @keydown.enter="loadMore" @keydown.space.prevent="loadMore">重试</view>
       </view>
       <view v-else-if="loadingMore">加载更多…</view>
-      <view v-else-if="hasMore" class="load-more" @tap="loadMore">加载更多</view>
+      <view v-else-if="hasMore" class="load-more" role="button" tabindex="0" aria-label="加载更多" @tap="loadMore" @keydown.enter="loadMore" @keydown.space.prevent="loadMore">加载更多</view>
       <view v-else>已加载 {{ rows.length }} 条</view>
     </view>
 
