@@ -15,7 +15,7 @@
           aria-label="搜索会话" data-testid="im-conversation-search" />
       </div>
       <div class="conversation-list" role="list">
-        <div v-for="(conv, convIndex) in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
+        <div v-for="(conv, convIndex) in filteredConversations" :key="conv.id" class="conv-item" role="listitem" tabindex="0" @keydown.enter="selectConversation(conv)" @keydown.space.prevent="selectConversation(conv)"
           :class="{ active: selectedChat?.id === conv.id }"
           :data-testid="'im-conv-' + (convIndex + 1)" @click="selectConversation(conv)">
           <div class="conv-avatar">{{ conv.avatar || displayConversationName(conv)?.[0] }}</div>
