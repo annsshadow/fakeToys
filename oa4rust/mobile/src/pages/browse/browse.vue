@@ -121,7 +121,7 @@ function goSearch() {
 <template>
   <view class="page ai-surface-gradient">
     <view class="tabs ai-brand-fill">
-      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: tab === t.key }" @tap="switchTab(t.key)">
+      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: tab === t.key }" role="button" tabindex="0" :aria-label="t.label" @tap="switchTab(t.key)" @keydown.enter="switchTab(t.key)" @keydown.space.prevent="switchTab(t.key)">
         {{ t.label }}
       </view>
     </view>
@@ -132,24 +132,24 @@ function goSearch() {
     </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重新加载浏览数据" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
     <view v-else-if="rows.length === 0" class="empty-guide">
       <view class="empty-guide-emoji" aria-hidden="true">🔎</view>
       <text class="empty-guide-text">暂无数据</text>
       <text class="empty-guide-hint">暂无浏览数据，换个页签或去搜索找找看</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
-        <view class="empty-guide-link ai-pressable primary" @tap="goSearch">去搜索</view>
+        <view class="empty-guide-link ai-pressable" role="button" tabindex="0" aria-label="刷新浏览数据" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" role="button" tabindex="0" aria-label="去搜索" @tap="goSearch" @keydown.enter="goSearch" @keydown.space.prevent="goSearch">去搜索</view>
       </view>
     </view>
 
     <view v-else>
       <view v-if="loadError" class="tip-error error-banner">
         <text class="error-text">{{ loadError }}</text>
-        <view class="retry-btn" @tap="load()">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重新加载浏览数据" @tap="load()" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
       </view>
-      <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card" @tap="open(r)">
+      <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card" role="button" tabindex="0" :aria-label="'查看 ' + nameOf(r) + ' 详情'" @tap="open(r)" @keydown.enter="open(r)" @keydown.space.prevent="open(r)">
         <view class="card-title">{{ nameOf(r) }}</view>
         <view v-if="descOf(r)" class="card-desc">{{ descOf(r) }}</view>
       </view>
@@ -162,7 +162,7 @@ function goSearch() {
     <view v-else-if="detail" class="detail">
       <view class="detail-head">
         <text class="detail-title">详情</text>
-        <text class="detail-close" @tap="detail = null">关闭</text>
+        <text class="detail-close" role="button" tabindex="0" aria-label="关闭详情" @tap="detail = null" @keydown.enter="detail = null" @keydown.space.prevent="detail = null">关闭</text>
       </view>
       <text class="detail-body">{{ detailText() }}</text>
     </view>
