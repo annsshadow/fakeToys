@@ -6,6 +6,8 @@
  * 断言 .r16-* DOM 的真实渲染行为：排序/取名/格式化/空态/截断/诚实红线。
  * test-first：先写本文件跑 RED，再实施 BattlesView 跑 GREEN。
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -207,3 +209,79 @@ describe('R16 战报详情逐次反应时间线渲染', () => {
     wrapper.unmount()
   })
 })
+describe('R47 R16 验真 CTA 言行一致性（真实 BattlesView）', () => {
+  const viewPath = join(__dirname, '../src/views/BattlesView.vue')
+  const r16SpecPath = join(__dirname, '../../../docs/laiyipao/specs/round16-admin-reaction-timeline/SPEC.md')
+  const viewSrc = () => readFileSync(viewPath, 'utf-8')
+
+  function ctaLine(src: string): string {
+    const hit = src.split('\n').filter((l) => l.includes('r16-timeline-cta') && l.includes('发起验真'))
+    return hit.length ? hit[0] : ''
+  }
+
+  function cssRule(src: string, selector: string): string {
+    const start = src.indexOf(selector + ' {')
+    if (start < 0) return ''
+    const end = src.indexOf('}', start)
+    return src.slice(start, end < 0 ? start + 200 : end + 1)
+  }
+
+  function clickHandler(line: string): string {
+    const at = line.indexOf('@click')
+    const von = line.indexOf('v-on:click')
+    const start = at >= 0 ? at : von
+    if (start < 0) return ''
+    const q1 = line.indexOf('"', start)
+    const q2 = q1 >= 0 ? line.indexOf('"', q1 + 1) : -1
+    if (q1 < 0 || q2 < q1) return ''
+    return line.slice(q1 + 1, q2).split('(')[0].trim()
+  }
+
+  it('CTA 是可点击元素：模板行带 @click/v-on:click，不再是死 div', () => {
+    const line = ctaLine(viewSrc())
+    expect(line, '找不到 .r16-timeline-cta 且含「发起验真」的模板行').not.toBe('')
+    expect(line).toContain('发起验真 →')
+    expect(clickHandler(line), 'CTA 行缺少 @click/v-on:click 绑定').not.toBe('')
+  })
+
+  it('CTA 点击定位到验真区：绑定方法体含 scrollIntoView/focus', () => {
+    const src = viewSrc()
+    const handler = clickHandler(ctaLine(src))
+    expect(handler, 'CTA 行缺少 @click 绑定，无法校验定位行为').not.toBe('')
+    const fnIdx = src.indexOf('function ' + handler)
+    const constIdx = src.indexOf('const ' + handler)
+    const start = fnIdx >= 0 ? fnIdx : constIdx
+    expect(start, '找不到 CTA 绑定方法 ' + handler + ' 的定义').toBeGreaterThanOrEqual(0)
+    const body = src.slice(start, start + 600)
+    expect(
+      body.includes('scrollIntoView') || body.includes('focus('),
+      'CTA 绑定方法 ' + handler + ' 必须 scrollIntoView/focus 定位到验真区'
+    ).toBe(true)
+  })
+
+  it('CTA CSS 含可点击视觉提示，且全文件无裸 hash', () => {
+    const src = viewSrc()
+    const rule = cssRule(src, '.r16-timeline-cta')
+    expect(rule, '找不到 .r16-timeline-cta 的 CSS 规则').not.toBe('')
+    expect(
+      rule.includes('cursor: pointer') || rule.includes('pointer-events: auto'),
+      'CTA CSS 必须含 cursor: pointer 或 pointer-events: auto'
+    ).toBe(true)
+    for (const q of ['"', "'"]) {
+      const token = 'href=' + q + '#'
+      let pos = src.indexOf(token)
+      while (pos >= 0) {
+        expect(src[pos + token.length] === '/', '禁止裸 hash：' + src.slice(pos, pos + 40)).toBe(true)
+        pos = src.indexOf(token, pos + token.length)
+      }
+    }
+  })
+
+  it('R16 规范仍承诺可执行语义：SPEC:39 与实现一致', () => {
+    const s = readFileSync(r16SpecPath, 'utf-8')
+    expect(s).toContain('可执行语义')
+    expect(s).toContain('发起验真 →')
+    expect(s).toContain('定位到同抽屉已有验真区')
+  })
+})
+
