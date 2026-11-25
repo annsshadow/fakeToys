@@ -150,24 +150,24 @@ function goDoc() {
     </view>
     <view v-else-if="listView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" @tap="load()" role="button" tabindex="0" aria-label="重试" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
     <view v-else-if="listView === 'empty'" class="empty-guide ai-brand-fill">
       <view class="empty-guide-emoji" aria-hidden="true">🗑️</view>
       <text class="empty-guide-text">回收站为空</text>
       <text class="empty-guide-hint">删除的内容会出现在这里，便于查看或彻底清除</text>
       <view class="empty-guide-actions">
-        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
-        <view class="empty-guide-link ai-pressable primary" @tap="goDoc">去文档</view>
+        <view class="empty-guide-link ai-pressable" @tap="load()" role="button" tabindex="0" aria-label="刷新" @keydown.enter="load()" @keydown.space.prevent="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="goDoc" role="button" tabindex="0" aria-label="去文档" @keydown.enter="goDoc" @keydown.space.prevent="goDoc">去文档</view>
       </view>
     </view>
 
     <view v-if="loadError && rows.length > 0" class="tip-error error-banner">
       <text class="error-text">{{ loadError }}</text>
-      <view class="retry-btn" @tap="load()">重试</view>
+      <view class="retry-btn" @tap="load()" role="button" tabindex="0" aria-label="重试" @keydown.enter="load()" @keydown.space.prevent="load()">重试</view>
     </view>
     <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card">
-      <view class="card-title" @tap="showDetail(r)">{{ nameOf(r) }}</view>
+      <view class="card-title" @tap="showDetail(r)" role="button" tabindex="0" :aria-label="'查看' + nameOf(r) + '详情'" @keydown.enter="showDetail(r)" @keydown.space.prevent="showDetail(r)">{{ nameOf(r) }}</view>
       <view v-if="metaOf(r)" class="card-meta">{{ metaOf(r) }}</view>
       <button class="btn danger" :disabled="busy" @tap="remove(r)">彻底删除</button>
     </view>
@@ -175,7 +175,7 @@ function goDoc() {
     <view v-if="detail" class="card detail">
       <view class="card-head">
         <text class="card-title">{{ nameOf(detail) }}</text>
-        <text class="detail-close" @tap="detail = null">关闭</text>
+        <text class="detail-close" @tap="detail = null" role="button" tabindex="0" aria-label="关闭详情" @keydown.enter="detail = null" @keydown.space.prevent="detail = null">关闭</text>
       </view>
       <text class="detail-body">{{ detailText() }}</text>
     </view>
