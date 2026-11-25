@@ -361,7 +361,7 @@
         <text class="r22-ai-title">AI · 协同预判</text>
         <text class="r22-ai-conclusion">{{ synergyNoteConclusion }}</text>
         <text class="r22-ai-basis">依据：已装备元素 × 手牌元素，经 REACTION_PAIRS(源自引擎 lookupReaction)派生</text>
-        <text class="r22-ai-cta">去装备/选它</text>
+        <text class="r22-ai-cta">↑ 点上方卡牌即可装备它 →</text>
         <text class="r22-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
       </view>
     </view>
