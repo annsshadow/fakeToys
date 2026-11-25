@@ -82,14 +82,14 @@ function newTopic() {
   <view class="page ai-surface-gradient">
     <view class="toolbar">
       <view class="toolbar-title">最新主题</view>
-      <view class="new-btn ai-brand-fill" @tap="newTopic">发帖</view>
+      <view class="new-btn ai-brand-fill" role="button" tabindex="0" aria-label="发帖" @tap="newTopic" @keydown.enter="newTopic" @keydown.space.prevent="newTopic">发帖</view>
     </view>
     <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
       <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
     </view>
     <view v-else-if="rows.length === 0 && bbsError" class="tip tip-error">
       <view class="error-text">{{ bbsError }}</view>
-      <view class="retry-btn" @tap="load">重试</view>
+      <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
     </view>
     <view v-else-if="rows.length === 0" class="o2-empty">
       <view class="o2-empty-icon" aria-hidden="true"></view>
@@ -98,9 +98,9 @@ function newTopic() {
     <view v-else class="topic-list">
       <view v-if="bbsError" class="error-banner">
         <text class="error-text">{{ bbsError }}</text>
-        <view class="retry-btn" @tap="load">重试</view>
+        <view class="retry-btn" role="button" tabindex="0" aria-label="重试" @tap="load" @keydown.enter="load" @keydown.space.prevent="load">重试</view>
       </view>
-      <view v-for="(row, i) in rows" :key="i" class="topic o2-list-item" @tap="openTopic(row)">
+      <view v-for="(row, i) in rows" :key="i" class="topic o2-list-item" role="button" tabindex="0" :aria-label="'查看' + titleOf(row) + '详情'" @tap="openTopic(row)" @keydown.enter="openTopic(row)" @keydown.space.prevent="openTopic(row)">
         <view class="topic-title">{{ titleOf(row) }}</view>
         <view v-if="excerptOf(row)" class="topic-excerpt">{{ excerptOf(row) }}</view>
         <view class="topic-meta">{{ creatorOf(row) }} · {{ timeOf(row) }}</view>
