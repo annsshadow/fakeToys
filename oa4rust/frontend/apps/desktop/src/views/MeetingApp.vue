@@ -57,13 +57,13 @@
               <span v-if="m.attendeeCount">👤{{m.attendeeCount}}人</span>
             </div></div>
             <div class="ma">
-              <button class="bsm" @click.stop="joinMeeting(m)">加入</button>
-              <button class="bsm" @click.stop="showParticipants(m)">参会人</button>
-              <button class="bsm" @click.stop="inviteParticipant(m)">邀请</button>
-              <button class="bsm" @click.stop="manageInvitee(m)">邀请管理</button>
-              <button class="bsm" @click.stop="modifyMeetingTime(m)">改时间</button>
-              <button class="bsm" @click.stop="markMeetingCompleted(m)">标记完成</button>
-              <button class="bsm" @click.stop="showCheckinCode(m)">签到码</button>
+              <button class="bsm" @click.stop="joinMeeting(m)" @keydown.enter.stop @keydown.space.stop>加入</button>
+              <button class="bsm" @click.stop="showParticipants(m)" @keydown.enter.stop @keydown.space.stop>参会人</button>
+              <button class="bsm" @click.stop="inviteParticipant(m)" @keydown.enter.stop @keydown.space.stop>邀请</button>
+              <button class="bsm" @click.stop="manageInvitee(m)" @keydown.enter.stop @keydown.space.stop>邀请管理</button>
+              <button class="bsm" @click.stop="modifyMeetingTime(m)" @keydown.enter.stop @keydown.space.stop>改时间</button>
+              <button class="bsm" @click.stop="markMeetingCompleted(m)" @keydown.enter.stop @keydown.space.stop>标记完成</button>
+              <button class="bsm" @click.stop="showCheckinCode(m)" @keydown.enter.stop @keydown.space.stop>签到码</button>
             </div>
           </li>
         </ul>
