@@ -91,9 +91,10 @@
                 type="text"
                 placeholder="新昵称（≤64 字）"
                 placeholder-class="ph"
+                :disabled="nicknameSubmitting"
                 @confirm="submitNickname"
               />
-              <view class="btn btn-mini btn-primary" @click="submitNickname">保存</view>
+              <view class="btn btn-mini btn-primary" :class="{ 'btn-disabled': nicknameSubmitting }" @click="submitNickname">{{ nicknameSubmitting ? '提交中…' : '保存' }}</view>
               <view class="btn btn-mini" @click="cancelEditNickname">取消</view>
             </view>
             <text
@@ -1227,6 +1228,7 @@ const editingNickname = ref(false)
 const nicknameDraft = ref('')
 const nicknameMsg = ref('')
 const nicknameErr = ref(false)
+const nicknameSubmitting = ref(false)
 
 function startEditNickname() {
   nicknameDraft.value = store.nickname || ''
@@ -1242,6 +1244,7 @@ function cancelEditNickname() {
 }
 
 async function submitNickname() {
+  if (nicknameSubmitting.value) return
   const name = nicknameDraft.value.trim()
   nicknameMsg.value = ''
   nicknameErr.value = false
@@ -1259,6 +1262,7 @@ async function submitNickname() {
     nicknameErr.value = true
     return
   }
+  nicknameSubmitting.value = true
   try {
     await api.updateNickname(name)
     await store.refreshProfile()
@@ -1266,6 +1270,8 @@ async function submitNickname() {
   } catch (e) {
     nicknameErr.value = true
     nicknameMsg.value = (e as Error)?.message || '修改失败，请稍后再试'
+  } finally {
+    nicknameSubmitting.value = false
   }
 }
 
