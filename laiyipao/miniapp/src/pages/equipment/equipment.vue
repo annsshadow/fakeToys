@@ -146,6 +146,8 @@
         <!-- 搜索（2026-11-01 新一轮第 73 轮）：按名称/部位/元素过滤 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索装备名称 / 部位 / 元素'"
+          aria-label="搜索装备名称 / 部位 / 元素"
           class="search-inp"
           placeholder="搜索装备名称 / 部位 / 元素"
           placeholder-class="ph"

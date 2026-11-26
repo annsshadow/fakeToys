@@ -82,6 +82,8 @@
         <!-- 搜索（2026-11-01 新一轮第 75 轮）：按名称/属性过滤 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索宝石名称 / 属性'"
+          aria-label="搜索宝石名称 / 属性"
           class="search-inp"
           placeholder="搜索宝石名称 / 属性"
           placeholder-class="ph"

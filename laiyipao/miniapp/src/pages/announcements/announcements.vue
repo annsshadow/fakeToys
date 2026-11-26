@@ -86,6 +86,8 @@
         <!-- G112 公告关键词搜索 -->
         <input
           v-model="annKeyword"
+          v-aria-native="'搜索公告标题 / 正文'"
+          aria-label="搜索公告标题 / 正文"
           class="search-inp"
           placeholder="搜索公告标题 / 正文"
           placeholder-class="ph"

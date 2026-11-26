@@ -184,6 +184,8 @@
         <!-- 搜索（2026-11-01 新一轮第 77 轮）：按反应名过滤 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索反应名称'"
+          aria-label="搜索反应名称"
           class="search-inp"
           placeholder="搜索反应名称"
           placeholder-class="ph"

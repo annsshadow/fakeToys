@@ -85,6 +85,8 @@
             <view v-else class="nick-edit-row">
               <input
                 v-model="nicknameDraft"
+                v-aria-native="'新昵称（≤64 字）'"
+                aria-label="新昵称（≤64 字）"
                 class="inp nick-inp"
                 type="text"
                 placeholder="新昵称（≤64 字）"
@@ -567,6 +569,8 @@
         <view v-else class="pwd-form">
           <input
             v-model="oldPassword"
+            v-aria-native="'原口令'"
+            aria-label="原口令"
             class="inp"
             type="text"
             password
@@ -576,6 +580,8 @@
           />
           <input
             v-model="newPassword"
+            v-aria-native="'新口令（至少 10 位）'"
+            aria-label="新口令（至少 10 位）"
             class="inp"
             type="text"
             password
@@ -595,6 +601,8 @@
           <text
             v-if="passwordMsg"
             class="muted"
+            role="status"
+            aria-live="polite"
             style="display: block; margin-top: 12rpx"
             :style="{ color: passwordErr ? 'var(--bad)' : 'var(--ok)' }"
           >
@@ -614,6 +622,8 @@
         <view v-else class="pwd-form">
           <input
             v-model="upgradeUsername"
+            v-aria-native="'用户名'"
+            aria-label="用户名"
             class="inp"
             type="text"
             placeholder="用户名"
@@ -622,6 +632,8 @@
           />
           <input
             v-model="upgradePassword"
+            v-aria-native="'密码（至少 10 位）'"
+            aria-label="密码（至少 10 位）"
             class="inp"
             type="text"
             password

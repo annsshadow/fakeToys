@@ -202,6 +202,8 @@
         <view class="row" style="gap: 12rpx">
           <input
             v-model="code"
+            v-aria-native="'输入兑换码'"
+            aria-label="输入兑换码"
             class="code-input"
             :class="{ 'input-error': !!redeemMsg && !redeemMsg.startsWith('兑换成功') }"
             placeholder="输入兑换码"
@@ -209,7 +211,7 @@
           />
           <view class="btn" style="width: 160rpx; height: 72rpx" @click="doRedeem">兑换</view>
         </view>
-        <text v-if="redeemMsg" :key="redeemMsg" class="muted shake" style="display: block; margin-top: 12rpx">
+        <text v-if="redeemMsg" :key="redeemMsg" class="muted shake" style="display: block; margin-top: 12rpx" role="status" aria-live="polite">
           {{ redeemMsg }}
         </text>
       </view>

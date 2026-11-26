@@ -52,6 +52,8 @@
         <view class="row" style="gap: 12rpx">
           <input
             v-model="battleId"
+            v-aria-native="'battle_id'"
+            aria-label="battle_id"
             class="inp"
             :class="{ 'input-error': !!errMsg }"
             type="number"
@@ -69,7 +71,7 @@
             {{ fetching ? '获取中…' : '取复现信息' }}
           </view>
         </view>
-        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)">
+        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
           {{ errMsg }}
         </text>
       </view>

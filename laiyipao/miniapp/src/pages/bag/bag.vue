@@ -404,13 +404,15 @@
         <view class="preset-save-row">
           <input
             v-model="presetName"
+            v-aria-native="'预设名（最多 20 字）'"
+            aria-label="预设名（最多 20 字）"
             class="preset-input"
             placeholder="预设名（最多 20 字）"
             placeholder-class="ph"
             maxlength="20"
             :focus="presetFocus"
           />
-          <text v-if="presetSaving" class="dim">{{ SAVING_PRESET_TEXT }}</text>
+          <text v-if="presetSaving" class="dim" role="status" aria-live="polite">{{ SAVING_PRESET_TEXT }}</text>
           <text v-else class="link" @click="doSavePreset">保存当前构筑</text>
         </view>
         <!-- R52 空态可直接聚焦输入框，少一次手动寻找 -->

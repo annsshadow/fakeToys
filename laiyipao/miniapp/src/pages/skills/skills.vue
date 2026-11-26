@@ -153,6 +153,8 @@
         <!-- 搜索（2026-11-01 新一轮第 71 轮）：按名称/元素/主动被动过滤 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索技能名称 / 元素 / 主动被动'"
+          aria-label="搜索技能名称 / 元素 / 主动被动"
           class="search-inp"
           placeholder="搜索技能名称 / 元素 / 主动被动"
           placeholder-class="ph"

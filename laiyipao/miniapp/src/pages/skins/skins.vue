@@ -38,6 +38,8 @@
         <!-- 搜索（2026-11-01 新一轮第 78 轮）：按名称/稀有度过滤 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索皮肤名称 / 稀有度'"
+          aria-label="搜索皮肤名称 / 稀有度"
           class="search-inp"
           placeholder="搜索皮肤名称 / 稀有度"
           placeholder-class="ph"

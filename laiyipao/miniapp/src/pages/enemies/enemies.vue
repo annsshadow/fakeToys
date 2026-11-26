@@ -33,6 +33,8 @@
         <!-- 搜索（2026-11-01 新一轮第 70 轮）：图鉴条目多，名称/类别过滤快速定位 -->
         <input
           v-model="keyword"
+          v-aria-native="'搜索敌人名称 / 类别（如 Boss、飞行）'"
+          aria-label="搜索敌人名称 / 类别（如 Boss、飞行）"
           class="search-inp"
           placeholder="搜索敌人名称 / 类别（如 Boss、飞行）"
           placeholder-class="ph"

@@ -32,6 +32,8 @@
         <text class="card-title" style="text-align: left">账号</text>
         <input
           v-model="username"
+          v-aria-native="'用户名'"
+          aria-label="用户名"
           class="inp"
           :class="{ 'input-error': !!errMsg }"
           type="text"
@@ -42,6 +44,8 @@
         <view class="row" style="align-items: center; gap: 12rpx">
           <input
             v-model="password"
+            v-aria-native="'口令'"
+            aria-label="口令"
             class="inp flex-1"
             :class="{ 'input-error': !!errMsg }"
             type="text"
@@ -73,7 +77,7 @@
           </text>
         </view>
         <!-- R81 空字段实时提示：按钮变暗的同时说明为什么 -->
-        <text v-if="!username || !password" class="form-hint">请填写用户名与口令后可登录</text>
+        <text v-if="!username || !password" class="form-hint" role="status" aria-live="polite">请填写用户名与口令后可登录</text>
         <view
           class="btn btn-primary"
           :class="{ 'btn-dim': submitting || !username || !password }"
@@ -82,7 +86,7 @@
           <view v-if="submitting" class="spinner" />
           {{ submitting ? '登录中…' : '登录' }}
         </view>
-        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)">
+        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
           {{ errMsg }}
         </text>
         <text class="dim" style="display: block; margin-top: 12rpx">
