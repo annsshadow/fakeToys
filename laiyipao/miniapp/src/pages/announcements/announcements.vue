@@ -93,7 +93,7 @@
           placeholder-class="ph"
           style="margin-top: 12rpx"
         />
-        <text v-if="annKeyword && filteredItems.length === 0" class="muted">
+        <text v-if="annKeyword && filteredItems.length === 0" class="muted search-empty-text">
           没有匹配「{{ annKeyword }}」的公告
           <text class="link" @click="annKeyword = ''">清除搜索</text>
         </text>

@@ -251,7 +251,7 @@
         <text v-if="!allReactions.length" class="muted">反应表为空（配置未加载？）</text>
         <!-- R28 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
         <view v-if="keyword && allReactions.length && r3FilteredReactions.length === 0" class="search-empty">
-          <text class="muted">没有匹配「{{ keyword }}」的反应</text>
+          <text class="muted search-empty-text">没有匹配「{{ keyword }}」的反应</text>
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
       </view>

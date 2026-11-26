@@ -357,6 +357,12 @@ page,
   padding: 48rpx 0 32rpx;
 }
 
+.search-empty-text {
+  display: block;
+  max-width: 100%;
+  word-break: break-all;
+}
+
 .clear-search {
   font-size: var(--fs-sm);
   color: var(--fire);
