@@ -208,6 +208,7 @@ export default function Augmentation() {
           <div>
             <label>输入文件：</label>
             <Select
+              aria-label="输入文件"
               style={{ width: 300 }}
               value={inputFile}
               onChange={setInputFile}
@@ -223,6 +224,7 @@ export default function Augmentation() {
           <div>
             <label>输出文件：</label>
             <input
+              aria-label="输出文件"
               type="text"
               value={outputFile}
               onChange={(e) => setOutputFile(e.target.value)}
@@ -237,19 +239,19 @@ export default function Augmentation() {
           <div style={{ display: 'flex', gap: 24 }}>
             <div>
               <label>质量检查：</label>
-              <Switch checked={useQuality} onChange={setUseQuality} />
+              <Switch aria-label="质量检查" checked={useQuality} onChange={setUseQuality} />
             </div>
             <div>
               <label>智能去重：</label>
-              <Switch checked={useDedup} onChange={setUseDedup} />
+              <Switch aria-label="智能去重" checked={useDedup} onChange={setUseDedup} />
             </div>
             <div>
               <label>断点续传：</label>
-              <Switch checked={useCheckpoint} onChange={setUseCheckpoint} />
+              <Switch aria-label="断点续传" checked={useCheckpoint} onChange={setUseCheckpoint} />
             </div>
             <div>
               <label>异步引擎：</label>
-              <Switch checked={useAsync} onChange={setUseAsync} />
+              <Switch aria-label="异步引擎" checked={useAsync} onChange={setUseAsync} />
             </div>
           </div>
           <Button
