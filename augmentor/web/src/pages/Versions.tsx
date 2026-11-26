@@ -269,6 +269,7 @@ export default function Versions() {
           <div>
             <label>选择文件：</label>
             <select
+              aria-label="选择输入文件"
               value={selectedFile}
               onChange={(e) => setSelectedFile(e.target.value)}
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
@@ -315,6 +316,7 @@ export default function Versions() {
           <div>
             <label>版本 1：</label>
             <select
+              aria-label="版本 1"
               value={diffVersion1}
               onChange={(e) => setDiffVersion1(e.target.value)}
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
@@ -330,6 +332,7 @@ export default function Versions() {
           <div>
             <label>版本 2：</label>
             <select
+              aria-label="版本 2"
               value={diffVersion2}
               onChange={(e) => setDiffVersion2(e.target.value)}
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
