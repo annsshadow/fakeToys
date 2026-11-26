@@ -8,6 +8,12 @@
           class="tab"
           :class="{ active: curType === t.key }"
           @click="switchTab(t.key)"
+          role="button"
+          tabindex="0"
+          :aria-label="t.label"
+          :aria-pressed="curType === t.key"
+          @keydown.enter="switchTab(t.key)"
+          @keydown.space.prevent="switchTab(t.key)"
         >
           {{ t.label }}
         </view>
