@@ -569,3 +569,9 @@ docs/laiyipao/audits/round66-gem-cache-guard/data/
 docs/laiyipao/audits/round66-gem-cache-guard/admin-auth-init.js
 docs/laiyipao/audits/round66-gem-cache-guard-postdeploy/data/
 docs/laiyipao/audits/round66-gem-cache-guard-postdeploy/admin-auth-init.js
+
+# R69 昵称提交在途反馈与防连点修复及部署后真值不入库
+docs/laiyipao/audits/round69-nickname-busy/data/
+docs/laiyipao/audits/round69-nickname-busy/admin-auth-init.js
+docs/laiyipao/audits/round69-nickname-busy-postdeploy/data/
+docs/laiyipao/audits/round69-nickname-busy-postdeploy/admin-auth-init.js

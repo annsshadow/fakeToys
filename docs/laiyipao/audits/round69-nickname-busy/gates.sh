@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -uo pipefail
+ROOT="$(pwd)"; D="$ROOT/docs/laiyipao/audits/round69-nickname-busy/data"
+cd "$ROOT/laiyipao/miniapp"
+echo "=== G1 CONTRACT ==="
+pnpm exec vitest run src/styles/r69NicknameBusy.contract.test.ts --reporter=verbose > "$D/g1-contract.txt" 2>&1; echo "G1_RC=$?"
+tail -6 "$D/g1-contract.txt"
+echo "=== G2 FULL ==="
+pnpm exec vitest run --reporter=verbose > "$D/g2-full.txt" 2>&1; echo "G2_RC=$?"
+tail -8 "$D/g2-full.txt"
+echo "=== G3 TYPECHECK ==="
+pnpm exec vue-tsc --noEmit > "$D/g3-typecheck.txt" 2>&1; echo "G3_RC=$?"
+echo "=== G4 BUILD ==="
+pnpm run build:h5 > "$D/g4-build.txt" 2>&1; echo "G4_RC=$?"
+tail -3 "$D/g4-build.txt"
+cd "$ROOT"
+echo "=== G5 DIFF ==="
+git diff --check > "$D/g5-diff.txt" 2>&1; echo "G5_RC=$?"
+cat "$D/g5-diff.txt"
+echo GATES_DONE
