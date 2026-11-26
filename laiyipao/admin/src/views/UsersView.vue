@@ -679,7 +679,9 @@ const asRow = (r: unknown) => r as AdminUserView
           <el-table :data="detail.recent_battles" size="small" border>
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="level_id" label="关卡" width="70" />
-            <el-table-column prop="result" label="结果" width="70" />
+            <el-table-column label="结果" width="70">
+              <template #default="{ row }">{{ row.result === 'win' ? '胜' : '负' }}</template>
+            </el-table-column>
             <el-table-column prop="score" label="分数" width="100" />
             <el-table-column prop="kills" label="击杀" width="70" />
             <el-table-column prop="leaked" label="漏怪" width="70" />

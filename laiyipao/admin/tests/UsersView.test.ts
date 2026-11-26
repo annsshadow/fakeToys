@@ -712,7 +712,7 @@ describe('UsersView 详情抽屉（P5-7）', () => {
     expect(text).toContain('#21、#22')
     expect(text).toContain('11、12')
     // 战报与验真两态
-    expect(text).toContain('win')
+    expect(text).toContain('胜')
     expect(text).toContain('9999')
     expect(text).toContain('一致')
     expect(text).toContain('不匹配')
