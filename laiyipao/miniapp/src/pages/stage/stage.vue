@@ -19,6 +19,11 @@
             class="chapter-chip"
             :class="{ active: curChapter === ch.id }"
             @click="switchChapter(ch.id)"
+            role="button"
+            tabindex="0"
+            :aria-label="ch.name + (curChapter === ch.id ? '，当前章节' : '，点击切换')"
+            @keydown.enter="switchChapter(ch.id)"
+            @keydown.space.prevent="switchChapter(ch.id)"
           >
             {{ ch.name }}
             <!-- 第六批 R7 关卡数：切章前就知道这一章有多少关 -->
@@ -113,6 +118,11 @@
             boss: lv.is_boss,
           }"
           @click="enter(lv.id)"
+          role="button"
+          tabindex="0"
+          :aria-label="'第 ' + lv.id + ' 关 ' + lv.name"
+          @keydown.enter="enter(lv.id)"
+          @keydown.space.prevent="enter(lv.id)"
         >
           <!-- 锁定关（100 轮打磨 R11）：锁图标替代纯暗格 —— 「为什么点不了」不再靠猜 -->
           <Icon v-if="lv.id > store.unlockedLevel" name="lock" :size="36" class="lock-glyph" />
@@ -219,6 +229,11 @@
         class="btn btn-primary start-btn"
         :class="{ 'btn-disabled': !canEnter }"
         @click="startBattle"
+        role="button"
+        tabindex="0"
+        :aria-label="startLabel"
+        @keydown.enter="startBattle"
+        @keydown.space.prevent="startBattle"
       >
         {{ startLabel }}
       </view>
