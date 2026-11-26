@@ -190,14 +190,16 @@ function r12Go() {
 const gemGain = ref<GemGainView>(normalizeGemGain(null))
 function loadGemGain() {
   let raw: string | null = null
+  let parsed: unknown = null
   try {
     const prefix = r10GemGainCacheKey(store.userId, 0).replace(/:0$/, ':')
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
       if (k && k.startsWith(prefix)) { raw = localStorage.getItem(k); break }
     }
-  } catch { raw = null }
-  gemGain.value = normalizeGemGain(raw ? JSON.parse(raw) : null)
+    parsed = raw ? JSON.parse(raw) : null
+  } catch { parsed = null }
+  gemGain.value = normalizeGemGain(parsed)
 }
 loadGemGain()
 onShow(() => { loadGemGain() })
