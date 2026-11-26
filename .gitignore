@@ -581,3 +581,9 @@ docs/laiyipao/audits/round71-verify-time-format/data/
 docs/laiyipao/audits/round71-verify-time-format/admin-auth-init.js
 docs/laiyipao/audits/round71-verify-time-format-postdeploy/data/
 docs/laiyipao/audits/round71-verify-time-format-postdeploy/admin-auth-init.js
+
+# R72 搜索空态极端值溢出修复及部署后真值不入库
+docs/laiyipao/audits/round72-search-empty-overflow/data/
+docs/laiyipao/audits/round72-search-empty-overflow/admin-auth-init.js
+docs/laiyipao/audits/round72-search-empty-overflow-postdeploy/data/
+docs/laiyipao/audits/round72-search-empty-overflow-postdeploy/admin-auth-init.js
