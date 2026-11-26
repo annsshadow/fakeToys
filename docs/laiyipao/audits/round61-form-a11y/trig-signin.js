@@ -1,0 +1,1 @@
+(function(){var b=document.querySelectorAll(".btn");for(var i=0;i<b.length;i++){if((b[i].innerText||"").trim()==="兑换"){b[i].click();return "CLICKED";}}return "NO_BTN";})()

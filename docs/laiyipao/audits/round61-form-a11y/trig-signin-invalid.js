@@ -1,0 +1,1 @@
+(function(){var i=document.querySelector("input.code-input")||document.querySelector("input");if(i){i.value="INVALID-CODE-999";i.dispatchEvent(new Event("input",{bubbles:true}));}var b=document.querySelectorAll(".btn");for(var k=0;k<b.length;k++){if((b[k].innerText||"").trim()==="兑换"){b[k].click();return "CLICKED_INVALID";}}return "NO_BTN";})()

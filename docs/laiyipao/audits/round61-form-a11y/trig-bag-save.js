@@ -1,0 +1,1 @@
+(function(){var i=document.querySelector("input.preset-input")||document.querySelector("input");if(i){i.value="QA预设A";i.dispatchEvent(new Event("input",{bubbles:true}));}var t=document.querySelectorAll(".link");for(var k=0;k<t.length;k++){if((t[k].innerText||"").indexOf("保存当前构筑")>=0){t[k].click();return "CLICKED_SAVE";}}return "NO_LINK";})()

@@ -1,0 +1,1 @@
+(function(){var bs=document.querySelectorAll("button,.btn,uni-button");for(var k=0;k<bs.length;k++){var t=(bs[k].innerText||"").trim();if(t.indexOf("修改密码")>=0){bs[k].click();return "CLICKED_MODPWD";}}return "NO_BTN";})()

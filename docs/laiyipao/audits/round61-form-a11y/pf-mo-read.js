@@ -1,0 +1,1 @@
+(function(){return JSON.stringify({href:location.href,captured:window.__CAP||[]});})()

@@ -1,0 +1,1 @@
+(function(){var b=document.querySelectorAll(".btn");for(var i=0;i<b.length;i++){if((b[i].innerText||"").indexOf("取复现信息")>=0){b[i].click();return "CLICKED";}}return "NO_BTN";})()

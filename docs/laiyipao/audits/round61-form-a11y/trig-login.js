@@ -1,0 +1,1 @@
+(function(){var b=document.querySelector(".btn-primary");if(!b)return "NO_BTN";b.click();return "CLICKED";})()

@@ -549,4 +549,13 @@ docs/laiyipao/audits/round60-a11y-recon/admin-auth-init.js
 docs/laiyipao/audits/round60-a11y-keyboard/data/
 docs/laiyipao/audits/round60-a11y-keyboard/admin-auth-init.js
 docs/laiyipao/audits/round60-postdeploy/data/
+# R61 表单输入语义与错误播报审计真值（data/ 与鉴权脚本不入库）
+docs/laiyipao/audits/round61-form-a11y/data/
+docs/laiyipao/audits/round61-form-a11y/admin-auth-init.js
+docs/laiyipao/audits/round61-form-a11y-postdeploy/data/
+docs/laiyipao/audits/round61-form-a11y-postdeploy/admin-auth-init.js
 docs/laiyipao/audits/round60-postdeploy/admin-auth-init.js
+
+# R61-B admin表单A11Y走查临时真值不入库
+docs/laiyipao/audits/round61-b-admin-a11y/data/
+docs/laiyipao/audits/round61-b-admin-a11y/admin-auth-init.js

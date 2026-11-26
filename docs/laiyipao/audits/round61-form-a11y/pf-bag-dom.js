@@ -1,0 +1,1 @@
+(function(){var i=document.querySelector("input");if(!i)return "NO_INPUT";var p=i.parentElement;var chain=[];for(var k=0;k<4&&p;k++){chain.push({tag:p.tagName,cls:String(p.className||""),html:p.outerHTML.slice(0,600)});p=p.parentElement;}return JSON.stringify(chain);})()
