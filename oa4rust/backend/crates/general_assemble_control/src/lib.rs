@@ -2790,6 +2790,60 @@ pub async fn worktime_betweenminutes_start_start_end_end(
     ))))
 }
 
+/// forwarddays 的 TEXT 日期上界：把 start(YYYY-MM-DD) 加 days 天后格式化回 YYYY-MM-DD。
+/// legacy 用 format!("{} + {} days", start, days) 作 TEXT 列上界，'+'(0x2B) < 数字，
+/// 导致上界字典序小于任何 YYYY-MM-DD，days 之后的行被 date <= 上界 排除。
+/// 采用 Howard Hinnant 的 days_from_civil/civil_from_days 纯整数算法，无新依赖。
+/// 非法 start（格式不符/数字解析失败）降级原样返回，与 legacy 不 panic 的行为一致。
+fn worktime_forwarddays_end_date(start: &str, days: u32) -> String {
+    let parsed = if start.len() == 10
+        && start.chars().nth(4) == Some('-')
+        && start.chars().nth(7) == Some('-')
+    {
+        let y = start[0..4].parse::<i32>().ok();
+        let m = start[5..7].parse::<u32>().ok();
+        let d = start[8..10].parse::<u32>().ok();
+        match (y, m, d) {
+            (Some(y), Some(m), Some(d)) if (1..=12).contains(&m) && (1..=31).contains(&d) => {
+                Some((y, m, d))
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let (y, m, d) = match parsed {
+        Some(v) => v,
+        None => return start.to_string(),
+    };
+
+    // Hinnant days_from_civil：1970-01-01 => 0。
+    let days_from_civil = |y: i32, m: u32, d: u32| -> i64 {
+        let y = y - if m <= 2 { 1 } else { 0 };
+        let era = (if y >= 0 { y } else { y - 399 }) / 400;
+        let yoe = y - era * 400;
+        let mp = if m > 2 { m - 3 } else { m + 9 };
+        let doy = (153 * mp + 2) / 5 + d - 1;
+        let doe = yoe as i64 * 365 + yoe as i64 / 4 - yoe as i64 / 100 + doy as i64;
+        era as i64 * 146097 + doe - 719468
+    };
+    // Hinnant civil_from_days：days_from_civil 的逆运算。
+    let civil_from_days = |z: i64| -> (i32, u32, u32) {
+        let z = z + 719468;
+        let era = (if z >= 0 { z } else { z - 146096 }) / 146097;
+        let doe = z - era * 146097;
+        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        let y = yoe + era * 400;
+        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        let mp = (5 * doy + 2) / 153;
+        let d = doy - (153 * mp + 2) / 5 + 1;
+        let m = if mp < 10 { mp + 3 } else { mp - 9 };
+        ((y + if m <= 2 { 1 } else { 0 }) as i32, m as u32, d as u32)
+    };
+    let z = days_from_civil(y, m, d) + days as i64;
+    let (ey, em, ed) = civil_from_days(z);
+    format!("{ey:04}-{em:02}-{ed:02}")
+}
 #[allow(non_snake_case)]
 pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
@@ -2797,7 +2851,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let end_date = format!("{} + {} days", start, days);
+    let end_date = worktime_forwarddays_end_date(&start, days);
 
     let rows = client
         .query(
