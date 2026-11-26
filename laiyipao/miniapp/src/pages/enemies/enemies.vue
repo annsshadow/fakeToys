@@ -30,7 +30,12 @@
             :key="c.key"
             class="chip tap"
             :class="{ hit: categoryFilter === c.key }"
+            role="button"
+            tabindex="0"
+            :aria-label="c.label"
             @click="categoryFilter = c.key"
+            @keydown.enter="categoryFilter = c.key"
+            @keydown.space.prevent="categoryFilter = c.key"
           >{{ c.label }}</text>
         </view>
         <!-- G104 元素克制排行：堆某元素时先打谁 -->
@@ -43,7 +48,12 @@
               class="chip tap"
               :class="{ hit: counterElement === el }"
               :style="counterElement === el ? { background: ELEMENT_COLOR[el], color: '#fff' } : {}"
+              role="button"
+              tabindex="0"
+              :aria-label="ELEMENT_NAME[el]"
               @click="counterElement = el"
+              @keydown.enter="counterElement = el"
+              @keydown.space.prevent="counterElement = el"
             >{{ ELEMENT_NAME[el] }}</text>
           </view>
           <view v-for="(c, i) in counterRanking" :key="c.id" class="counter-row">
@@ -75,10 +85,10 @@
             <view class="icon-badge" :class="en.is_boss ? 'badge-fire' : ''" style="width: 64rpx; height: 64rpx">
               <DefIcon :name="'enemy:' + en.category" :size="40" />
             </view>
-            <text class="rxn-name tap" @click="toggleEnemy(en.id)">{{ en.name }}</text>
+            <text class="rxn-name tap" role="button" tabindex="0" :aria-label="'查看 ' + en.name + ' 抗性'" @click="toggleEnemy(en.id)" @keydown.enter="toggleEnemy(en.id)" @keydown.space.prevent="toggleEnemy(en.id)">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
             <text v-if="en.is_boss" class="chip hit">Boss</text>
-            <text class="resist-toggle" @click="toggleEnemy(en.id)">
+            <text class="resist-toggle" role="button" tabindex="0" :aria-label="(expandedEnemy === en.id ? '收起' : '查看') + en.name + '抗性图'" @click="toggleEnemy(en.id)" @keydown.enter="toggleEnemy(en.id)" @keydown.space.prevent="toggleEnemy(en.id)">
               {{ expandedEnemy === en.id ? '收起抗性图 ▲' : '抗性图 ▼' }}
             </text>
           </view>
@@ -137,7 +147,7 @@
         <!-- R23 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
         <view v-if="keyword && enemies.length && filteredEnemies.length === 0" class="search-empty">
           <text class="muted">没有匹配「{{ keyword }}」的敌人</text>
-          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+          <text class="clear-search" role="button" tabindex="0" aria-label="清除搜索" @click="keyword = ''" @keydown.enter="keyword = ''" @keydown.space.prevent="keyword = ''">清除搜索</text>
         </view>
       </view>
     </view>
