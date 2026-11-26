@@ -680,6 +680,7 @@ export default function DataManagement() {
             <div style={{ marginBottom: 12 }}>
               <label>问题 (instruction):</label>
               <Input.TextArea
+                aria-label="问题内容"
                 rows={3}
                 value={editingItem.instruction}
                 onChange={(e) => setEditingItem({ ...editingItem, instruction: e.target.value })}
@@ -688,6 +689,7 @@ export default function DataManagement() {
             <div style={{ marginBottom: 12 }}>
               <label>回答 (output):</label>
               <Input.TextArea
+                aria-label="回答内容"
                 rows={5}
                 value={editingItem.output}
                 onChange={(e) => setEditingItem({ ...editingItem, output: e.target.value })}
