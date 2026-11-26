@@ -48,7 +48,12 @@
             class="btn"
             :class="{ 'btn-disabled': fetching }"
             style="width: 180rpx; height: 72rpx"
+            role="button"
+            tabindex="0"
+            :aria-label="fetching ? '获取中' : '取复现信息'"
             @click="fetchReplay"
+            @keydown.enter="fetchReplay"
+            @keydown.space.prevent="fetchReplay"
           >
             {{ fetching ? '获取中…' : '取复现信息' }}
           </view>
@@ -122,7 +127,7 @@
           </view>
         </view>
 
-        <view class="btn btn-primary" style="margin-top: 16rpx" @click="doReplay">
+        <view class="btn btn-primary" style="margin-top: 16rpx" role="button" tabindex="0" aria-label="本地重放并提交验真" @click="doReplay" @keydown.enter="doReplay" @keydown.space.prevent="doReplay">
           本地重放并提交验真
         </view>
 
@@ -131,7 +136,12 @@
           class="btn"
           :class="{ 'btn-disabled': falsifying }"
           style="margin-top: 12rpx"
+          role="button"
+          tabindex="0"
+          :aria-label="falsifying ? '提交中' : '提交伪造哈希'"
           @click="doFalsify"
+          @keydown.enter="doFalsify"
+          @keydown.space.prevent="doFalsify"
         >
           {{ falsifying ? '提交中…' : '提交伪造哈希（演示证伪）' }}
         </view>
@@ -166,7 +176,12 @@
           v-for="h in verifyHistory"
           :key="h.id + h.at"
           class="kv vh-row tap"
+          role="button"
+          tabindex="0"
+          :aria-label="'回填战报 #' + h.id + '，' + (h.matched ? '一致' : '不一致') + '，' + h.at"
           @click="refillBattleId(h.id)"
+          @keydown.enter="refillBattleId(h.id)"
+          @keydown.space.prevent="refillBattleId(h.id)"
         >
           <text class="mono">#{{ h.id }}</text>
           <text :class="h.matched ? 'vh-ok' : 'vh-bad'">{{ h.matched ? '一致' : '不一致' }}</text>
