@@ -26,6 +26,11 @@
           <text
             class="link"
             :class="{ 'link-off': resetting || selected.length === 0 || resetTokens <= 0 }"
+            role="button"
+            tabindex="0"
+            :aria-label="resetting ? '重铸中' : '重铸'"
+            @keydown.enter="resetMastery"
+            @keydown.space.prevent="resetMastery"
             @click="resetMastery"
           >
             <view v-if="resetting" class="spinner" style="display: inline-block" />
@@ -44,6 +49,12 @@
             :key="f.family"
             class="tab-chip"
             :class="{ active: curFamily === f.family }"
+            role="button"
+            tabindex="0"
+            :aria-label="f.name"
+            :aria-pressed="curFamily === f.family"
+            @keydown.enter="curFamily = f.family"
+            @keydown.space.prevent="curFamily = f.family"
             @click="curFamily = f.family"
           >
             {{ f.name }}
@@ -112,6 +123,11 @@
                 locked: isLocked(n),
                 selectable: !selected.includes(n.id) && !isLocked(n),
               }"
+              role="button"
+              tabindex="0"
+              :aria-label="n.name + '，+' + n.value + '，' + (selected.includes(n.id) ? '已点亮' : isLocked(n) ? '未解锁' : '可点亮')"
+              @keydown.enter="toggle(n)"
+              @keydown.space.prevent="toggle(n)"
               @click="toggle(n)"
             >
               <!-- 已点亮勾选标（100 轮打磨 R15）：三态此前只有底色差别，
