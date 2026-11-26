@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -uo pipefail
+ROOT="$(pwd)"
+echo "=== CONTRACT R64 ==="
+cd "$ROOT/laiyipao/miniapp" && npx vitest run src/styles/r64BattlesRace.contract.test.ts --reporter=verbose > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-contract.txt" 2>&1; C1=$?; tail -8 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-contract.txt"; echo "RC=$C1"
+echo "=== CONTRACT R60 ==="
+cd "$ROOT/laiyipao/miniapp" && npx vitest run src/styles/r60A11yKeyboard.contract.test.ts --reporter=verbose > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-r60.txt" 2>&1; C1b=$?; tail -6 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-r60.txt"; echo "RC=$C1b"
+echo "=== FULL VITEST ==="
+cd "$ROOT/laiyipao/miniapp" && pnpm test > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-full.txt" 2>&1; C2=$?; tail -6 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-full.txt"; echo "RC=$C2"
+echo "=== TYPECHECK ==="
+cd "$ROOT/laiyipao/miniapp" && pnpm exec vue-tsc --noEmit > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-type.txt" 2>&1; C3=$?; tail -6 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-type.txt"; echo "RC=$C3"
+echo "=== BUILD H5 ==="
+cd "$ROOT/laiyipao/miniapp" && pnpm run build:h5 > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-build.txt" 2>&1; C4=$?; tail -5 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-build.txt"; echo "RC=$C4"
+echo "=== DIFF CHECK ==="
+cd "$ROOT" && git diff --check > "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-diff.txt" 2>&1; C5=$?; head -10 "$ROOT/docs/laiyipao/audits/round64-battles-detail-race/data/g-diff.txt"; echo "RC=$C5"
+echo "SUMMARY contract=$C1 r60=$C1b full=$C2 type=$C3 build=$C4 diff=$C5"

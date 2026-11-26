@@ -559,3 +559,7 @@ docs/laiyipao/audits/round60-postdeploy/admin-auth-init.js
 # R61-B admin表单A11Y走查临时真值不入库
 docs/laiyipao/audits/round61-b-admin-a11y/data/
 docs/laiyipao/audits/round61-b-admin-a11y/admin-auth-init.js
+docs/laiyipao/audits/round64-battles-detail-race/data/
+docs/laiyipao/audits/round64-battles-detail-race/admin-auth-init.js
+docs/laiyipao/audits/round64-battles-detail-race-postdeploy/data/
+docs/laiyipao/audits/round64-battles-detail-race-postdeploy/admin-auth-init.js

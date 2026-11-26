@@ -1,0 +1,1 @@
+(function(){var c=window.__raceCtl;if(!c)return "NO_CTL";c.delayMatch="/me/battles?limit=20&offset=0";c.delayMs=2600;c.remaining=2;c.log=[];return JSON.stringify({delayMatch:c.delayMatch,delayMs:c.delayMs,remaining:c.remaining});})()

@@ -1,0 +1,1 @@
+(function(){var r=[].slice.call(document.querySelectorAll(".battle-row"));var t=r[4];if(!t)return "NO_I4:"+r.length;t.click();return "CLICKED_I4:"+(t.innerText||"").replace(/\s+/g," ").trim().slice(0,60);})()

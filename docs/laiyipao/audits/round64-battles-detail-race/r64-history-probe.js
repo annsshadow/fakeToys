@@ -1,0 +1,1 @@
+(function(){var t=[].slice.call(document.querySelectorAll(".battle-row"));return JSON.stringify({rows:t.length,heads:t.map(function(e,i){return {i:i,head:(e.innerText||"").replace(/\s+/g," ").trim().slice(0,70)};})});})()

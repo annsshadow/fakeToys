@@ -1,0 +1,1 @@
+(function(){var r=[].slice.call(document.querySelectorAll(".battle-row"));var t=r.filter(function(e){return (e.innerText||"").indexOf("19925")>=0;})[0];if(!t)return "NO_PAIR";t.click();return "CLICKED_PAIR:"+(t.innerText||"").replace(/\s+/g," ").trim().slice(0,60);})()
