@@ -40,6 +40,11 @@
           :class="{ 'btn-disabled': canSign === false }"
           style="margin-top: 20rpx"
           @click="doSignIn"
+          role="button"
+          tabindex="0"
+          :aria-label="canSign ? '领取今日奖励' : signedToday ? '今日已签到' : cycleCompleteText"
+          @keydown.enter="doSignIn"
+          @keydown.space.prevent="doSignIn"
         >
           {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : `✓ ${cycleCompleteText}` }}
         </view>
@@ -86,6 +91,11 @@
             class="btn btn-mini btn-primary offline-claim"
             :class="{ disabled: offlineReward.coin <= 0 || offlineClaiming }"
             @click="claimOffline"
+            role="button"
+            tabindex="0"
+            :aria-label="offlineClaiming ? '领取中' : offlineReward.coin > 0 ? '领取离线收益' : '离线收益已领完'"
+            @keydown.enter="claimOffline"
+            @keydown.space.prevent="claimOffline"
           >
             {{ offlineClaiming ? '领取中' : offlineReward.coin > 0 ? '领取' : '已领完' }}
           </view>
@@ -118,6 +128,12 @@
             class="dim"
             :style="scope === s.key ? 'color: #58a6ff' : ''"
             @click="switchScope(s.key)"
+            role="button"
+            tabindex="0"
+            :aria-label="s.label"
+            :aria-pressed="scope === s.key"
+            @keydown.enter="switchScope(s.key)"
+            @keydown.space.prevent="switchScope(s.key)"
           >
             {{ s.label }}
             <!-- 第六批 R65：当前周期有几项可领，一眼可见，不必逐行找「领取」 -->
@@ -153,6 +169,11 @@
             style="width: 140rpx; height: 64rpx; font-size: 24rpx"
             :class="{ 'btn-disabled': !(t.done && !t.claimed) }"
             @click="claim(t.id)"
+            role="button"
+            tabindex="0"
+            :aria-label="t.claimed ? '任务' + t.name + '已领' : t.done ? '领取任务' + t.name : '任务' + t.name + '未完成'"
+            @keydown.enter="claim(t.id)"
+            @keydown.space.prevent="claim(t.id)"
           >
             {{ t.claimed ? '已领' : t.done ? '领取' : '未完成' }}
           </view>
@@ -170,7 +191,7 @@
             placeholder="输入兑换码"
             placeholder-class="ph"
           />
-          <view class="btn" style="width: 160rpx; height: 72rpx" @click="doRedeem">兑换</view>
+          <view class="btn" style="width: 160rpx; height: 72rpx" @click="doRedeem" role="button" tabindex="0" aria-label="兑换" @keydown.enter="doRedeem" @keydown.space.prevent="doRedeem">兑换</view>
         </view>
         <text v-if="redeemMsg" :key="redeemMsg" class="muted shake" style="display: block; margin-top: 12rpx">
           {{ redeemMsg }}
