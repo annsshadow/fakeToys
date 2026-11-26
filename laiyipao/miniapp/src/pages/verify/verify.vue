@@ -98,7 +98,7 @@
         <view v-if="attackerFullRows.length" class="attacker-full">
           <text v-for="r in attackerFullRows" :key="r.label" class="af-item">{{ r.label }} {{ r.value }}</text>
         </view>
-        <view class="kv"><text class="muted">记录时间</text><text class="mono">{{ replayInfo.created_at }}</text></view>
+        <view class="kv"><text class="muted">记录时间</text><text class="mono">{{ fmtVerifyTime(replayInfo.created_at) }}</text></view>
         <view class="kv">
           <text class="muted">服务端记录的哈希</text>
           <text class="mono hash">{{ pretty(replayInfo.expected_hash) }}</text>
@@ -427,6 +427,18 @@ function r17GoAuthority(): void {
 
 function pretty(h: string): string {
   return prettyHash(h)
+}
+
+/** 验真页记录时间本地化（R71）：完整日期 + 时分，非法 ISO 回退原串。 */
+function fmtVerifyTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const y = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${mm}-${dd} ${hh}:${mi}`
 }
 
 function duration(ms: number): string {
