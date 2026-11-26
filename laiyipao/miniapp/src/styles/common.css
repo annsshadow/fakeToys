@@ -382,6 +382,10 @@ page,
 
 .ph {
   color: var(--dim);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 键值行：左标签右值。值列必须能收缩，否则长哈希会把标签挤走。 */
