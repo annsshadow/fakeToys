@@ -44,8 +44,8 @@ pub async fn unit_create(
     let sort = body
         .get("sort")
         .and_then(|v| v.as_i64())
-        .unwrap_or(0)
-        .to_string();
+        .map(|v| v as i32)
+        .unwrap_or_default();
     let creator = session.person_unique.clone();
     let id = uuid::Uuid::new_v4().to_string();
     client

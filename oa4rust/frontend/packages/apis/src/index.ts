@@ -526,7 +526,7 @@ export const programCenterApi = {
   scriptGet: (flag: string) => api.get(`/api/program_center/script/${flag}`),
   // Dict 字典
   dictList: () => api.get('/api/program_center/dict/list'),
-  dictCreate: (data: unknown) => api.post('/api/program_center/dict/create', data),
+  dictCreate: (data: unknown) => api.post('/api/program_center/dict', data),
   // Config 配置
   configList: () => api.get('/api/program_center/config/list'),
   configGet: (key: string) => api.get(`/api/program_center/config/${key}`),
@@ -600,8 +600,8 @@ export const mindApi = {
 export const documentApi = {
   list: (params?: Record<string, string>) => api.get('/api/document/list', { params }),
   detail: (id: string) => api.get(`/api/document/${id}`),
-  create: (data: unknown) => api.post('/api/document/document', data),
-  update: (id: string, data: unknown) => api.put(`/api/document/document/${id}`, data),
+  create: (data: unknown) => api.post('/api/document', data),
+  update: (id: string, data: unknown) => api.post(`/api/document/${id}/update`, data),
   delete: (id: string) => api.delete(`/api/document/${id}`),
   draftList: (page: number, size: number) => api.post(`/api/document/draft/list/paging/${page}/${size}`, {}),
   filterList: (params: unknown) => api.post('/api/document/filter/list', params),

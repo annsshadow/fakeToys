@@ -1,5 +1,5 @@
 === admin login -> 200
-{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImtuZCI6ImFkbWluIiwic2lkIjoiYV80ci1JM29XdExRRDZ3bGVIVnM4Wi0wWUFid1ViMndRVGI3bTJnZkh1b2RJIiwiaWF0IjoxNzkzODg5NzUyLCJleHAiOjE3OTM4OTY5NTJ9.pBMFwf8umf5Pv2ZPJhUrcB1f2yTVfDgqQF3PzvJDR1U","expires_at":"2026-11-05T16:42:32Z","admin":{"id":1,"username":"audit-admin","role":"admin"}}
+{"access_token":"<YOUR_TEST_TOKEN>","expires_at":"2026-11-05T16:42:32Z","admin":{"id":1,"username":"audit-admin","role":"admin"}}
 
 ADMIN_TOKEN_LEN=0
 GUEST_LOGIN_FAIL 响应状态代码未指示成功: 403 (Forbidden)。

@@ -8,6 +8,21 @@
         <text class="dim">测试环境 · 账号登录</text>
       </view>
 
+      <!-- R5：轻量本机提示，不新增输入、不新增按钮、不打断登录提交 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">欢迎回来</text>
+        <text class="section-kicker-en">LOCAL SESSION · RULE ENGINE</text>
+      </view>
+      <view class="r5-ai-note r5-enter" role="note">
+        <text class="r3-ai-badge">AI</text>
+        <view class="r5-note-body">
+          <text class="r5-note-title">AI 本机提示</text>
+          <text class="r5-note-text">{{ r5AiLogin.conclusion }}</text>
+          <text class="r5-note-basis">依据：本机缓存 · 上次登录 · 更新于本次进入</text>
+          <text class="r5-note-cta">登录后由首页 AI 卡承接 →</text>
+        </view>
+      </view>
+
       <view class="card">
         <text class="muted" style="display: block; margin-bottom: 20rpx">
           本环境要求用账号登录，<b>全体测试者共用同一个账号</b> ——
@@ -132,6 +147,15 @@ const inputChecks = computed(() => [
 ])
 
 const usernamePrefilled = ref(false)
+/** R5：只依据本机缓存是否有上次登录用户名，编造关卡/得分属于假数据。 */
+const r5AiLogin = computed(() => {
+  const hasCache = usernamePrefilled.value || !!loadLastUsername()
+  return {
+    conclusion: hasCache
+      ? '本机缓存有上次登录用户名；登录后首页会按当前构筑给出推进建议。'
+      : '本机没有上次登录缓存；登录后首页会按当前构筑给出推进建议。',
+  }
+})
 
 onLoad(() => {
   // 只回填用户名：口令不存、也不预填（见上方注释）。

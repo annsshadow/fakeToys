@@ -1,0 +1,1 @@
+JSON.stringify((window.__LYP_PROBE__?.pageErrors||[]).slice(0,5).concat((window.__LYP_PROBE__?.pageErrors||[]).slice(-3)))

@@ -1,16 +1,35 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view v-if="!loading && items.length" class="r3-kpi r4-kpi r4-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r4AiBattle ? r4AiBattle.leakPct + '%' : '—' }}</text>
+          <text class="r3-kpi-label">漏杀比 · {{ r4AiBattle ? r4AiBattle.grade : '待计算' }}</text>
+          <text class="r3-kpi-sub">{{ battleTotals.count }} 场 · 均分 {{ battleTotals.avgScore }}</text>
+        </view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ battleTotals.kills }}</text><text class="r3-kpi-label">总击杀</text></view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ battleTotals.leaked }}</text><text class="r3-kpi-label">总漏怪</text></view>
+      </view>
+      <view v-if="!loading && r4AiBattle" class="r3-ai r4-ai r4-enter" aria-label="AI 防守诊断">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 防守诊断</text>
+          <text class="r3-ai-engine">规则引擎 · 基于已加载战报</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiBattle.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiBattle.basis }}</text>
+        <view class="r3-ai-cta" @click="r4GoBattle()">看战报详情 →</view>
+      </view>
       <text class="muted" style="display: block; margin-bottom: 16rpx">
         最近战斗的记录。点开一行可以回顾单局掉落与元素/反应/地形使用。
       </text>
 
       <!-- 结果筛选（2026-11-01 新一轮第 74 轮） -->
-      <view class="filter-row">
+      <view class="filter-row r3-filter r4-filter">
         <view
           v-for="f in filters"
           :key="f.key"
-          class="filter-chip"
+          class="filter-chip r3-chip"
           :class="{ active: filter === f.key }"
           @click="filter = f.key"
         >
@@ -109,18 +128,14 @@
         </view>
       </view>
 
-      <view v-else-if="items.length === 0" class="card empty-state">
-        <!-- R19 空态不再是一行孤零零的文字：给一个锚点 + 明确下一步 -->
-        <text class="empty-glyph">⚔</text>
-        <text class="card-title">还没有战报</text>
-        <text class="muted" style="display: block; margin-top: 8rpx">
-          打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
-        </text>
-        <!-- 第六批 R36：此前这行看起来像链接却点不动（假入口）。接上真实跳转。 -->
-        <text class="empty-hint link" @click="goStage">去关卡页挑一关开打 →</text>
+      <view v-else-if="items.length === 0" class="r3-empty r4-empty empty-state" aria-live="polite" role="status">
+        <text class="r3-empty-slot empty-glyph">⚔</text>
+        <text class="r3-empty-title">还没有战报</text>
+        <text class="r3-empty-reason">打一局战斗后，胜负、星级、分数和击杀都会出现在这里。</text>
+        <view class="r3-empty-action" @click="r4GoBattle()">去关卡页挑一关开打 →</view>
       </view>
 
-      <view v-else class="card" style="padding: 8rpx 24rpx">
+      <view v-else class="card r3-data-grid r4-grid" style="padding: 8rpx 24rpx">
         <view
           v-for="it in items"
           :key="it.id"
@@ -527,6 +542,34 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
  */
 function goVerify(battleId: number) {
   uni.navigateTo({ url: `/pages/verify/verify?battle_id=${battleId}` })
+}
+
+/** R4：把总账与连胜状态翻译成一条防守质量结论；无战报时返回 null。 */
+const r4AiBattle = computed(() => {
+  const t = battleTotals.value
+  if (!t.count) return null
+  const denom = t.kills + t.leaked
+  const leakPct = denom > 0 ? Math.round(t.leaked / denom * 100) : 0
+  const grade = leakPct >= 25 ? '漏怪偏高' : leakPct >= 10 ? '防守尚可' : '防守扎实'
+  const streakText = streak.value.count
+    ? `当前${streak.value.type === 'win' ? '连胜' : '连败'} ${streak.value.count} 场`
+    : '暂无连胜连败'
+  return {
+    leakPct,
+    grade,
+    conclusion: `${grade}：${t.count} 场共漏 ${t.leaked}/${denom} 只（${leakPct}%），均分 ${t.avgScore}`,
+    basis: `依据：战绩总账 ${t.kills} 杀 / ${t.leaked} 漏 · ${streakText}`,
+  }
+})
+
+function r4GoBattle() {
+  const first = items.value[0]
+  if (first) {
+    toggleDetail(first)
+    uni.pageScrollTo({ selector: '.battle-row', duration: 200 })
+    return
+  }
+  goStage()
 }
 
 /** 第六批 R36：空态引导接上真实跳转（此前是点不动的假链接）。 */

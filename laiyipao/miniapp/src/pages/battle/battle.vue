@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="page-root battle-page" @click="unlockSfx()">
     <!-- 画布：整个战斗画面 -->
     <canvas
@@ -26,6 +26,27 @@
         <view class="hud-spacer" />
         <view class="hud-pill"><text class="wave-text">波次 {{ waveText }}</text></view>
         <view class="hud-pill"><text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text></view>
+        <view v-if="liveStarGap" class="hud-pill"><text class="star-gap-text">{{ liveStarGap }}</text></view>
+        <!-- R8 缺口3：免钳分倒计时与临近锚点提示。纯 HUD 胶囊，不遮挡战场；
+             数值来自关卡波次 + 战斗时钟，绝不在页面里写死 60s/75s。
+             服务端是「快于锚点才裁」，锚点前显示钳分中，不能谎称保分窗口。 -->
+        <view
+          v-if="timeBudget"
+          class="hud-pill time-budget"
+          :class="{ warn: timeBudget.warning, clamped: timeBudget.clamped }"
+        >
+          <text class="time-budget-text">{{ timeBudget.text }}</text>
+        </view>
+      </view>
+      <!-- R9：最近反应记录。与星级/钳分胶囊同属顶部浮层，不拦截点击。 -->
+      <view v-if="recentReactions.length" class="reaction-feed" aria-live="polite">
+        <view v-for="r in recentReactions" :key="r.id" class="reaction-line">
+          <view class="reaction-line-main">
+            <text class="reaction-name">{{ r.pair }} → {{ r.name }}</text>
+            <text class="reaction-damage">{{ r.resisted ? '抗性削减 ' : '' }}-{{ r.damage }}</text>
+          </view>
+          <text class="reaction-cue">AI {{ r.cue }}</text>
+        </view>
       </view>
       <view class="hud-row">
         <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
@@ -37,7 +58,7 @@
           战场图例（2026-11-17）：画布底部的热量条与技能槽此前只有颜色块，
           没有任何语义说明（用户反馈「红蓝黄块看不出是干嘛的」）。
           图例遮罩逐项解释 HUD 元素、热量档位、技能槽读法与全部反应链。
-          打开图例不改变战斗状态 —— 想边看边停可以自己点暂停。
+          打开图例会暂停战斗，关闭后自动继续（R3 实测发现阅读期间怪还在走）；暂停不污染回放哈希。
         -->
         <!-- 第六批 R70：首次进战斗给图例按钮一个呼吸提示，读过一次后记住，不再打扰 -->
         <view
@@ -81,6 +102,16 @@
           <Icon name="pause" :size="26" />
         </view>
       </view>
+
+      <!-- t13 / F-10-1：五元素连锁 HUD —— 带汉字标签，颜色不是唯一线索 -->
+      <view class="battle-sigil-rail" aria-label="五元素连锁">
+        <view class="sigil sig-fire"><text>火</text></view>
+        <view class="sigil sig-ice"><text>冰</text></view>
+        <view class="sigil sig-lightning"><text>雷</text></view>
+        <view class="sigil sig-corrosion"><text>蚀</text></view>
+        <view class="sigil sig-kinetic"><text>动</text></view>
+        <text class="sigil-caption">元素连锁 · 命中挂层触发反应</text>
+      </view>
     </view>
 
     <!-- 暂停遮罩：挡住画布点击，避免「看起来暂停了其实还能点」 -->
@@ -95,11 +126,11 @@
     </view>
 
     <!-- 战场图例（2026-11-17）：解释画布 HUD 的全部视觉语言 -->
-    <view v-if="helpVisible" class="legend-overlay" @click="helpVisible = false">
+    <view v-if="helpVisible" class="legend-overlay" @click="closeHelp">
       <view class="legend-box" @click.stop>
         <view class="legend-head">
           <text class="legend-title">战场图例</text>
-          <view class="legend-close" @click="helpVisible = false"><text>×</text></view>
+          <view class="legend-close" @click="closeHelp"><text>×</text></view>
         </view>
         <scroll-view scroll-y class="legend-scroll">
           <!-- 画布底部：热量条 -->
@@ -124,14 +155,14 @@
             </view>
             <view class="legend-rows">
               <view class="legend-row"><view class="dot dot-ring" style="border-color: #ffd33d" /><text>右上角数字 = 热量费用（每次释放消耗多少热量）</text></view>
-              <view class="legend-row"><view class="dot dot-ring" style="border-color: #8b949e" /><text>格内变暗 + 剩余秒数 = 冷却中；描边亮起 = 就绪</text></view>
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: var(--dim)" /><text>格内变暗 + 剩余秒数 = 冷却中；描边亮起 = 就绪</text></view>
               <view class="legend-row"><view class="dot dot-ring" style="border-color: #58a6ff" /><text>格子数量 = 你携带的元素种类，「元素层数 N 技能」即来源于此</text></view>
             </view>
           </view>
           <!-- 元素与反应 -->
           <view class="legend-sec">
             <text class="legend-sec-title">元素反应（核心玩法）</text>
-            <text class="legend-p">敌人身上先挂一种元素，再用另一种元素命中它就会触发<b>反应</b> —— 反应伤害与面板攻击力关系不大，凑齐元素搭配更重要。</text>
+            <text class="legend-p">敌人身上先挂一种元素，再用另一种元素命中它就会触发<b>反应</b> —— 反应伤害中元素侧是主力，<b>面板攻击力也有贡献但权重上限 30%</b>，凑齐元素搭配更重要。</text>
             <view v-for="k in REACTION_ORDER" :key="k" class="legend-rxn">
               <view class="legend-rxn-head">
                 <text class="legend-rxn-name">{{ REACTIONS[k].name }}</text>
@@ -163,13 +194,13 @@
             <text class="legend-sec-title">顶部信息与控制</text>
             <view class="legend-rows">
               <view class="legend-row"><Icon name="shield" :size="26" style="color: #58a6ff" /><text>防线 = 你的血量，漏怪会扣，扣光即失败</text></view>
-              <view class="legend-row"><Icon name="scroll" :size="26" style="color: #8b949e" /><text>波次 = 本关共几波敌人；击杀 = 已消灭数</text></view>
-              <view class="legend-row"><Icon name="volume-on" :size="26" style="color: #8b949e" /><text>音效开关；倍速档只压缩等待，不影响战斗结果与回放</text></view>
+              <view class="legend-row"><Icon name="scroll" :size="26" style="color: var(--dim)" /><text>波次 = 本关共几波敌人；击杀 = 已消灭数</text></view>
+              <view class="legend-row"><Icon name="volume-on" :size="26" style="color: var(--dim)" /><text>音效开关；倍速档只压缩等待，不影响战斗结果与回放</text></view>
               <view class="legend-row"><Icon name="flag" :size="26" style="color: #ff7b72" /><text>放弃 = 作废本局并退还体力（无战报无奖励）</text></view>
               <view class="legend-row"><Icon name="pause" :size="26" style="color: #58a6ff" /><text>暂停 = 战斗时间冻结，切后台会自动暂停</text></view>
             </view>
           </view>
-          <text class="legend-foot">元素 / 反应 / 技能 / 敌人 / 装备 / 宝石 / 皮肤的完整数值见首页「图鉴」入口。</text>
+          <text class="legend-foot">元素 / 反应 / 技能 / 敌人 / 装备 / 宝石 / 皮肤的完整数值见首页「图鉴」入口。打开图例时战斗暂停，关闭后自动继续。</text>
         </scroll-view>
       </view>
     </view>
@@ -183,6 +214,7 @@
           <!-- 第六批 R69：牌堆剩余此前完全不展示，玩家不知道这波卡是从多少张里抽的 -->
           <text> 本波还能弃 {{ deck.discardsLeft }} 张，牌堆剩 {{ deck.size }} 张。</text>
         </text>
+        <text v-if="cardChoiceFeedback" class="card-choice-feedback">{{ cardChoiceFeedback }}</text>
       </view>
       <view class="cards">
         <view
@@ -217,15 +249,15 @@
 
     <!-- 结算界面 -->
     <view v-if="settleResult" class="sheet">
-      <text class="result-title">{{ settleResult.win ? '通关' : '防线失守' }}</text>
+      <text class="result-title" :style="settleFailed ? { color: 'var(--bad)' } : undefined">{{ settleFailed ? (settleResult.win ? '战绩未入账' : '防线失守 · 战绩未入账') : (settleResult.win ? '通关' : '防线失守') }}</text>
       <!-- G91 战斗评级徽章：一个可追求的综合目标 -->
-      <view v-if="battleGrade" class="grade-badge" :style="{ borderColor: battleGrade.color, color: battleGrade.color }">
+      <view v-if="battleGrade && !settleFailed" class="grade-badge" :style="{ borderColor: battleGrade.color, color: battleGrade.color }">
         <text class="grade-letter">{{ battleGrade.grade }}</text>
         <text class="grade-label">{{ battleGrade.label }}</text>
       </view>
       <!-- G92 下次目标：一句可执行的改进方向 -->
-      <text v-if="nextGoal" class="next-goal">下一步：{{ nextGoal }}</text>
-      <view class="stars-big">
+      <text v-if="nextGoal && !settleFailed" class="next-goal">下一步：{{ nextGoal }}</text>
+      <view v-if="!settleFailed" class="stars-big">
         <text
           v-for="i in 3"
           :key="i"
@@ -233,9 +265,10 @@
           :class="{ off: i > settleResult.stars }"
         >★</text>
       </view>
+      <text v-if="settleFailed" class="settle-local-note">以下为本地战绩（仅供参考，未入账）</text>
       <view class="result-stats">
         <view class="rstat">
-          <Icon name="sword" :size="30" style="color: #8b949e" />
+          <Icon name="sword" :size="30" style="color: var(--dim)" />
           <text class="muted">击杀</text><text class="mono">{{ settleResult.kills }}</text>
         </view>
         <view class="rstat">
@@ -254,22 +287,28 @@
       <view v-if="settleResult.clamped" class="clamp-note">
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
-      <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
-      <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
+      <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
+      <text v-if="settleCardFeedback" class="settle-card-feedback">{{ settleCardFeedback }}</text>
+      <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
+      <view v-if="settleFailed" class="settle-error">
+        <text class="settle-error-hint">{{ settleErrorHint }}</text>
+        <text class="settle-error-detail">{{ settleResult.error }}</text>
+      </view>
       <!-- 结算失败时 token 仍未 used_at，服务端仍允许放弃退体力；
            不给出入口，玩家会白白损失开战时已扣的体力（或被迫再来一局再扣一次）。 -->
       <view v-if="settleResult.error" class="btn" @click="abandon">{{ abandoning ? '处理中…' : '放弃并退回体力' }}</view>
-      <view class="reward-row">
+      <view v-if="!settleFailed" class="reward-row">
         <view v-for="(v, k) in settleResult.loot" :key="k" class="reward">
           <Icon :name="currencyIcon(String(k))" :size="28" />
           <text>{{ currencyName(String(k)) }} +{{ v }}</text>
         </view>
       </view>
-      <text class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
+      <text v-if="settleFailed" class="hash-note">本地回放哈希 {{ settleResult.replay_hash }}（未入账，仅供排障）</text>
+      <text v-else class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
            跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
       <view
-        v-if="settleResult.battle_id"
+        v-if="settleResult.battle_id && !settleFailed"
         class="btn"
         style="margin-top: 20rpx"
         @click="goBattleReport"
@@ -278,7 +317,13 @@
       </view>
       <!-- 再来一局（2026-11-01 新一轮第 53 轮）：redirectTo 替换当前页，
            重新进入同一关（重新扣体力/发 token），省去返回选关再点一次的路径。 -->
-      <view class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
+      <view v-if="!settleFailed" class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
+      <view
+        v-if="canGoNextLevel"
+        class="btn btn-primary next-level-btn"
+        style="margin-top: 20rpx"
+        @click="goNextLevel"
+      >前往第 {{ nextLevelId }} 关 →</view>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
     </view>
 
@@ -318,9 +363,10 @@ import {
   logicIntervalMs,
   normalizeSpeed,
 } from '@/render/canvas'
-import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element } from '@/game/elements'
+import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
-import { scoreRulesFromServer } from '@/game/score'
+import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
+import { damageShareFromEvents, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -337,6 +383,42 @@ const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/**
+ * R9：最近反应的可读记录。canvas 粒子只在几帧内闪现，8× 下几乎看不清；
+ * HUD 这三条短记录不拦截点击、不盖住战场，让玩家知道「刚刚打出了什么」。
+ */
+interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean }
+const recentReactions = ref<ReactionLog[]>([])
+let reactionSeq = 0
+/** R9：累计本局真实 hit/reaction 事件金额，只用于展示「反应伤害占比」，不进回放哈希。 */
+const damageShare = ref<DamageShare>({ reactionDamage: 0, totalDamage: 0, ratioPct: null })
+/** cardPicks 是引擎类实例上的普通数组；显式版本号让选卡反馈能随 take/discard/skip 刷新。 */
+const cardChoiceVersion = ref(0)
+/** 结算时冻结权威 card_picks，避免后续操作改写归因。 */
+const settleCardPicks = ref<number[]>([])
+
+/**
+ * 结算被服务端拒绝（如 replay_skills 与构筑不符）时，这一局**没有入账**。
+ * 此时哪怕引擎跑出了胜利，也不能把它渲染成「通关 + C 评级 + 0 星」——
+ * 那会让玩家以为奖励已到账，直到去背包/战报才发现什么都没有（2026-11-21 实测）。
+ */
+const settleFailed = computed(() => Boolean(settleResult.value?.error))
+const settleErrorHint = computed(() => {
+  const raw = String(settleResult.value?.error ?? '')
+  if (raw.includes('replay_skills') || raw.includes('构筑不符')) {
+    return '本地构筑与服务端记录不一致，这一局未计入战绩。可放弃退回体力，或返回关卡重新挑战。'
+  }
+  return '战绩上报失败，这一局未计入战绩。可放弃退回体力，或稍后重试。'
+})
+
+/** R7：星级门槛只认服务端下发的关卡配置；拿不到就不显示差额，绝不硬编码。 */
+function levelStarTargets(): number[] {
+  const raw = engine.value?.cfg?.level?.star_targets
+  return Array.isArray(raw)
+    ? raw.map((t: unknown) => Number(t)).filter((t: number) => Number.isFinite(t))
+    : []
+}
 
 /** G91 战斗评级：基于星级/漏怪/反应的综合评价，给玩家一个可追求的目标（纯客户端派生）。 */
 const battleGrade = computed(() => {
@@ -362,8 +444,99 @@ const nextGoal = computed(() => {
   const stars = Number(r.stars ?? 0)
   if (stars >= 3) return '完美三星！试试更少反应或更高难度关卡。'
   if (leaked > 0) return `漏了 ${leaked} 只怪 —— 补点溅射/控场技能守住防线即可拿更高星。`
-  if (reactions < 3) return '多凑一种元素触发反应链，反应伤害不吃攻击力加成。'
+  // t63 §1F：反应伤害攻击侧贡献最高 300‰，「关系不大」同样是误导养成，必须说清上限 30%。
+  if (reactions < 3) return '多凑一种元素触发反应链，反应伤害中元素侧是主力，面板攻击力也有贡献但权重上限 30%，优先凑齐元素搭配。'
+  // R5 真浏览器实测：0 星 / 11646 分（1★ 门槛 11941）还显示「冲 3 星」，
+  // 玩家连最低门槛都没摸到，这句建议等于没说。门槛由服务端下发在关卡配置里，
+  // 分数用结算返回的权威值（含超时长裁剪），别拿引擎本地分数自说自话。
+  const targets = levelStarTargets()
+  const nextStar = stars + 1
+  if (targets.length >= nextStar) {
+    const target = targets[nextStar - 1]!
+    const score = Number(r.score ?? 0)
+    if (score < target) {
+      return `还差 ${target - score} 分就能拿 ${nextStar} 星（门槛 ${target} 分）—— 少漏怪、多触发反应就能提分。`
+    }
+  }
   return '再稳一点，冲 3 星拿满钥匙。'
+})
+
+/** R7 缺口2：战斗中实时显示距下一星差额；门槛来自关卡配置，分数来自引擎当前值。 */
+const liveStarGap = computed(() => {
+  if (settleResult.value || !engine.value) return null
+  const targets = levelStarTargets()
+  if (!targets.length) return null
+  const score = Math.max(0, Number(engine.value.score ?? 0) || 0)
+  for (let i = 0; i < targets.length; i++) {
+    const target = targets[i]!
+    if (score < target) return `距 ${i + 1} 星 ${target - score}`
+  }
+  return '已达满星门槛'
+})
+
+/**
+ * R8 缺口3：战斗中实时显示距离「免钳分锚点」还有多久。
+ * 服务端 scoreCapFor 是负向闸（快于锚点按比例裁分），锚点前一直钳分中，
+ * 所以文案必须是「距满分 Xs / 即将免钳分」，不能说成「保分窗口」。
+ * 锚点由关卡波次按服务端同款系数推导，已用战斗时钟 elapsedMs 更新；
+ * 没有波次配置或已结算时不显示，避免把本地猜测当成服务端口径。
+ */
+const timeBudget = computed(() => {
+  if (settled.value || !engine.value) return null
+  return scoreTimeBudget(engine.value.cfg?.level, Number(engine.value.elapsedMs ?? 0))
+})
+
+/** R7 缺口1：把服务端权威分数、钳分上限、星级门槛与漏怪数串成一句可执行的复盘建议。 */
+const settleAttribution = computed(() => {
+  const r = settleResult.value
+  if (!r || !r.win || settleFailed.value) return null
+  const score = Math.max(0, Number(r.score ?? 0) || 0)
+  const leaked = Math.max(0, Number(r.leaked ?? 0) || 0)
+  const targets = levelStarTargets()
+  const nextStar = Math.max(1, Number(r.stars ?? 0) + 1)
+  const target = nextStar <= targets.length ? targets[nextStar - 1]! : null
+
+  // 服务端 SettleResp 没有结构化 time_cap；钳分串由 domain/battle.go 生成，
+  // 只从真实返回的 clamp_note 解析。没有就只讲真实分数，绝不编造上限。
+  const note = String(r.clamp_note ?? '')
+  const clamp = note.match(/得分超时长额度：(\d+)\s*→\s*(\d+)（(\d+)s\s*内上限/)
+  const parts: string[] = []
+  if (clamp) parts.push(`${clamp[3]}s 内得分上限 ${clamp[1]}，实得 ${score}`)
+  else parts.push(`实得 ${score}`)
+  if (target !== null) {
+    if (score < target) parts.push(`距 ${nextStar} 星门槛 ${target} 还差 ${target - score}`)
+    else parts.push(`已达 ${nextStar} 星门槛 ${target}`)
+  }
+  parts.push(`漏怪 ${leaked}`)
+  parts.push(clamp ? '建议缩短清波时间或少漏怪、多触发反应提分' : '建议少漏怪、多触发反应提分')
+  return parts.join('；') + '。'
+})
+
+/** R9 选卡面板：统计来自权威 card_picks，反应数来自引擎，不虚构任何收益。 */
+const cardChoiceFeedback = computed(() => {
+  const eng = engine.value
+  void cardChoiceVersion.value
+  if (!eng || settled.value) return null
+  const picks = Array.isArray(eng.cardPicks) ? eng.cardPicks : []
+  const s = summarizeCardPicks(picks)
+  const reactions = Math.max(0, Number(eng.reactionsCount ?? 0) || 0)
+  if (s.total === 0 && reactions === 0) {
+    return 'AI 本局还没有可归因的选择记录；依据 card_picks / reaction 事件，点卡装备或全部不要了继续。'
+  }
+  return `AI 已取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；依据 card_picks / reaction 事件；点卡装备或全部不要了推进下一波。`
+})
+
+/** R9 结算：把权威选择、真实反应数与伤害占比串成可复盘结论。缺数据就诚实空态。 */
+const settleCardFeedback = computed(() => {
+  const r = settleResult.value
+  if (!r || settleFailed.value) return null
+  const picks = settleCardPicks.value
+  if (!Array.isArray(picks) || !picks.length) return 'AI 本局未记录选择收益（缺 card_picks）；下一局可对比不同搭配。'
+  const s = summarizeCardPicks(picks)
+  const reactions = Math.max(0, Number(r.reactions ?? 0) || 0)
+  const share = damageShare.value
+  const shareText = share.ratioPct === null ? '本局无完整伤害记录' : `反应伤害占比 ${share.ratioPct}%`
+  return `AI 本局取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；${shareText}；依据 card_picks / hit+reaction 事件；下一局可换元素搭配对比收益。`
 })
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
@@ -472,12 +645,31 @@ function kindLabel(k: string): string {
 const helpVisible = ref(false)
 /** 第六批 R70：是否读过图例（本机记忆）。 */
 const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
+/** R3：图例遮罩挡住整个战场，读说明时由页面代为暂停；关掉时只恢复这类暂停。 */
+let helpPausedByPage = false
 
 function openHelp() {
-  helpVisible.value = !helpVisible.value
-  if (helpVisible.value && !helpSeen.value) {
+  if (helpVisible.value) {
+    closeHelp()
+    return
+  }
+  helpVisible.value = true
+  // 手动暂停中就别代劳：玩家自己暂停的状态不能被「看图例」顺手改掉。
+  if (!paused.value && !settled.value) {
+    doPause()
+    helpPausedByPage = true
+  }
+  if (!helpSeen.value) {
     helpSeen.value = true
     uni.setStorageSync('battle_help_seen', '1')
+  }
+}
+
+function closeHelp() {
+  helpVisible.value = false
+  if (helpPausedByPage) {
+    helpPausedByPage = false
+    doResume()
   }
 }
 
@@ -556,6 +748,38 @@ function getCanvas(): Promise<any | null> {
  * 抽成具名函数是为了换挡时能重建定时器 —— 此前它是 setup() 里的一个
  * 内联闭包，倍速改不到它，于是「兼容模式」下档位是个摆设。
  */
+function noteReactions(events: unknown[]): void {
+  const d = damageShareFromEvents(events as Array<{ type?: string; damage?: bigint | number }>)
+  if (d.reactionDamage > 0 || d.totalDamage > 0) {
+    const prev = damageShare.value
+    const totalDamage = prev.totalDamage + d.totalDamage
+    const reactionDamage = prev.reactionDamage + d.reactionDamage
+    damageShare.value = {
+      reactionDamage,
+      totalDamage,
+      ratioPct: totalDamage > 0 ? Math.round(reactionDamage * 1000 / totalDamage) / 10 : null,
+    }
+  }
+  const reactions = events.filter(
+    (e): e is { type: 'reaction'; reaction: ReactionKey; damage: bigint | number; resisted: boolean; existingElement?: Element | ''; incomingElement?: Element | '' } =>
+      (e as { type?: string })?.type === 'reaction',
+  )
+  if (!reactions.length) return
+  const fresh = reactions.slice(-3).map((e) => {
+    const cue = reactionCue(e.reaction, e.existingElement, e.incomingElement, e.damage)
+    return {
+      id: ++reactionSeq,
+      key: e.reaction,
+      name: cue.name,
+      pair: cue.pair,
+      cue: cue.cue,
+      damage: Math.max(0, Number(e.damage)),
+      resisted: Boolean(e.resisted),
+    }
+  })
+  recentReactions.value = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+}
+
 function fallbackTick(): void {
   // ⚠️ 必须显式还原类型：`engine` 是 ref，Vue 的 `UnwrapRef` 会把类实例的
   // **类型**摊成结构映射（私有成员不在 keyof 里 → 方法看起来全丢了），
@@ -567,6 +791,7 @@ function fallbackTick(): void {
   if (paused.value) return
   const events = eng.step()
   playBattleEvents(events)
+  noteReactions(events)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -669,6 +894,10 @@ async function setup() {
         ? scoreRulesFromServer(store.config.score_rules)
         : undefined,
     })
+    recentReactions.value = []
+    damageShare.value = { reactionDamage: 0, totalDamage: 0, ratioPct: null }
+    settleCardPicks.value = []
+    cardChoiceVersion.value++
     engine.value = eng
     eng.start()
 
@@ -702,6 +931,7 @@ async function setup() {
         const events = eng.step()
         // 音效与视觉同源：都从同一批事件来，不另算一份状态
         playBattleEvents(events)
+        noteReactions(events)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -756,6 +986,8 @@ async function settle(eng: BattleEngine) {
   }
   try {
     let payload = eng.settleInput(tokenId.value)
+    const reportedPicks = (payload as { card_picks?: unknown }).card_picks
+    settleCardPicks.value = Array.isArray(reportedPicks) ? [...reportedPicks] : []
     let res: any
     try {
       res = await api.settleBattle(payload)
@@ -803,18 +1035,21 @@ function takeCard(id: string) {
   if (!engine.value) return
   engine.value.takeCard(id)
   hand.value = [...engine.value.deck.hand]
+  cardChoiceVersion.value++
 }
 
 function discardCard(id: string) {
   if (!engine.value) return
   engine.value.discardCard(id)
   hand.value = [...engine.value.deck.hand]
+  cardChoiceVersion.value++
 }
 
 function skipCards() {
   if (!engine.value) return
   engine.value.skipCards()
   hand.value = []
+  cardChoiceVersion.value++
 }
 
 function backToStage() {
@@ -842,6 +1077,21 @@ function goBattleReport() {
  */
 function retryLevel() {
   uni.redirectTo({ url: `/pages/battle/battle?level=${levelId.value}` })
+}
+
+/** R9 通关后的下一关入口：只认服务端解锁进度与真实存在的关卡配置。 */
+const nextLevelId = computed(() => levelId.value + 1)
+const canGoNextLevel = computed(() => {
+  const r = settleResult.value
+  return Boolean(
+    r?.win && !settleFailed.value &&
+      store.levelMap.has(nextLevelId.value) &&
+      nextLevelId.value <= store.unlockedLevel,
+  )
+})
+function goNextLevel() {
+  if (!canGoNextLevel.value) return
+  uni.redirectTo({ url: `/pages/stage/stage?level=${nextLevelId.value}` })
 }
 
 /**
@@ -1182,7 +1432,9 @@ onShareAppMessage(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 17, 23, 0.86);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .legend-box {
@@ -1190,8 +1442,10 @@ onShareAppMessage(() =>
   max-height: 82vh;
   padding: 28rpx 28rpx 20rpx;
   border-radius: 20rpx;
-  background: var(--panel);
-  border: 1rpx solid var(--border);
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-2);
@@ -1378,15 +1632,17 @@ onShareAppMessage(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 17, 23, 0.78);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .pause-box {
   width: 70%;
   padding: 40rpx 32rpx;
   border-radius: 20rpx;
-  background: var(--panel);
-  border: 1rpx solid var(--border);
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1467,35 +1723,47 @@ onShareAppMessage(() =>
   pointer-events: none;
 }
 
-/* HUD 行：胶囊各自排布，行内不再互相拉伸 */
+/* HUD 行：胶囊各自排布；窄屏换行但胶囊本身绝不挤压成竖排 */
 .hud-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
   align-items: center;
-  gap: 12rpx;
+  gap: 8rpx 12rpx;
 }
 
 .hud-spacer {
   flex: 1;
 }
 
-/* 波次 / 击杀胶囊 */
+/* 波次 / 击杀胶囊：真浮层才用玻璃，画布上方的 HUD 允许 */
 .hud-pill {
   display: inline-flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   align-items: center;
-  height: 56rpx;
-  padding: 0 20rpx;
+  height: 52rpx;
+  padding: 0 14rpx;
+  white-space: nowrap;
   border-radius: 999rpx;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1rpx solid var(--border-soft);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
 }
 
 .hp-box {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1rpx solid var(--border-soft);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
   border-radius: 16rpx;
   padding: 12rpx 20rpx;
   min-width: 240rpx;
+  flex-shrink: 0;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.06), 0 6rpx 20rpx rgba(0, 0, 0, 0.30);
 }
 
 .hp-line {
@@ -1526,7 +1794,9 @@ onShareAppMessage(() =>
 
 .hp-fill {
   height: 100%;
-  background: var(--ok);
+  background: linear-gradient(90deg, var(--corrosion), var(--ok));
+  box-shadow: 0 0 12rpx rgba(126, 231, 135, 0.45);
+  transition: width 0.18s ease-out;
 }
 
 /* 第六批 R5 当前关卡名 */
@@ -1542,9 +1812,130 @@ onShareAppMessage(() =>
 }
 
 .wave-text,
-.kill-text {
-  font-size: 24rpx;
+.kill-text,
+.star-gap-text,
+.time-budget-text {
+  font-size: 22rpx;
   color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* R8 时间预算胶囊：钳分中低调、临近免钳分变黄、已免钳分变绿，
+   只改文字颜色/边框，不改变布局，也不盖住战场。 */
+.time-budget {
+  border-color: var(--border-soft);
+}
+
+.time-budget.warn {
+  border-color: rgba(255, 209, 61, 0.7);
+}
+
+.time-budget.warn .time-budget-text {
+  color: #ffd33d;
+}
+
+.time-budget.clamped {
+  border-color: rgba(126, 231, 135, 0.7);
+}
+
+.time-budget.clamped .time-budget-text {
+  color: #7ee787;
+  font-weight: 600;
+}
+
+/* t95：390×844 移动视口是 H5 主场景。让 HUD 行换行、胶囊内文字保持单行，
+   并给反应因果链留出宽度；pointer-events 仍由 .overlay-top 关闭，不挡战场。 */
+@media (max-width: 430px) {
+  .hud-row {
+    gap: 6rpx 8rpx;
+  }
+  .hud-spacer { display: none; }
+  .hp-box {
+    min-width: 0;
+    padding: 8rpx 12rpx;
+  }
+  .hud-pill {
+    height: 44rpx;
+    padding: 0 10rpx;
+  }
+  .wave-text,
+  .kill-text,
+  .star-gap-text,
+  .time-budget-text {
+    font-size: 20rpx;
+    white-space: nowrap;
+  }
+  .reaction-feed {
+    gap: 4rpx;
+  }
+  .reaction-line {
+    flex-wrap: wrap;
+    row-gap: 2rpx;
+    padding: 4rpx 10rpx;
+    width: 100%;
+  }
+  .reaction-line-main {
+    gap: 8rpx;
+  }
+  .reaction-name,
+  .reaction-damage {
+    font-size: 20rpx;
+  }
+  .reaction-cue {
+    font-size: 18rpx;
+    max-width: 100%;
+  }
+}
+
+/* R9 最近反应：只占顶部浮层一行，pointer-events 由 .overlay-top 关闭。 */
+.reaction-feed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6rpx;
+}
+
+.reaction-line {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  align-items: baseline;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(13, 17, 23, 0.82);
+  border: 1rpx solid var(--border-soft);
+}
+
+.reaction-name {
+  font-size: 22rpx;
+  color: #ffd33d;
+}
+
+.reaction-line-main {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  align-items: baseline;
+}
+
+.reaction-damage {
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+
+.reaction-cue {
+  font-size: 20rpx;
+  color: #58a6ff;
+  line-height: 1.45;
+  max-width: 620rpx;
+}
+
+.card-choice-feedback {
+  display: block;
+  margin-bottom: 16rpx;
+  font-size: 22rpx;
+  color: #58a6ff;
+  line-height: 1.5;
 }
 
 .sheet {
@@ -1729,6 +2120,56 @@ onShareAppMessage(() =>
   margin-bottom: 16rpx;
 }
 
+.settle-attribution {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: -6rpx 20rpx 16rpx;
+}
+
+.settle-card-feedback {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: #58a6ff;
+  line-height: 1.55;
+  margin: 0 20rpx 16rpx;
+}
+
+.settle-local-note {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--warn);
+  margin-bottom: 10rpx;
+}
+
+.settle-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  background: rgba(255, 123, 114, 0.1);
+  border-left: 6rpx solid var(--bad);
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.settle-error-hint {
+  font-size: 24rpx;
+  color: var(--bad);
+  line-height: 1.5;
+}
+
+.settle-error-detail {
+  font-size: 20rpx;
+  color: var(--dim);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
 .reward-row {
   display: flex;
   flex-direction: row;
@@ -1752,5 +2193,48 @@ onShareAppMessage(() =>
   font-size: 22rpx;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
+}
+
+/* t13 / F-10-1：战斗首屏五元素连锁仪表 */
+.battle-sigil-rail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1rpx solid var(--glass-border);
+  pointer-events: none;
+}
+
+.sigil {
+  width: 40rpx;
+  height: 40rpx;
+  flex: 0 0 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1rpx solid currentColor;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.sig-fire { color: var(--fire); }
+.sig-ice { color: var(--ice); }
+.sig-lightning { color: var(--lightning); }
+.sig-corrosion { color: var(--corrosion); }
+.sig-kinetic { color: var(--kinetic); }
+
+.sigil-caption {
+  margin-left: 4rpx;
+  font-size: 19rpx;
+  color: var(--text-2);
+  white-space: nowrap;
 }
 </style>

@@ -1,0 +1,1 @@
+(async function(){var t=localStorage.getItem('lyp_token');var r=await fetch('http://127.0.0.1:8080/api/v1/wallet',{headers:{Authorization:'Bearer '+t}});return JSON.stringify({status:r.status,body:(await r.text()).slice(0,200)})})()

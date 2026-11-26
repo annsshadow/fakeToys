@@ -14,6 +14,22 @@
         </text>
       </view>
 
+      <!-- R5：轻量复核行，不插入步骤条，复用已有本地重放按钮 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">战斗验真</text>
+        <text class="section-kicker-en">REPLAY VERIFY · RULE ENGINE</text>
+      </view>
+      <view class="r5-ai-note r5-enter" role="note">
+        <text class="r3-ai-badge">AI</text>
+        <view class="r5-note-body">
+          <text class="r5-note-title">AI 复核提示</text>
+          <text class="r5-note-text">{{ r5AiVerify.conclusion }}</text>
+          <text class="r5-note-basis">依据：复现信息 · 本次验真 · 更新于本次进入</text>
+          <text class="r5-note-cta" role="button" @click="r5FocusReplay">去本地重放 →</text>
+          <text v-if="result" class="r5-note-cta" role="button" @click="r5GoBattles">去战报对照 →</text>
+        </view>
+      </view>
+
       <!-- R21 流程步骤条：把「填 ID → 取信息 → 出裁定」三段进度显性化，
            与全端页签/step chip 的视觉语言一致。 -->
       <view class="steps">
@@ -122,7 +138,7 @@
           </view>
         </view>
 
-        <view class="btn btn-primary" style="margin-top: 16rpx" @click="doReplay">
+        <view id="r5-replay-btn" class="btn btn-primary" style="margin-top: 16rpx" @click="doReplay">
           本地重放并提交验真
         </view>
 
@@ -236,6 +252,30 @@ const result = ref<any>(null)
 
 /** G125 本次会话验真记录：保留每次验真的结论，可点击回填 battle_id。 */
 const verifyHistory = ref<Array<{ id: number; matched: boolean; at: string }>>([])
+/** R5：验真复核提示，只读取本次复现信息与验真结论，不伪造思考过程。 */
+const r5AiVerify = computed(() => {
+  const info = replayInfo.value
+  const missing: string[] = []
+  if (!info) missing.push('关卡/种子/构筑')
+  else {
+    if (!info.level_id) missing.push('关卡')
+    if (!info.seed) missing.push('种子')
+    if (!buildSnapshotCard.value.length) missing.push('构筑')
+  }
+  let conclusion: string
+  if (!info) conclusion = '复现信息尚未到位：先填 battle_id 取信息，再本地重放比对哈希。'
+  else if (missing.length) conclusion = `复现信息缺项：${missing.join('、')}；补齐后才能作为证伪依据。`
+  else if (result.value) conclusion = `本次验真${result.value.matched ? '一致' : '不一致'}；哈希一致才可作为证伪依据，可去战报对照。`
+  else conclusion = '关卡/种子/构筑齐备；本地重放哈希与服务端哈希一致才可作为证伪依据。'
+  return { conclusion, missing, hasInfo: !!info, historyCount: verifyHistory.value.length }
+})
+function r5FocusReplay(): void {
+  uni.pageScrollTo({ selector: '#r5-replay-btn', duration: 240 })
+}
+function r5GoBattles(): void {
+  uni.navigateTo({ url: '/pages/battles/battles' })
+}
+
 function refillBattleId(id: number) {
   battleId.value = String(id)
 }

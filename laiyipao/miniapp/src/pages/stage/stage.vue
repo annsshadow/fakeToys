@@ -1,6 +1,72 @@
-﻿<template>
+<template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- t13 / F-10-1：首屏作战简报 hero —— 让"在哪、打哪关、还差多少"先被看见 -->
+      <view v-if="!store.configLoading && chapterLevels.length" class="stage-hero" aria-label="章节作战简报">
+        <view class="stage-hero-head">
+          <text class="stage-hero-eyebrow">作战简报 · ACTIVE FRONT</text>
+          <text class="stage-hero-chapter">{{ (chapters.find(c => c.id === curChapter) || {}).name || '当前章节' }}</text>
+        </view>
+        <view class="stage-hero-body">
+          <view class="stage-hero-level">
+            <text class="stage-hero-num mono">{{ activeLevelId }}</text>
+            <text class="stage-hero-cap">当前关卡</text>
+          </view>
+          <view class="stage-hero-meter">
+            <view class="stage-hero-meter-head">
+              <text class="muted">章节推进</text>
+              <text class="mono">{{ chapterStars }}★ / {{ chapterTotal }}★</text>
+            </view>
+            <view class="stage-hero-track">
+              <view
+                class="stage-hero-meter-fill"
+                :style="{ width: chapterTotal ? (chapterStars / chapterTotal * 100) + '%' : '0%' }"
+              />
+            </view>
+            <view class="stage-hero-rail" aria-label="五元素战线">
+              <text class="sh-fire">火</text>
+              <text class="sh-ice">冰</text>
+              <text class="sh-lightning">雷</text>
+              <text class="sh-corrosion">蚀</text>
+              <text class="sh-kinetic">动</text>
+            </view>
+          </view>
+        </view>
+        <view class="stage-hero-cta" @click="enter(activeLevelId)">继续挑战 · 第 {{ activeLevelId }} 关 →</view>
+      </view>
+
+      <!-- R5：作战推进眉题 + 当前存档指标 + 规则引擎推进建议 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">作战推进</text>
+        <text class="section-kicker-en">FRONT ANALYSIS · RULE ENGINE</text>
+        <text class="r3-ai-badge">AI</text>
+      </view>
+      <view v-if="!store.configLoading && chapterLevels.length" class="r3-kpi r5-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ chapterStars }}/{{ chapterTotal }}</text>
+          <text class="r3-kpi-label">本章星级</text>
+          <text class="r3-kpi-sub">体力净消耗 {{ energyBudget.net }} · 剩 {{ energyBudget.count }} 关未通关</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ chapterOverview.filter(c => c.pct > 0).length }}</text>
+          <text class="r3-kpi-label">已推进章节</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ bossLevels.length }}</text>
+          <text class="r3-kpi-label">本章首领关</text>
+        </view>
+      </view>
+      <view v-if="r5AiStage.visible && !store.configLoading" class="r3-ai r5-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 推进建议</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r5AiStage.conclusion }}</text>
+        <text class="r3-ai-basis">依据：关卡曲线/地形/星数 · 当前存档 · 更新于本次进入 · 机制字段 is_boss / 敌种 id / 地形 id</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoLevel()">{{ r5AiStage.ctaText }}</text>
+      </view>
+
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -9,6 +75,12 @@
         <text class="empty-glyph">🗺️</text>
         <text class="muted">本章节还没有关卡</text>
         <text class="dim">换一个章节看看，或从下方选择其它章节。</text>
+        <view class="r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">章节数据同步中</text>
+          <text class="r3-empty-reason">没有关卡曲线与星数就无法计算推进建议，请稍后重试。</text>
+          <text class="r3-empty-action" role="button" @click="r5GoLevel()">去看已解锁关卡 →</text>
+        </view>
       </view>
       <!-- 章节选择 -->
       <scroll-view scroll-x class="chapter-scroll" :show-scrollbar="false">
@@ -44,18 +116,50 @@
         </view>
       </view>
 
+      <!-- R8 §1G.1 星级口径：满分/门槛都来自服务端配置，解释按满分百分比给星 -->
+      <view v-if="selected && selected.max_score > 0 && selected.star_targets.length" class="card star-rule-card">
+        <view class="card-title">星级口径<text class="dim">本关配置</text></view>
+        <view class="sr-row"><text class="muted">本关满分</text><text class="mono">{{ selected.max_score }}</text></view>
+        <view class="sr-row"><text class="muted">1★门槛</text><text class="mono">{{ selected.star_targets[0] }}（约满分的{{ starOnePct }}%）</text></view>
+        <view class="sr-row">
+          <text class="mono">难度 {{ selected.difficulty }}‰</text>
+          <text class="mono">波次 {{ selected.wave_count }}</text>
+          <text class="mono">元素上限 {{ selected.element_cap }}</text>
+        </view>
+        <text class="sr-note">按本关满分百分比给星；关卡难度仍逐级上升，星级门槛按本关满分缩放，因此不同关卡的绝对分数线会升降，不代表高关更容易。</text>
+      </view>
+
       <!-- G85 本章难度曲线：折线看章内难度爬升 -->
       <view v-if="difficultyCurve.pts.length >= 2" class="card diff-curve-card">
-        <view class="card-title">本章难度曲线</view>
-        <svg class="diff-svg" viewBox="0 0 300 92" aria-label="关卡难度曲线">
+        <view class="card-title">本章难度曲线<text class="dim">机制拐点</text></view>
+        <svg class="diff-svg" viewBox="0 0 300 112" aria-label="关卡难度曲线与机制拐点">
           <polyline class="diff-line" :points="difficultyCurve.line" />
           <circle
             v-for="p in difficultyCurve.pts"
             :key="p.id"
             :cx="p.x" :cy="p.y" r="3"
             class="diff-dot"
+            :class="{ 'diff-dot-boss': p.boss, 'diff-dot-enemy': p.newEnemy, 'diff-dot-terrain': p.terrain }"
+          />
+          <circle
+            v-for="m in difficultyCurve.milestones"
+            :key="'m' + m.id"
+            :cx="m.x" :cy="m.y" r="6"
+            class="diff-marker"
+            :class="m.shape"
           />
         </svg>
+        <view class="diff-legend">
+          <text class="diff-legend-item"><text class="diff-shape boss">◆</text> 首领</text>
+          <text class="diff-legend-item"><text class="diff-shape enemy">▲</text> 本关敌种</text>
+          <text class="diff-legend-item"><text class="diff-shape terrain">■</text> 地形</text>
+        </view>
+        <view v-for="m in difficultyCurve.milestones" :key="'t' + m.id" class="diff-milestone">
+          <text class="diff-ms-shape" :class="m.shape">{{ m.glyph }}</text>
+          <text class="diff-ms-label">第 {{ m.id }} 关 · {{ m.label }}</text>
+          <text class="dim">{{ m.reason }}</text>
+        </view>
+        <text v-if="!difficultyCurve.milestones.length" class="dim">本章难度平稳上升（无首领/敌种/地形拐点）。</text>
       </view>
 
       <!-- G129 地形关索引 -->
@@ -85,7 +189,7 @@
       </view>
 
       <!-- G63 全章节星级总览：整体进度 + 每章完成度，跨章节推进度一眼可见 -->
-      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card">
+      <view v-if="starsLoaded && chapterOverview.length" class="card overview-card r3-data-grid">
         <view class="card-title">
           <text>全局进度</text>
           <text class="mono">{{ allStars }} / {{ allStarCap }} ★</text>
@@ -180,7 +284,7 @@
           <view v-for="(w, wi) in detailWaves" :key="wi" class="wave-row">
             <text class="muted">第 {{ wi + 1 }} 波</text>
             <text v-for="(sp, si) in w.spawns" :key="si" class="wave-spawn">
-              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}
+              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}<text v-if="enemyThreatTag(sp.enemy_id)" class="threat-tag"> {{ enemyThreatTag(sp.enemy_id) }}</text>
             </text>
           </view>
         </view>
@@ -245,7 +349,7 @@ import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
 import Icon from '@/components/Icon.vue'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
-import type { LevelSummary, TerrainKind, Wave } from '@/game/types'
+import type { EnemyDef, LevelSummary, TerrainKind, Wave } from '@/game/types'
 
 const store = useGameStore()
 
@@ -293,16 +397,24 @@ const chapterTotal = computed(() => chapterLevels.value.length * 3)
 /** G111 本章 BOSS 关清单：这些是要专门配装的硬骨头，清单化后不用逐格找。 */
 /** G129 地形关索引：按地形类型列出哪些关有它 —— 想练/避开某地形时一次找全。 */
 const terrainIndex = computed(() => {
-  const m = new Map<string, number[]>()
+  // 同一关可能配置多个同类地形（如第 59 关有两个 charge_tower），
+  // 索引问的是「哪些关有这种地形」而不是「有几块地形」，所以按关卡号去重。
+  const m = new Map<string, Set<number>>()
   for (const l of store.config?.levels ?? []) {
     for (const t of l.terrain ?? []) {
-      const arr = m.get(t.kind) ?? []
-      arr.push(l.id)
-      m.set(t.kind, arr)
+      let ids = m.get(t.kind)
+      if (!ids) {
+        ids = new Set<number>()
+        m.set(t.kind, ids)
+      }
+      ids.add(l.id)
     }
   }
   return [...m.entries()]
-    .map(([kind, ids]) => ({ kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }))
+    .map(([kind, idSet]) => {
+      const ids = [...idSet].sort((a, b) => a - b)
+      return { kind, name: terrainName(kind), ids: ids.slice(0, 12), total: ids.length }
+    })
     .sort((a, b) => b.total - a.total)
 })
 
@@ -320,19 +432,52 @@ const bossLevels = computed(() =>
     .map((l) => ({ id: l.id, name: l.name, difficulty: l.difficulty, stars: starOf(l.id) })),
 )
 
+/** R8 §1G.1：1★ 门槛占本关满分的百分比只用于解释，不参与任何星级判定。 */
+const starOnePct = computed(() => {
+  const lv = selected.value
+  if (!lv || !lv.max_score || !lv.star_targets.length) return 0
+  return Math.round(lv.star_targets[0] / lv.max_score * 100)
+})
+
 const difficultyCurve = computed(() => {
   const list = chapterLevels.value
   const max = Math.max(1, ...list.map((l) => l.difficulty ?? 0))
   const min = Math.min(...list.map((l) => l.difficulty ?? 0), max)
   const span = Math.max(1, max - min)
-  const pts = list.map((l, i) => ({
-    id: l.id,
-    x: list.length <= 1 ? 150 : (i / (list.length - 1)) * 300,
-    // 难度越高 y 越小（越靠上）
-    y: 80 - ((l.difficulty ?? 0) - min) / span * 64,
-    diff: l.difficulty ?? 0,
-  }))
-  return { pts, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+  // /config 不下发每关 waves；detailWaves 只属于当前选中关，不能伪造成整章每关的"首现敌种"。
+  // 只在当前关标注它真实的敌种（去重）， label 写"本关敌种"而非"首现"，避免假洞察。
+  const currentId = selected.value?.id ?? activeLevelId.value
+  const pts = list.map((l, i) => {
+    const x = list.length <= 1 ? 150 : (i / (list.length - 1)) * 300
+    const y = 80 - ((l.difficulty ?? 0) - min) / span * 64
+    const enemyIds = l.id === currentId
+      ? [...new Set((detailWaves.value ?? []).flatMap((w) => w.spawns ?? []).map((sp) => sp.enemy_id))]
+      : []
+    return {
+      id: l.id, x, y,
+      diff: l.difficulty ?? 0,
+      boss: !!l.is_boss,
+      terrain: (l.terrain ?? []).length > 0,
+      newEnemy: enemyIds.length > 0,
+      enemyIds,
+    }
+  })
+  const milestones = pts.flatMap((p, i) => {
+    const out: { id: number; x: number; y: number; label: string; reason: string; shape: string; glyph: string }[] = []
+    if (p.boss) out.push({ id: p.id, x: p.x, y: p.y, label: '首领关', reason: '首领血量与技能机制改变打法', shape: 'boss', glyph: '◆' })
+    for (const eid of p.enemyIds) {
+      const e = enemyDefMap.value.get(eid)
+      if (!e) continue
+      const threat = enemyThreatTag(eid).replace(/[][]/g, '') || '新机制'
+      out.push({ id: p.id, x: p.x, y: p.y, label: `本关敌种 ${e.name}`, reason: `${threat} · 调整对空/远程/清场手段`, shape: 'enemy', glyph: '▲' })
+    }
+    const lv = list[i]
+    for (const t of lv?.terrain ?? []) {
+      out.push({ id: p.id, x: p.x, y: p.y, label: `地形变化 ${terrainName(t.kind)}`, reason: terrainDescr(t.kind), shape: 'terrain', glyph: '■' })
+    }
+    return out
+  })
+  return { pts, milestones, line: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
 })
 
 /* -------------------------------------------------------------------------- */
@@ -367,6 +512,40 @@ const selected = computed<LevelSummary | null>(() => {
  */
 const activeLevelId = computed(() => selected.value?.id ?? store.unlockedLevel)
 
+/** R5：按章内难度最大爬升点给出推进建议，输入全部来自当前存档。 */
+const r5AiStage = computed(() => {
+  const pts = difficultyCurve.value.pts
+  const ms = difficultyCurve.value.milestones
+  const ahead = ms.filter((m) => m.id >= activeLevelId.value)
+  const next = ahead[0] ?? ms[0]
+  const nextBoss = bossLevels.value.find((b) => b.id > activeLevelId.value) ?? bossLevels.value[0]
+  const fallback = pts.find((p) => p.id >= activeLevelId.value) ?? pts[0]
+  const target = next?.id ?? nextBoss?.id ?? fallback?.id ?? activeLevelId.value
+  const unlocked = target <= store.unlockedLevel
+  const conclusion = next
+    ? `第 ${target} 关是机制拐点：${next.label}（${next.reason}）。难度爬升来自机制变化，不能只看分数斜率。`
+    : nextBoss
+      ? `第 ${target} 关是首领关（难度 ${nextBoss.difficulty}‰），需要针对机制配装。`
+      : pts.length
+        ? '本章难度平稳上升，没有首领/新敌种/地形拐点；按当前节奏推进即可。'
+        : '关卡配置未下发，暂时无法判断机制节奏。'
+  return {
+    visible: pts.length > 0,
+    target,
+    conclusion,
+    ctaText: unlocked ? `直达第 ${target} 关 →` : '先去装备页补强 →',
+    unlocked,
+  }
+})
+function r5GoLevel(): void {
+  const r = r5AiStage.value
+  if (!r.unlocked) {
+    uni.navigateTo({ url: '/pages/equipment/equipment' })
+    return
+  }
+  enter(r.target)
+}
+
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
 
 /**
@@ -386,6 +565,27 @@ const enemyNameMap = computed(() => {
 
 function enemyName(id: number): string {
   return enemyNameMap.value.get(id) ?? `#${id}`
+}
+
+/**
+ * R8 敌人辨识度：波次预览只写名字时，玩家看不出「浮空囊」要对空、
+ * 「潜地者」需要范围清场。服务端配置本就带 fly_height / burrow /
+ * attack_range / is_boss，直接标出来，不必进战斗试错。
+ */
+const enemyDefMap = computed(() => {
+  const m = new Map<number, EnemyDef>()
+  for (const e of store.config?.enemies ?? []) m.set(e.id, e)
+  return m
+})
+
+function enemyThreatTag(id: number): string {
+  const e = enemyDefMap.value.get(id)
+  if (!e) return ''
+  if (e.is_boss) return '[首领]'
+  if (e.fly_height > 0) return '[飞行]'
+  if (e.burrow) return '[潜地]'
+  if (e.attack_range > 0) return '[远程]'
+  return ''
 }
 
 // 第 69 轮：切关竞态守卫。快速点选关卡时，先发请求可能晚到；
@@ -586,13 +786,24 @@ onMounted(() => {
   background: linear-gradient(180deg, var(--bg) 82%, rgba(7, 10, 16, 0));
 }
 
+/* 基线 h5-03：章节 chip 超出 560rpx 视口后被直接裁掉（「母巢核…」不可点）。
+   改为横向滚动条：所有章节仍一屏可见入口，滚动即可触达最后的 chip。 */
 .chapter-row {
   display: flex;
   flex-direction: row;
   gap: 12rpx;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 6rpx;
+}
+
+.chapter-row::-webkit-scrollbar {
+  display: none;
 }
 
 .chapter-chip {
+  flex: 0 0 auto;
   padding: 12rpx 26rpx;
   border-radius: 999rpx;
   background: var(--panel);
@@ -633,9 +844,30 @@ onMounted(() => {
 .bl-cleared { color: var(--warn); font-weight: 600; }
 
 /* G85 本章难度曲线 */
+/* R8 §1G.1 星级口径说明卡 */
+.sr-row { display: flex; flex-direction: row; align-items: center; gap: 14rpx; padding: 6rpx 0; font-size: 23rpx; }
+.sr-note { display: block; margin-top: 8rpx; font-size: 21rpx; line-height: 1.5; color: var(--text-2); }
+
 .diff-svg { width: 100%; height: 184rpx; overflow: visible; }
 .diff-line { fill: none; stroke: var(--fire); stroke-width: 2; stroke-linejoin: round; }
 .diff-dot { fill: var(--warn); }
+.diff-dot-boss { fill: var(--fire); }
+.diff-dot-enemy { fill: var(--ice); }
+.diff-dot-terrain { fill: var(--corrosion); }
+.diff-marker { fill: none; stroke-width: 2; }
+.diff-marker.boss { stroke: var(--fire); }
+.diff-marker.enemy { stroke: var(--ice); }
+.diff-marker.terrain { stroke: var(--corrosion); }
+.diff-legend { display: flex; flex-direction: row; flex-wrap: wrap; gap: 18rpx; margin-top: 6rpx; font-size: 20rpx; color: var(--text-2); }
+.diff-shape.boss { color: var(--fire); }
+.diff-shape.enemy { color: var(--ice); }
+.diff-shape.terrain { color: var(--corrosion); }
+.diff-milestone { display: flex; flex-direction: row; align-items: baseline; gap: 10rpx; padding: 6rpx 0; border-bottom: 1rpx solid var(--border-soft); font-size: 21rpx; }
+.diff-ms-shape { font-size: 22rpx; }
+.diff-ms-shape.boss { color: var(--fire); }
+.diff-ms-shape.enemy { color: var(--ice); }
+.diff-ms-shape.terrain { color: var(--corrosion); }
+.diff-ms-label { flex-shrink: 0; }
 
 /* G63 全章节星级总览 */
 .overview-card .card-title .mono { color: var(--warn); }
@@ -841,7 +1073,7 @@ onMounted(() => {
 .terrain-note-descr {
   flex: 1;
   font-size: 24rpx;
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -858,7 +1090,11 @@ onMounted(() => {
   font-size: 24rpx;
 }
 .wave-spawn {
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
+}
+.threat-tag {
+  color: var(--fire);
+  font-size: 22rpx;
 }
 
 /* 通关掉落预览（2026-11-01 新一轮第 39 轮） */
@@ -895,5 +1131,172 @@ onMounted(() => {
   line-height: 1.7;
   display: block;
   margin-top: 6rpx;
+}
+
+/* t13 / F-10-1：选关首屏作战简报 —— 用明度差与元素光代替又一层细描边 */
+.stage-hero {
+  position: relative;
+  margin-bottom: 20rpx;
+  padding: 22rpx 24rpx 20rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid var(--border-soft);
+  background: linear-gradient(116deg, rgba(255, 107, 53, 0.10), var(--panel) 44%, rgba(88, 166, 255, 0.08));
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.32), inset 0 1rpx 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  animation: stage-hero-in var(--motion-base) var(--motion-ease) both;
+}
+
+.stage-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx);
+  background-size: 48rpx 48rpx;
+  pointer-events: none;
+}
+
+.stage-hero-head,
+.stage-hero-body,
+.stage-hero-cta {
+  position: relative;
+}
+
+.stage-hero-head {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.stage-hero-eyebrow {
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+  color: var(--muted);
+}
+
+.stage-hero-chapter {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stage-hero-body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24rpx;
+  margin-top: 14rpx;
+}
+
+.stage-hero-level {
+  flex: 0 0 150rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage-hero-num {
+  font-size: 72rpx;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--fire);
+  text-shadow: 0 0 18rpx rgba(255, 107, 53, 0.35);
+}
+
+.stage-hero-cap {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--text-2);
+}
+
+.stage-hero-meter {
+  flex: 1;
+  min-width: 0;
+}
+
+.stage-hero-meter-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 22rpx;
+}
+
+.stage-hero-track {
+  height: 14rpx;
+  margin-top: 10rpx;
+  border-radius: 999rpx;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+
+.stage-hero-meter-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, var(--fire), var(--ice), var(--lightning), var(--corrosion), var(--kinetic));
+  box-shadow: 0 0 12rpx rgba(255, 107, 53, 0.35);
+  transition: width var(--motion-slow) ease-out;
+}
+
+.stage-hero-rail {
+  display: flex;
+  flex-direction: row;
+  gap: 14rpx;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+}
+
+.sh-fire { color: var(--fire); }
+.sh-ice { color: var(--ice); }
+.sh-lightning { color: var(--lightning); }
+.sh-corrosion { color: var(--corrosion); }
+.sh-kinetic { color: var(--kinetic); }
+
+.stage-hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 16rpx;
+  border-radius: 12rpx;
+  background: var(--accent-grad);
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 五元素分色只做小面积描边/色条，编号仍是主要辨识线索 */
+.grid .level-cell:nth-child(5n+1) { --cell-accent: var(--fire); }
+.grid .level-cell:nth-child(5n+2) { --cell-accent: var(--ice); }
+.grid .level-cell:nth-child(5n+3) { --cell-accent: var(--lightning); }
+.grid .level-cell:nth-child(5n+4) { --cell-accent: var(--corrosion); }
+.grid .level-cell:nth-child(5n+5) { --cell-accent: var(--kinetic); }
+
+.grid .level-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5rpx;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--cell-accent, var(--border));
+  opacity: 0.8;
+}
+
+.grid .level-cell.current {
+  border-color: var(--cell-accent, var(--fire));
+}
+
+@keyframes stage-hero-in {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-hero { animation: none; }
+  .level-cell.current,
+  .play-glyph { animation: none; }
 }
 </style>

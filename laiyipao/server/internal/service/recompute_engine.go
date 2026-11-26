@@ -44,7 +44,10 @@ import (
 // 的语义完全不同：前者是「上报值与同一份 DB 数据不符」，
 // 后者是「我方引擎与客户端引擎对同一局给出了不同结果」——
 // 后者可能是引擎漂移，所以它有熔断而前者没有（见 RecomputeScope 的注释）。
-const RecomputeEngineVersionWholeBattle = "whole-battle/v1"
+// v1 → v2（t41）：反应溅射从「resolveHit 的 0.4 权重 + 暴击」改为纯函数
+// 直落 25%，整局 replay_hash 会变。v1 台账保留原样用于历史对账；
+// 兼容窗口内不对旧 hash 放宽 enforce / I-6，新对局一律记 v2。
+const RecomputeEngineVersionWholeBattle = "whole-battle/v2"
 
 // ⚠️ 这里**不**新声明一个 `ErrReplayHashMismatch` 哨兵。
 //

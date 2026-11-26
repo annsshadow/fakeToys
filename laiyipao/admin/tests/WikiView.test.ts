@@ -511,3 +511,32 @@ describe('WikiView 实战分布', () => {
     wrapper.unmount()
   })
 })
+
+/**
+ * R9-WIKI（t89）：文档站也要有内容区眉题（§1B.2 SectionKicker），
+ * 且 AI 卡四判据（可见 AI 汉字 / 真实数据结论 / 依据 / 可点 CTA）不因路由修复回退。
+ */
+describe('WikiView R9 眉题与 AI 四判据', () => {
+  it('内容区有 section-kicker 眉题（中文眉题 + 英文小标）', async () => {
+    const wrapper = await mountWiki()
+    const kicker = wrapper.find('.section-kicker')
+    expect(kicker.exists(), 'WikiView 缺 §1B.2 内容区眉题').toBe(true)
+    expect(kicker.find('.section-kicker-cn').exists()).toBe(true)
+    expect(kicker.find('.section-kicker-en').exists()).toBe(true)
+    expect(kicker.text()).toContain('玩法')
+    wrapper.unmount()
+  })
+
+  it('AI 洞察卡四判据齐全：可见 AI 汉字 + 真实数据结论 + 依据 + 可点 CTA', async () => {
+    const wrapper = await mountWiki()
+    const card = wrapper.find('#ai-insight-card')
+    expect(card.exists(), 'WikiView 缺 AI 洞察卡').toBe(true)
+    const text = card.text()
+    expect(text).toContain('AI')                       // 可见汉字徽章
+    expect(text).toMatch(/规则引擎|数据截至/)          // 诚实标注 + 依据行
+    expect(text.length).toBeGreaterThan(20)            // 有真实数据结论，不只是标题
+    const cta = card.find('.ai-cta a, .ai-cta')
+    expect(cta.exists(), 'AI 卡缺可点 CTA').toBe(true)
+    wrapper.unmount()
+  })
+})

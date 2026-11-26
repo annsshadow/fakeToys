@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onActivated, ref } from 'vue'
+import PageSkeleton from "@/components/PageSkeleton.vue"
+import { onMounted, onActivated, ref, computed } from 'vue'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 import { ElMessage } from 'element-plus'
 import { fetchEquipment, type AdminEquipmentView } from '@/api'
 
@@ -9,6 +13,12 @@ const loading = ref(false)
 const equipment = ref<AdminEquipmentView[]>([])
 const gems = ref<import('@/api').SeedGem[]>([])
 const skins = ref<import('@/api').SeedSkin[]>([])
+
+/** R6 §1E：装备配置建议（接口优先，未上线回退本地真实数据）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('equipment', {
+  equipment: equipment.value, gems: gems.value, skins: skins.value,
+}))
 
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
@@ -35,6 +45,14 @@ const SLOT_LABEL: Record<string, string> = {
 
 const activeTab = ref('equipment')
 
+/** R4 §1C.2：目录款数与元素/部位覆盖统计（真实数据，非写死）。 */
+const equipmentCount = () => equipment.value.length
+const gemCount = () => gems.value.length
+const skinCount = () => skins.value.length
+const elementCoverage = () => new Set(equipment.value.map((e) => e.element)).size
+const slotCoverage = () => new Set(equipment.value.map((e) => e.slot)).size
+const currentCount = () => (activeTab.value === 'gems' ? gemCount() : activeTab.value === 'skins' ? skinCount() : equipmentCount())
+
 // keep-alive onActivated 重拉与在途 load 可重叠（侧栏在 v-loading 遮罩外）：
 // 迟到的旧快照不得覆盖新 equipment/gems/skins，与 EconomyView 同款序号守卫。
 let loadSeq = 0
@@ -47,6 +65,10 @@ async function load() {
     equipment.value = res.equipment
     gems.value = res.gems
     skins.value = res.skins
+    // R6：推荐接口锦上添花，未上线/失败都不影响目录
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('equipment'), aiInsight.value)
+    } catch { recInsight.value = null }
     // 2026-10-21: the endpoint returns 8 keys but the old TS type declared
     // only 3, so enemies / reactions / mastery / rating_weights were
     // silently dropped on the way to the UI. They are now typed and
@@ -75,7 +97,8 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">装备 · 宝石 · 皮肤</div>
@@ -87,10 +110,26 @@ onActivated(() => {
       </div>
     </div>
 
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
+
+    <section class="section-kicker" aria-label="目录结构概览">
+      <span class="section-kicker-cn">目录结构概览</span>
+      <span class="section-kicker-en">Catalog Coverage</span>
+    </section>
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">装备款数</div><div class="kpi-value">{{ equipmentCount() }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">宝石款数</div><div class="kpi-value">{{ gemCount() }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">皮肤款数</div><div class="kpi-value">{{ skinCount() }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">元素 / 部位覆盖</div><div class="kpi-value">{{ elementCoverage() }} / {{ slotCoverage() }}</div></div>
+    </div>
+    <div class="filter-bar">
+      <span class="result-count" aria-live="polite" role="status">当前目录 {{ currentCount() }} 款</span>
+    </div>
+
     <el-tabs v-model="activeTab">
       <!-- 装备 -->
       <el-tab-pane label="装备" name="equipment">
-        <el-table :data="equipment" size="small" stripe>
+        <el-table :data="equipment" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
           <el-table-column prop="id" label="ID" width="55" />
           <el-table-column prop="name" label="名称" min-width="130" />
           <el-table-column label="元素" width="80">
@@ -115,7 +154,12 @@ onActivated(() => {
           </el-table-column>
           <el-table-column prop="descr" label="效果" min-width="200" />
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">该目录当前没有条目；装备随版本种子发布，运行期不写库。</p>
+            <el-button class="empty-state-action" size="small" @click="load">刷新目录</el-button>
+          </div>
         </template>
 </el-table>
       </el-tab-pane>
@@ -129,27 +173,37 @@ onActivated(() => {
           title="注意「元素石」"
           description="元素石提高元素系数，而反应伤害与面板攻击力无关（攻击力在反应中的权重结构性 ≤30%）。因此元素石的收益普遍高于攻击力宝石 —— 若玩家反馈「宝石没感觉」，先检查元素石词条数值是否偏低。" class="mb-2"
         />
-        <el-table :data="gems" size="small" stripe>
+        <el-table :data="gems" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
           <el-table-column prop="id" label="ID" width="55" />
           <el-table-column prop="name" label="名称" min-width="130" />
           <el-table-column prop="attr" label="效果" min-width="120" />
           <el-table-column prop="descr" label="说明" min-width="200" />
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">该目录当前没有条目；装备随版本种子发布，运行期不写库。</p>
+            <el-button class="empty-state-action" size="small" @click="load">刷新目录</el-button>
+          </div>
         </template>
 </el-table>
       </el-tab-pane>
 
       <!-- 皮肤 -->
       <el-tab-pane label="皮肤" name="skins">
-        <el-table :data="skins" size="small" stripe>
+        <el-table :data="skins" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
           <el-table-column prop="id" label="ID" width="55" />
           <el-table-column prop="name" label="名称" min-width="130" />
           <el-table-column prop="rarity" label="稀有度" width="90" />
           <el-table-column prop="passive" label="被动" min-width="140" />
           <el-table-column prop="descr" label="说明" min-width="220" />
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">该目录当前没有条目；装备随版本种子发布，运行期不写库。</p>
+            <el-button class="empty-state-action" size="small" @click="load">刷新目录</el-button>
+          </div>
         </template>
 </el-table>
       </el-tab-pane>

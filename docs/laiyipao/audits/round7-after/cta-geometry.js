@@ -1,0 +1,1 @@
+(function(){var e=[].slice.call(document.querySelectorAll('[role=button],.r6-rec .r6-cta,text')).find(function(x){return (x.innerText||'').trim().indexOf('调整技能')>=0});if(!e)return 'NO_CTA';e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return 'CTA '+Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)+' '+e.tagName})()

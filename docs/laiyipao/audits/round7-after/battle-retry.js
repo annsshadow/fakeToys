@@ -1,0 +1,1 @@
+(function(){var all=[].slice.call(document.querySelectorAll('view,text,.btn'));var e=all.find(function(x){return (x.innerText||'').trim()==='再来一局'&&x.children.length===0});if(!e)return 'NONE';e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)})()

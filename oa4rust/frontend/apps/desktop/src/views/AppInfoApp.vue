@@ -102,7 +102,7 @@ const stats = computed(() => [
   { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
   { label: '已启用', value: items.value.filter((i) => i.status !== 'disabled').length, color: 'var(--color-success)' },
   { label: '已禁用', value: items.value.filter((i) => i.status === 'disabled').length, color: 'var(--color-error)' },
-  { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-warning)' },
+  ...(loading.value ? [{ label: '加载中', value: 1, color: 'var(--color-warning)' }] : []),
 ])
 
 async function doSearch() {

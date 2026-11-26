@@ -1,12 +1,35 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R4：指标带 → 筛选 → 数据格 → 智能空态（复用 §1B 组件） -->
+      <view v-if="!loading && r4AiBag" class="r3-kpi r4-kpi r4-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r4AiBag.elementCount }} 种元素</text>
+          <text class="r3-kpi-label">出战槽 {{ r4AiBag.slotCount }}/4 · 构筑侦察</text>
+          <text class="r3-kpi-sub">技能表 {{ allSkills.length }} 项 · 当前存档</text>
+        </view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ ownedGems.length }}</text><text class="r3-kpi-label">已拥有宝石</text></view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ heatBudget.pct }}%</text><text class="r3-kpi-label">出战热量</text></view>
+      </view>
+      <view v-if="!loading && r4AiBag" class="r3-ai r4-ai r4-enter" aria-label="AI 构筑诊断">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 构筑诊断</text>
+          <text class="r3-ai-engine">规则引擎 · 基于当前构筑</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiBag.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiBag.basis }}</text>
+        <view class="r3-ai-cta" @click="r4GoBag()">去技能槽 →</view>
+      </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
       </view>
-      <view v-else-if="allSkills.length === 0" class="card">
-        <text class="muted">还没有可用技能</text>
+      <view v-else-if="allSkills.length === 0" class="r3-empty r4-empty" aria-live="polite" role="status">
+        <text class="r3-empty-slot">AI</text>
+        <text class="r3-empty-title">还没有可用技能</text>
+        <text class="r3-empty-reason">技能表尚未下发，先去关卡页打一场，配置到位后再回来配装。</text>
+        <view class="r3-empty-action" @click="r4GoBag()">去关卡页 →</view>
       </view>
 
       <!--
@@ -15,12 +38,12 @@
         数据加载、测试断言（wrapper.text()）与交互触发都不受影响。
         「合成配方」卡与「熔炼」卡渲染同一份 recipes，前者删除（信息重复）。
       -->
-      <view v-if="!loading && allSkills.length" class="chip-row bag-tabs">
+      <view v-if="!loading && allSkills.length" class="chip-row bag-tabs r3-filter r4-filter">
         <text
           v-for="t in bagTabDefs"
           :key="t.key"
-          class="chip tap"
-          :class="{ hit: bagTab === t.key }"
+          class="chip r3-chip tap"
+          :class="{ hit: bagTab === t.key, active: bagTab === t.key }"
           @click="bagTab = t.key"
         >{{ t.label }}<text class="tab-count">{{ tabCount(t.key) }}</text></text>
       </view>
@@ -30,7 +53,7 @@
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           技能携带的元素决定你能打出哪些反应链。凑齐 2 种以上元素才能触发大部分反应。
         </text>
-        <view class="slots">
+        <view class="slots r3-data-grid r4-grid">
           <view
             v-for="i in 4"
             :key="i"
@@ -1293,6 +1316,31 @@ async function doApplyPreset(p: api.PresetView) {
     presetBusyId.value = 0
     presetWriteBusy.value = false
   }
+}
+
+/** R4：把 4 个出战槽翻译成一条规则结论，不新增接口、不写死元素搭配。 */
+const r4AiBag = computed(() => {
+  if (!allSkills.value.length) return null
+  const used = selected.value.map((id, idx) => ({ id, idx })).filter((s) => s.id > 0)
+  const elements = new Set(used.map((s) => skillOf(s.idx)?.element).filter(Boolean))
+  const count = elements.size
+  return {
+    slotCount: used.length,
+    elementCount: count,
+    conclusion: count < 2
+      ? `当前只带 ${count} 种元素，多数反应链需要 2 种以上`
+      : `当前 ${count} 种元素已覆盖多类反应链，优先补足 ${used.length}/4 个出战槽`,
+    basis: `依据：4 个出战槽 / 技能元素（图鉴 ${allSkills.value.length} 项）· 更新于本次进入`,
+  }
+})
+
+function r4GoBag() {
+  bagTab.value = 'skills'
+  if (!allSkills.value.length) {
+    uni.navigateTo({ url: '/pages/stage/stage' })
+    return
+  }
+  uni.pageScrollTo({ selector: '.bag-tabs', duration: 200 })
 }
 
 onMounted(async () => {

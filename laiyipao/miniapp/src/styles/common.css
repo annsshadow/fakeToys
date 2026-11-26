@@ -10,75 +10,12 @@
  * scoped 样式天然不跨组件生效，**跨页复用件必须放在这里**。
  */
 
+/* 令牌真源：./tokens.css（版本 lyp-tokens-v1）；本文件只保留跨页复用样式 */
+@import './tokens.css';
+
 page,
 :root {
-  /* v2 表面分层：页面底最深 → 卡片 → 浮起元素。层次靠明度差 + 阴影，不靠描边堆砌 */
-  --bg: #070a10;
-  --panel: #121826;
-  --panel-2: #1a2233;
-  --panel-3: #222c3d;
-  --border: #2a3547;
-  --border-soft: rgba(42, 53, 71, 0.55);
-  --shadow-1: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 14rpx 36rpx rgba(0, 0, 0, 0.5);
-  --text: #e6edf3;
-  --text-2: #c2ccd6;
-  --muted: #8b949e;
-  --dim: #6e7681;
-
-  /* 品牌与语义色。
-     ⚠️ 以前 `--bad` 与主色同为 #ff6b35：同一个橙既表示「主按钮」又表示「错误」，
-     红色警示因此完全不醒目。现在错误/危险统一走 `--bad`（红），主行动走 `--accent`。 */
-  --accent: #ff6b35;
-  --accent-2: #ff3d71;
-  --accent-grad: linear-gradient(135deg, #ff6b35, #ff3d71);
-  --ok: #7ee787;
-  --warn: #ffd33d;
-  --bad: #ff7b72;
-
-  /* 元素主题色 */
-  --fire: #ff6b35;
-  --ice: #58a6ff;
-  --lightning: #ffd33d;
-  --corrosion: #7ee787;
-  --kinetic: #c9a7ff;
-
-  /* 元素色半透明（用于标签背景与 hover 状态） */
-  --fire-soft: rgba(255, 107, 53, 0.18);
-  --ice-soft: rgba(88, 166, 255, 0.18);
-  --lightning-soft: rgba(255, 211, 61, 0.18);
-  --corrosion-soft: rgba(126, 231, 135, 0.18);
-  --kinetic-soft: rgba(201, 167, 255, 0.18);
-  --neutral-soft: rgba(139, 148, 158, 0.16);
-
-  /* 榜单名次色：金银铜不该散落在 rank.vue 里写死 */
-  --rank-gold: #ffd700;
-  --rank-silver: #c9ced6;
-  --rank-bronze: #cd7f32;
-
-  /* 稀有度色（2026-11-17 全物品视觉化）：common 默认中性，不设专用变量 */
-  --rare: #58a6ff;
-  --epic: #c9a7ff;
-  --legendary: #ffd700;
-  --rare-soft: rgba(88, 166, 255, 0.18);
-  --epic-soft: rgba(201, 167, 255, 0.18);
-  --legendary-soft: rgba(255, 215, 0, 0.16);
-
-  /* 字阶与间距：让「正文最小 24rpx」这类约束有名字可引用 */
-  --fs-xs: 22rpx;
-  --fs-sm: 24rpx;
-  --fs-base: 26rpx;
-  --fs-md: 28rpx;
-  --fs-lg: 32rpx;
-  --fs-xl: 38rpx;
-  --sp-1: 8rpx;
-  --sp-2: 12rpx;
-  --sp-3: 16rpx;
-  --sp-4: 24rpx;
-
-  --radius-sm: 10rpx;
-  --radius: 16rpx;
-  --radius-lg: 18rpx;
+  /* 令牌见 ./tokens.css；此处只保留全局渲染属性 */
 
   background-color: var(--bg);
   background-image: radial-gradient(120% 36% at 50% -6%, rgba(255, 107, 53, 0.10) 0%, rgba(255, 107, 53, 0) 60%);
@@ -883,7 +820,7 @@ uni-page-body {
 
 /* R73 次级文字对比度微调（深底上更易读） */
 .muted { color: var(--text-2); }
-.dim { color: var(--muted); }
+.dim { color: var(--dim); }
 
 /* R74 长哈希可读性：字距 + 选中高亮 */
 .hash {
@@ -962,9 +899,13 @@ uni-page-body {
   }
 }
 
-/* R97 键盘焦点可见（无障碍） */
+/* LYP-a11y / R97 键盘焦点可见（WCAG 2.4.7）：与 admin 同判据 */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3rpx solid var(--accent);
+  outline-offset: 2rpx;
+}
 :focus-visible {
-  outline: 3rpx solid var(--fire);
+  outline: 3rpx solid var(--accent);
   outline-offset: 2rpx;
 }
 
@@ -1153,3 +1094,531 @@ html {
     opacity: 1;
   }
 }
+
+/* LYP-a11y：系统「减少动态效果」全局兜底，覆盖所有装饰动画与伪元素 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+ * LYP-VISUAL-V1 · AI 风格视觉层
+ * 依据：docs/laiyipao/audits/baseline-round1/screenshots/h5-01/h5-03/h5-14
+ *       （非物理真机，桌面 Chrome 模拟 H5 视口）：原卡片为扁平深色块，
+ *       t4 落地的玻璃令牌全端零消费，视觉层次弱。
+ * 规范：AI_VISUAL_SYSTEM.md §2.1 静态低透明底纹 / §2.3 实色卡片 /
+ *       §4 玻璃仅浮层 / §9 reduced-motion 可关。
+ * 19 页共享 .page-root / .card / .card-title，此段置于末尾保证生效；
+ * 不改动任何既有测试标记与业务类名。
+ * ============================================================ */
+:root,
+page {
+  --lyp-visual-version: lyp-visual-v1;
+}
+
+/* 页面画布：静态网格 + 双色辉光，透明度均 ≤0.10，不铺满、不动画。 */
+.page-root {
+  position: relative;
+  isolation: isolate;
+}
+
+.page-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1rpx, transparent 1rpx),
+    radial-gradient(520rpx 320rpx at 12% 2%, rgba(255, 107, 53, 0.06), transparent 70%),
+    radial-gradient(460rpx 300rpx at 92% 26%, rgba(88, 166, 255, 0.05), transparent 72%);
+  background-size: 48rpx 48rpx, 48rpx 48rpx, 100% 100%, 100% 100%;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #6b7280 45%, transparent 90%);
+  mask-image: linear-gradient(180deg, #000 0%, #6b7280 45%, transparent 90%);
+}
+
+/* 正文卡片保持实色：渐变仅做顶部微高光，玻璃化只允许出现在浮层。 */
+.page-root .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 46%),
+    var(--panel);
+  box-shadow: var(--shadow-1), inset 0 1rpx 0 rgba(255, 255, 255, 0.055);
+}
+
+/* 高优先恢复 .card-hero 的品牌渐变，避免被上一条更高特异性覆盖。 */
+.page-root .card-hero {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(135deg, rgba(255, 107, 53, 0.16), rgba(255, 61, 113, 0.10)),
+    var(--panel);
+  border-color: rgba(255, 107, 53, 0.35);
+}
+
+/* 标题保留橙色竖条（既有守卫标记），叠加一层向右消散的元素色辉光。 */
+.page-root .card-title {
+  padding-left: 14rpx;
+  background-image: linear-gradient(90deg, var(--fire-soft), rgba(255, 107, 53, 0) 68%);
+  background-repeat: no-repeat;
+  border-radius: 4rpx;
+}
+
+/* ==========================================================================
+   LYP-R3-SECONDARY-V1：次级页结构性组件层。
+   组件本体才是改造点；底纹/辉光只作氛围，不计入 AI 感（§1B.4）。
+   ========================================================================== */
+.section-kicker {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin: 24rpx 0 12rpx;
+  padding-left: 12rpx;
+  border-left: 4rpx solid var(--accent);
+}
+.section-kicker-cn { font-size: 24rpx; font-weight: 600; color: var(--muted); }
+.section-kicker-en { font-size: 20rpx; color: var(--dim); letter-spacing: .12em; }
+.section-kicker--ai .section-kicker-cn { color: var(--ai-ink); }
+.r3-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48rpx;
+  min-height: 34rpx;
+  padding: 0 8rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 8rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.r3-kpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12rpx; margin: 12rpx 0 20rpx; }
+.r3-kpi-main,
+.r3-kpi-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 80rpx;
+  padding: 14rpx 18rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 14rpx;
+  background: var(--panel-2);
+}
+.r3-kpi-main {
+  grid-column: 1 / -1;
+  min-height: 96rpx;
+  border-left: 6rpx solid var(--accent);
+  background:
+    linear-gradient(90deg, rgba(255, 107, 53, .10), rgba(255, 107, 53, 0) 72%),
+    var(--panel-2);
+}
+.r3-kpi-num { font-size: 44rpx; font-weight: 700; line-height: 1.15; color: var(--text); font-variant-numeric: tabular-nums; }
+.r3-kpi-label { font-size: 22rpx; color: var(--muted); }
+.r3-kpi-sub { font-size: 20rpx; color: var(--dim); }
+
+.r3-ai {
+  margin: 12rpx 0 20rpx;
+  padding: 18rpx 18rpx 14rpx;
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+  background:
+    linear-gradient(135deg, var(--ai-halo), rgba(201, 167, 255, 0) 68%),
+    var(--panel-2);
+  box-shadow: var(--ai-glow);
+}
+.r3-ai-head { display: flex; align-items: center; gap: 12rpx; }
+.r3-ai-title { font-size: 28rpx; font-weight: 700; color: var(--text); }
+.r3-ai-engine { font-size: 20rpx; color: var(--ai-ink); }
+.r3-ai-conclusion { display: block; margin: 12rpx 0 8rpx; font-size: 26rpx; font-weight: 600; color: var(--text); line-height: 1.5; }
+.r3-ai-basis { display: block; font-size: 21rpx; color: var(--muted); line-height: 1.5; }
+.r3-ai-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  padding: 0 28rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.r3-data-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10rpx; margin: 8rpx 0 16rpx; }
+.r3-data-grid .list-row,
+.r3-data-grid .r3-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 12rpx 16rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 12rpx;
+  background: var(--panel-2);
+}
+.r3-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.r3-row-label { font-size: 26rpx; font-weight: 600; color: var(--text); }
+.r3-row-meta { font-size: 21rpx; color: var(--muted); }
+.r3-row-value { font-size: 28rpx; font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; text-align: right; }
+
+.r3-filter { display: flex; flex-direction: row; gap: 12rpx; min-height: 88rpx; padding: 6rpx 0 10rpx; overflow-x: auto; white-space: nowrap; }
+.r3-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 999rpx;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 24rpx;
+}
+.r3-filter .r3-chip.active {
+  background: var(--accent-soft);
+  border-color: rgba(255, 107, 53, .42);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.r3-progress { height: 14rpx; border: 1rpx solid var(--border); border-radius: 999rpx; background: var(--progress-track); overflow: hidden; }
+.r3-progress-fill { height: 100%; border-radius: 999rpx; background: var(--accent-grad); }
+.r3-progress-row { display: flex; align-items: center; gap: 12rpx; margin: 10rpx 0; }
+.r3-progress-row .r3-progress-label { width: 150rpx; flex-shrink: 0; font-size: 22rpx; color: var(--text-2); }
+.r3-progress-row .r3-progress { flex: 1; }
+.r3-progress-row .r3-progress-num { width: 120rpx; text-align: right; font-size: 22rpx; color: var(--muted); font-variant-numeric: tabular-nums; }
+.r3-progress-row.is-ai .r3-progress-fill { background: var(--ai-accent); }
+.r3-progress-row.is-ai .r3-progress-num { color: var(--ai-ink); }
+
+.r3-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240rpx;
+  margin: 12rpx 0 20rpx;
+  padding: 24rpx;
+  border: 1rpx dashed var(--border);
+  border-radius: 14rpx;
+  background: var(--panel-2);
+  text-align: center;
+}
+.r3-empty-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  margin-bottom: 12rpx;
+  border: 1px solid var(--ai-accent);
+  border-radius: 50%;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 700;
+}
+.r3-empty-title { font-size: 28rpx; font-weight: 600; color: var(--text); }
+.r3-empty-reason { margin: 8rpx 0 4rpx; font-size: 22rpx; color: var(--muted); line-height: 1.5; }
+.r3-empty-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  padding: 0 32rpx;
+  border-radius: 12rpx;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.r3-enter { animation: r3-enter 240ms ease-out both; }
+@keyframes r3-enter {
+  from { opacity: 0; transform: translateY(10rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r3-enter { animation: none !important; }
+}
+
+/* ==========================================================================
+   LYP-R4-SECONDARY-V1：第二批次级页语义钩子。
+   只复用 §1B 六组件（r3-*），不建平行样式体系；r4-* 仅作页面级锚点与滚动定位。
+   ========================================================================== */
+.r4-section,
+.r4-kpi,
+.r4-ai,
+.r4-filter,
+.r4-grid,
+.r4-empty { scroll-margin-top: 120rpx; }
+.r4-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r4-enter { animation: none !important; }
+}
+
+/* ==========================================================================
+   LYP-R5-H5-V1：剩余五页轻量 AI 线索层。
+   结构组件继续复用 §1B 的 r3-* 六件套；这里只补 login/verify 的 role="note"
+   单行卡片，避免为两页再造一套平行卡片体系。零新增令牌。
+   ========================================================================== */
+.r5-section { scroll-margin-top: 120rpx; }
+.r5-ai-note {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin: 14rpx 0 18rpx;
+  padding: 18rpx 20rpx;
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: linear-gradient(90deg, var(--ai-halo), rgba(18, 24, 38, 0));
+  box-shadow: var(--ai-glow);
+}
+.r5-ai-note .r3-ai-badge { flex-shrink: 0; }
+.r5-note-body { flex: 1; min-width: 0; }
+.r5-note-title { font-size: 26rpx; font-weight: 600; color: var(--ai-ink); }
+.r5-note-text { display: block; margin-top: 6rpx; font-size: 24rpx; line-height: 1.5; color: var(--text); }
+.r5-note-basis { display: block; margin-top: 6rpx; font-size: 20rpx; color: var(--muted); }
+.r5-note-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56rpx;
+  margin-top: 6rpx;
+  color: var(--ai-ink);
+  font-size: 22rpx;
+  font-weight: 600;
+}
+.r5-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r5-enter, .r5-ai-note { animation: none !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LYP-R6-PERSONALIZED-V1：真实数据驱动推荐卡（§1E.5 四区信息架构）            */
+/* 只用既有 --panel-2 / --ai-* / --accent-* 令牌；不新增颜色、不铺玻璃底、      */
+/* 不在 panel-3 上叠元素 soft，muted/dim 不放在玻璃层。                        */
+/* -------------------------------------------------------------------------- */
+.r6-rec {
+  position: relative;
+  min-height: 300rpx;
+  margin: 14rpx 0;
+  padding: 18rpx 20rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+  box-shadow: var(--ai-glow);
+}
+.r6-rec-head { display: flex; flex-direction: row; align-items: center; gap: 10rpx; }
+.r6-badge {
+  flex-shrink: 0;
+  min-width: 56rpx;
+  padding: 4rpx 10rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 8rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 22rpx;
+  font-weight: 700;
+  text-align: center;
+}
+.r6-engine {
+  margin-left: auto;
+  font-size: 19rpx;
+  color: var(--text-2);
+  text-align: right;
+}
+.r6-headline {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+.r6-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-top: 12rpx;
+  padding: 10rpx 12rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+}
+.r6-ev { display: flex; flex-direction: row; align-items: baseline; gap: 10rpx; font-size: 22rpx; }
+.r6-ev-metric { flex: 1; min-width: 0; color: var(--text-2); }
+.r6-ev-val { color: var(--ai-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.r6-ev-src { flex-shrink: 0; font-size: 19rpx; color: var(--muted); }
+.r6-why { display: flex; flex-direction: column; gap: 4rpx; margin-top: 10rpx; }
+.r6-why-toggle {
+  min-height: 56rpx;
+  font-size: 22rpx;
+  color: var(--ai-ink);
+  font-weight: 600;
+}
+.r6-why-line { font-size: 20rpx; line-height: 1.45; color: var(--text-2); }
+.r6-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+  background: var(--ai-halo);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.r6-empty {
+  min-height: 300rpx;
+  background: var(--panel-2);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+}
+.r6-skeleton {
+  min-height: 300rpx;
+  padding: 18rpx 20rpx;
+  background: var(--panel-2);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+}
+.r6-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r6-enter, .r6-skeleton { animation: none !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LYP-R7-IMPACT-APPLY-V1：真实收益对比 + 两步确认                             */
+/* -------------------------------------------------------------------------- */
+.r7-impact {
+  margin-top: 12rpx;
+  padding: 12rpx 14rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 12rpx;
+  background: var(--panel);
+}
+.r7-impact-title { display: block; font-size: 22rpx; font-weight: 700; color: var(--ai-ink); }
+.r7-bar-block { margin-top: 8rpx; }
+.r7-delta { display: block; margin-top: 6rpx; font-size: 20rpx; color: var(--ai-ink); font-variant-numeric: tabular-nums; }
+.r7-bar-row { display: flex; align-items: center; gap: 10rpx; min-height: 48rpx; }
+.r7-bar-label { width: 132rpx; flex-shrink: 0; font-size: 20rpx; color: var(--text-2); }
+.r7-bar { flex: 1; height: 12rpx; border-radius: 999rpx; background: var(--progress-track); overflow: hidden; }
+.r7-bar-fill { height: 100%; border-radius: 999rpx; background: var(--accent-grad); }
+.r7-bar-next .r7-bar-fill { background: var(--ai-accent); }
+.r7-bar-val { width: 150rpx; text-align: right; font-size: 20rpx; color: var(--text); font-variant-numeric: tabular-nums; }
+.r7-star { display: block; margin-top: 8rpx; font-size: 20rpx; line-height: 1.5; color: var(--text-2); }
+.r7-why { display: block; margin-top: 8rpx; font-size: 20rpx; line-height: 1.5; color: var(--ai-ink); }
+.r7-basis { display: block; margin-top: 4rpx; font-size: 19rpx; line-height: 1.5; color: var(--muted); }
+.r7-empty-note { display: block; margin-top: 10rpx; font-size: 21rpx; color: var(--muted); }
+.r7-compare-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  background: rgba(7, 10, 16, .82);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.r7-compare {
+  width: 100%;
+  max-width: 680rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24rpx;
+  border: 1rpx solid var(--glass-border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 16rpx;
+  background: var(--panel-2);
+  box-shadow: var(--ai-glow);
+}
+.r7-compare-title { display: block; font-size: 30rpx; font-weight: 700; color: var(--text); }
+.r7-vs-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 72rpx;
+  margin-top: 10rpx;
+  padding: 0 14rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 10rpx;
+  background: var(--panel);
+  font-size: 24rpx;
+}
+.r7-vs-row.is-next { border-color: var(--ai-accent); background: var(--ai-halo); }
+.r7-vs-label { flex: 1; min-width: 0; color: var(--muted); }
+.r7-vs-arrow { flex: 0 0 auto; color: var(--ai-ink); font-weight: 700; }
+.r7-vs-name { flex: 1; color: var(--text); font-weight: 600; }
+.r7-vs-val { color: var(--ai-ink); font-variant-numeric: tabular-nums; }
+.r7-error { display: block; margin-top: 10rpx; font-size: 21rpx; line-height: 1.5; color: var(--fire); }
+.r7-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
+.r7-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+  background: var(--panel);
+  color: var(--text-2);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.r7-btn.primary { border-color: var(--ai-accent); background: var(--ai-halo); color: var(--ai-ink); }
+.r7-btn.btn-disabled { opacity: .55; }
+.r7-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r7-enter, .r7-compare-mask, .r7-compare { animation: none !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LYP-R7-CAUSAL-V1：成长页「本局靠什么拿分 → 换上后预计提升」因果链            */
+/* 只消费 v1/v3/r6 既有令牌；收益缺失时只写诚实文案，不编造数值。              */
+/* -------------------------------------------------------------------------- */
+.r7-causal {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 16rpx 18rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+}
+.r7-causal-title { display: block; font-size: 24rpx; font-weight: 600; color: var(--ai-ink); }
+.r7-causal-text { display: block; margin-top: 8rpx; font-size: 23rpx; line-height: 1.55; color: var(--text); }
+.r7-causal-next { display: block; margin-top: 8rpx; font-size: 23rpx; line-height: 1.55; color: var(--text-2); }
+.r7-causal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-top: 8rpx;
+  padding: 12rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  color: var(--muted);
+}
+.r7-causal-src { display: block; margin-top: 8rpx; font-size: 19rpx; color: var(--dim); }
+.r7-causal-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r7-causal-enter { animation: none !important; }
+}
+

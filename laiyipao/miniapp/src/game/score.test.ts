@@ -15,8 +15,62 @@
  * 所以"测试文件必须被测试运行器收集到"本身也要验证（见下方的前提用例）。
  */
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import fixture from '@vectors/smoke_levels.json'
-import { DEFAULT_SCORE_RULES, scoreRulesFromServer, damageScore, killScore } from './score'
+import {
+  DEFAULT_SCORE_RULES,
+  SPEED_ANCHOR_PERMILLE,
+  scoreRulesFromServer,
+  damageScore,
+  killScore,
+  scoreTimeBudget,
+} from './score'
+
+describe('R8 得分时间预算：锚点必须来自服务端同款规则', () => {
+  const waves = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      wave_index: i,
+      spawns: [{ enemy_id: 1, count: 6, interval: 200, delay: 0 }],
+    }))
+
+  it('跨端钉住：满分锚点系数与 Go 侧 SpeedAnchorPermille 一致', () => {
+    const go = readFileSync(
+      resolve(__dirname, '../../../server/internal/domain/battle.go'),
+      'utf-8',
+    )
+    expect(go).toMatch(/const SpeedAnchorPermille = 9000/)
+    expect(SPEED_ANCHOR_PERMILLE).toBe(9000n)
+  })
+
+  it('锚点从关卡波次推导，不是写死 60s；不同配置给出不同保分窗口', () => {
+    const five = scoreTimeBudget({ waves: waves(5) }, 0)
+    const three = scoreTimeBudget({ waves: waves(3) }, 0)
+    // 每波 6 只 × 200ms = 1s；5 波 → 5s × 9 = 45s（服务端 SpeedAnchorPermille）。
+    expect(five?.anchorSec).toBe(45)
+    expect(three?.anchorSec).toBe(27)
+    expect(five?.remainingSec).toBe(45)
+    expect(scoreTimeBudget({ waves: [] }, 0)).toBeNull()
+  })
+
+  it('最后 5s 触发钳分预警，跨过锚点后标记窗口已结束', () => {
+    const five = { waves: waves(5) }
+    const safe = scoreTimeBudget(five, 39_000)
+    expect(safe?.warning).toBe(false)
+    expect(safe?.text).toContain('钳分中 · 距满分 6s')
+
+    const warn = scoreTimeBudget(five, 40_000)
+    expect(warn?.warning).toBe(true)
+    expect(warn?.clamped).toBe(false)
+    expect(warn?.text).toContain('即将免钳分')
+
+    const clamped = scoreTimeBudget(five, 46_000)
+    expect(clamped?.clamped).toBe(true)
+    expect(clamped?.remainingSec).toBe(0)
+    expect(clamped?.text).toContain('已免钳分')
+    expect(clamped?.text, '锚点前是钳分区，不能谎称有保分窗口').not.toContain('保分窗口')
+  })
+})
 describe('分数规则：前提检查', () => {
   // 上一条教训的直接对策。
   //

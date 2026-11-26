@@ -185,6 +185,43 @@ describe('LoginView 消费 ?redirect=（第 155 轮）', () => {
     await submitVia(wrapper)
     expect(router.currentRoute.value.path).toBe('/admin/dashboard')
   })
+
+  // R9-WIKI: 壳外文档站 /wiki 是合法目标（侧栏 wiki-link 指向它），
+  // 守卫对无令牌 /wiki 会写 redirect=/wiki，登录后必须跳回而不是落看板。
+  it('R9-WIKI: /wiki 的 redirect 登录后跳回文档站（不回退 dashboard）', async () => {
+    adminLogin.mockResolvedValueOnce({
+      access_token: 'tok-w1',
+      admin: { id: 1, username: 'a', role: 'admin' },
+    })
+    const { wrapper, router } = await mountWithQuery('/admin/login', { redirect: '/wiki' })
+    await submitVia(wrapper)
+    expect(router.currentRoute.value.path).toBe('/wiki')
+  })
+
+  it('R9-WIKI: 带 query 的 /wiki 深链 redirect 保留 tab/focus', async () => {
+    adminLogin.mockResolvedValueOnce({
+      access_token: 'tok-w2',
+      admin: { id: 1, username: 'a', role: 'admin' },
+    })
+    const target = '/wiki?tab=enemies&focus=enemy:12'
+    const { wrapper, router } = await mountWithQuery('/admin/login', { redirect: target })
+    await submitVia(wrapper)
+    expect(router.currentRoute.value.path).toBe('/wiki')
+    expect(router.currentRoute.value.query.tab).toBe('enemies')
+    expect(router.currentRoute.value.query.focus).toBe('enemy:12')
+  })
+
+  it('R9-WIKI: /wiki 前缀的恶意外部 URL 仍被拒（防开放重定向不回退）', async () => {
+    adminLogin.mockResolvedValueOnce({
+      access_token: 'tok-w3',
+      admin: { id: 1, username: 'a', role: 'admin' },
+    })
+    const { wrapper, router } = await mountWithQuery('/admin/login', {
+      redirect: '/wiki.evil.example.com/admin/dashboard',
+    })
+    await submitVia(wrapper)
+    expect(router.currentRoute.value.path).toBe('/admin/dashboard')
+  })
 })
 
 /** 填表并提交（登录页 input 全局唯一，直接操作）。 */
@@ -205,6 +242,7 @@ async function mountWithQuery(path: string, query: Record<string, string>) {
       { path: '/admin/login', component: LoginView },
       { path: '/admin/dashboard', component: Empty },
       { path: '/admin/levels', component: Empty },
+      { path: '/wiki', component: Empty },
     ],
   })
   await router.push({ path, query })

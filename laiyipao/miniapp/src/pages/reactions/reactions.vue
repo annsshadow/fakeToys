@@ -1,6 +1,79 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">反应作战台</text>
+        <text class="section-kicker-en">REACTION MATRIX</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ myReactions.length }}/{{ allReactions.length }}</text>
+          <text class="r3-kpi-label">当前构筑可达反应</text>
+          <text class="r3-kpi-sub">{{ r3AiReaction ? r3AiReaction.reason : '元素构筑数据尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ store.equippedElements.length }}</text>
+          <text class="r3-kpi-label">出战元素</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ r3FilteredReactions.length }}</text>
+          <text class="r3-kpi-label">当前筛选结果</text>
+        </view>
+      </view>
+      <view class="r3-progress-row is-ai r3-enter">
+        <text class="r3-progress-label">反应覆盖</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3ReactionPct + '%' }" /></view>
+        <text class="r3-progress-num">已达成 {{ myReactions.length }}/{{ allReactions.length }}</text>
+      </view>
+      <view class="r3-filter" aria-label="按元素筛选反应">
+        <text class="r3-chip" :class="{ active: r3Element === '' }" @click="r3Element = ''">全部 {{ allReactions.length }}</text>
+        <text v-for="el in ELEMENT_ORDER" :key="'f' + el" class="r3-chip" :class="{ active: r3Element === el }" @click="r3Element = el">
+          {{ ELEMENT_NAME[el] }}
+        </text>
+      </view>
+      <view v-if="r6Loading" class="r6-skeleton r6-enter" aria-hidden="true">
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 42%" /></view>
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 86%" /></view>
+        <view class="skeleton-row"><view class="skeleton-bar" style="width: 58%" /></view>
+      </view>
+      <view v-else-if="r6Rec && r6Rec.status !== 'local'" class="r6-rec r6-enter">
+        <view class="r6-rec-head">
+          <text class="r6-badge">{{ r6Rec.badge }}</text>
+          <text class="r6-engine">{{ r6Rec.engineLabel }}</text>
+        </view>
+        <text class="r6-headline">{{ r6Rec.headline }}</text>
+        <view v-if="r6Rec.evidence.length" class="r6-evidence">
+          <view v-for="(ev, i) in r6Rec.evidence" :key="'e' + i" class="r6-ev">
+            <text class="r6-ev-metric">{{ ev.metric }}</text>
+            <text class="r6-ev-val">{{ ev.value }}{{ ev.unit }}</text>
+            <text class="r6-ev-src">{{ ev.source }} · {{ ev.window }}</text>
+          </view>
+        </view>
+        <view class="r6-why">
+          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
+          <block v-if="r6Open">
+            <text v-for="(line, i) in r6Rec.basis" :key="'b' + i" class="r6-why-line">{{ line }}</text>
+            <text class="r6-why-line">目标：{{ r6Rec.cta.route }}</text>
+          </block>
+        </view>
+        <view v-if="r6Rec.status === 'empty'" class="r6-empty r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">{{ r6Rec.headline }}</text>
+          <text class="r3-empty-reason">{{ r6Rec.basis[0] }} · {{ r6Rec.basis[1] }}</text>
+          <text class="r3-empty-action" role="button" @click="r6Go()">{{ r6Rec.cta.label }}</text>
+        </view>
+        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()">{{ r6Rec.cta.label }} →</text>
+      </view>
+      <view v-if="r6Rec && r6Rec.status === 'local' && r3AiReaction" class="r3-ai r6-local r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 下一条反应</text>
+          <text class="r3-ai-engine">本地规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiReaction.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiReaction.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoSkills">去调整出战技能 →</text>
+      </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
@@ -15,7 +88,7 @@
           <view v-for="k in myReactions" :key="k" class="chip hit">{{ reactionName(k) }}</view>
         </view>
         <text v-else class="muted">
-          当前出战技能的元素凑不出任何反应链 —— 反应伤害与面板攻击力无关，
+          当前出战技能的元素凑不出任何反应链 —— 反应伤害中元素侧是主力，面板攻击力也有贡献但权重上限 30%，
           换一种元素搭配比堆面板更有效。
         </text>
         <text v-if="myReactions.length" class="muted" style="display: block; margin-top: 12rpx">
@@ -90,8 +163,9 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
         </text>
-        <text class="result-count">显示 {{ filteredReactions.length }} / 共 {{ allReactions.length }} 条</text>
-        <view v-for="r in filteredReactions" :key="r.key" class="rxn">
+        <text class="result-count">显示 {{ r3FilteredReactions.length }} / 共 {{ allReactions.length }} 条</text>
+        <view class="r3-data-grid">
+        <view v-for="r in r3FilteredReactions" :key="r.key" class="rxn list-row">
           <view class="rxn-head">
             <!-- 反应图标：双环交叠（两个元素圈相碰的隐喻） -->
             <view class="icon-badge" style="width: 64rpx; height: 64rpx">
@@ -127,9 +201,10 @@
             <text v-if="r.knockback > 0" class="stat">击退 {{ r.knockback / 1000 }}</text>
           </view>
         </view>
+        </view>
         <text v-if="!allReactions.length" class="muted">反应表为空（配置未加载？）</text>
         <!-- R28 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
-        <view v-if="keyword && allReactions.length && filteredReactions.length === 0" class="search-empty">
+        <view v-if="keyword && allReactions.length && r3FilteredReactions.length === 0" class="search-empty">
           <text class="muted">没有匹配「{{ keyword }}」的反应</text>
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
@@ -145,6 +220,7 @@ import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, lookupReaction, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
+import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
 
 const store = useGameStore()
 
@@ -281,6 +357,72 @@ onMounted(() => {
   // onLoad 在 H5 上可能早于组件挂载，这里补一次（loadPage 本身幂等）。
   void loadPage()
 })
+
+/** R3 FilterBar：在既有搜索结果上按元素二次筛选，不改动原搜索 computed。 */
+const r3Element = ref<Element | ''>('')
+const r3FilteredReactions = computed(() => {
+  const base = filteredReactions.value
+  if (!r3Element.value) return base
+  return base.filter((r) => reactionPairs(r.key).some((pair) => pair.includes(r3Element.value as Element)))
+})
+const r3ReactionPct = computed(() => {
+  const total = allReactions.value.length
+  return total ? Math.round(myReactions.value.length / total * 100) : 0
+})
+
+/** R3 AI 线索：取第一条不可达反应 + 其元素对，依据来自 reachable / 反应表。 */
+const r3AiReaction = computed(() => {
+  const list = allReactions.value
+  if (!list.length) return null
+  const miss = list.filter((r) => !reachable.value.has(r.key as ReactionKey))
+  const pick = miss[0] ?? list[0]
+  const pair = reactionPairs(pick.key)[0]
+  const pairText = pair ? ELEMENT_NAME[pair[0]] + ' + ' + ELEMENT_NAME[pair[1]] : '对应元素对'
+  return {
+    reason: miss.length ? '还差 ' + miss.length + ' 条反应未可达' : '全部反应已可达',
+    conclusion: miss.length
+      ? '还差 ' + miss.length + ' 条反应未可达：先凑「' + pick.name + '」的 ' + pairText
+      : '已覆盖全部 ' + list.length + ' 条反应：保持当前元素搭配',
+    basis: '当前出战 ' + store.equippedElements.length + ' 种元素 + ' + allReactions.value.length + ' 条反应表',
+  }
+})
+function r3GoSkills() {
+  uni.navigateTo({ url: '/pages/skills/skills' })
+}
+
+/* R6 §1E：反应链结论优先读真实战斗/配置推荐；接口缺席才用本地规则并标注。 */
+const r6Loading = ref(true)
+const r6Rec = ref<R6Card | null>(null)
+const r6Open = ref(false)
+
+async function loadR6Recommendation() {
+  r6Loading.value = true
+  const rec = await fetchRecommendations('reactions')
+  if (rec) {
+    r6Rec.value = rec
+  } else {
+    r6Rec.value = localFallbackCard({
+      context: "reactions",
+      headline: r3AiReaction.value ? r3AiReaction.value.conclusion : '本地规则引擎：反应表尚未到达，暂不写死推荐',
+      basis: ['依据：当前出战元素 + 反应表（' + allReactions.value.length + ' 条）；触发率数据待接口下发'],
+      evidence: [{ metric: '可达反应', value: myReactions.value.length + '/' + allReactions.value.length, unit: '条', source: 'config/store', window: 'now' }],
+      ctaLabel: '去调整出战技能',
+      ctaRoute: '/pages/skills/skills',
+    })
+  }
+  r6Loading.value = false
+}
+
+function r6Go() {
+  const cta = r6Rec.value?.cta
+  if (!cta || !cta.route) return
+  const query = cta.params
+    ? '?' + Object.entries(cta.params).map(([k, v]) => k + '=' + encodeURIComponent(String(v))).join('&')
+    : ''
+  uni.navigateTo({ url: cta.route + query })
+}
+
+void loadR6Recommendation()
 </script>
 
 <style scoped>

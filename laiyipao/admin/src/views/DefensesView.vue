@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { exportDateLabel, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { fetchAdminRecommendation, insightFromRecommendation, buildLocalRecommendation } from '@/utils/recommendation'
+import type { AiInsight } from '@/utils/aiInsight'
 
 const router = useRouter()
 
@@ -47,6 +51,10 @@ const emptyText = '还没有人设置防线'
 const loading = ref(false)
 const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
+
+/** R6 §1E：薄弱防线洞察（接口优先，未上线回退本地真实数据）。 */
+const recInsight = ref<AiInsight | null>(null)
+const aiInsight = computed<AiInsight>(() => recInsight.value ?? buildLocalRecommendation('defenses', { rows: rows.value }))
 
 // 防线挑战记录（2026-10-31 新一轮第 30 轮）。
 const challengeVisible = ref(false)
@@ -195,6 +203,10 @@ async function load() {
     if (seq !== loadSeq) return
     rows.value = res.items
     total.value = res.total
+    // R6：推荐接口锦上添花，未上线/失败都不影响防线列表
+    try {
+      recInsight.value = insightFromRecommendation(await fetchAdminRecommendation('defenses'), aiInsight.value)
+    } catch { recInsight.value = null }
   } catch (e) {
     if (seq !== loadSeq) return
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
@@ -268,7 +280,8 @@ load()
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">防线值守</div>
@@ -289,6 +302,19 @@ load()
       style="margin-bottom: 12px"
     />
 
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
+
+    <section class="section-kicker" aria-label="防线监控概览">
+      <span class="section-kicker-cn">防线监控概览</span>
+      <span class="section-kicker-en">Defense Monitor</span>
+    </section>
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">防线总数</div><div class="kpi-value">{{ total }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">胜率异常防线</div><div class="kpi-value">{{ suspiciousRows.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">本页防线</div><div class="kpi-value">{{ rows.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">需巡检</div><div class="kpi-value">{{ suspiciousRows.length > 0 ? '优先核查异常' : '暂无异常' }}</div></div>
+    </div>
+    <div class="filter-bar">
     <el-card shadow="never">
       <div class="toolbar">
         <!-- 防线搜索（2026-10-31 新一轮第 19 轮） -->
@@ -331,10 +357,10 @@ load()
         <el-button @click="load">刷新</el-button>
         <el-button @click="openChallenges">挑战记录</el-button>
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ total }} 条防线</span>
+        <span class="result-count" aria-live="polite" role="status">共 {{ total }} 条防线</span>
       </div>
 
-      <el-table :data="rows" size="small" stripe>
+      <el-table :data="rows" size="small" stripe class="data-grid" style="font-variant-numeric: tabular-nums">
         <el-table-column label="ID" width="100">
           <!-- 复制防线 ID（2026-11-01 新一轮第 93 轮）：贴工单/追查 -->
           <template #default="{ row }">
@@ -404,10 +430,16 @@ load()
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选条件下没有防线；可清空筛选或刷新后重试。</p>
+            <el-button class="empty-state-action" size="small" @click="((page = 1), load())">刷新防线</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
+    </div>
 
     <!-- 防线挑战记录（2026-10-31 新一轮第 30 轮） -->
     <el-dialog v-model="challengeVisible" title="防线挑战记录" width="760px">

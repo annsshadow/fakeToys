@@ -10,6 +10,41 @@
       <view v-if="canGoBack" class="me-back-row">
         <text class="back-btn tap" @click="goBack">‹ 返回</text>
       </view>
+      <!-- R4：眉题 → 指标带 → 数据格 → 智能空态（复用 §1B 组件） -->
+      <view class="section-kicker section-kicker--ai r4-section r4-enter">
+        <text class="section-kicker-cn">指挥官档案</text>
+        <text class="section-kicker-en">COMMANDER PROFILE / R4</text>
+      </view>
+      <view v-if="store.buildRating" class="r3-kpi r4-kpi r4-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ store.buildRating.total ?? 0 }} 分</text>
+          <text class="r3-kpi-label">{{ store.nickname || '玩家' }} · 第 {{ store.maxStage || 1 }} 关</text>
+          <text class="r3-kpi-sub">累计 {{ totalStars }}/{{ totalStarCap }} 星 · 当前存档</text>
+        </view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ store.maxStage || 1 }}</text><text class="r3-kpi-label">最高关卡</text></view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ store.power }}</text><text class="r3-kpi-label">战力</text></view>
+      </view>
+      <view v-if="r4AiMe" class="r3-ai r4-ai r4-enter" aria-label="AI 养成诊断">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 养成诊断</text>
+          <text class="r3-ai-engine">规则引擎 · 基于服务端评分</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiMe.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiMe.basis }}</text>
+        <view class="r3-ai-cta" @click="r4GoMe()">去补强 →</view>
+      </view>
+      <view v-if="r4AiMe" class="r3-data-grid r4-grid">
+        <view class="list-row"><view class="r3-row-main"><text class="r3-row-label">当前关卡</text><text class="r3-row-meta">服务端权威进度</text></view><text class="r3-row-value">第 {{ r4AiMe.level }} 关</text></view>
+        <view class="list-row"><view class="r3-row-main"><text class="r3-row-label">构筑评分</text><text class="r3-row-meta">五维加权总分</text></view><text class="r3-row-value">{{ r4AiMe.rating }}</text></view>
+        <view class="list-row"><view class="r3-row-main"><text class="r3-row-label">优先补强</text><text class="r3-row-meta">规则引擎选取最短板</text></view><text class="r3-row-value">{{ r4AiMe.weak }}</text></view>
+      </view>
+      <view v-else class="r3-empty r4-empty" aria-live="polite" role="status">
+        <text class="r3-empty-slot">AI</text>
+        <text class="r3-empty-title">AI 等待数据</text>
+        <text class="r3-empty-reason">服务端评分尚未到达，先去专精页投入几点再回来看诊断。</text>
+        <view class="r3-empty-action" @click="r4GoMe()">去专精页 →</view>
+      </view>
       <view class="card">
         <view class="row" style="gap: 20rpx">
           <view class="avatar">炮</view>
@@ -841,6 +876,46 @@ const starRing = computed(() => {
   const C = 2 * Math.PI * 40
   return { dash: pct * C, rest: C - pct * C, pct: Math.round(pct * 100) }
 })
+
+/** R4：按服务端五维评分找最短板，只输出一条建议；评分未到则保持空态。 */
+const R4_DIM_CAP: Record<string, number> = {
+  element_coverage: 5,
+  reaction_coverage: 7,
+  mastery_done: 8,
+  equipment_synergy: 18,
+  mechanic_depth: 8,
+}
+const R4_DIM_LABEL: Record<string, string> = {
+  element_coverage: '元素覆盖',
+  reaction_coverage: '反应链',
+  mastery_done: '专精投入',
+  equipment_synergy: '装备契合',
+  mechanic_depth: '机制深度',
+}
+const r4AiMe = computed(() => {
+  const rating = store.buildRating as Record<string, unknown> | null
+  if (!rating) return null
+  const weak = Object.entries(R4_DIM_CAP)
+    .map(([key, cap]) => ({ key, pct: Number(rating[key] ?? 0) / cap * 100 }))
+    .sort((a, b) => a.pct - b.pct)[0]!
+  const hint = weak.key === 'mastery_done'
+    ? '/pages/mastery/mastery'
+    : weak.key === 'equipment_synergy'
+      ? '/pages/bag/bag'
+      : '/pages/shop/shop'
+  return {
+    level: store.maxStage || 1,
+    rating: Number(rating.total ?? 0),
+    weak: R4_DIM_LABEL[weak.key] ?? weak.key,
+    conclusion: `第 ${store.maxStage || 1} 关 · 评分 ${Number(rating.total ?? 0)}，优先补「${R4_DIM_LABEL[weak.key] ?? weak.key}」（当前 ${Math.round(weak.pct)}%）`,
+    basis: `依据：构筑五维 / 服务端评分 · ${store.nickname || '玩家'} 的当前存档`,
+    hint,
+  }
+})
+
+function r4GoMe() {
+  uni.navigateTo({ url: r4AiMe.value?.hint ?? '/pages/mastery/mastery' })
+}
 
 async function loadStars() {
   try {

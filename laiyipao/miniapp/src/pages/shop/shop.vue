@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- 2026-11-16：之前根节点是全项目未定义的 `.page`，也没有 `.pad` / `.safe-bottom`
        —— 商城成了唯一左右贴边、底部压 Home indicator 的页面。 -->
   <view class="page-root">
@@ -22,6 +22,42 @@
           <text class="res-glyph">🔑</text>
           <text class="mono">{{ wallet.keys ?? 0 }}</text>
         </view>
+      </view>
+
+      <view class="section-kicker section-kicker--ai r3-enter">
+        <text class="section-kicker-cn">商城决策台</text>
+        <text class="section-kicker-en">SHOP INTELLIGENCE</text>
+      </view>
+      <view class="r3-kpi r3-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r3AiShop ? r3AiShop.name : '暂无推荐' }}</text>
+          <text class="r3-kpi-label">AI 推荐 · 当前最高性价比</text>
+          <text class="r3-kpi-sub">{{ r3AiShop ? r3AiShop.reason : '服务端价格表尚未到达' }}</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ items.length }}</text>
+          <text class="r3-kpi-label">在售商品</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ clearCost.length }}</text>
+          <text class="r3-kpi-label">限购币种</text>
+        </view>
+      </view>
+      <view class="r3-filter" aria-label="商品分类筛选">
+        <text class="r3-chip" :class="{ active: r3Group === '' }" @click="r3Group = ''">全部 {{ items.length }}</text>
+        <text v-for="g in groups" :key="'f' + g.key" class="r3-chip" :class="{ active: r3Group === g.key }" @click="r3Group = g.key">
+          {{ g.label }} {{ g.items.length }}
+        </text>
+      </view>
+      <view v-if="r3AiShop" class="r3-ai r3-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 建议 · 买什么最划算</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r3AiShop.conclusion }}</text>
+        <text class="r3-ai-basis">依据：{{ r3AiShop.basis }}</text>
+        <text class="r3-ai-cta" role="button" @click="r3FocusShopItem(r3AiShop.id)">定位到该商品 →</text>
       </view>
 
       <!-- G82 今日产出总览：今天还能补哪些资源 -->
@@ -55,12 +91,14 @@
         </view>
       </view>
 
-      <view v-for="g in groups" :key="g.key" class="card">
+      <view class="r3-data-grid">
+      <view v-for="g in r3Groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}<text class="group-count">{{ g.items.length }} 件</text></text>
         <view
           v-for="it in g.items"
           :key="it.id"
-          class="shop-row"
+          :id="'shop-' + it.id"
+          class="shop-row list-row"
           :class="{ 'bought-flash': justBoughtId === it.id, 'buy-failed': justFailedId === it.id }"
         >
           <view class="icon-badge">
@@ -97,6 +135,7 @@
           </view>
         </view>
       </view>
+      </view>
 
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
@@ -108,9 +147,12 @@
       </view>
       <view v-else-if="loadError" class="card"><text class="muted">加载失败：{{ loadError }}</text></view>
       <view v-else-if="items.length === 0" class="card empty-block">
-        <text class="empty-glyph">🛒</text>
-        <text class="muted">商城暂无可售商品。</text>
-        <text class="dim">运营上新后这里会自动出现，稍后再来看看。</text>
+        <view class="r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot empty-glyph">AI</view>
+          <text class="r3-empty-title">商城还没有可售商品</text>
+          <text class="r3-empty-reason">服务端商品表为空或尚未下发，暂时没有价格可比较。运营上新后会自动出现，稍后再来看看。</text>
+          <text class="r3-empty-action" role="button" @click="load()">重新加载商城</text>
+        </view>
       </view>
     </view>
   </view>
@@ -131,7 +173,7 @@
  * 「服务端有扣减逻辑」不等于「玩家能用」—— 前者是代码完成度，
  * 后者才是机制闭环。这个页面补的是后者。
  */
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'
 import * as api from '@/api/client'
 import { useGameStore } from '@/store/game'
 import Icon from '@/components/Icon.vue'
@@ -140,7 +182,7 @@ const store = useGameStore()
 const items = ref<ShopItem[]>([])
 const loading = ref(true)
 /**
- * 加载失败的原因；空串表示「确实加载成功了」。
+ * 请求错误原因；空串表示「确实加载成功了」。
  *
  * 为什么要单独一个字段而不是靠 `items.length === 0` 区分：
  * 「拉不到」与「商城真的空」在界面上都长成空白，而后者会让玩家
@@ -412,6 +454,33 @@ onMounted(async () => {
   if (!store.loggedIn) await store.login()
   await load()
 })
+
+/** R3 FilterBar：只过滤展示分组，不改动服务端下发的 groups 数据与购买逻辑。 */
+const r3Group = ref('')
+const r3Groups = computed(() => r3Group.value ? groups.value.filter((g) => g.key === r3Group.value) : groups.value)
+
+/** R3 AI 线索：直接取性价比表的第 1 名，结论与依据都来自现有 valueTable / wallet。 */
+const r3AiShop = computed(() => {
+  const vg = valueTable.value[0]
+  const top = vg?.rows?.[0]
+  if (!vg || !top) return null
+  const it = items.value.find((x) => x.name === top.name)
+  const pay = it ? priceText(it) : '价格见商品行'
+  return {
+    id: it?.id ?? 0,
+    name: top.name,
+    reason: vg.currency + ' 每单位 ' + top.per + '，排第 1',
+    conclusion: top.name + ' 的' + vg.currency + '每单位产出 ' + top.per + ' 排第 1：' + pay + '，是当前性价比首选',
+    basis: '同货币 ' + vg.rows.length + ' 件商品对照 + 当前余额（钻石 ' + (wallet.value.gem ?? 0) + ' / 金币 ' + (wallet.value.coin ?? 0) + '）',
+  }
+})
+function r3FocusShopItem(id: number) {
+  if (!id) return
+  r3Group.value = ''
+  void nextTick(() => {
+    uni.pageScrollTo({ selector: '#shop-' + id, duration: 250 })
+  })
+}
 </script>
 
 <style scoped>

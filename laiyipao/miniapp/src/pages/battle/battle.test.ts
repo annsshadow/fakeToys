@@ -17,6 +17,8 @@
  *  - 结算的幂等（settled 单飞）与失败兜底
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { flushPromises } from '@vue/test-utils'
 import * as api from '@/api/client'
 import { installUniMock } from '../../test/uni-mock'
@@ -67,8 +69,17 @@ class FakeEngine {
   kills = 1
   leaked = 2
   reactionsCount = 3
+  /** R9 选卡反馈：权威 card_picks（由引擎公开数组透传） */
+  cardPicks: number[] = []
   score = 100
-  cfg = { level: { wave_count: 3 } }
+  elapsedMs = 0
+  cfg: {
+    level: {
+      wave_count: number
+      star_targets?: number[]
+      waves?: Array<{ wave_index: number; spawns: Array<{ enemy_id: number; count: number; interval: number; delay: number }> }>
+    }
+  } = { level: { wave_count: 3 } }
   deck = {
     hand: [
       { id: 'c1', name: '燃烧弹', kind: 'skill', rarity: 'rare', descr: 'd1', element: 'fire' },
@@ -220,6 +231,7 @@ async function loadPage() {
 
 beforeEach(() => {
   um = installUniMock()
+  ;(um.mock as any).redirectTo = vi.fn()
   __resetSfxForTest() // 音效解锁态是模块级单例
   FakeEngine.instances.length = 0
   FakeRenderer.instances.length = 0
@@ -455,6 +467,196 @@ describe('battle.vue 战斗页', () => {
     expect(mockApi.abandonBattle).toHaveBeenCalledWith(77)
     expect(refreshWalletSpy).toHaveBeenCalled()
     await new Promise((resolve) => setTimeout(resolve, 850))
+  })
+
+  it('0 星且分数未达 1 星门槛时，下一步应指向 1 星而不是空喊冲 3 星', async () => {
+    // 2026-11-22 R5 真浏览器实测：第 1 关结算 stars=0 / score=11646，
+    // 1★ 门槛 11941，页面却说「再稳一点，冲 3 星拿满钥匙」。
+    // 玩家连 1 星都没拿到就被催 3 星，是拿不到可执行信息的误导文案。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 11646,
+      loot: {},
+      new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'zero-star' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('1 星')
+    expect(text).toContain('11941')
+    expect(text).toContain('295')
+    expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
+  })
+
+  it('R8 战斗 HUD 实时显示免钳分倒计时并在临近锚点时提示（来自关卡波次与战斗时钟）', async () => {
+    // 2026-11-22 真浏览器：第 1 关 75s 结算时分数被钳到 19708，
+    // 但战斗全程没有任何提示；玩家只能事后在结算卡看到上限。
+    // 服务端是「快于锚点按比例裁分」，所以这是免钳分倒计时，不是保分窗口。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const liveEngine = (wrapper.vm as any).engine as any
+    expect(liveEngine, '页面必须把 engine 暴露给模板').toBeTruthy()
+    liveEngine.cfg.level.waves = Array.from({ length: 5 }, (_, i) => ({
+      wave_index: i,
+      spawns: [{ enemy_id: 1, count: 6, interval: 200, delay: 0 }],
+    }))
+    liveEngine.elapsedMs = 10_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('钳分中 · 距满分 35s')
+    expect(wrapper.text(), '锚点前仍在钳分区，不能说成保分窗口').not.toContain('保分窗口')
+    expect(wrapper.find('.time-budget').classes(), '安全期不得预警').not.toContain('warn')
+
+    liveEngine.elapsedMs = 40_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('即将免钳分')
+    expect(wrapper.find('.time-budget').classes()).toContain('warn')
+
+    liveEngine.elapsedMs = 46_000
+    await flushPromises()
+    expect(wrapper.text()).toContain('已免钳分')
+    expect(wrapper.find('.time-budget').classes()).toContain('clamped')
+  })
+
+  it('R7 战斗 HUD 实时显示距下一星差额（门槛来自关卡配置，随分数更新）', async () => {
+    // 2026-11-22 R7 实测：关卡目标只在选关页与结算卡出现，战斗中不知道还差多少分。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    // VTU 会把 setup 的 ref 解包，wrapper.vm.engine 就是响应式的引擎代理；
+    // 直接改它才能验证「随得分变化更新」，改 FakeEngine 的原始对象不会触发渲染。
+    const liveEngine = (wrapper.vm as any).engine as any
+    expect(liveEngine, '页面必须把 engine 暴露给模板').toBeTruthy()
+    liveEngine.cfg.level.star_targets = [11941, 16916, 19503]
+    liveEngine.score = 10000
+    await flushPromises()
+    expect(wrapper.text()).toContain('距 1 星 1941')
+    liveEngine.score = 12000
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('距 2 星 4916')
+    expect(text, '跨过 1 星门槛后不应继续显示 1 星差额').not.toContain('距 1 星')
+  })
+
+  it('R7 结算归因把超时长钳分上限、实得分、星级门槛和漏怪数串成可执行建议', async () => {
+    // 2026-11-22 R7 实测：第 1 关 74s 结算 10909 分，1★ 门槛 11941，
+    // 页面只分散显示原始 clamp_note 与分数，玩家不知道「为什么没星、该改什么」。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 10909,
+      loot: {},
+      new_max_stage: 0,
+      clamped: true,
+      clamp_note: '得分超时长额度：19726 → 10909（74s 内上限，满分需 60s）',
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'r7-attribution' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('74s 内得分上限 19726')
+    expect(text).toContain('实得 10909')
+    expect(text).toContain('1 星门槛 11941')
+    expect(text).toContain('还差 1032')
+    expect(text).toContain('漏怪 0')
+    expect(text).toContain('缩短清波时间')
+  })
+
+  it('R7 结算归因没有钳分数据时不得编造超时长上限', async () => {
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 0,
+      score: 11646,
+      loot: {},
+      new_max_stage: 0,
+      clamped: false,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cfg.level.star_targets = [11941, 16916, 19503]
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 39, leaked: 0, reactions: 91, replay_hash: 'r7-no-cap' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('实得 11646')
+    expect(text).toContain('1 星门槛 11941')
+    expect(text, '服务端没给 clamp_note 时不能编造得分上限').not.toContain('得分上限')
+  })
+
+  it('反应偏少时的下一步建议必须诚实说明攻击力权重上限，不得说关系不大', async () => {
+    // 2026-11-21 R4 真浏览器实测：结算建议写「反应伤害不吃攻击力加成」；
+    // t63 §1F 进一步钉住：damage.ts 反应攻击侧最高 300‰，「关系不大」同样是说谎，
+    // 会让玩家误洗攻击词条。必须说清元素侧为主、攻击力也有贡献且上限 30%。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true,
+      stars: 1,
+      score: 100,
+      loot: {},
+      new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    eng.settleInput = () => ({ kills: 1, leaked: 0, reactions: 1, replay_hash: 'lowrx' })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('多凑一种元素触发反应链')
+    expect(wrapper.text(), '不能把有 30% 贡献说成完全不吃').not.toContain('不吃攻击力加成')
+    expect(wrapper.text(), 't63 §1F：30% 不是「关系不大」').not.toContain('关系不大')
+    expect(wrapper.text()).toContain('面板攻击力也有贡献')
+    expect(wrapper.text()).toContain('30%')
+  })
+
+  it('结算被服务端拒绝 → 结果卡不冒充通关，也不展示虚构的星级/奖励/战报入口', async () => {
+    // 真实实测（2026-11-21，第 1 关通关）：服务端重算 replay_skills 拒绝后，
+    // 页面仍显示「通关」+ 0 星 + C 评级 + 原始报错串，玩家完全不知道战绩没入账。
+    mockApi.settleBattle.mockRejectedValue(
+      new Error('replay_skills 与构筑不符\n上报 0:1:100:1:20\n重算 0:1:282:1:20'),
+    )
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('战绩未入账')
+    expect(text, '结算被拒时绝不能冒充通关').not.toContain('通关')
+    expect(text).toContain('本地战绩')
+    expect(text).toContain('构筑')
+    expect(wrapper.find('.grade-badge').exists(), '失败时不该展示 C 评级').toBe(false)
+    expect(wrapper.find('.stars-big').exists(), '失败时不该展示 0 星').toBe(false)
+    expect(wrapper.find('.reward-row').exists(), '失败时不该展示奖励').toBe(false)
+    expect(text, '没有 battle_id 时不该有战报入口').not.toContain('查看本局战报')
+    expect(text, '原始错误串仍要保留，便于排障').toContain('0:1:282:1:20')
+    expect(
+      wrapper.findAll('.btn').some((b: any) => b.text().includes('放弃并退回体力')),
+      '仍必须能退体力',
+    ).toBe(true)
   })
 
   it('R151 令牌行丢失：结算 404 → 重取一次凭证并重报，奖励只发一次', async () => {
@@ -783,6 +985,10 @@ describe('battle.vue 战场图例（2026-11-17）', () => {
     expect(legendText).toContain('蒸汽爆发')
     expect(legendText).toContain('破甲击退')
     expect(legendText).toContain('腐蚀扩散')
+    // t63 §1F：图例也不能把攻击侧最高 300‰ 说成「关系不大」，会误导洗词条。
+    expect(legendText, 't63 §1F：30% 不是「关系不大」').not.toContain('关系不大')
+    expect(legendText).toContain('面板攻击力也有贡献')
+    expect(legendText).toContain('30%')
     // 点遮罩空白处关闭
     await wrapper.find('.legend-overlay').trigger('click')
     expect(wrapper.find('.legend-overlay').exists()).toBe(false)
@@ -799,6 +1005,42 @@ describe('battle.vue 战场图例（2026-11-17）', () => {
     expect(wrapper.find('.legend-overlay').exists()).toBe(true)
     await wrapper.find('.help-chip').trigger('click')
     expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+  })
+
+  it('R3 打开图例会暂停战斗，关闭后自动继续；手动暂停不被图例误恢复', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    const renderer = FakeRenderer.instances[0]!
+    eng.winAtStep = Infinity
+    renderer.loop!(TICK)
+    const before = eng.stepCount
+    expect(before).toBeGreaterThan(0)
+    expect(renderer.paused).toBe(false)
+
+    // 玩家在战斗中途打开图例读说明：整块遮罩挡住画布，战斗时间不该继续流逝。
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(true)
+    renderer.loop!(TICK)
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before)
+
+    // 关掉图例就该回到战斗，不该再让玩家多点一次「继续战斗」。
+    await wrapper.find('.legend-close').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before + 1)
+
+    // 手动暂停时打开图例：关闭后仍保持暂停，不能替玩家擅自恢复。
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    await wrapper.find('.legend-close').trigger('click')
+    expect(renderer.paused).toBe(true)
   })
 })
 
@@ -976,3 +1218,167 @@ describe('battle.vue 倍速档位', () => {
 })
 
 
+describe('battle.vue R9 战斗反馈与连连贯性（2026-11-22）', () => {
+  it('R9 反应事件在 HUD 留下可读的最近反应记录，而不只是瞬时粒子', async () => {
+    // 真浏览器第 1 关 8× 连拍：反应只在 canvas 上闪一下，HUD 没有任何
+    // 「刚触发了什么」的可读记录。高层速下玩家根本看不清，事后只能看结算计数。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Number.POSITIVE_INFINITY
+    eng.winAtStep = Number.POSITIVE_INFINITY
+    eng.events = [
+      { type: 'reaction', reaction: 'steam_burst', damage: 1234n, resisted: false, x: 0n, y: 0n },
+      { type: 'reaction', reaction: 'overheat', damage: 567n, resisted: false, x: 0n, y: 0n },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await wrapper.vm.$nextTick()
+
+    const feed = wrapper.find('.reaction-feed')
+    expect(feed.exists(), '战斗 HUD 应有最近反应记录').toBe(true)
+    expect(feed.text()).toContain('蒸汽爆发')
+    expect(feed.text()).toContain('1234')
+    expect(feed.text()).toContain('过热')
+  })
+
+  it('R9 通关后提供下一关入口，直接带着解锁关卡进入选关页', async () => {
+    // 真浏览器第 1 关结算后只有「再来一局 / 返回关卡」：返回后选关页仍停在第 1 关，
+    // 玩家要自己找到第 2 关。前 3 关连贯性被这个多余步骤打断。
+    mockApi.settleBattle.mockResolvedValue({
+      win: true, stars: 0, score: 11646, loot: {}, new_max_stage: 2,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '1' })
+    await flushPromises()
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const next = wrapper.find('.next-level-btn')
+    expect(next.exists(), '通关且解锁新关时应给出下一关入口').toBe(true)
+    expect(next.text()).toContain('第 2 关')
+    await next.trigger('click')
+    expect((um.mock as any).redirectTo).toHaveBeenCalledWith({ url: '/pages/stage/stage?level=2' })
+  })
+
+  it('R9 结算失败不显示下一关入口，避免谎报解锁', async () => {
+    mockApi.settleBattle.mockRejectedValue(new Error('上报失败'))
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '1' })
+    await flushPromises()
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('上报失败')
+    expect(wrapper.find('.next-level-btn').exists()).toBe(false)
+  })
+
+  it('R9 反应记录显示真实元素组合与 AI 因果提示', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '1' })
+    await flushPromises()
+    const eng = FakeEngine.instances[0]!
+    eng.events = [
+      { type: 'reaction', reaction: 'overheat', x: 0n, y: 0n, damage: 1234n, resisted: false, existingElement: 'fire', incomingElement: 'lightning' },
+      { type: 'reaction', reaction: 'steam_burst', x: 0n, y: 0n, damage: 88n, resisted: true },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const feed = wrapper.find('.reaction-feed')
+    expect(feed.exists()).toBe(true)
+    expect(feed.text()).toContain('焰+电 → 过热')
+    expect(feed.text()).toContain('1234')
+    expect(feed.text()).toContain('AI')
+    expect(feed.text()).toContain('密集波 25% 溅射')
+    expect(feed.text()).toContain('依据 reaction=overheat/damage=1234')
+    expect(feed.text()).toContain('点卡凑同元素')
+    expect(feed.text()).toContain('元素组合未上报')
+    expect(feed.text()).toContain('抗性削减')
+  })
+
+  it('R9 选卡面板给出基于 card_picks 的 AI 取舍反馈', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '1' })
+    await flushPromises()
+    const eng = FakeEngine.instances[0]!
+    eng.cardPicks = [0, -1]
+    eng.reactionsCount = 7
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const fb = wrapper.find('.card-choice-feedback')
+    expect(fb.exists()).toBe(true)
+    expect(fb.text()).toContain('AI')
+    expect(fb.text()).toContain('已取卡 1 张')
+    expect(fb.text()).toContain('跳过 1 波')
+    expect(fb.text()).toContain('反应 7 次')
+    expect(fb.text()).toContain('依据 card_picks')
+    expect(fb.text()).toContain('点卡装备')
+  })
+
+  it('R9 结算反馈用 card_picks 与真实反应伤害占比归因', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '1' })
+    await flushPromises()
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Infinity
+    eng.winAtStep = 1
+    eng.events = [
+      { type: 'hit', x: 0n, y: 0n, damage: 1000n, crit: false },
+      { type: 'reaction', reaction: 'overheat', x: 0n, y: 0n, damage: 250n, resisted: false },
+    ]
+    eng.settleInput = vi.fn(() => ({
+      kills: 39, leaked: 0, reactions: 12, replay_hash: 'replayhash',
+      card_picks: [0, -1, -7, 2],
+    }))
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const fb = wrapper.find('.settle-card-feedback')
+    expect(fb.exists()).toBe(true)
+    expect(fb.text()).toContain('AI')
+    expect(fb.text()).toContain('取卡 3 张')
+    expect(fb.text()).toContain('弃 1 张')
+    expect(fb.text()).toContain('跳过 1 波')
+    expect(fb.text()).toContain('反应 12 次')
+    expect(fb.text()).toContain('反应伤害占比 25%')
+    expect(fb.text()).toContain('依据 card_picks')
+    expect(fb.text()).toContain('下一局')
+  })
+
+  it('R9-BUG-1 移动视口 HUD 胶囊不竖排：nowrap/flex-shrink:0 且窄屏换行', async () => {
+    // t93 终审 390×844 真浏览器：波次/击杀/星级/钳分四个胶囊被挤成逐字竖排。
+    // 胶囊自身必须不收缩、文字不换行；窄屏靠父行换行，而不是把字挤竖。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const liveEngine = (wrapper.vm as any).engine as any
+    liveEngine.cfg.level.star_targets = [11941]
+    liveEngine.cfg.level.waves = Array.from({ length: 5 }, (_, i) => ({
+      wave_index: i,
+      spawns: [{ enemy_id: 1, count: 6, interval: 200, delay: 0 }],
+    }))
+    await flushPromises()
+
+    expect(wrapper.findAll('.hud-pill').length, '四项 HUD 都应常驻').toBeGreaterThanOrEqual(4)
+    for (const frag of ['波次', '击杀', '距 1 星', '钳分中']) {
+      expect(wrapper.text()).toContain(frag)
+    }
+
+    const css = readFileSync(resolve(__dirname, 'battle.vue'), 'utf8')
+    expect(css, 'HUD 行窄屏必须换行').toMatch(/\.hud-row\s*\{[^}]*flex-wrap:\s*wrap/)
+    expect(css, '胶囊不得被 flex 压成竖条').toMatch(/\.hud-pill\s*\{[^}]*flex-shrink:\s*0/)
+    expect(css, '胶囊文字不得逐字换行').toMatch(/\.hud-pill\s*\{[^}]*white-space:\s*nowrap/)
+    expect(css, '钳分文案同样不得竖排').toMatch(/\.time-budget-text\s*\{[^}]*white-space:\s*nowrap/)
+    expect(css, '移动视口应有专门收缩布局').toMatch(/@media\s*\(max-width:\s*430px\)/)
+    expect(css, '窄屏下 spacer 不应把胶囊挤出可视宽度').toMatch(/@media\s*\(max-width:\s*430px\)[\s\S]*\.hud-spacer\s*\{\s*display:\s*none/)
+  })
+})

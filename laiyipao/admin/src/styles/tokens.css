@@ -1,0 +1,103 @@
+/**
+ * laiyipao 设计令牌 · PC/admin —— 唯一真源。
+ * 规范：docs/laiyipao/design/AI_VISUAL_SYSTEM.md §8.1 / §8.3。
+ * 版本 lyp-tokens-v1：与 miniapp/src/styles/tokens.css 成对维护；
+ * R3 规范包 lyp-tokens-v3-r3（--lyp-r3-version）：次级页面六组件模式见主规范 §1B；
+ * R6 规范包 lyp-tokens-r6（--lyp-r6-version）：真实数据驱动推荐见主规范 §1E，仅标记不新增视觉变量；
+ * 旧版 --lyp-token-version 保留 v1 作为兼容锚点，待守卫同步迁移后再提升。
+ * 五元素主色 / on-soft ink / 玻璃文本 / 动效令牌必须双端同值。
+ * 本文件在 main.ts 中随 main.css 于 element-plus 深色变量之后引入。
+ */
+:root {
+  --lyp-token-version: lyp-tokens-v1;
+  --lyp-r3-version: lyp-tokens-v3-r3;
+  --lyp-r6-version: lyp-tokens-r6;
+
+  /* 表面：页面底最深 → 卡片 → 浮起元素 */
+  --lyp-bg: #0b0f14;
+  --lyp-panel: #141a21;
+  --lyp-panel-2: #1a222c;
+  --lyp-panel-3: #212b37;
+  --lyp-border: #2b3540;
+  --lyp-border-soft: #222b35;
+  --lyp-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+
+  /* 文本四阶：弱化/更弱文字承载 kpi-sub / hint / nav-group-title，均 ≥4.5:1 */
+  --lyp-text: #e6edf3;
+  --lyp-text-2: #c2ccd6;
+  --lyp-muted: #9aa5b2;
+  --lyp-dim: #96a0ad;
+
+  /* 品牌与语义色 */
+  --lyp-accent: #ff6b35;
+  --lyp-accent-2: #ff3d71;
+  --lyp-accent-grad: linear-gradient(135deg, #ff6b35, #ff3d71);
+  --lyp-success: #7ee787;
+  --lyp-warning: #ffd33d;
+  --lyp-danger: #ff7b72;
+  --lyp-info: #58a6ff;
+
+  /* 五元素主色：双端同值，不得单边改色 */
+  --el-fire: #ff6b35;
+  --el-ice: #58a6ff;
+  --el-lightning: #ffd33d;
+  --el-corrosion: #7ee787;
+  --el-kinetic: #c9a7ff;
+
+  /* 18% soft 只叠 panel / panel-2，禁止叠 panel-3 承载元素色文字 */
+  --el-fire-soft: rgba(255, 107, 53, 0.18);
+  --el-ice-soft: rgba(88, 166, 255, 0.18);
+  --el-lightning-soft: rgba(255, 211, 61, 0.18);
+  --el-corrosion-soft: rgba(126, 231, 135, 0.18);
+  --el-kinetic-soft: rgba(201, 167, 255, 0.18);
+
+  /* R3 FilterBar 活动态专用 soft：语义色，不借用元素 fire-soft；文字用 --el-fire-ink */
+  --lyp-accent-soft: rgba(255, 107, 53, 0.18);
+
+  /* 元素 ink：文字叠自身 18% soft + panel-3 时替代主色，仍 ≥4.5:1 */
+  --el-fire-ink: #ff8659;
+  --el-ice-ink: #6fb2ff;
+  --el-lightning-ink: #ffd33d;
+  --el-corrosion-ink: #7ee787;
+  --el-kinetic-ink: #c9a7ff;
+
+  /* 玻璃浮层：底固定 panel 基色，绝不使用 panel-3 */
+  --lyp-glass-bg: rgba(20, 26, 33, 0.82);
+  --lyp-glass-border: rgba(255, 255, 255, 0.08);
+  --lyp-glass-blur: blur(16px) saturate(1.2);
+  --lyp-glass-text-muted: #9faab6;
+  --lyp-glass-text-dim: #a1aab5;
+
+  /* 几何 / 间距 / 字阶（px） */
+  --lyp-radius: 10px;
+  --lyp-radius-sm: 8px;
+  --lyp-gap-1: 6px;
+  --lyp-gap-2: 10px;
+  --lyp-gap-3: 14px;
+  --lyp-gap-4: 20px;
+  --lyp-fs-xs: 11px;
+  --lyp-fs-sm: 12px;
+  --lyp-fs-base: 13px;
+  --lyp-fs-md: 15px;
+  --lyp-fs-lg: 20px;
+  --lyp-fs-xl: 26px;
+
+  /* AI 感元素（规范 §1A）：动能紫是唯一 AI 标识色；ink 用于 soft 底上的文字 */
+  --lyp-ai-accent: #c9a7ff;
+  --lyp-ai-ink: #d7bfff;
+  --lyp-ai-halo: rgba(201, 167, 255, 0.14);
+  --lyp-ai-glow: 0 0 24px rgba(201, 167, 255, 0.28);
+
+  /* R3 ProgressTree 轨道：只作底纹，状态必须由相邻数字文本承载 */
+  --lyp-progress-track: #39465a;
+
+  /* 动效与层级：双端同值 */
+  --lyp-motion-fast: 120ms;
+  --lyp-motion-base: 240ms;
+  --lyp-motion-slow: 320ms;
+  --lyp-motion-ease: cubic-bezier(0.2, 0.85, 0.3, 1.15);
+  --lyp-z-raised: 10;
+  --lyp-z-popover: 100;
+  --lyp-z-command: 1000;
+  --lyp-z-toast: 2000;
+}

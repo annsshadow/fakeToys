@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="page-root home">
     <!-- 顶部资源栏（v2）：资源从纯文本改为图标胶囊 -->
     <view class="topbar" :style="{ paddingTop: statusBarPad }">
@@ -46,6 +46,53 @@
     </view>
 
     <view v-else class="pad">
+      <!--
+        R7 真实新玩家实测：首屏第一眼只有 AI 洞察/公告/评分，主行动「开始」要滚动很远才看到。
+        这里给 0 通关玩家一条明确目标与下一步，且按钮直达同一套 goStage 导航，不做假入口。
+      -->
+      <view v-if="store.maxStage === 0" class="card first-run-guide tap" @click="goStage">
+        <text class="first-run-kicker">新玩家先打第 {{ store.unlockedLevel }} 关</text>
+        <text class="first-run-title">守住防线，清完全部波次</text>
+        <text class="first-run-sub">打完就能解锁技能、装备与元素反应搭配，先在这里试一手。</text>
+        <text class="first-run-cta">去第 {{ store.unlockedLevel }} 关 →</text>
+      </view>
+
+      <!-- P8 / F-10-2：首屏第一张内容卡 —— AI 战术洞察（规则引擎，非聊天） -->
+      <view v-if="aiInsight" id="ai-insight" class="card ai-insight-card" aria-label="AI 战术洞察">
+        <view class="ai-head">
+          <text class="ai-badge">AI</text>
+          <view class="ai-head-copy">
+            <text class="ai-title">AI 战术洞察</text>
+            <text class="ai-sub">规则引擎 · 基于当前构筑</text>
+          </view>
+          <view class="ai-element-rail" aria-label="五元素构筑主题">
+            <view v-for="e in elements" :key="e.key" class="ai-element" :title="e.name">
+              <view class="ai-element-dot" :style="{ background: e.color }" />
+              <text class="ai-element-name">{{ e.name }}</text>
+            </view>
+          </view>
+        </view>
+        <text class="ai-conclusion">{{ aiInsight.weak.label }}仅 {{ aiInsight.weak.pct }}%（权重 {{ aiInsight.weak.weightPct }}%）：优先补它，收益 {{ aiInsight.gain }}</text>
+        <text class="ai-evidence">依据：五维评分 / 补分边际收益 · 更新于本次进入</text>
+        <view class="ai-cta-row">
+          <view class="btn ai-cta" @click="go(aiInsight.hint)">去补强 →</view>
+        </view>
+      </view>
+      <view v-else id="ai-insight" class="card ai-insight-card ai-empty" aria-label="AI 战术洞察">
+        <view class="ai-head">
+          <text class="ai-badge">AI</text>
+          <view class="ai-head-copy">
+            <text class="ai-title">AI 战术洞察</text>
+            <text class="ai-sub">规则引擎 · 基于当前构筑</text>
+          </view>
+        </view>
+        <text class="ai-conclusion">AI 暂时没有足够构筑数据，先打一场战斗吧</text>
+        <text class="ai-evidence">依据：五维评分 / 补分边际收益 · 更新于本次进入</text>
+        <view class="ai-cta-row">
+          <view class="btn ai-cta" @click="goStage">去战斗 →</view>
+        </view>
+      </view>
+
       <!--
         公告（2026-10-23）。
         此前 `announcements` 表与后台的增删查全都在，唯独玩家端零入口 ——
@@ -260,8 +307,8 @@
           </view>
         </view>
         <text class="muted" style="display: block; margin-top: 12rpx">
-          敌人对不同元素的抗性不同。两种元素叠加会触发反应链，反应伤害与面板攻击力无关 ——
-          这是低养成玩家翻盘的主要来源。
+          敌人对不同元素的抗性不同。两种元素叠加会触发反应链；反应伤害中元素侧是主力，面板攻击力也有贡献但占比受限（权重上限 30%，具体以 damage.ts 实测为准）——
+          低养成玩家靠元素搭配仍有翻盘空间。
         </text>
       </view>
     </view>
@@ -529,6 +576,18 @@ const marginalGain = computed(() => {
     return { label: d.label, gap, gain, hint: d.hint, hintLabel: d.hintLabel }
   })
   return rows.sort((a, b) => b.gain - a.gain)
+})
+
+/**
+ * P8 / F-10-2：首页首屏 AI 战术洞察。
+ * 只把已有 dims（来自 store.buildRating）+ marginalGain 的排序结果翻译成一条结论，
+ * 不新增接口、不写死数值、不伪装成生成式模型。
+ */
+const aiInsight = computed(() => {
+  const top = marginalGain.value.find((r) => r.gain > 0 && r.hint)
+  const weak = top ? dims.value.find((d) => d.label === top.label) : undefined
+  if (!top || !weak) return null
+  return { weak, gain: top.gain, hint: top.hint! }
 })
 
 /** G101 攻方全属性面板：把「我的战力」拆成可读的属性构成（数据来自 store.attacker）。 */
@@ -864,6 +923,43 @@ onShareAppMessage(() => indexShare())
   color: var(--dim);
 }
 
+/* R7 新玩家首屏引导：把「目标 + 下一步」放在第一眼，不假装成已通关玩家。 */
+.first-run-guide {
+  border-left: 6rpx solid var(--fire);
+  padding: 24rpx 26rpx;
+  margin-bottom: 24rpx;
+}
+
+.first-run-kicker {
+  font-size: 22rpx;
+  color: var(--fire);
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  display: block;
+}
+
+.first-run-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  display: block;
+  margin-top: 8rpx;
+}
+
+.first-run-sub {
+  font-size: 22rpx;
+  color: var(--muted);
+  display: block;
+  margin-top: 8rpx;
+  line-height: 1.6;
+}
+
+.first-run-cta {
+  font-size: 24rpx;
+  color: var(--fire);
+  display: block;
+  margin-top: 14rpx;
+}
+
 .weakness-box {
   margin-top: 20rpx;
   padding: 18rpx;
@@ -1119,5 +1215,150 @@ onShareAppMessage(() => indexShare())
 
 .ann-body.clamped {
   -webkit-line-clamp: 2;
+}
+
+/* t13 / P8：AI 战术洞察卡 —— 面板实色 + AI 令牌，光斑只做装饰 */
+#ai-insight.ai-insight-card {
+  position: relative;
+  min-height: 180rpx;
+  margin-bottom: 20rpx;
+  padding: 20rpx 22rpx 18rpx 26rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: var(--radius);
+  box-shadow: var(--ai-glow), var(--shadow-1);
+  overflow: hidden;
+  animation: ai-insight-in var(--motion-base) var(--motion-ease) both;
+}
+
+#ai-insight.ai-insight-card::before {
+  content: "";
+  position: absolute;
+  top: -90rpx;
+  right: -50rpx;
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ai-halo), transparent 70%);
+  pointer-events: none;
+}
+
+.ai-head {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.ai-badge {
+  flex: 0 0 auto;
+  min-width: 60rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 10rpx;
+  background: var(--kinetic-soft);
+  color: var(--ai-ink);
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+.ai-head-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ai-sub {
+  font-size: 20rpx;
+  color: var(--muted);
+  margin-top: 2rpx;
+}
+
+.ai-element-rail {
+  display: flex;
+  flex-direction: row;
+  gap: 8rpx;
+}
+
+.ai-element {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.ai-element-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+
+.ai-element-name {
+  font-size: 18rpx;
+  color: var(--text-2);
+}
+
+.ai-conclusion {
+  position: relative;
+  display: block;
+  margin-top: 16rpx;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ai-evidence {
+  position: relative;
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: var(--text-2);
+}
+
+.ai-cta-row {
+  position: relative;
+  display: flex;
+  margin-top: 14rpx;
+}
+
+.ai-cta {
+  flex: 1;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--ai-ink);
+  background: var(--kinetic-soft);
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+}
+
+.ai-empty .ai-conclusion {
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+@keyframes ai-insight-in {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ai-insight.ai-insight-card { animation: none; }
 }
 </style>

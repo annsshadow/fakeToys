@@ -1,0 +1,1 @@
+(function(){return 'TOKLEN='+(localStorage.getItem('lyp_token')||'').length})()

@@ -97,7 +97,7 @@ const stats = computed(() => [
   { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
   { label: '今日热门', value: items.value.filter((i) => i.isHot).length, color: 'var(--color-warning)' },
   { label: '精华', value: items.value.filter((i) => i.isCream).length, color: 'var(--color-success)' },
-  { label: '加载中', value: loading.value ? 1 : 0, color: 'var(--color-error)' },
+  ...(loading.value ? [{ label: '加载中', value: 1, color: 'var(--color-error)' }] : []),
 ])
 
 const hotpicMetaText = ref('')

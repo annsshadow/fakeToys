@@ -415,30 +415,22 @@ pub async fn get_file(
 pub async fn upload_file(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
-    axum::extract::Json(body): axum::extract::Json<Value>,
+    multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = shared::db::acquire(&pool).await?;
-
-    let name = body
-        .get("name")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let path = body
-        .get("path")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let folder_id = body
-        .get("folderId")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
+    // 真实 multipart 字节：复用同 crate 的取字段/落盘校验链，path 列存 BlobStorage key。
+    let (name, _mime, bytes) = u2_read_multipart_file(multipart).await?;
+    let size = bytes.len() as i64;
     let creator = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
+    let key = u2_blob_key(&id, &name)?;
+    let storage = shared::storage::storage_with_pool(pool.0.clone());
+    u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
+    let path = key;
+    let client = shared::db::acquire(&pool).await?;
+    // 与前端根目录列表口径（loadFiles: folderId || 'root'）一致，确保上传后立即可见。
+    let folder_id = "root".to_string();
 
     client
         .execute(
@@ -452,13 +444,15 @@ pub async fn upload_file(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
-        ("path".to_string(), Value::String(path)),
+        ("path".to_string(), Value::String(path.clone())),
         (
             "size".to_string(),
             Value::Number(serde_json::Number::from(size)),
         ),
         ("creator".to_string(), Value::String(creator)),
         ("folderId".to_string(), Value::String(folder_id)),
+        ("uploaded".to_string(), Value::Bool(true)),
+        ("storageKey".to_string(), Value::String(path)),
     ]));
 
     Ok(Json(ActionResult::success(result)))

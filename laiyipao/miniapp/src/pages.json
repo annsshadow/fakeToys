@@ -121,9 +121,9 @@
   "globalStyle": {
     "navigationBarTextStyle": "white",
     "navigationBarTitleText": "来一炮",
-    "navigationBarBackgroundColor": "#0d1117",
-    "backgroundColor": "#0d1117",
-    "backgroundColorTop": "#0d1117",
-    "backgroundColorBottom": "#0d1117"
+    "navigationBarBackgroundColor": "#070a10",
+    "backgroundColor": "#070a10",
+    "backgroundColorTop": "#070a10",
+    "backgroundColorBottom": "#070a10"
   }
 }

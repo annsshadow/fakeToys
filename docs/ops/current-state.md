@@ -3880,7 +3880,7 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 ## 166. P1+P2 测试服部署与真机 E2E 复验（2026-11-20）
 - 提交推送：86867e1d4（14 文件 923+/742-）。首次 push 遇 schannel 握手偶发失败，默认 backend 重试成功，LOCAL=REMOTE=86867e1d4...。
 - 前端构建部署：pnpm --filter desktop build EXIT=0；新产物 index-DXXwuW-d.js 含「工作台/系统管理/会议室预订」标签（grep 实证）。scp 首次用 MSYS /d/ 路径失败（Windows OpenSSH scp 不认，SCP_EXIT=255），改 D:/ 路径成功。测试服 /usr/local/oa4rust 原子替换 web/，备份 web.bak-r297-predeploy，index.html mtime 15:16:15。
-- 真机 E2E（本地代理 127.0.0.1:8899 → testmall.zhongxinxinchuang.cn，Origin override 绕 CSRF）：R296/R297 导航 4 passed（live+coverage 各 2）；meeting-business.spec.ts 会议业务区块 2 passed（live+coverage 各 1）。此前因测试服旧产物的 2 例超时失败全部转绿。
+- 真机 E2E（本地代理 127.0.0.1:8899 → <YOUR_TEST_DOMAIN>，Origin override 绕 CSRF）：R296/R297 导航 4 passed（live+coverage 各 2）；meeting-business.spec.ts 会议业务区块 2 passed（live+coverage 各 1）。此前因测试服旧产物的 2 例超时失败全部转绿。
 - 结论：P1 导航收敛、P2 会议/工作流/文件业务化在测试服真机浏览器中功能正确，无死链、无端点调试残留。后续「全部重构」（其余 A 类页面 + P4 B 类迁管理区 + D 类删除）待续。
 
 ## 167. 全部重构收尾：A 类剩余页面业务化 + P4 管理区授权 + D 类空壳删除（2026-11-20）
@@ -4288,5 +4288,162 @@ lybug-r51 多轮 nudge 超 20 分钟仍无写入、无结论（closing 仅称工
 - t54（page-core）commit ea1c40f9 精确 8 文件（205+/20-）：B 组 6 设计器（QueryDesigner/PortalDesigner/QueryExplorerApp/QueryViewDesignerApp/PortalDictDesignerApp/PortalPageDesignerApp）双未消费转令牌深度消费，根 modern-page ai-page + 页头 ai-page ai-panel、玻璃/渐变/8px栅格/骨架/微交互令牌。预存真 bug（test-first RED→GREEN）：QueryExplorerApp/QueryViewDesignerApp 的 AdminPageHeader/AdminFormSection/AdminToolbar 只 void 引用未 import，setup 抛 ReferenceError 被全局 errorHandler 吞成 toast（pageerror 抓不到），补 import 删 void 后 GREEN 5/5。AdminR306B 契约 5/5、typecheck exit0；真浏览器 6/6 页 aiPage=2/aiPanel=1/gradientOnPanel=true/0 pageError；文档 40 行合规、evidence r306-admin-b/ 非物理真机。队长定点复跑 5/5 exit0、import fix diff 实读坐实。
 - t53（page-work）commit 318cace72 精确 9 文件（204+/53-）：A 组 6 管理页（QueryManager/JPushApp/QueryViewApp/FormApp/ViewApp/FileInfoApp）双未消费转令牌深度消费。同类真 bug（test-first RED→GREEN）：QueryViewApp 模板引用 AdminPageHeader/AdminFormSection/AdminToolbar 仅 void 占位未 import 致 ReferenceError 白屏，新增 QueryViewApp.imports.R306.contract.test.ts，RED 2→GREEN 2。AdminR306A 契约 4/4 + import 契约 2/2 = 6/6、typecheck/build exit0；真浏览器六页 aiPage=2/2/5/2/2/2、glass 3-13、errors=[]；文档 22 行合规、evidence r306-admin-a/ 非物理真机。队长定点复跑 6/6 exit0、import fix diff 实读坐实。
 - R306 三组改造（A/B/C 各 6 页，共 18 页）全部完成并按 hash 定点独立复核（提交交错：t55 5da60b8fe→t54 ea1c40f9→t53 318cace72），写域互不重叠、无回退。A/B 组各修复一个预存 ReferenceError 真 bug（被 errorHandler 吞成 toast，pageerror 事件抓不到），均为 test-first RED→GREEN 且新增回归契约断言禁 void 占位。三组自述的全量 desktop 2 failed 系并行中间态（队友在途写域），最终全绿以 t57 终审独立全量复跑为准。t56 第二阶段同口径复查待三组产物部署后执行。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 231. R306 改造后同口径复查对照（2026-11-21）
+- t56 第二阶段（qa-e2e）commit 7c47db7a 精确 1 文档 56 行 docs/ops/oa4rust-r306-admin-after.md。三组改造产物切到 index-BiyhjNmp.js 后，用同脚本/同 18 路由/同视口 1440×900 复查：18 页 DOM aiPage 全部 0→2~5（18/18 >0）、源码 srcVar 0→13~30（18/18 >0），完成标记 R306_AFTER_PC_DONE {total:18,captured:18,errors:0,apiFailures:0}。功能不退化：pageerror=0/apiFailures=0/loading=true 0 页/errorText=true 0 页/h1Count 全为 1/无重定向上登录；目视确认 query(queryview) 渐变卡片与按钮生效、功能入口完整。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、文档 <YOUR_TEST_DOMAIN> 占位、非物理真机、0 真值；evidence.json（448 行）source 非物理真机、aiPage=2、urlHost 占位；两阶段基线 d17a3151 与对照 7c47db7a 按 hash 定点复核、同口径脚本 r306-after-pc.cjs 与基线一致；HEAD=TRACK=7c47db7aa。
+- R306 量化闭环：改造前 18/18 双未消费（§229）→ 三组改造（§229 C / §230 A/B，含 2 个预存 ReferenceError 真 bug test-first 修复）→ 改造后 18/18 达标（本节）。t57 终审已自动 claimed，待其独立全量复跑（重点确认三组并行中间态 2 failed 归零）后收官。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 232. R306 收官：admin 18 页全达标、全量测试全绿（2026-11-21）
+- t57 终审（design-reviewer，attempt bc36762c，只读、未提交）：verdict=pass、findings_open=0。18/18 admin 页改造后 DOM aiPage∈[2,5]（基线全 0）、srcVar 0→13~30；pageerror/API失败/loading/errorText 全 0、h1=1、debugText=rawUuid=redirected=false 与基线一致无回归。R306 四契约（A4+B5+C6+import 闭环 2）共 17 项断言全绿、逐选择器 hasAiRule/aiVarCount≥5/aiPageCount≥2/import 闭包真断言、弱断言 0；自跑 desktop 254 文件/2089、mobile 70/452 全绿；证据 r306-after-pc/ 非物理真机、文档 <YOUR_TEST_DOMAIN> 占位真域名 0 命中。
+- 队长独立全量复核（不采信自述）：desktop `pnpm exec vitest run` 254 files/2089 passed/0 failed（12.17s）、mobile 70 files/452 passed/0 failed（2.70s）、`pnpm run typecheck` EXIT=0——与 t57 自述一致；较 R305 收官基线（250/2072、69/430）净增 4 文件/17 用例，三组自述的并行中间态 2 failed 确认归零。t57 status=completed/verdict=pass/findings_open=0 已核实；HEAD=TRACK=2b9f728bc、工作树干净。
+- R306 全链收官：t56 基线（§229，18/18 双未消费）→ t55 C 组（§229）+ t54 B 组 / t53 A 组（§230，各含 1 个预存 ReferenceError 真 bug test-first RED→GREEN）→ t56 改造后复查（§231，18/18 达标）→ t57 终审 pass。5 任务 0 失败回退，18 个 admin 设计器页的系统性令牌缺口清零。
+- 至此 R300 设计令牌→R301 框架升级→R302 集成打磨→R303 缺陷闭环→R304 契约债务清零→R305 业务/H5 视觉深化→R306 admin 全域视觉消费，七轮视觉重构链全部收官；全量测试 desktop 254/2089 + mobile 70/452 全绿。下一轮方向待定（用户目标 ≥1000 轮持续迭代非终态）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 233. R307 组织域数据真空根因审计（2026-11-21）
+- t58（qa-e2e，只读审计）commit 6eb459af 精确 1 文档 54 行 docs/ops/oa4rust-r307-org-data-audit.md。根因坐实（真登录测试服 + 接口取证）：后端组织组与部门数据真空——PUT group/list/like 与 GET departments/tree 均 HTTP200/success 但 data:[]，而 POST person/list/filter 返回真实 21 条人员数据，证明组织域非全空、前端信封解析正确。真 UI 补数两轮无效（目录页『加载部门树』后接口仍空；org 空态下 org-tree-retry 按钮 v-if 未渲染、buttonCount=0）。hotpic/appinfo 的 loadingText=true 系探针正则误匹配统计卡标签、目视正常渲染无缺陷。
+- 源码定位：OrgViewer.vue:1422-1439 loadOrgTree→group/list/like、模板:130/:132 空态；OrgDirectoryApp.vue:216-236 loadDeptTree→departments/tree、:237-260 loadPersonFilter→person/list/filter（解析正确）。t28 已修复名册错误态/重试/onMounted，剩余空态不在前端而在后端数据。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、全文根因分级严谨（真空 vs 接口错 vs 卡死明确区分、确定性等级如实）、<YOUR_TEST_DOMAIN> 占位 0 真值、非物理真机；证据 9 文件（6 PNG + probe/refill/retry 3 JSON）齐全；HEAD=TRACK=6eb459afa。审计结论：需后端补组织/部门种子数据，或前端补新建部门入口+配套接口；非前端解析 bug。
+- 修复方向待决策（本轮只审计不修）：后端侦察已发现 departments/tree 有实装（organization_assemble_control/src/u2_org.rs:1252）与 KNOWN_BACKEND_GAPS 回归测试（tests_u2.rs:712），需判断真空是缺种子还是接口逻辑问题后再派修复任务。遵循用户『缺接口评估后补、三端都可改』要求。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 234. R307 组织/部门新建入口与 unit_create INT4 绑定修复（2026-11-21）
+- t59（page-comm）commit d828a8b04 精确 6 文件 209+/3-：OrgViewer.vue 补『新建组织组』入口（api.post /control/group）、OrgDirectoryApp.vue 补『新建部门』入口（api.post /control/unit 带 parentId），成功后刷新树、失败中文提示；保留 t14/t28 withTimeout/重试/onMounted。契约 OrgCreateEntry.R307.contract.test.ts 6 项 RED 4→GREEN 6。
+- 后端真 bug test-first 修复：部门新建 POST /control/unit 原返回 HTTP 500，运行日志坐实 `WrongType { postgres: Int4, rust: i64/String }`——unit_create 的 `$4::int` 绑定类型不匹配；三轮实证（String→i64→unit_edit to_string 范式均失败）后确认 i32 是唯一接受 INT4 的 Rust 整数类型，改 `as_i64().map(|v| v as i32).unwrap_or_default()`，tests_u2 新增 RED 测试 RE→GREEN，cargo test -p organization_assemble_control --lib 138 passed。遵循用户授权『三端都可改』，最小改动只动 unit_create sort 绑定。
+- 队长独立复核（不采信自述）：git show --stat 精确 6 文件、diff 实读确认 i32 绑定；定点复跑前端契约 6/6 与后端 138 passed 均 exit0；文档 28 行 <YOUR_TEST_DOMAIN> 占位、真值扫描 0 命中（真域名仅在 gitignored 证据目录）；evidence.json pageErrors=[]/passed=true，部门树 deptRows 0→1、组织树 treeNodes 7→8、刷新保留、POST unit/group 均 200、source=Playwright Chromium headless not a physical device；HEAD=TRACK=d828a8b04、暂存区干净。
+- 根因闭环：t58 审计的『数据真空』经产品自身真实 UI 新建流程补数解决，组织树/部门树从 data:[] 变为非空且持久；qa-e2e t60 复查已放行（待独立验证）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 235. R307 组织树改造后真浏览器独立复查（2026-11-21）
+- t60（qa-e2e，只读复查）commit 6898e2ca 精确 1 文档 50 行 docs/ops/oa4rust-r307-org-after.md。在 t59（d828a8b04）原子部署、新产物 admin-CpsrAJgl.js/OrgViewer-BKtyqMaC.css 上线后，真登录 Playwright Chromium 1440×900 抓 /app/org 与 /app/directory，与 t58 基线（data:[]）量化对照：组织组树 group/list/like HTTP200 dataArrayLen 0→8、DOM 节点 0→8；部门树 departments/tree HTTP200 dataArrayLen 0→1、DOM 节点 0→1；部门筛选 5 chip / 人员 21 条保持不变；pageerror=0/API失败=0/中文错误条=0。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、父提交 a05554f7e（t59+§234 之后）正确；HEAD=TRACK=6898e2ca、暂存区干净；实读 50 行文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位、真域名 0 命中（唯一『口令』命中为第 6 行『凭据运行时读取仅存内存不入库』描述性文字、合规）；evidence.json group/list/like dataArrayLen=8、departments/tree dataArrayLen=1、orgTreeNodes=8、deptTreeNodes=1、deptFilterChips=5、personMeta=共21人、errors=[]/apiFailures=[]/pass=true、source=NOT physical device；截图 org-after.png/directory-after.png 齐全。
+- 根因闭环确认：t58『数据真空』→ t59 新建入口+INT4 绑定修复 → t60 独立复查，组织组树与部门树从 data:[] 变非空且持久，无回归；t61 终审依赖 t59/t60/t23 已齐备。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 236. R307 组织域数据真空修复终审收官（2026-11-21）
+- t61（design-reviewer，只读终审）verdict=pass / status=completed / findings=[]。三项验收闭环：①t59 新建入口真 UI 创建组织组/部门并刷新持久（组织树 7→8、部门树 0→1、create API 200 且 hasCreated=true）；②t60 真浏览器组织树 8 节点/部门树 1 节点、人员 21 条/5 chip，与 t58 data:[] 基线量化收敛，0 pageerror/API失败/中文错误条、2 张 1440×900 截图目视确认；③t14/t28 withTimeout/onMounted/错误态/重试契约真断言保留，desktop 255 文件/2095 passed、mobile exit0 全绿无回归。t61 本轮只读、无改码无提交。
+- 队长独立复核（不采信自述）：agent_teams_status 读 t61 status=completed、verdict=pass、findings=[]；独立全量复跑 desktop（DESKTOP_EXIT=0，255 workers）与 mobile（MOBILE_EXIT=0，70 workers）交叉验证通过；t59（d828a8b04，6 文件 INT4 i32 绑定修复）、t60（6898e2ca，1 文档非物理真机）队长已逐项定点复核（§234/§235），三段证据链完整；四份 gitignored evidence.json 均标注非物理真机、文档占位域名零真值。
+- R307 收官：t58 审计（后端数据真空）→ t59 新建入口+INT4 绑定修复 → t60 独立复查 → t61 终审 pass，组织域数据真实性缺陷闭环，无遗留 P0/P1。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 237. R308 全页基线再审计与两项真实问题派发（2026-11-21）
+- t62（qa-e2e，只读审计）commit d60121e08 精确 1 文档 186 行 docs/ops/oa4rust-r308-baseline-reaudit.md。当前 HEAD 全页真浏览器基线（PC 74/74 + H5 19/19 真登录截图、0 pageerror/API失败/错误文案）：PC DOM aiPage gt0 45→70/74、双未消费页 20→0；H5 branded gt0 2→16/19。核心：修正 loading 探针假阳性——旧文本正则命中 PC 2 页（19-admin-hotpic/21-admin-appinfo）系统计卡标签『加载中』误匹配；新骨架屏口径命中 1 页（57-admin-portal-script-designer）系无条件渲染静态装饰条；真实加载中页=0，坐实历史『loading 2 页』为假阳性。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=d60121e08、工作树干净；实读 186 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence.json（gitignored，git check-ignore EXIT=0）标注非物理真机、PC aiPage 70/74、双未消费 0；源码坐实两项问题：HotpicApp.vue:100/AppInfoApp.vue:105 stats 含 `{label:'加载中',value:loading?1:0}` 恒显误导标签，PortalScriptDesignerApp.vue:11 `<div class="script-loading ai-skeleton-line" aria-hidden="true">` 无条件渲染。
+- 据两项真实问题（非臆造）派发：t63（page-work，统计卡误导标签修正，test-first，写域 HotpicApp/AppInfoApp+契约+文档）、t64（shell-eng，静态骨架条条件化/移除，test-first，写域 PortalScriptDesignerApp+契约+文档），两任务 inScope 不重叠、均 claimed。改造后待真浏览器复验与终审。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 238. R308 统计卡误导标签修正复核（2026-11-21）
+- t63（page-work）commit aff8c281f 精确 4 文件（HotpicApp.vue/AppInfoApp.vue 各 1 行 + StatsCardLabel.R308.contract.test.ts 47 行 + oa4rust/docs/ops/oa4rust-r308-stats-label-fix.md 32 行，81+/2-）。两页 stats computed 由无条件 `{label:'加载中',value:loading?1:0}` 改为 `...(loading.value?[{label:'加载中',value:1,...}]:[])`：加载中保留真实提示、加载完成不再含该项。契约 RED 2→GREEN 6/6。
+- 队长独立复核（不采信自述）：stat 精确 4 文件、HEAD=TRACK=aff8c281f、暂存区干净；diff 实读确认两处展开式修改；定点复跑契约 6/6 exit 0；文档 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（gitignored）标注非物理真机、hotpic/appinfo 两页 loadingText=0/statCards=3/errors=0/apiFailures=0。工作树 M PortalScriptDesignerApp.vue + ?? SkeletonGate 契约系 t64 在途，非 t63 遗留、未触碰。
+
+## 239. R308 静态骨架条修正复核（2026-11-21）
+- t64（shell-eng）commit ed47e1080 精确 3 文件（PortalScriptDesignerApp.vue 删 1 行 + SkeletonGate.R308.contract.test.ts 44 行 + oa4rust/docs/ops/oa4rust-r308-skeleton-gate-fix.md 34 行，78+/1-）。根因：该页无真实 loading 引用、ScriptWorkbench 子组件自管加载态，父页面无条件渲染 `<div class="script-loading ai-skeleton-line" aria-hidden="true">` 致数据加载完成后骨架条常驻。方案：直接移除常驻装饰节点，保留 .ai-skeleton-line/@keyframes ai-shimmer 令牌样式（护 R306C 契约）。契约 RED 2 failed → GREEN 3 passed；AdminR306C 6/6、typecheck 通过。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=ed47e1080、暂存区干净；diff 实读确认仅删该无条件骨架节点；定点复跑 SkeletonGate.R308 3/3 与 AdminR306C 6/6 均 exit 0；文档 <YOUR_TEST_DOMAIN> 占位零真值；evidence（gitignored）标注非物理真机、skeletonBar=0/aiPage=2/workbench=true/pass=true、0 pageerror/API失败。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 240. R308 终审收官（2026-11-21）
+- t65（design-reviewer，只读终审）verdict=pass / status=completed / findings=[]。两项真实问题逐条闭环：①t63 统计卡恒显『加载中』误导标签——HotpicApp.vue:100/AppInfoApp.vue:105 改 loading 条件展开、StatsCardLabel.R308 契约 6/6、r308-stats-label-fix/evidence.json 两页 loadingText=0、截图目视仅三张真实统计卡；②t64 PortalScriptDesignerApp 静态骨架条移除——SkeletonGate.R308 契约 3/3、r308-skeleton-gate/evidence.json skeletonBar=0/aiPage=2/pass=true、ScriptWorkbench 完整。t62 基线 loading 假阳性判定有据（旧文本正则误命中统计卡、新 DOM 探针误命中装饰条），PC 74/74/H5 19/19、0 pageerror/API失败、PC aiPage gt0 45→70/74、双未消费 20→0、H5 branded 2→16/19。
+- 队长独立复核（不采信自述）：t65 status=completed/verdict=pass/findings=[]；独立全量 vitest 257 files/2104 passed exit 0（与 t65 自跑一致）、pnpm run typecheck exit 0；证据均标注非物理真机、docs/ops/*r308*.md 脱敏 0 命中；t62/t63/t64 三段证据链（§237/§238/§239）完整、commit 精确、队长逐项定点复核通过。
+- R308 收官：t62 基线再审计（修正 loading 探针假阳性）→ t63 统计卡标签修正 → t64 静态骨架条修正 → t65 终审 pass，两项低优先级真实问题闭环、无阻断性缺陷、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 241. R309 深度功能缺陷审计与 P1 会议创建 500 发现（2026-11-21）
+- t66（qa-e2e，只读审计）commit 1b7526478 精确 1 文档 68 行 docs/ops/oa4rust-r309-deep-functional-audit.md。真 UI 走 8 业务闭环 + 跨页一致性：6 项 PASS（通讯录建部门/工作流发起/笔记新建删除/文件新建回收/论坛建版块发帖/角色新建成员弹窗）、1 项取证受限（日程新建无前置日历 my_calendars=[]）、1 项真实 P1 缺陷。跨页：工作台 5 待审批系 slice(0,5) 截断（全量 11）非矛盾、H5 未读 count=0 与 PC 一致。
+- 【P1 真实缺陷 D1】会议创建稳定 HTTP 500（4 次复现、新建会议完全不可用）：PC /app/meeting 提交 POST /api/meeting/assemble/control/meeting/create 返回 500、无回显；抓包 payload 合法（title+ISO 时间、roomId/creator 空串非根因）。源码定位：路由 meeting_assemble_control/src/routes.rs:54→create_meeting（lib.rs:2467），INSERT 在 lib.rs:2503 时间参数 $5/$6 无 ::text::timestamp cast；对照同表 meeting/src/lib.rs:293 有该 cast——两 crate INSERT 唯一实质差异。t66 只读未取到后端错误日志，队长源码级复核确认 cast 差异属实（高置信推断）。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=1b7526478、工作树干净、暂存区纯净；实读 68 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；源码并行对照坐实 meeting_assemble_control lib.rs:2503 缺 cast vs meeting lib.rs:293 有 cast、routes.rs:54 绑定正确、测试基建 tests_u2.rs 具备。低优先级 D2（笔记删除不进回收站）、D3（通讯录无建人入口）属产品口径未判 bug，如实保留。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 242. R309 会议创建双缺陷修复与队长裁决（2026-11-21）
+- t67（page-work）commit b326d2a06 精确 3 文件（lib.rs 1 行 + tests_u2.rs +119 行 + 文档 56 行，176+/1-）。两个独立真缺陷均 test-first RED→GREEN：①HTTP500——create_meeting INSERT 时间参数 $5/$6 缺 ::text::timestamp cast，真实错误文本 run.log `Error { kind: ToSql(4), cause: WrongType { postgres: Timestamp, rust: "&str" } }` 坐实；修复为 `$5::text::timestamp,$6::text::timestamp` 对照 meeting crate lib.rs:293。②创建成功但列表不可见——x_meeting.applied DDL 默认 false、后端生产代码 0 处设 true，而「我的会议」主列表 meeting/list/apply SQL（lib.rs:1070）强制 `WHERE applied=true AND creator谓词`；INSERT 加 applied 列写 TRUE 修复。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=b326d2a06、工作树干净、暂存区纯净；diff 实读确认 lib.rs INSERT 单行同时补 cast 与 applied TRUE；定点复跑 cargo test -p meeting_assemble_control exit 0；实读文档 56 行 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence.json（gitignored）createStatus=200/applyContains=true/titleInList=true/titleAfterReload=true/0 pageerror/API失败、非物理真机。
+- 【队长裁决 status 偏差】page-work 如实上报：队长批复依据 migration 006 认为 status 默认 'wait'，但真 DB 探针显示 x_meeting.status 为 nullable text 默认 NULL（根因：migrations/038_add_missing_columns.sql:37 后加无 DEFAULT 的 status TEXT 列），applied/wait 列表（lib.rs:1006）额外强制 `status='wait' AND applied=true`，故新会议（status=null）不进 applied/wait。裁决：以实测为准，队长原迁移推断有误；主验收「我的会议」list/apply SQL 只 WHERE applied=true（无 status 条件）已满足；applied/wait 断言降级为 HTTP200 可达、文档如实记录属正确处置；本轮不扩大改 DDL/status——status 在 wait/processing/completed 间转换无生产代码驱动且属产品口径，臆造修复风险高于收益，保留为已知遗留。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 243. R309 终审收官（2026-11-21）
+- t68（design-reviewer，只读终审 reviewedTaskId=t67）verdict=pass / status=completed / findings=[]。5 项验收全达标：①缺陷 A run.log 真实 WrongType 错误 + lib.rs:2503 补 $5::text::timestamp/$6::text::timestamp（对照 meeting/lib.rs:293）+ 测试 RED→GREEN；②缺陷 B applied=TRUE 写入 + list/apply 回显 + 测试 RED→GREEN + 真浏览器 createStatus=200/titleInList=true/titleAfterReload=true（截图目视确认）；③status 偏差与台账 §242 队长裁决一致（默认 NULL、applied/wait 断言降级 HTTP200、不扩大改 DDL）、如实无隐瞒无越权；④自跑 cargo test 61+1 passed/0 failed exit0、单提交未触及前端/H5/历史缺陷；⑤证据 source 标注非物理真机、文档脱敏 0 命中、单提交 b326d2a06 精确 3 文件。t68 只读、无改码无提交。
+- 队长独立复核（不采信自述）：agent_teams_status 读 t68 status=completed/verdict=pass/findings=[]；t67 修复（§242）已逐项定点复核全绿、t68 终审与队长裁决一致。
+- R309 收官：t66 深度功能审计（8 闭环 + 跨页一致性）→ 发现 P1 会议创建双缺陷 → t67 test-first 修复 → t68 终审 pass。全程真浏览器取证、精确单提交、无回归。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 244. R310 回收站与日程闭环审计收官（2026-11-21）
+- t69（qa-e2e，只读审计）commit f1bdf907e 精确 1 文档 69 行 docs/ops/oa4rust-r310-recycle-calendar-audit.md。对 R309 两项遗留如实定性：①D2 笔记删除不进回收站=**产品口径非缺陷**——回收站后端 file_assemble_control/src/lib.rs:3996-4062 recycle_list 仅查 FILE_FILE 表、笔记软删写 cms_core_entity/src/lib.rs:842 x_cms_note，数据源隔离；真 UI note/delete 200 {deleted:true}、列表残留 0、最终对照 pc-final-contrast.json 同刻 recycle/list 200 含被删文件（filePresent=true）不含被删笔记（noteAbsent=true）。②日程新建=**取证限制**——my_calendars=[]、PC CalendarApp.vue:251 calWriteCE 无 UI 调用点、H5 +新建仅事件表单需 calendarId，不判缺陷。③H5 跨端抽检一致、全程 0 pageerror/API失败。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=f1bdf907e、工作树干净、暂存区纯净；源码并行坐实 recycle_list SQL 仅查 FILE_FILE（lib.rs:4003-4004）与 cms_entity_note_delete 软删 x_cms_note（lib.rs:842）隔离属实；实读 69 行文档 <YOUR_TEST_DOMAIN> 占位、真域名 0 命中；evidence（gitignored）source 标注 NOT physical device、最终对照 filePresent=true/noteAbsent=true——真域名仅存 gitignored 证据目录、不入库。
+- R310 收官：两项遗留均经真浏览器 + 源码定性为非缺陷（产品口径/取证限制），无需开 bug；若期望统一回收站可另立产品需求。全程只读、无源码改动。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 245. R312 写端点可达性静态审计（2026-11-21）
+- t74（page-work，纯本地静态审计、不碰测试服）commit 4a2dca284 精确 1 文档 41 行 docs/ops/oa4rust-r312-write-entry-gap-audit.md。交叉验证 jpush/categoryinfo/document/hotpic/appinfo/form/program/cms 八域后端写端点注册 vs 桌面 UI 触发点，按 A（有 UI）/B（有封装无 UI）/C（无封装无 UI）分类。结论：**未发现 B 类真实缺口**，主业务写端点均 A 类；静态候选为 programCenterApi.dictCreate/documentApi.create 封装路径漂移（中价值）、jpush/hotpic GET 写变体仅诊断探测、program_center invoke/create 重复注册（低价值），均明确标注『非已确认缺陷、需真浏览器验证后再决策』。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=4a2dca284；实读 41 行文档 <YOUR_TEST_DOMAIN>/<TEST_HOST> 占位 0 真值；抽样验证 dictCreate 候选——packages/apis 封装路径与实际桌面直调确实不一致（封装漂移属实、但 UI 入口真实存在，与 t74 判定一致）。工作树 M/?? 均为 t70/t71 在途写入、未触碰。
+- R312 快照结论：本轮为静态审计快照、不代表项目完成；封装路径漂移等候选留后续轮次按真浏览器实测决策。与 t70/t71（R311 建日历入口）并行执行、写域不重叠。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 246. R311 PC 建日历入口与三修复复核（2026-11-21）
+- t70（page-core）commit b10f73e5c 精确 3 文件（CalendarApp.vue 91+/7- + CalendarCreateEntry.R311.contract.test.ts 62 行 + 文档 39 行，185+/7-）。除补可见『+ 新建日历』入口（data-testid=calendar-create-entry + 表单替 prompt）外，真浏览器诊断出并 test-first 修复两个额外真 bug：②loadCalendars 原取 r.data.list 无法识别后端 `{data:{my_calendars,unit_calendars,follow_calendars}}` 信封致 chip 不增长，改 my_calendars 优先回退；③后端 calendar legacy(Pool/原始SQL) 与 core_entity(sea_orm) 双轨隔离——原创建走 core/entity 表而列表/事件走 legacy 表致详情 404，统一改走 legacy 同轨（/api/calendar/calendar/create 等）。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=b10f73e5c、暂存区纯净；定点复跑 CalendarCreateEntry.R311 契约 6/6 exit 0；diff 实读坐实三修复；源码确认 legacy 创建端点真实存在（calendar/src/routes.rs:24 + lib.rs:269 handler）；文档 39 行 <YOUR_TEST_DOMAIN> 占位 0 真值、L9 诚实标注任务引用文档查无文件、以源码侦察为准未臆造；H5 对应契约 5/5 亦 GREEN。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 247. R311 H5 建日历入口与同轨端点复核（2026-11-21）
+- t71（mobile-eng）commit 9d679c19b 精确 5 文件（calendar.vue 58+/1- + calendarCreate.R311.contract.test.ts 55 行 + services/index.ts 3 行 + index.surface.test.ts 10 行 + 文档 28 行，153+/1-）。补 H5 可见『+新建日历』入口与最小表单，创建后列表+1并自动选中新日历，打通保存事件链路；真浏览器首轮暴露**双表漂移真 bug**（core entity POST /calendar/core/entity/calendar/create 写 x_cal_calendar 而 list/my 读 cal_calendar→建完列表读不到），改用与 list/my 同源的 POST /api/calendar_assemble_control/calendar（routes.rs:29-32→u2.rs:335 原生 SQL INSERT cal_calendar），未改后端。RED 4→2→GREEN 14/14，mobile 全量 71 files/458 passed、typecheck exit0、H5 build 成功。
+- 队长独立复核（不采信自述）：stat 精确 5 文件、HEAD=TRACK=9d679c19b、工作树干净；diff 实读确认同轨端点修复与注释；定点复跑 calendarCreate.R311 契约 5/5 exit 0；源码核实 create/list 同 crate 同写读 cal_calendar 表（u2.rs:335 create/:164 list）无双轨残留；文档 28 行 <YOUR_TEST_DOMAIN> 占位 0 真值；evidence（gitignored）source 非物理真机、create POST 200/日历 3→4/事件下拉自动选中新日历/今日事件可见/0 pageerror/0 API失败/passed=true。t25 normalizeRows、t51 ai-brand-fill 保留不回退。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 248. R311 建日历入口改造后真浏览器独立复查（2026-11-21）
+- t72（qa-e2e，只读复查）commit 7a8e90508 精确 1 文档 77 行 docs/ops/oa4rust-r311-calendar-after.md。PC 1440×900 / H5 390×844 双端真登录闭环复查：PC 日历 chip 4→5、新建日历+事件创建+回显+刷新持久、org loading 兜底正常（orgLoadingStuck=false）；H5 日历 6→7（刷新仍 7）、自动选中新日历、今日事件可见+刷新持久、信封归一化 envelopeOk=true、渐变品牌 branded=4；双端 errors=[]/apiFailures=0（PC 24 calls、H5 40 calls）。R310『日程新建取证受限』解除，t24 TDZ/t25 H5信封/t28 org loading/t51 branded 四项回归无异常，未发现新增真实缺陷。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=7a8e90508、工作树干净；实读 77 行文档 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；双端 evidence（gitignored）标注非物理真机、apiCalls 全 200、PC chipsBefore=4→chipsAfter=5、H5 calsBefore=6→calsAfter=7→刷新仍7、eventAfterReload=true、0 错误。改造引入的 PC my_calendars 信封解析/跨轨 404 与 H5 core entity 双表漂移两真 bug 在真浏览器下未见复现。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 249. R311 终审判定：业务达标但 CI 三契约过时（2026-11-21）
+- t73（design-reviewer，只读终审 reviewedTaskId=t70）verdict=needs_revision / status=failed / findings_open=4，无改码无提交。业务侧全部达标无回退：PC/H5 建日历入口契约与源码一致、真浏览器双端闭环通过（PC chip 4→5、H5 6→7、事件回显刷新持久、0 pageerror/API失败）、R310 取证限制解除、文档 0 真值、提交精确。阻塞项为 CI 由绿转红：desktop 全量 3 failed/2107 passed（t65 基线 2104 全绿），均系旧契约守卫未随 R311 同步、非业务回退。
+- 队长独立复核（不采信自述）：t73 status=failed/verdict=needs_revision；独立复现三条失败并读断言定位根因：①CalendarApp.business.contract.test.ts:54-55 把 calWriteCE 列入『端点调试 handler 黑名单』，但 R311 已将其作为新建日历业务入口（data-testid=calendar-create-entry）；②CalendarApp.tdz.contract.test.ts:139 朴素 indexOf("loadCalendars('my')") 误抓函数体内 await 调用（位置 6779 < 声明 10660），真正顶层调用在声明后；③tests/contracts/mobile-endpoints.test.ts:213 白名单漏登 H5 新增 POST /api/calendar_assemble_control/calendar（后端 routes.rs:29-30 真实注册、t71/t72 真浏览器 200）。
+- 系统按质量门自动生成 t75（repair，page-core，修三契约；已 in_progress）+ t76（review，design-reviewer，复核 t75；pending）。队长已向 page-core 下发精确修复口径：只改契约断言、不改业务源码；calWriteCE 移出黑名单但保留其余断言；TDZ 断言改精确顶层判定但保留守护力（顶层调用移回声明前仍须失败）；白名单只补登该一条真实端点；底线 desktop 全量恢复 0 failed、typecheck exit0。t73 needs_revision 不可作下游依赖，R311 收官待 t75/t76。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 250. R311 三过时契约同步修复复核（2026-11-21）
+- t75（page-core，repair-round-2）commit 0c56d5351 精确 3 契约文件（CalendarApp.business.contract.test.ts 10+/3- + CalendarApp.tdz.contract.test.ts 18+/4- + tests/contracts/mobile-endpoints.test.ts 2+，23+/7-），仅同步契约、未改业务源码。三处修复：①business 黑名单移除 calWriteCE（R311 已是新建日历业务入口）+ 改词边界正则消除 calWrite 子串假阳性；②tdz 用花括号栈深度判定『顶层调用』——排除函数体内 depth>0 的 await 调用、取最早顶层调用保留守护力（任一顶层调用移回声明前仍须失败）；③mobile-endpoints 白名单补登真实 POST /api/calendar_assemble_control/calendar。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=0c56d5351、工作树干净；diff 实读确认 TDZ 花括号栈判定保留守护力（非简单放宽）；独立从 oa4rust 根跑全量 vitest 258 files/2110 passed exit 0（从 t73 的 3 failed/2107 passed 恢复、与 t65 基线 2104 相比 +6 为 R311 新增契约，全绿）；三处契约 + R311 契约定点 4 files/17 tests exit 0。t75 自报『200 files/1104 tests』系其命令口径偏差，队长以 oa4rust 根全量复跑为准。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 251. R311 终审复核通过收官（2026-11-21）
+- t76（design-reviewer，只读复核 t75）verdict=pass / findings_open=0 / status=completed，无改码无提交。t73 四条 findings 全关闭：①CI 转绿（t75 仅同步 3 契约无业务源码改动）；②端点白名单补登 POST /api/calendar_assemble_control/calendar（后端 routes.rs:28-31 真实注册）；③business 契约移除 calWriteCE 误列并加正向断言；④tdz 契约改花括号栈深度判定，顶层调用 line411 > 声明 line406。双端真浏览器闭环 pass（PC chips4→5/事件回显刷新持久、H5 日历+1/事件回显持久、0 pageerror/API失败），evidence source 均 headless 非物理真机，r311 文档真域名/口令 grep 0 命中。
+- 队长独立复核（不采信自述）：t76 status=completed/verdict=pass/findings=[]；独立全量复跑 desktop 258 files/2110 passed exit 0 + mobile 71 files/458 passed exit 0，双端全绿无回归，与 t75 恢复态一致。
+- R311 收官：t70（PC 建日历入口+3 修复）→ t71（H5 建日历入口+同轨端点）→ t72（双端真浏览器复查、R310 取证限制解除）→ t73 终审 needs_revision（业务达标但 CI 三契约过时）→ t75 repair（仅同步 3 契约、保留 TDZ 守护力）→ t76 复核 pass。建日历与事件闭环在 PC/H5 双端打通、跨刷新持久、0 错误，全量测试全绿，无阻断缺陷。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 252. R313 API 封装路径漂移立项（2026-11-21）
+- 来源：t74 R312 静态审计（§245）中价值候选『封装路径漂移』，队长源码级坐实为真实潜伏缺陷（非臆造）：packages/apis/src/index.ts:603 `documentApi.create`→POST /api/document/document（后端 cms_assemble_control/routes.rs:526 仅 POST /api/document，404）；:604 `documentApi.update`→PUT /api/document/document/${id}（后端 routes.rs:527 仅 POST /api/document/{id}/update，路径+方法双重漂移）；:529 `programCenterApi.dictCreate`→POST /api/program_center/dict/create（后端 program_center/routes.rs:566 仅 POST /api/program_center/dict，0 注册）。全后端复核 /api/document/document 仅 .../fields(GET)、/dict/create 0 注册。
+- 潜伏性定性：桌面 UI 均直调正确路径（DocumentApp.vue:250、ProgramCenterApp.vue:999），当前功能不 break；documentApi.create/update 除 api-coverage-generated.test.ts 覆盖率测试外无业务调用方。该测试只 expect(fn).toBeDefined 且注释称『401/404 也是有效覆盖』，不校验路径，故漂移长期潜伏。未来新调用方用封装必 404，属真实缺陷、非产品口径。
+- 派发 t77（page-core，implementation）修复：新建真断言路径契约（非覆盖率驱动）先 RED→GREEN、改三处封装对齐后端、桌面 build + 测试服原子部署 + 真浏览器封装调用非 404/0 pageerror、精确单提交（index.ts+契约+文档 docs/ops/oa4rust-r313-api-wrapper-drift-fix.md）。已 claimed。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 253. R313 API 封装路径漂移修复复核（2026-11-21）
+- t77（page-core）commit 77603c529 精确 3 文件（index.ts 3 行改 + apiWrapperDrift.R313.contract.test.ts 60 行 + 文档 40 行，103+/3-）。三处修复：documentApi.create→POST /api/document、documentApi.update→POST /api/document/{id}/update（原 PUT 路径+方法双漂移）、programCenterApi.dictCreate→POST /api/program_center/dict，全部对齐后端注册。新契约用 vi.mock 真断言方法与 URL（非覆盖率驱动），RED 3 failed/1 passed→GREEN 4/4；packages/apis 全量 8 files/738 tests 无回归、typecheck exit0。同源核对：apis.general.dictCreate（generalApi，走 /api/general/dict/create）非同源、路径已正确、未改。
+- 队长独立复核（不采信自述）：stat 精确 3 文件、HEAD=TRACK=77603c529、工作树干净；diff 实读确认三处封装改动；定点复跑 apiWrapperDrift.R313 契约 4/4 exit 0；文档 40 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored）标注非物理真机、真浏览器 esbuild 封装探针注入已登录工作台执行三封装均 200 JSON（create 返真实 id+draft、update updated:true、dictCreate 返真实 id）、apiCalls 路径正确无 404 HTML、pageErrors=[]。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 254. R313 API 封装漂移修复终审收官（2026-11-21）
+- t78（design-reviewer，只读终审 reviewedTaskId=t77）verdict=pass / status=completed / findings=[]。逐行复核三封装 create→POST /api/document、update→POST /api/document/{id}/update、dictCreate→POST /api/program_center/dict 与 cms routes.rs:526-527、program_center routes.rs:566 真实注册一致；契约 4 it 真断言方法+URL 非覆盖率驱动 GREEN 4/4；apis.general.dictCreate 非同源属实未改（general lib.rs:1073）；evidence 非物理真机、三调用 200 JSON、hasDrift=false/nginx404=false/pageErrors=[]；文档脱敏 0 真值；抽查无新增同类漂移。
+- 队长独立复核（不采信自述）：t78 status=completed/verdict=pass/findings=[]；独立全量 vitest 259 files/2114 passed exit 0（与自报一致）、typecheck exit 0；t74 审计（§245）→t77 修复（§253）→t78 终审三段证据链完整、commit 精确、队长逐项定点复核通过。
+- R313 收官：R312 静态审计中价值候选『封装路径漂移』转化为真实潜伏缺陷并修复闭环；三封装从『命中 404』恢复为真实 200 调用，契约由覆盖率驱动升级为真断言路径，堵住漂移复发漏洞。项目处于 ≥1000 轮持续迭代中，非终态。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 255. R314 契约健康度静态审计（2026-11-21）
+- t80（design-reviewer，纯静态审计）commit 81cdaa4f5 精确 1 文档 91 行 oa4rust/docs/ops/oa4rust-r314-contract-health-audit.md。程序化对照 packages/apis/src/index.ts 全部 200 处 api.get/post/put/delete 封装 vs 后端方法 fixture（2618 条）+真实 .route 源码。三条静态坐实缺陷：F1（high 结构性）packages/apis/src 不在 desktop/mobile/route-methods 三个守卫任何扫描根（route-methods.test.ts:22-25 SRC_ROOTS 仅 desktop/src+mobile/src），R313 三漂移正因此只能靠临时专门契约发现；F2（medium）api-coverage-generated 只断言函数存在+吞异常『401/404 也是有效覆盖』无路径真断言；F3（high 静态）5 处无 @dead 封装方法/路径漂移（generalApi.dictItemCreate、jpushApi.templateUpdate、queryViewApi.search、queryViewApi.importModelList、programCenterApi.moduleInvoke），当前无视图消费方、线上 405/404 未证实、保守列待确认。R311 三契约+R313 三封装复核无残留 pass、181 契约假断言 0、文档 0 真值。
+- 队长独立复核（不采信自述）：stat 精确 1 文档、HEAD=TRACK=81cdaa4f5、工作树干净、文档 0 真值；源码坐实 F1（SRC_ROOTS 确无 packages/apis/src）与 F3 三处后端注册（jpush template/{id} 仅 GET lib.rs:274、queryview/search 为 POST lib.rs:617、general dict/item/create 为 POST lib.rs:1078），与审计一致。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 256. R314 深度审计两真缺陷与守卫盲区修复复核（2026-11-21）
+- t79（qa-e2e，真浏览器深度审计）commit 451a83b20 精确 1 文档 54 行 docs/ops/oa4rust-r314-deep-functional-audit.md：真 UI 走 9 闭环，PASS 6 / 取证限制 2（I2 群聊无会话、A2 打卡仅 prompt 调试残留）/ 真实缺陷 2。文档 0 真值、全程 0 pageerror。
+- 【D1 真实 P1】工作流审批通过后已办列表恒空：task/complete HTTP 200（含 end_time）但已办 tab 与 taskcompleted/list/my/paging 恒 0（0/3/6s 轮询）。队长源码坐实：processplatform_service_processing/src/lib.rs:3795 task_complete 只写 x_task/x_record/x_work，全局 grep backend 中 INSERT INTO PP_C_TASKCOMPLETED 命中 0 处；已办列表 processplatform_assemble_surface/src/lib.rs:19010 读该表 → 数据链路断裂。
+- 【D2 真实 P1】文件上传 415：FileManager.vue:1373-1379 FormData+XHR multipart，后端 file_assemble_control/src/lib.rs:415 upload_file 用 axum::extract::Json 仅收 application/json → 415；契约 fixture:899 仅校方法未校 Content-Type 故绿。队长源码坐实，且同 crate 已有多处 axum::extract::Multipart 实现可复用（lib.rs:1129/1962/3402 等）。
+- t81（page-core，F1 守卫盲区修复）commit 6b95568b5 精确 2 文件（route-methods.test.ts 219 行 + 文档 36 行）：packages/apis/src 纳入守卫 SRC_ROOTS；85 条历史错方法冻结为快照（非 EXEMPT）、F3 五处显式标注待修；未注册基线 legacy 860/apis 187 分源只降不升；注入错方法探针验证新增漂移被判 mismatch 后移除。队长独立复核全绿：全量 vitest 259 files/2115 passed exit 0、文档 0 真值、diff 确认冻结快照方案不掩盖新增漂移。纯静态本地未碰测试服（避免干扰 t79 取证）。
+- 派发两修复（写域不重叠）：t82（page-work，D2 上传 415，后端 upload_file 改 multipart 保住真实字节上传语义）、t83（page-core，D1 已办同步，先核对 DDL 字段映射再定方向）。两者均需部署测试服，已下发串行化：t82 先部署复验提交，t83 完成本地工作后暂缓部署、待 t82 完成信号再 build+部署（其产物含双方前端改动）。
+- 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
+
+## 257. R314 D2 文件上传 415 修复复核（2026-11-21）
+- t82（page-work）commit b3ce29e5a 精确 4 文件（file_assemble_control/src/lib.rs 34 + security_gate_tests_r6.rs 15（改签名后连带修直调用例）+ 文档 50 行 + FileUpload.R314.contract.test.ts 42 行，109+/32-）。两个独立真缺陷 test-first RED→GREEN：①Content-Type 冲突 415——upload_file 由 axum::extract::Json 改 Multipart，复用 u2_read_multipart_file/u2_persist_verified 落盘真实字节写 x_file，契约 RED 1→GREEN 2/2；②上传后列表不可见——原写 folder_id 空串而前端根目录用 folderId||'root'，改 folder_id='root' 后列表可见/刷新持久，契约 RED→GREEN。cargo test -p file_assemble_control 98 passed、typecheck 全绿、route-methods 冻结契约 2/2 无基线漂移。
+- 队长独立复核（不采信自述）：stat 精确 4 文件、HEAD=TRACK=b3ce29e5a、工作树仅剩 t83 在途文件（写域不重叠、未触碰）；diff 实读确认 Multipart 替换 Json + u2_persist_verified 落盘 + folder_id=root；定点复跑 FileUpload.R314 契约 2/2 exit 0；文档 50 行 <YOUR_TEST_DOMAIN>/<YOUR_TEST_HOST> 占位 0 真值；evidence（gitignored r314-upload-415-fix/）标注非物理真机、uploadStatus=200（非 415）/fileNameInList=true/fileNameAfterReload=true/0 错误/0 API失败。t82 完成 build+原子部署+复验+提交全链路，已按串行化放行 t83 部署。
 - 真值纪律：文档用占位域名，口令/私钥/会话数据不入库；截图与临时脚本留在 gitignored 证据目录。
 

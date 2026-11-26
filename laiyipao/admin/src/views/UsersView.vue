@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -20,6 +23,14 @@ import { canGoNext, cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的用户'
+
+function resetFilters() {
+  keyword.value = ''
+  isGuestFilter.value = undefined
+  suspiciousFilter.value = undefined
+  offset.value = 0
+  load()
+}
 const loading = ref(false)
 // 2026-10-21（P5-6）：readonly 账号看不到写按钮。
 const { isReadonly } = useAdminRole()
@@ -121,6 +132,9 @@ function flowReasonLabel(reason: string): string {
 }
 
 const page = computed(() => Math.floor(offset.value / limit.value) + 1)
+
+/** R5：AI 洞察结论从当前页用户数据确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('users', { users: users.value }))
 const pageCount = computed(() => Math.max(1, Math.ceil(cappedTotal(total.value, limit.value) / limit.value)))
 
 /** status: 1=正常 2=封禁（与迁移中的 CHECK 约束一致） */
@@ -509,7 +523,8 @@ const asRow = (r: unknown) => r as AdminUserView
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">用户管理</div>
@@ -520,7 +535,22 @@ const asRow = (r: unknown) => r as AdminUserView
       </div>
     </div>
 
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
+
+    <div class="section-kicker">
+      <span class="section-kicker-cn">用户管理 · 玩家档案</span>
+      <span class="section-kicker-en">PLAYER MANAGEMENT / ACCOUNTS</span>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-main"><div class="kpi-label">用户总数</div><div class="kpi-value">{{ total }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">本页记录</div><div class="kpi-value">{{ users.length }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">当前页</div><div class="kpi-value">{{ page }} / {{ pageCount }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">筛选条件</div><div class="kpi-value">{{ keyword ? '搜索' : isGuestFilter !== undefined || suspiciousFilter !== undefined ? '筛选' : '全部' }}</div></div>
+    </div>
+
     <el-card shadow="never">
+      <div class="filter-bar">
       <div class="toolbar">
         <el-input
           v-model="keyword"
@@ -564,13 +594,14 @@ const asRow = (r: unknown) => r as AdminUserView
         />
         <span class="toolbar-spacer" />
         <span class="toolbar-group toolbar-group--end">
-          <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
+          <span class="result-count" aria-live="polite">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
           <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
           <el-button size="small" :disabled="!canGoNext(offset, limit, total)" @click="nextPage">下一页</el-button>
         </span>
       </div>
+      </div>
 
-      <el-table :data="users" size="small" stripe>
+      <el-table class="data-grid" :data="users" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column label="昵称" min-width="120">
           <template #default="{ row }">
@@ -623,7 +654,12 @@ const asRow = (r: unknown) => r as AdminUserView
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前搜索 / 筛选条件下没有用户。清空关键词与筛选即可查看全部玩家。</p>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
@@ -783,4 +819,5 @@ const asRow = (r: unknown) => r as AdminUserView
 <style scoped>
 /* 页内特有样式；toolbar / muted / drawer-actions / flow-pos / flow-neg
    已收敛到 styles/main.css */
+.data-grid .el-table__cell { font-variant-numeric: tabular-nums; }
 </style>

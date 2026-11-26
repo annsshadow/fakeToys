@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import PageSkeleton from "@/components/PageSkeleton.vue"
+import AiInsightCard from "@/components/AiInsightCard.vue"
+import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -102,6 +105,42 @@ const filterParams = computed(() => ({
   // 结果筛选（2026-11-01 新一轮第 44 轮）
   result: result.value || undefined,
 }))
+
+/**
+ * F-10-3 标杆重构：本页速览指标带。
+ * 从当前页 battles 确定性派生（胜率 / 验真异常 / 守恒可疑），不新增接口、不引入随机。
+ * 让运营打开战报第一眼就看到「本页有没有异常」，而不是先扫 16 列等权表格。
+ */
+const battleSummary = computed(() => {
+  const rows = battles.value
+  const n = rows.length
+  const wins = rows.filter((b) => b.result === 'win').length
+  const mismatched = rows.filter((b) => (b.verify_mismatched ?? 0) > 0).length
+  const suspicious = rows.filter((b) => {
+    const tot = Number(b.total_enemies ?? 0)
+    return tot > 0 && b.kills + b.leaked > tot
+  }).length
+  return {
+    count: n,
+    winRate: n === 0 ? '—' : `${((wins / n) * 100).toFixed(1)}%`,
+    mismatched,
+    suspicious,
+  }
+})
+
+/** R5：AI 洞察结论从当前页战报数据确定性推导。 */
+const aiInsight = computed(() => buildAdminAiInsight('battles', { battles: battles.value }))
+
+/** R5：智能空态动作 —— 清空筛选并重载。 */
+function resetFilters() {
+  userId.value = undefined
+  levelId.value = undefined
+  result.value = ''
+  onlyMismatched.value = false
+  dateRange.value = null
+  page.value = 1
+  load()
+}
 
 const router = useRouter()
 
@@ -312,7 +351,8 @@ const asRow = (r: unknown) => r as AdminBattleView
 </script>
 
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
+    <PageSkeleton v-if="loading" />
     <div class="page-header">
       <div class="page-heading">
         <div class="page-title">战斗记录与验真</div>
@@ -324,8 +364,23 @@ const asRow = (r: unknown) => r as AdminBattleView
       </div>
     </div>
 
-    <el-card shadow="never">
-      <div class="toolbar">
+    <AiInsightCard :insight="aiInsight" :loading="loading" />
+
+    <div class="section-kicker">
+      <span class="section-kicker-cn">战斗记录 · 验真与守恒审查</span>
+      <span class="section-kicker-en">BATTLE REPLAY / VERIFY REVIEW</span>
+    </div>
+
+    <div class="kpi-strip" data-test="battle-summary">
+      <div class="kpi-main"><div class="kpi-label">本页记录</div><div class="kpi-value tabular-nums">{{ battleSummary.count }}</div></div>
+      <div class="kpi-main"><div class="kpi-label">本页胜率</div><div class="kpi-value tabular-nums">{{ battleSummary.winRate }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">验真异常</div><div class="kpi-value tabular-nums">{{ battleSummary.mismatched }}</div></div>
+      <div class="kpi-sub-card"><div class="kpi-label">守恒可疑</div><div class="kpi-value tabular-nums">{{ battleSummary.suspicious }}</div></div>
+    </div>
+
+    <el-card shadow="never" class="battle-table-card">
+      <div class="filter-bar">
+       <div class="filter-row">
         <el-pagination
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"
@@ -355,6 +410,8 @@ const asRow = (r: unknown) => r as AdminBattleView
         </el-select>
         <el-button @click="((page = 1), load())">筛选</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
+       </div>
+       <div class="filter-row">
         <!-- 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报 -->
         <el-date-picker
           v-model="dateRange"
@@ -369,10 +426,11 @@ const asRow = (r: unknown) => r as AdminBattleView
           只看验真不匹配
         </el-checkbox>
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ total }} 条</span>
+        <span class="result-count tabular-nums" aria-live="polite">共 {{ total }} 条</span>
+       </div>
       </div>
 
-      <el-table :data="battles" size="small" stripe>
+      <el-table class="data-grid" :data="battles" size="small" stripe>
         <el-table-column label="ID" width="100">
           <!-- 复制战报 ID（2026-11-01 新一轮第 92 轮）：贴工单/外部重放 -->
           <template #default="{ row }">
@@ -389,7 +447,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
-        <el-table-column label="结果" width="70">
+        <el-table-column label="结果" width="70" class-name="col-emphasis">
           <template #default="{ row }">
             <el-tag :type="row.result === 'win' ? 'success' : 'info'" size="small">
               {{ row.result === 'win' ? '胜' : '负' }}
@@ -402,12 +460,12 @@ const asRow = (r: unknown) => r as AdminBattleView
         <el-table-column prop="score" label="分数" width="100" />
         <el-table-column prop="kills" label="击杀" width="70" />
         <el-table-column prop="leaked" label="漏怪" width="70" />
-        <el-table-column label="一致性" width="94">
+        <el-table-column label="一致性" width="94" class-name="col-emphasis">
           <template #default="{ row }">
             <el-tag :type="consistencyTag(asRow(row)).type" size="small">{{ consistencyTag(asRow(row)).text }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="验真" width="118">
+        <el-table-column label="验真" width="118" class-name="col-emphasis">
           <!--
             三态。`0/0` 是「未验真 = 未知」，不是「一致」——
             与 UsersView 的验真标签说同一套话。
@@ -436,7 +494,12 @@ const asRow = (r: unknown) => r as AdminBattleView
           </template>
         </el-table-column>
         <template #empty>
-          <el-empty :description="emptyText" :image-size="60" />
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state-glyph" aria-hidden="true">◇</div>
+            <div class="empty-state-title">{{ emptyText }}</div>
+            <p class="empty-state-reason">当前筛选下没有战报，清空筛选即可查看全部对局。</p>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
+          </div>
         </template>
 </el-table>
     </el-card>
@@ -556,6 +619,16 @@ const asRow = (r: unknown) => r as AdminBattleView
 </template>
 
 <style scoped>
+/* R5：本页速览指标已并入共享 .kpi-strip（data-test=battle-summary），不重复渲染 */
+/* 筛选动线拆两行：主筛选（谁/哪关/结果）与范围筛选（日期/验真/计数） */
+.filter-bar { display: flex; flex-direction: column; gap: 8px; }
+.filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.filter-row:first-child { border-bottom: 1px solid var(--lyp-border); padding-bottom: 10px; }
+/* 关键列强调：结果/一致性/验真的单元格数字更醒目 */
+:deep(.col-emphasis .cell) { font-weight: 600; }
+@media (max-width: 900px) {
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 /* 验真区：种子 + 粘贴框 + 结果同一行的阅读节奏 */
 .verify-row {
   display: flex;

@@ -60,6 +60,37 @@ const composing = ref(false)
 const creating = ref(false)
 const removing = ref(false)
 const form = ref({ calendarId: '', title: '', startTime: '', endTime: '', location: '' })
+
+// 新建日历（core calendar entity/create）：干净数据下先建日历才能保存事件
+const creatingCalendar = ref(false)
+const showCalendarForm = ref(false)
+const newCalendarName = ref('')
+function toggleCalendarForm(): void {
+  showCalendarForm.value = !showCalendarForm.value
+}
+async function submitCalendar(): Promise<void> {
+  const name = newCalendarName.value.trim()
+  if (!name) {
+    uni.showToast({ title: '请输入日历名称', icon: 'none' })
+    return
+  }
+  if (creatingCalendar.value) return
+  creatingCalendar.value = true
+  try {
+    const resp = await calendarApi.create(name)
+    const created = (resp?.data ?? null) as CalendarRow | null
+    if (created) calendars.value = [created, ...calendars.value]
+    if (created) form.value.calendarId = String(created?.id ?? '')
+    newCalendarName.value = ''
+    showCalendarForm.value = false
+    uni.showToast({ title: '日历已创建', icon: 'success' })
+    void load()
+  } catch {
+    uni.showToast({ title: '创建日历失败', icon: 'none' })
+  } finally {
+    creatingCalendar.value = false
+  }
+}
 function toggleCompose(): void {
   composing.value = !composing.value
   if (composing.value && !form.value.calendarId && calendars.value[0]) {
@@ -260,7 +291,15 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 
     <view class="sub-row">
       <text class="sub">我的日历 {{ calendars.length }} 个</text>
-      <text class="compose-btn" @tap="toggleCompose">{{ composing ? '取消' : '+ 新建' }}</text>
+      <view class="sub-actions">
+        <text class="calendar-create-btn ai-brand-fill" role="button" aria-label="新建日历" @tap="toggleCalendarForm">+新建日历</text>
+        <text class="compose-btn" @tap="toggleCompose">{{ composing ? '取消' : '+ 新建' }}</text>
+      </view>
+    </view>
+
+    <view v-if="showCalendarForm" class="card calendar-create-form">
+      <input v-model="newCalendarName" class="c-input" placeholder="日历名称" />
+      <view class="c-submit" :class="{ disabled: creatingCalendar }" @tap="submitCalendar">创建日历</view>
     </view>
 
     <view v-if="composing" class="card compose">
@@ -431,6 +470,23 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   font-size: 26rpx;
   color: var(--color-primary);
   font-weight: 600;
+}
+.sub-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.calendar-create-btn {
+  font-size: 24rpx;
+  color: var(--color-surface);
+  font-weight: 600;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+}
+.calendar-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
 }
 .compose {
   display: flex;

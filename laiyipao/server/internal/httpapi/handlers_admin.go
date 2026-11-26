@@ -117,7 +117,10 @@ func (s *Server) adminDashboard(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(d)
+	// 零战报时漏斗是 nil slice → JSON null；生成的 TS 类型声明是非 null
+	// 数组，前端看板按 .slice() 消费会整页崩。与其它 admin 列表 handler
+	// 一样在响应边界归一（不改聚合口径/业务语义）。
+	return c.JSON(service.NormalizeNilSlices(d))
 }
 
 func (s *Server) adminLevels(c *fiber.Ctx) error {

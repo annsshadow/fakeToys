@@ -1,0 +1,1 @@
+(function(){var e=[].slice.call(document.querySelectorAll('[role=button],.r7-btn,uni-text,text')).find(function(x){return (x.innerText||'').trim().indexOf('先看收益对比')>=0});if(!e)return 'NO_CTA';e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return 'MODAL_CTA '+Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)+' '+e.innerText.trim()})()

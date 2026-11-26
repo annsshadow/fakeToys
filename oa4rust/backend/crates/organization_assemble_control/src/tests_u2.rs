@@ -43,6 +43,40 @@ async fn request(method: Method, uri: &str, body: Option<&str>) -> StatusCode {
     app().oneshot(req).await.unwrap().status()
 }
 
+/// R307: unit_create must bind sort as i32 (the only Rust type accepting INT4).
+#[test]
+fn unit_create_sort_is_bound_as_int_not_string() {
+    use deadpool_postgres::tokio_postgres::types::{ToSql, Type};
+    assert!(<i32 as ToSql>::accepts(&Type::INT4), "i32 must accept INT4");
+    assert!(!<i64 as ToSql>::accepts(&Type::INT4), "i64 must NOT accept INT4");
+    assert!(!<String as ToSql>::accepts(&Type::INT4), "String must NOT accept INT4");
+    let sort = 0i32;
+    let source = include_str!("u2_org.rs");
+    let bind_block = source
+        .split("INSERT INTO x_org_unit")
+        .nth(1)
+        .unwrap_or_default()
+        .split("ok(Value::Object")
+        .next()
+        .unwrap_or_default();
+    assert!(
+        bind_block.contains("$4::int") && bind_block.contains("&sort,"),
+        "sort must be bound to $4::int, got: {bind_block}"
+    );
+    let sort_block = source
+        .split("let sort = body")
+        .nth(1)
+        .unwrap_or_default()
+        .split("let creator")
+        .next()
+        .unwrap_or_default();
+    assert!(
+        sort_block.contains("as i32"),
+        "sort must be cast to i32 for the $4::int (INT4) parameter, got: {sort_block}"
+    );
+    assert_eq!(sort, 0i32);
+}
+
 #[test]
 fn normalize_key_collapses_whitespace() {
     assert_eq!(u2_helpers::normalize_key("  Zhang   San  "), "Zhang San");

@@ -4,10 +4,10 @@ import { describe, it, expect } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
 import { BattleEngine, SPAWN_PROGRESS_FULL, TICK_MS, type BattleConfig } from './engine'
 import { toFixed } from './terrain'
-import { defaultAttacker } from './damage'
+import { defaultAttacker, type Attacker } from './damage'
 import type { EquippedSkill } from './heatmap'
 import type { Enemy, EnemyDef, GeneratedLevel, Projectile, SkillDef } from './types'
-import type { Element } from './elements'
+import type { Element, ReactionKey } from './elements'
 
 /**
  * overheat 的爆炸溅射（第 160 轮）。
@@ -46,6 +46,7 @@ interface EngineInternals {
   /** 真实签名是 (enemyId, uid)，敌人被 push 进 this.enemies。 */
   spawnEnemy(enemyId: number, uid: number): void
   updateProjectiles(): void
+  triggerReactionAoe(origin: Enemy, key: ReactionKey, reactionDmg: bigint, att: Attacker): void
 }
 
 /**
@@ -162,5 +163,51 @@ describe('overheat 爆炸溅射（第 160 轮）', () => {
       '100px 在 overheat 半径（90）之外 —— 吃到伤害说明半径误用了 steam_burst 的 120',
     ).toBe(1_000_000n)
     expect(near.stacks.get('fire') ?? 0n, '溅射不施加元素层数').toBe(0n)
+  })
+
+  it('25% 是 reactionDmg 的 25%，不得再乘直接伤害权重 0.4（t41）', () => {
+    const eng = mkEngine()
+    const inner = eng as unknown as EngineInternals
+    const origin = placeEnemy(eng, 300, 500, 1)
+    const near = placeEnemy(eng, 320, 500, 2)
+    near.armorPermille = 0n
+    near.shield = 0n
+    near.armorShredMs = 0
+    near.stacks.clear()
+
+    const att = defaultAttacker()
+    att.attack = 0n
+    att.critPermille = 0n
+    att.critMultiplierPermille = 1500n
+    inner.triggerReactionAoe(origin, 'overheat', 10000n, att)
+
+    expect(
+      near.hp,
+      'reactionDmg=10000 → splash=2500；旧实现走 resolveHit 只结算 1000（再乘 0.4）',
+    ).toBe(1_000_000n - 2500n)
+    expect(near.stacks.size, '纯溅射不得写元素层数').toBe(0)
+  })
+
+  it('t42: 暴击与攻击力不得污染 25% 反应溅射（零护甲定量探针）', () => {
+    const eng = mkEngine()
+    const inner = eng as unknown as EngineInternals
+    const origin = placeEnemy(eng, 300, 500, 1)
+    const near = placeEnemy(eng, 320, 500, 2)
+    near.armorPermille = 0n
+    near.shield = 0n
+    near.armorShredMs = 0
+    near.stacks.clear()
+
+    const att = defaultAttacker()
+    att.attack = 1000n
+    att.critPermille = 1000n
+    att.critMultiplierPermille = 3000n
+    inner.triggerReactionAoe(origin, 'overheat', 10000n, att)
+
+    expect(
+      1_000_000n - near.hp,
+      'reactionDmg=10000 → splash=2500；旧实现会把 splash 再过 resolveHit，必暴击权重彻底改写这个数',
+    ).toBe(2500n)
+    expect(near.stacks.size, '纯溅射不得写元素层数').toBe(0)
   })
 })

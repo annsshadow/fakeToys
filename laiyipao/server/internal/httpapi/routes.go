@@ -120,6 +120,10 @@ func (s *Server) Register(app *fiber.App) {
 
 	me := v1.Group("/me", requireUser(s.Svc))
 	me.Get("/", s.me)
+	// R6 §1E：真实数据驱动的个性化推荐（用户侧），沿用同一登录态。
+	me.Get("/recommendations", s.meRecommendations)
+	// R7 缺口3：推荐落地收益预估（只读，参数 kind/id/replace 缺一不可）。
+	me.Get("/recommendations/impact", s.meRecommendationImpact)
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
@@ -323,6 +327,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Post("/logout", s.adminLogout)
 	adm.Get("/me", s.adminMe)
 	adm.Get("/dashboard", s.adminDashboard)
+	// R6 §1E：管理侧聚合洞察；读端点，readonly 角色也允许查看。
+	adm.Get("/recommendations/:scope", s.adminRecommendations)
 	adm.Get("/levels", s.adminLevels)
 	adm.Get("/levels/:id/waves", s.adminLevelWaves)
 	// 第 127 轮：写操作挂 requireWritable —— readonly 账号 403，

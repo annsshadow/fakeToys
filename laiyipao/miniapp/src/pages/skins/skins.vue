@@ -1,12 +1,35 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R4：指标带 → 流派筛选 → 数据格 → 智能空态 -->
+      <view v-if="skins.length" class="r3-kpi r4-kpi r4-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ r4AiSkin ? r4AiSkin.element : '图鉴' }} 流派</text>
+          <text class="r3-kpi-label">按当前构筑元素推荐被动</text>
+          <text class="r3-kpi-sub">传说 {{ r4AiSkin ? r4AiSkin.rarityPct : 0 }}% · 共 {{ skins.length }} 款</text>
+        </view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ passiveElementMap.length }}</text><text class="r3-kpi-label">元素流派</text></view>
+        <view class="r3-kpi-cell"><text class="r3-kpi-num">{{ filteredSkins.length }}</text><text class="r3-kpi-label">当前筛选</text></view>
+      </view>
+      <view v-if="r4AiSkin" class="r3-ai r4-ai r4-enter" aria-label="AI 皮肤流派提示">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 皮肤流派提示</text>
+          <text class="r3-ai-engine">规则引擎 · 基于被动映射</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r4AiSkin.conclusion }}</text>
+        <text class="r3-ai-basis">{{ r4AiSkin.basis }}</text>
+        <view class="r3-ai-cta" @click="r4FocusSkin()">查看同流派皮肤 →</view>
+      </view>
       <!-- 加载中 / 空态（与其它图鉴同款）-->
       <view v-if="store.configLoading" class="card">
         <text class="muted">加载中…</text>
       </view>
-      <view v-else-if="skins.length === 0" class="card">
-        <text class="muted">皮肤表还没加载出来</text>
+      <view v-else-if="skins.length === 0" class="r3-empty r4-empty" aria-live="polite" role="status">
+        <text class="r3-empty-slot">AI</text>
+        <text class="r3-empty-title">皮肤表还没加载出来</text>
+        <text class="r3-empty-reason">被动映射来自服务端 /config；配置未到位时不会推荐流派。</text>
+        <view class="r3-empty-action" @click="loadPage()">重新加载配置</view>
       </view>
 
       <!-- 皮肤图鉴（服务端下发的权威表） -->
@@ -44,6 +67,21 @@
             </text>
           </view>
         </view>
+        <!-- R4 FilterBar：按稀有度快速筛选，活动态用 soft 底 + ink 字 -->
+        <view class="r3-filter r4-filter">
+          <text
+            class="r3-chip"
+            :class="{ active: !keyword }"
+            @click="keyword = ''"
+          >全部</text>
+          <text
+            v-for="r in RARITIES"
+            :key="'f' + r"
+            class="r3-chip"
+            :class="{ active: keyword === rarityLabel(r) }"
+            @click="keyword = rarityLabel(r)"
+          >{{ rarityLabel(r) }}</text>
+        </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
         <!-- G133 被动→元素流派映射 -->
         <view v-if="passiveElementMap.length" class="pe-map">
@@ -67,7 +105,8 @@
           当前版本皮肤暂无获得途径，图鉴用于了解被动机制。
         </text>
         <text class="result-count">显示 {{ filteredSkins.length }} / 共 {{ skins.length }} 条</text>
-        <view v-for="s in filteredSkins" :key="s.id" class="rxn skin">
+        <view class="r3-data-grid r4-grid">
+        <view v-for="s in filteredSkins" :key="s.id" class="rxn skin list-row">
           <view class="rxn-head">
             <!-- 皮肤图标座：稀有度决定底座配色（传说带金色描边） -->
             <view class="icon-badge" :class="rarityBadgeClass(s.rarity)" style="width: 64rpx; height: 64rpx">
@@ -83,6 +122,7 @@
             <text class="stat">被动：{{ passiveLabel(s.passive) }}</text>
           </view>
         </view>
+        </view>
         <text v-if="!skins.length" class="muted">皮肤表为空（配置未加载？）</text>
         <!-- R26 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
         <view v-if="keyword && skins.length && filteredSkins.length === 0" class="search-empty">
@@ -95,7 +135,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import DefIcon from '@/components/DefIcon.vue'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
@@ -199,6 +240,28 @@ const passiveElementMap = computed(() => {
   }))
 })
 
+/** R4：被动流派 × 当前出战元素 → 一句推荐；配置/构筑任一缺席就保持空态。 */
+const r4AiSkin = computed(() => {
+  const map = passiveElementMap.value
+  if (!map.length) return null
+  const equipped = store.equippedElements ?? []
+  const target = equipped.find((e) => map.some((m) => m.el === e)) ?? map[0]!.el
+  const row = map.find((m) => m.el === target)
+  if (!row) return null
+  return {
+    element: row.name,
+    rarityPct: rarityDonut.value.find((s) => s.key === 'legendary')?.pct ?? 0,
+    conclusion: `当前构筑偏${row.name}，建议关注${row.name}流派皮肤（${row.count} 款）`,
+    basis: '依据：被动→元素流派映射 / 当前出战元素 · 更新于本次进入',
+    keyword: row.name,
+  }
+})
+
+function r4FocusSkin() {
+  keyword.value = r4AiSkin.value?.keyword ?? ''
+  uni.pageScrollTo({ selector: '.pe-map', duration: 200 })
+}
+
 /** G121 稀有度×被动机制矩阵：行=稀有度，列=被动类型，格内款数。 */
 const RARITIES = ['legendary', 'epic', 'rare', 'common']
 const passiveKinds = computed(() => [...new Set(skins.value.map((s) => s.passive))])
@@ -232,6 +295,38 @@ function passiveLabel(p: string): string {
   }
   return map[p] ?? p
 }
+/* -------------------------------------------------------------------------- */
+/* R3 冷启动配置加载：深链接/刷新直入时自行拉 /config                             */
+/* -------------------------------------------------------------------------- */
+let pageLoaded = false
+let loadInflight: Promise<void> | null = null
+
+async function doLoadPage(): Promise<void> {
+  if (!store.config) {
+    // 此前本页没有任何加载调用，把「尚未加载」谎报成「皮肤表为空（配置未加载？）」。
+    if (!store.loggedIn) {
+      const ok = await store.login()
+      if (!ok) return
+    }
+    try {
+      await store.loadConfig()
+    } catch {
+      return
+    }
+  }
+  pageLoaded = true
+}
+
+/** onLoad/onMounted/onShow 可能同时到达；统一走一条幂等加载路径。 */
+function loadPage(): Promise<void> {
+  if (pageLoaded) return Promise.resolve()
+  if (!loadInflight) loadInflight = doLoadPage().finally(() => { loadInflight = null })
+  return loadInflight
+}
+
+onLoad(() => { void loadPage() })
+onMounted(() => { void loadPage() })
+onShow(() => { void loadPage() })
 </script>
 
 <style scoped>

@@ -4,6 +4,37 @@
       <text class="muted" style="display: block; margin-bottom: 16rpx">
         全部运营公告。首页只展示最新几条，这里可以回看历史公告。
       </text>
+      <!-- R5：公告与版本眉题 + 摘要指标带 + 规则引擎结论 -->
+      <view class="section-kicker r5-section r5-enter">
+        <text class="section-kicker-cn">公告与版本</text>
+        <text class="section-kicker-en">RELEASE NOTES · RULE ENGINE</text>
+        <text class="r3-ai-badge">AI</text>
+      </view>
+      <view v-if="!loading && !loadFailed && items.length" class="r3-kpi r5-enter">
+        <view class="r3-kpi-main">
+          <text class="r3-kpi-num">{{ items.length }}</text>
+          <text class="r3-kpi-label">公告总数</text>
+          <text class="r3-kpi-sub">近 7 日新增 {{ r5AnnRecent7 }} 条 · 未读 0（列表无未读字段）</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ groupedByMonth.length }}</text>
+          <text class="r3-kpi-label">归档月份</text>
+        </view>
+        <view class="r3-kpi-cell">
+          <text class="r3-kpi-num">{{ r5AnnRecent7 }}</text>
+          <text class="r3-kpi-label">近 7 日新增</text>
+        </view>
+      </view>
+      <view v-if="r5AiAnn.visible" class="r3-ai r5-enter">
+        <view class="r3-ai-head">
+          <text class="r3-ai-badge">AI</text>
+          <text class="r3-ai-title">AI 公告摘要</text>
+          <text class="r3-ai-engine">规则引擎</text>
+        </view>
+        <text class="r3-ai-conclusion">{{ r5AiAnn.conclusion }}</text>
+        <text class="r3-ai-basis">依据：公告列表 · 近 30 天 · 更新于本次进入</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoBattles()">去看变更影响 →</text>
+      </view>
       <!-- 第六批 R41：总数一眼可见（首页入口有「全部 N 条」，本页此前没有） -->
       <text v-if="!loading && !loadFailed && items.length" class="result-count">
         共 {{ items.length }} 条公告
@@ -33,11 +64,17 @@
         <text class="muted" style="display: block; margin-top: 8rpx">
           新服或活动前公告为空是正常的。
         </text>
+        <view class="r3-empty" aria-live="polite" role="status">
+          <view class="r3-empty-slot">AI</view>
+          <text class="r3-empty-title">近 30 天没有公告，去看看战报</text>
+          <text class="r3-empty-reason">公告列表为空或均超出 30 天，无法从版本记录推导更新影响。</text>
+          <text class="r3-empty-action" role="button" @click="r5GoBattles()">去看战报 →</text>
+        </view>
       </view>
 
       <view v-else>
         <!-- G86 时间筛选 -->
-        <view class="filter-row">
+        <view class="filter-row r3-filter">
           <view
             v-for="f in annFilters"
             :key="f.key"
@@ -60,7 +97,7 @@
         </text>
         <text v-else-if="filteredItems.length === 0" class="muted">该时间段没有公告。</text>
         <!-- G131 按月份分组归档 -->
-        <view v-for="grp in groupedByMonth" :key="grp[0]" class="month-group">
+        <view v-for="grp in groupedByMonth" :key="grp[0]" class="month-group r3-data-grid">
           <text class="month-label">{{ grp[0] }}</text>
           <view v-for="(a, i) in grp[1]" :key="a.id" class="card ann-card">
             <view class="ann-head">
@@ -157,6 +194,26 @@ function formatDate(iso: string | null): string {
   return `${y}-${mm}-${dd} ${hh}:${mi}`
 }
 
+/** R5：近 7 日公告数与摘要，全部来自已拉取的 items / groupedByMonth。 */
+const r5AnnRecent7 = computed(() => {
+  const cutoff = Date.now() - 7 * 86400000
+  return items.value.filter((a) => {
+    const t = a.published_at ? new Date(a.published_at).getTime() : 0
+    return t >= cutoff
+  }).length
+})
+const r5AiAnn = computed(() => {
+  const latest = items.value[0]
+  if (!latest) return { visible: false, conclusion: '' }
+  const monthGroup = groupedByMonth.value[0]
+  const monthCount = monthGroup ? monthGroup[1].length : 0
+  const title = latest.title.length > 18 ? latest.title.slice(0, 18) + '…' : latest.title
+  return { visible: true, conclusion: `本月更新 ${monthCount} 条，最新：${title}` }
+})
+function r5GoBattles(): void {
+  uni.navigateTo({ url: '/pages/battles/battles' })
+}
+
 onMounted(async () => {
   loading.value = true
   loadFailed.value = false
@@ -221,7 +278,7 @@ onMounted(async () => {
 .ann-body {
   font-size: 24rpx;
   line-height: 1.7;
-  color: var(--muted, #9aa0a6);
+  color: var(--muted);
   white-space: pre-wrap;
 }
 </style>

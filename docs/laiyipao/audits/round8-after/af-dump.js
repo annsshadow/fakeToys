@@ -1,0 +1,1 @@
+(function(){var p=window.__LYP_PROBE__||{};return JSON.stringify({af:(p.apiFailures||[]).map(function(e){return {status:e.status,path:(e.url||'').replace(/^https?:\/\/[^/]+/,'')}}),pe:(p.pageErrors||[]).map(function(e){return e.msg})});})()

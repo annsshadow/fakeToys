@@ -445,5 +445,66 @@
         "expected": -12345
       }
     ]
+  },
+  "reaction_splash": {
+    "_comment": "t41：reactionDamage >> 2 的二次伤害绝对值。旧实现把 splash 塞进 resolveHit 的 SkillDamage，direct 段再乘 400‰，25% 实收只有 10%；这里锁的是「护甲 → 护盾 → 扣血」的纯落血结果。damage 是护甲后、护盾吸收前的基准值（hit 事件/得分用），hp/shield 是结算后的守方状态。",
+    "cases": [
+      {
+        "name": "plain_quarter_no_armor_no_shield",
+        "splash": 2500,
+        "hp": 100000,
+        "shield": 0,
+        "armor_permille": 0,
+        "expected": { "damage": 2500, "hp": 97500, "shield": 0, "shield_broken": false, "killed": false }
+      },
+      {
+        "name": "armor_250_reduces_quarter",
+        "splash": 2500,
+        "hp": 100000,
+        "shield": 0,
+        "armor_permille": 250,
+        "expected": { "damage": 1875, "hp": 98125, "shield": 0, "shield_broken": false, "killed": false }
+      },
+      {
+        "name": "armor_over_cap_still_reduces_75pct",
+        "splash": 1000,
+        "hp": 1000,
+        "shield": 0,
+        "armor_permille": 1000,
+        "expected": { "damage": 250, "hp": 750, "shield": 0, "shield_broken": false, "killed": false }
+      },
+      {
+        "name": "shield_absorbs_all",
+        "splash": 2500,
+        "hp": 100000,
+        "shield": 4000,
+        "armor_permille": 0,
+        "expected": { "damage": 2500, "hp": 100000, "shield": 1500, "shield_broken": false, "killed": false }
+      },
+      {
+        "name": "shield_breaks_then_hp",
+        "splash": 2500,
+        "hp": 100000,
+        "shield": 1000,
+        "armor_permille": 0,
+        "expected": { "damage": 2500, "hp": 98500, "shield": 0, "shield_broken": true, "killed": false }
+      },
+      {
+        "name": "lethal_after_shield",
+        "splash": 2500,
+        "hp": 1000,
+        "shield": 500,
+        "armor_permille": 0,
+        "expected": { "damage": 2500, "hp": 0, "shield": 0, "shield_broken": true, "killed": true }
+      },
+      {
+        "name": "zero_splash_is_noop",
+        "splash": 0,
+        "hp": 100,
+        "shield": 10,
+        "armor_permille": 500,
+        "expected": { "damage": 0, "hp": 100, "shield": 10, "shield_broken": false, "killed": false }
+      }
+    ]
   }
 }

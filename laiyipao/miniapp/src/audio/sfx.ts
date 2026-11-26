@@ -43,6 +43,30 @@ const ctxs = new Map<SfxName, AudioCtx>()
 let unlocked = false
 let muted = false
 let initialized = false
+let mediaRejectionFiltered = false
+
+/**
+ * H5 端 uni 的 `InnerAudioContext.play()` 返回 void —— 给返回值挂 `.catch` 是无效的：
+ * 真正 rejected 的 Promise 由 uni 内部的 `HTMLAudioElement.play()` 产生，uni 自己没接。
+ * 连射时 `stop()`→`pause()` 会让上一个 `play()` reject AbortError，
+ * 以 unhandledrejection 污染监控（F-2 真浏览器实测：战斗 12s 内 5~10 条）。
+ *
+ * 这里只精确吃掉这一条**已知噪声**；其它 rejection 一律放行，
+ * 避免把战斗逻辑的真实异常一起静默掉。
+ */
+function installMediaRejectionFilter(): void {
+  if (mediaRejectionFiltered || typeof window === 'undefined') return
+  mediaRejectionFiltered = true
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = (event as Event & { reason?: unknown }).reason
+    const message = reason && typeof reason === 'object'
+      ? (reason as { message?: unknown }).message
+      : undefined
+    if (typeof message === 'string' && message.includes('play() request was interrupted')) {
+      event.preventDefault()
+    }
+  })
+}
 
 /**
  * 音效文件的 URL 前缀。
@@ -73,6 +97,7 @@ function assetPrefix(): string {
 export function initSfx(): void {
   if (initialized) return
   initialized = true
+  installMediaRejectionFilter()
   try {
     muted = uni.getStorageSync(MUTED_KEY) === '1'
   } catch {
@@ -104,7 +129,7 @@ export function unlockSfx(): void {
     const a = ctxFor('tap')
     const prev = a.volume
     a.volume = 0
-    a.play()
+    playWithCatch(a)
     a.stop()
     a.volume = prev
   } catch {
@@ -138,6 +163,25 @@ export function setMuted(v: boolean): void {
   }
 }
 
+/**
+ * H5 端 `InnerAudioContext` 映射到 `HTMLAudioElement`：`play()` 返回 Promise。
+ * 高频 `stop();play()` 时，上一个尚未 resolve 的 `play()` 会被 pause/stop 打断，
+ * 从而 reject `The play() request was interrupted by a call to pause()`。
+ * 这是**异步** rejection，`try/catch` 抓不到，会以 unhandledrejection 污染监控（F-2，
+ * 2026-11-21 真浏览器进战斗 12s 捕获 5 条）。
+ *
+ * 小程序端 `play()` 返回 void（旧 mock 同样返回 undefined），所以必须做兼容判断，
+ * 不能假设返回值一定有 `.catch`。
+ */
+function playWithCatch(a: AudioCtx): void {
+  try {
+    const ret = a.play() as unknown as { catch?: (fn: () => void) => void } | undefined
+    if (ret && typeof ret.catch === 'function') ret.catch(() => {})
+  } catch {
+    // 同步抛错（如无音频设备）沿用原有语义：不打断战斗循环
+  }
+}
+
 /** 取（或按需创建）某个音效的 context。 */
 function ctxFor(name: SfxName): AudioCtx {
   let a = ctxs.get(name)
@@ -166,7 +210,7 @@ export function playSfx(name: SfxName): void {
     // 先 stop 再 play：连射时同一个 context 不 stop 会排队，
     // 结果是「射速越快、声音越滞后」。
     a.stop()
-    a.play()
+    playWithCatch(a)
   } catch {
     // 播放失败（部分基础库在无音频设备时抛）不该影响战斗循环
   }

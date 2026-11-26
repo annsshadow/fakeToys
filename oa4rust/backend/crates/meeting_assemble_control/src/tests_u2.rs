@@ -678,4 +678,123 @@ mod u2_tests {
             .await
             .unwrap();
     }
+
+    /// R309 真 bug：create_meeting 的 INSERT 时间参数缺 ::text::timestamp cast，
+    /// datetime-local 格式字符串（如 2026-11-21T10:30）直接绑定 Timestamp 参数导致
+    /// ToSql WrongType{postgres:Timestamp,rust:&str} → HTTP 500。本测试先复现再修复。
+    #[tokio::test]
+    async fn u2_create_meeting_accepts_datetime_local_times() {
+        if !db_ready().await {
+            eprintln!("SKIP (no PG): u2_create_meeting_accepts_datetime_local_times");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let title = format!("U2 R309 {}", &uuid::Uuid::new_v4().to_string()[..8]);
+        let start = "2026-11-21T10:30";
+        let end = "2026-11-21T11:30";
+
+        let (st, json) = respond_db(
+            "POST",
+            "/api/meeting/assemble/control/meeting/create",
+            JSON,
+            Body::from(format!(
+                r#"{{"title":"{title}","startTime":"{start}","endTime":"{end}"}}"#
+            )),
+            NON_ADMIN,
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::OK,
+            "datetime-local ISO times must be accepted (missing ::text::timestamp cast caused 500): {json}"
+        );
+        let mid = json["data"]["id"].as_str().unwrap();
+
+        let row = client
+            .query_one(
+                "SELECT start_time::text, end_time::text FROM x_meeting WHERE id = $1",
+                &[&mid],
+            )
+            .await
+            .unwrap();
+        let stored_start: String = row.get(0);
+        let stored_end: String = row.get(1);
+        assert!(stored_start.starts_with("2026-11-21 10:30:00"), "start_time roundtrip: {stored_start}");
+        assert!(stored_end.starts_with("2026-11-21 11:30:00"), "end_time roundtrip: {stored_end}");
+
+        client
+            .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])
+            .await
+            .unwrap();
+    }
+
+    /// R309 第二个独立真缺陷：create_meeting 未写 applied，默认 false 导致
+    /// 「我的会议」列表（meeting/list/apply 与 list/applied/wait，均 WHERE applied=true）
+    /// 永不显示新建会议。applied 在此仅表示创建者申请可见标记，非审批通过状态。
+    #[tokio::test]
+    async fn u2_create_meeting_is_visible_in_my_meeting_lists() {
+        if !db_ready().await {
+            eprintln!("SKIP (no PG): u2_create_meeting_is_visible_in_my_meeting_lists");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let title = format!("U2 R309 visible {}", &uuid::Uuid::new_v4().to_string()[..8]);
+        let start = "2026-11-21T14:00";
+        let end = "2026-11-21T15:00";
+
+        let (st, json) = respond_db(
+            "POST",
+            "/api/meeting/assemble/control/meeting/create",
+            JSON,
+            Body::from(format!(
+                r#"{{"title":"{title}","startTime":"{start}","endTime":"{end}"}}"#
+            )),
+            NON_ADMIN,
+        )
+        .await;
+        assert_eq!(st, StatusCode::OK, "create must succeed: {json}");
+        let mid = json["data"]["id"].as_str().unwrap();
+
+        let applied: bool = client
+            .query_one("SELECT applied FROM x_meeting WHERE id = $1", &[&mid])
+            .await
+            .unwrap()
+            .get(0);
+        assert!(applied, "created meeting must be applied=true so it appears in my meeting list");
+
+        let (list_st, list_json) = respond_db(
+            "GET",
+            "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
+            &[],
+            Body::empty(),
+            NON_ADMIN,
+        )
+        .await;
+        assert_eq!(list_st, StatusCode::OK, "my meeting list must be reachable: {list_json}");
+        let visible = list_json["data"]
+            .as_array()
+            .map(|rows| rows.iter().any(|r| r["id"].as_str() == Some(mid)))
+            .unwrap_or(false);
+        assert!(visible, "newly created meeting must appear in my meeting list: {list_json}");
+
+        // applied/wait 列表额外过滤 status = 'wait'，而 x_meeting.status 的真实 DDL
+        // 默认为 NULL（非 'wait'）；t67 约束「不改 status 默认值」，故本断言仅验证该列表
+        // 可达且 HTTP200，不强制新会议出现在其中（「我的会议」主列表 list/apply 才是回显口径）。
+        let (wait_st, wait_json) = respond_db(
+            "GET",
+            "/api/meeting/assemble/control/meeting/list/applied/wait",
+            &[],
+            Body::empty(),
+            NON_ADMIN,
+        )
+        .await;
+        assert_eq!(wait_st, StatusCode::OK, "applied/wait list must be reachable: {wait_json}");
+
+        client
+            .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])
+            .await
+            .unwrap();
+    }
 }

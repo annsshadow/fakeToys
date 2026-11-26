@@ -161,8 +161,30 @@ describe('AdminLayout 顶栏', () => {
     expect(wrapper.find('.topbar-right').text()).toContain('API 127.0.0.1:8080')
   })
 
-  it('配置了 VITE_API_BASE 时标签显示配置值', async () => {
+  it('配置了非回环 VITE_API_BASE 时标签脱敏，DOM 不出现真地址', async () => {
     vi.stubEnv('VITE_API_BASE', 'https://ops.example.com/api/v1')
+    vi.resetModules()
+    try {
+      const { default: AdminLayout } = await import('@/layouts/AdminLayout.vue')
+      const router = makeRouter('/admin/dashboard')
+      const wrapper = mountEl(AdminLayout, { global: { plugins: [router] } })
+      await router.push('/admin/dashboard')
+      await flushPromises()
+      const topbar = wrapper.find('.topbar-right').text()
+      expect(topbar).toContain('API')
+      // 合规红线：真域名不得以任何形式进入 DOM 文本（测试环境截图会 capture 到）
+      expect(topbar).not.toContain('ops.example.com')
+      expect(topbar).not.toContain('https://')
+      wrapper.unmount()
+    } finally {
+      vi.unstubAllEnvs()
+      vi.resetModules()
+    }
+  })
+
+  it('显式调试开关 VITE_SHOW_API_HOST=1 时才显示完整地址', async () => {
+    vi.stubEnv('VITE_API_BASE', 'https://ops.example.com/api/v1')
+    vi.stubEnv('VITE_SHOW_API_HOST', '1')
     vi.resetModules()
     try {
       const { default: AdminLayout } = await import('@/layouts/AdminLayout.vue')

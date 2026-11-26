@@ -443,6 +443,9 @@ export interface CalendarEventRow {
 export const calendarApi = {
   /** 我的日历。 */
   myCalendars: () => list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/calendar/list/my')),
+  /** 新建个人日历（core calendar entity/create，body: name/type；后端 type 必填）。 */
+  // 与 myCalendars 的 list/my 同源（均写/读 cal_calendar），避免 core entity 写 x_cal_calendar 双表漂移
+  create: (name: string) => mapi.post<CalendarRow>('/api/calendar_assemble_control/calendar', { name, type: 'person' }),
   /** 公开日历。 */
   publicCalendars: () => list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/calendar/list/public')),
   calendarDetail: (id: string) => mapi.get<CalendarRow>(`/api/calendar_assemble_control/calendar/${id}`),

@@ -246,3 +246,72 @@ func TestNoInfraIdentifiersInRepo(t *testing.T) {
 			len(hits), strings.Join(hits, "\n  "))
 	}
 }
+
+// 历史遗留守卫：docs/ops/current-state.md 的本地代理记录只准写占位符。
+//
+// 为什么单独一条：TestNoRealSecretsInRepo 依赖 .local.keys，CI / 干净 worktree 里
+// 该文件不存在会显式 Skip（不是通过）。这条只检查结构性事实，不需要真值，任何环境都执行。
+var currentStateProxyRe = regexp.MustCompile(`本地代理\s+127\.0\.0\.1:\d+\s*[→-]\s*([^\s，。）]+)`)
+
+func TestCurrentStateDocUsesDomainPlaceholder(t *testing.T) {
+	root := findRepoRoot(t)
+	p := filepath.Join(root, "docs", "ops", "current-state.md")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("读不到 %s：%v", p, err)
+	}
+	ms := currentStateProxyRe.FindAllStringSubmatch(string(b), -1)
+	if len(ms) == 0 {
+		t.Fatal("没找到「本地代理 ... → ...」记录；格式若已改，请同步更新这条守卫")
+	}
+	for _, m := range ms {
+		// 失败信息绝不打印 m[1]：它一旦是真值，日志本身就成了泄露。
+		if strings.TrimSpace(m[1]) != "<YOUR_TEST_DOMAIN>" {
+			t.Errorf("docs/ops/current-state.md 的本地代理目标不是占位符；必须写 <YOUR_TEST_DOMAIN>")
+		}
+	}
+}
+
+// JWT 字面量守卫：仓库里不得出现真实签发的 JWT token。
+//
+// 为什么：QA 审计脚本常用 localStorage.setItem 注入真 token 来绕过登录，
+// 把 token 原文留在脚本/日志里 = 把可重放凭据入库。真 token 即使过期，
+// payload 里的 sid/uid 仍是会话定位信息。eyJ 是 JWT header base64 的固定前缀，
+// 三段式 x.y.z 是 JWT 的形状；每段至少 8 字符以避开短占位符噪声。
+//
+// 白名单：OIDC 测试夹具里的假 token（payload 是 test.example.com 占位域名与
+// 固定假 exp），不是任何真凭据，且有明确测试用途，故精确路径放行。
+//
+// 失败信息只列文件相对路径，绝不打印 token 原文 —— 否则测试日志本身成了泄露。
+var (
+	jwtLiteralRe        = regexp.MustCompile(`eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}`)
+	jwtFixtureWhitelist = map[string]bool{
+		filepath.Join("oa4rust", "backend", "crates", "auth", "src", "oidc.rs"): true,
+	}
+)
+
+func TestNoJWTLiteralInRepo(t *testing.T) {
+	root := findRepoRoot(t)
+
+	var hits []string
+	walkTracked(t, root, func(rel, path string) {
+		if jwtFixtureWhitelist[rel] {
+			return
+		}
+		if !isProbablyText(path) {
+			return
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return
+		}
+		if jwtLiteralRe.Match(b) {
+			hits = append(hits, rel)
+		}
+	})
+	if len(hits) > 0 {
+		t.Fatalf("仓库里有 %d 处 JWT 字面量（可能是真实签发的 token）：\n  %s\n"+
+			"请从环境变量/占位符读取 token，例如 <YOUR_TEST_TOKEN>；不要把 token 原文写进脚本或日志。",
+			len(hits), strings.Join(hits, "\n  "))
+	}
+}
