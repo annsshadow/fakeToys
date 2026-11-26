@@ -521,3 +521,14 @@ docs/laiyipao/audits/round55-visual-readability/admin-auth-init.js
 # R55 视觉可读性修复部署后审计临时真值不入库
 docs/laiyipao/audits/round55-postdeploy/data/
 docs/laiyipao/audits/round55-postdeploy/admin-auth-init.js
+
+# R56 视觉走查补盲审计临时真值不入库
+docs/laiyipao/audits/round56-visual-walk/data/
+docs/laiyipao/audits/round56-visual-walk/admin-auth-init.js
+
+# R57 视觉截断修复审计临时真值不入库
+docs/laiyipao/audits/round57-visual-truncation/data/
+docs/laiyipao/audits/round57-visual-truncation/admin-auth-init.js
+
+docs/laiyipao/audits/round57-postdeploy/data/
+docs/laiyipao/audits/round57-postdeploy/admin-auth-init.js
