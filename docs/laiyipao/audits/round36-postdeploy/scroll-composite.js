@@ -1,0 +1,1 @@
+(() => { try { const s=document.querySelector('#composite'); if(!s) return JSON.stringify({error:'NO_SECTION'}); s.scrollIntoView({block:'start'}); const r=s.getBoundingClientRect(); return JSON.stringify({top:r.top,height:r.height,hash:location.hash}); } catch(e){ return JSON.stringify({error:String(e)}); } })()

@@ -1,0 +1,9 @@
+#!/bin/bash
+cd "$(git rev-parse --show-toplevel)" || exit 1
+D=docs/laiyipao/audits/round38-postdeploy
+BAD=$(grep -RInE 'Bearer[[:space:]]+eyJ|eyJ[A-Za-z0-9_-]{10,}|[A-Za-z]:[/\\](Users|WORKSPACE|home)' "$D" --exclude-dir=data 2>/dev/null || true)
+echo BAD_COUNT=$(echo -n "$BAD" | grep -c . || true)
+for f in "$D"/*.sh; do bash -n "$f" || exit 1; done
+echo SYNTAX_RC=0
+git check-ignore -v "$D/data/config.json" "$D/data/admin-auth-init.js" 2>&1 || echo NO_IGNORE
+if [ -f "$D/data/admin-auth-init.js" ]; then echo AUTH_BEFORE=YES; else echo AUTH_BEFORE=NO; fi

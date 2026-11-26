@@ -82,3 +82,20 @@ export function computeGrowthPriority(rating: unknown, weights: unknown): Growth
     basis: '依据：服务端五维评分（build_rating）/ 权重份额 × 缺口 · 当前存档 · 更新于本次进入',
   }
 }
+
+/**
+ * R48 消费层：把 computeGrowthPriority 的结论转成页面可安全消费的 CTA 视图。
+ * 短板导航目标就是当前页（自指）时，避免 uni.navigateTo 自己造成死循环：
+ * 文案改为「在本页强化 + 维度」，由调用页在 self=true 时执行页内动作；
+ * 非自指时逐字保留 hintLabel，导航行为完全不变。纯函数，不 import store/game/api。
+ */
+export interface R12CtaView {
+  self: boolean
+  label: string
+}
+
+export function resolveR12Cta(priority: GrowthPriority | null, selfRoute: string): R12CtaView {
+  if (!priority) return { self: false, label: '' }
+  const self = priority.hint === selfRoute
+  return { self, label: self ? '在本页强化' + priority.label : priority.hintLabel }
+}

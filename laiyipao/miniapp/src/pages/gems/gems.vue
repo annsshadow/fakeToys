@@ -15,7 +15,7 @@
         </view>
         <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
         <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
-        <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
+        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>
       </view>
       <view class="r3-kpi r3-enter">
         <view class="r3-kpi-main">
@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
+import { computeGrowthPriority, resolveR12Cta } from '@/pages/_shared/r12GrowthPriority'
 import { computed, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
@@ -171,10 +171,17 @@ import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView }
 
 const store = useGameStore()
 // R12 跨系统成长优先级：口径与首页 aiInsight 一致，四页指向同一短板
+const selfRoute = '/pages/gems/gems'
 const r12Priority = computed(() => computeGrowthPriority(store.buildRating, store.config?.rating_weights))
+const r12Cta = computed(() => resolveR12Cta(r12Priority.value, selfRoute))
 function r12Go() {
   const p = r12Priority.value
-  if (p?.hint) uni.navigateTo({ url: p.hint })
+  if (!p) return
+  if (r12Cta.value.self) {
+    uni.pageScrollTo({ selector: '.r12-priority', duration: 200 })
+    return
+  }
+  if (p.hint) uni.navigateTo({ url: p.hint })
 }
 
 /** R10 §1I.3：图鉴只读背包真实写后缓存的服务端属性差分；无缓存不虚构收益。 */

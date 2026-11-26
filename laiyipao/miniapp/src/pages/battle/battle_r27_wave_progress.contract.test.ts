@@ -178,6 +178,37 @@ describe('R27 既有数据源依据与三端不回退', () => {
   })
 })
 
+// R43 CTA 文案-行为一致性守卫（R28 范式：真实源码文本断言，禁止内嵌参考实现）
+describe('R43 战斗 HUD AI 解读区 CTA 文案-行为一致性（真实 battle.vue）', () => {
+  const ctaLine = (cls: string): string => {
+    const line = battleSrc.split('\n').find(l => l.includes('class="' + cls + '"'))
+    expect(line, '未找到 class="' + cls + '" 的模板行').toBeTruthy()
+    return line ?? ''
+  }
+  const cssRule = (sel: string): string => {
+    const start = battleSrc.indexOf(sel + ' {')
+    if (start < 0) return ''
+    const end = battleSrc.indexOf('}', start)
+    return end < 0 ? '' : battleSrc.slice(start, end)
+  }
+
+  it('R27 r27-ai-cta 必须是只读提示：逐字文案保留，但不得绑定 openHelp/@click', () => {
+    const line = ctaLine('r27-ai-cta')
+    expect(line).toContain('继续清理场上敌人 →')
+    expect(line).not.toContain('openHelp')
+    expect(line).not.toContain('@click')
+  })
+
+  it('R27 .r27-ai-cta CSS 不得 pointer-events:auto（只读提示不拦截点击）', () => {
+    const rule = cssRule('.r27-ai-cta')
+    expect(rule).not.toContain('pointer-events: auto')
+    expect(rule).not.toContain('pointer-events:auto')
+  })
+
+  it('R26 r26-ai-cta 保持只读锚点（无 @click），作为修复对齐目标', () => {
+    expect(ctaLine('r26-ai-cta')).not.toContain('@click')
+  })
+})
 describe('R27 零真值', () => {
   it('SPEC 与源码不含域名/IP/JWT/口令/个人绝对路径', () => {
     for (const text of [spec, battleSrc, tokensSrc]) {

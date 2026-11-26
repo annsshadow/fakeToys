@@ -273,6 +273,10 @@ onMounted(async () => {
   font-size: 28rpx;
   font-weight: 600;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ann-body {

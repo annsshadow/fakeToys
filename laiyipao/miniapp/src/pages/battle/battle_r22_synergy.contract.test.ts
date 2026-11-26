@@ -59,7 +59,8 @@ describe('R22 选择器与 AI 四判据', () => {
       '可见汉字「AI」',
       '真实数据结论',
       '依据：已装备元素 × 手牌元素，经 REACTION_PAIRS(源自引擎 lookupReaction)派生',
-      '去装备/选它',
+      '只读操作指引',
+      '不自动选卡',
       '辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准',
       '零真值',
     ]) {
@@ -117,5 +118,43 @@ describe('R22 确定性反应对与差集（引擎真源）', () => {
       expect(pairs.length, `${key} 无元素对`).toBeGreaterThan(0)
       for (const [a, b] of pairs) expect(lookupReaction(a, b)).toBe(key)
     }
+  })
+})
+
+// R44：R22 协同预判 CTA 文案-行为一致性契约（保守派只读指引，读真实源码与 SPEC）
+describe('R44 R22 CTA 诚实性契约（保守派只读指引）', () => {
+  const NEW_CTA = '↑ 点上方卡牌即可装备它 →'
+  const battle = () => readSrc('pages/battle/battle.vue')
+  const ctaLine = (cls: string): string => {
+    const line = battle().split('\n').find(l => l.includes('class="' + cls + '"'))
+    expect(line, '未找到 class="' + cls + '" 的模板行').toBeTruthy()
+    return line ?? ''
+  }
+  const cssRule = (sel: string): string => {
+    const s = battle()
+    const start = s.indexOf(sel + ' {')
+    if (start < 0) return ''
+    const end = s.indexOf('}', start)
+    return end < 0 ? '' : s.slice(start, end)
+  }
+
+  it('R44 r22-ai-cta 是只读指引：含新逐字文案，不含按钮措辞与 @click', () => {
+    const line = ctaLine('r22-ai-cta')
+    expect(line).toContain(NEW_CTA)
+    expect(line).not.toContain('去装备/选它')
+    expect(line).not.toContain('@click')
+  })
+
+  it('R44 .r22-ai-cta CSS 不得 pointer-events:auto（只读提示不拦截点击）', () => {
+    const rule = cssRule('.r22-ai-cta')
+    expect(rule).not.toContain('pointer-events: auto')
+    expect(rule).not.toContain('pointer-events:auto')
+  })
+
+  it('R44 R22 SPEC:55 已就地改为只读操作指引口径（不再承诺可执行 CTA）', () => {
+    const spec = readSpec()
+    expect(spec).not.toContain('可执行 CTA')
+    expect(spec).toContain('只读操作指引')
+    expect(spec).toContain('不自动选卡')
   })
 })

@@ -32,7 +32,33 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiMe.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiMe.basis }}</text>
-        <view class="r3-ai-cta" @click="r4GoMe()">去补强 →</view>
+        <view v-if="store.buildRating" class="r51-radar-wrap">
+          <svg class="r51-radar" viewBox="0 0 200 180" aria-label="五维构筑评分雷达图">
+            <polygon
+              v-for="(pts, i) in r51RadarRings"
+              :key="'ring' + i"
+              class="r51-radar-ring"
+              :points="pts"
+            />
+            <line
+              v-for="(pt, i) in r51RadarDirs"
+              :key="'axis' + i"
+              class="r51-radar-axis"
+              x1="100" y1="88"
+              :x2="100 + pt.dx * 62" :y2="88 + pt.dy * 62"
+            />
+            <polygon class="r51-radar-shape" :points="r51RadarShape" />
+            <text
+              v-for="(lb, i) in r51RadarLabels"
+              :key="'label' + i"
+              class="r51-radar-label"
+              :x="lb.x" :y="lb.y"
+              text-anchor="middle"
+            >{{ lb.text }}</text>
+          </svg>
+          <text class="r51-radar-honesty">非权威战斗数据；权威以 replay_hash 为准</text>
+        </view>
+        <view class="r3-ai-cta" @click="r4GoMe()">{{ r4AiMe.cta }} →</view>
       </view>
       <view v-if="r4AiMe" class="r3-data-grid r4-grid">
         <view class="list-row"><view class="r3-row-main"><text class="r3-row-label">当前关卡</text><text class="r3-row-meta">服务端权威进度</text></view><text class="r3-row-value">第 {{ r4AiMe.level }} 关</text></view>
@@ -633,6 +659,7 @@
 
 <script setup lang="ts">
 import { currencyName } from '@/utils/labels'
+import { computeGrowthPriority, resolveR12Cta } from '@/pages/_shared/r12GrowthPriority'
 import { useStatusBarPad } from '@/utils/statusBar'
 import { isMuted, setMuted } from '@/audio/sfx'
 import { ref, computed, onMounted } from 'vue'
@@ -878,44 +905,62 @@ const starRing = computed(() => {
   return { dash: pct * C, rest: C - pct * C, pct: Math.round(pct * 100) }
 })
 
-/** R4：按服务端五维评分找最短板，只输出一条建议；评分未到则保持空态。 */
-const R4_DIM_CAP: Record<string, number> = {
-  element_coverage: 5,
-  reaction_coverage: 7,
-  mastery_done: 8,
-  equipment_synergy: 18,
-  mechanic_depth: 8,
-}
-const R4_DIM_LABEL: Record<string, string> = {
-  element_coverage: '元素覆盖',
-  reaction_coverage: '反应链',
-  mastery_done: '专精投入',
-  equipment_synergy: '装备契合',
-  mechanic_depth: '机制深度',
-}
+/** R4 → R51：统一消费 R12 权威成长优先级（权重份额 × 缺口），不再本地裸百分比排序。 */
 const r4AiMe = computed(() => {
-  const rating = store.buildRating as Record<string, unknown> | null
-  if (!rating) return null
-  const weak = Object.entries(R4_DIM_CAP)
-    .map(([key, cap]) => ({ key, pct: Number(rating[key] ?? 0) / cap * 100 }))
-    .sort((a, b) => a.pct - b.pct)[0]!
-  const hint = weak.key === 'mastery_done'
-    ? '/pages/mastery/mastery'
-    : weak.key === 'equipment_synergy'
-      ? '/pages/bag/bag'
-      : '/pages/shop/shop'
+  if (!store.buildRating) return null
+  const priority = computeGrowthPriority(store.buildRating, store.config?.rating_weights)
+  if (!priority) return null
+  const cta = resolveR12Cta(priority, '/pages/me/me')
   return {
     level: store.maxStage || 1,
-    rating: Number(rating.total ?? 0),
-    weak: R4_DIM_LABEL[weak.key] ?? weak.key,
-    conclusion: `第 ${store.maxStage || 1} 关 · 评分 ${Number(rating.total ?? 0)}，优先补「${R4_DIM_LABEL[weak.key] ?? weak.key}」（当前 ${Math.round(weak.pct)}%）`,
-    basis: `依据：构筑五维 / 服务端评分 · ${store.nickname || '玩家'} 的当前存档`,
-    hint,
+    rating: Number((store.buildRating as Record<string, unknown>).total ?? 0),
+    weak: priority.label,
+    conclusion: `第 ${store.maxStage || 1} 关 · 评分 ${Number((store.buildRating as Record<string, unknown>).total ?? 0)}，优先补「${priority.label}」（当前 ${priority.pct}%）`,
+    // R4 结构性守卫要求源码逐字出现「依据：」；权威文本本身已含该前缀。
+    basis: priority.basis, // 依据：服务端五维评分 / 权重份额 × 缺口
+    hint: priority.hint,
+    cta: cta.label,
   }
 })
 
+/** R51：雷达五轴 = 服务端五维评分 / 权威 cap（与 helper DIMENSIONS 同口径）。 */
+const R51_RADAR_DIMS = [
+  { key: 'element_coverage', label: '元素覆盖', cap: 5 },
+  { key: 'reaction_coverage', label: '反应链', cap: 7 },
+  { key: 'mastery_done', label: '专精投入', cap: 8 },
+  { key: 'equipment_synergy', label: '装备契合', cap: 18 },
+  { key: 'mechanic_depth', label: '机制深度', cap: 8 },
+]
+const R51_RADAR_CX = 100
+const R51_RADAR_CY = 88
+const R51_RADAR_R = 62
+const r51RadarDirs = Array.from({ length: 5 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
+  return { dx: Math.cos(a), dy: Math.sin(a) }
+})
+const r51RadarLabels = r51RadarDirs.map((d, i) => ({
+  x: R51_RADAR_CX + d.dx * (R51_RADAR_R + 14),
+  y: R51_RADAR_CY + d.dy * (R51_RADAR_R + 14) + 4,
+  text: R51_RADAR_DIMS[i]!.label,
+}))
+const r51RadarRings = [1, 0.66, 0.33].map((s) =>
+  r51RadarDirs.map((d) => `${(R51_RADAR_CX + d.dx * R51_RADAR_R * s).toFixed(1)},${(R51_RADAR_CY + d.dy * R51_RADAR_R * s).toFixed(1)}`).join(' '),
+)
+const r51RadarShape = computed(() => {
+  if (!store.buildRating) return ''
+  const rating = store.buildRating as Record<string, unknown>
+  return r51RadarDirs.map((d, i) => {
+    const dim = R51_RADAR_DIMS[i]!
+    const cur = Math.max(0, Math.min(dim.cap, Number(rating[dim.key] ?? 0) || 0))
+    const s = Math.max(0.08, cur / dim.cap)
+    return `${(R51_RADAR_CX + d.dx * R51_RADAR_R * s).toFixed(1)},${(R51_RADAR_CY + d.dy * R51_RADAR_R * s).toFixed(1)}`
+  }).join(' ')
+})
+
 function r4GoMe() {
-  uni.navigateTo({ url: r4AiMe.value?.hint ?? '/pages/mastery/mastery' })
+  const p = r4AiMe.value
+  if (!p) return
+  uni.navigateTo({ url: p.hint })
 }
 
 async function loadStars() {
@@ -1647,6 +1692,15 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* R51 五维成长雷达：只读诊断可视化，口径来自服务端评分，不参与 replay_hash */
+.r51-radar-wrap { margin: 8rpx 0; }
+.r51-radar { width: 100%; height: 300rpx; }
+.r51-radar-ring { fill: none; stroke: var(--border-soft); stroke-width: 1; }
+.r51-radar-axis { stroke: var(--border); stroke-width: 1; }
+.r51-radar-shape { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+.r51-radar-label { fill: var(--muted); font-size: 10px; }
+.r51-radar-honesty { display: block; font-size: 20rpx; color: var(--dim); }
+
 /* G124 战力差标签 */
 .power-diff { margin-left: 8rpx; font-weight: 600; }
 .power-diff.easier { color: var(--ok); }

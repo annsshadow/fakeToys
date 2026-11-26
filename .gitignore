@@ -369,3 +369,166 @@ docs/laiyipao/audits/round31-wiki-reaction-mechanics/admin-auth-init.js
 # R31 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照 / dump）
 docs/laiyipao/audits/round31-postdeploy/data/
 docs/laiyipao/audits/round31-postdeploy/admin-auth-init.js
+
+# R32 Wiki技能机制复查审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round32-wiki-skill-mechanics/data/
+docs/laiyipao/audits/round32-wiki-skill-mechanics/admin-auth-init.js
+
+# R32 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round32-postdeploy/data/
+docs/laiyipao/audits/round32-postdeploy/admin-auth-init.js
+
+# R32 修复后复查审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round32-postfix-recheck/data/
+docs/laiyipao/audits/round32-postfix-recheck/admin-auth-init.js
+
+# R33 部署前复查审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round33-wiki-enemy-mechanics/data/
+docs/laiyipao/audits/round33-wiki-enemy-mechanics/admin-auth-init.js
+
+# R33 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round33-postdeploy/data/
+docs/laiyipao/audits/round33-postdeploy/admin-auth-init.js
+
+# R34 Wiki 关卡机制审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round34-wiki-level-mechanics/data/
+docs/laiyipao/audits/round34-wiki-level-mechanics/admin-auth-init.js
+
+# R34 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round34-postdeploy/data/
+docs/laiyipao/audits/round34-postdeploy/admin-auth-init.js
+
+# R35 Wiki 宝石图鉴审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round35-wiki-gem-mechanics/data/
+docs/laiyipao/audits/round35-wiki-gem-mechanics/admin-auth-init.js
+
+# R35 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round35-postdeploy/data/
+docs/laiyipao/audits/round35-postdeploy/admin-auth-init.js
+
+# R36 Wiki 合成技能审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round36-wiki-composite-skills/data/
+docs/laiyipao/audits/round36-wiki-composite-skills/admin-auth-init.js
+
+# R36 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round36-postdeploy/data/
+docs/laiyipao/audits/round36-postdeploy/admin-auth-init.js
+
+# R37 Wiki 专精树审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round37-wiki-mastery-nodes/data/
+docs/laiyipao/audits/round37-wiki-mastery-nodes/admin-auth-init.js
+
+# R37 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round37-postdeploy/data/
+docs/laiyipao/audits/round37-postdeploy/admin-auth-init.js
+
+# R38 Wiki 合成配方审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round38-wiki-recipes/data/
+docs/laiyipao/audits/round38-wiki-recipes/admin-auth-init.js
+
+# R38 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round38-postdeploy/data/
+docs/laiyipao/audits/round38-postdeploy/admin-auth-init.js
+
+# R39 Wiki 皮肤与掉落审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round39-wiki-skins-drop-rates/data/
+docs/laiyipao/audits/round39-wiki-skins-drop-rates/admin-auth-init.js
+
+# R39 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round39-postdeploy/data/
+docs/laiyipao/audits/round39-postdeploy/admin-auth-init.js
+
+# R40 Wiki 评分权重审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round40-wiki-rating-weights/data/
+docs/laiyipao/audits/round40-wiki-rating-weights/admin-auth-init.js
+
+# R40 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round40-postdeploy/data/
+docs/laiyipao/audits/round40-postdeploy/admin-auth-init.js
+
+# R41 Wiki章节元数据审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round41-wiki-chapters/data/
+docs/laiyipao/audits/round41-wiki-chapters/admin-auth-init.js
+
+# R41 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round41-postdeploy/data/
+docs/laiyipao/audits/round41-postdeploy/admin-auth-init.js
+
+# R42 Wiki关卡所属章节审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round42-wiki-level-chapter/data/
+docs/laiyipao/audits/round42-wiki-level-chapter/admin-auth-init.js
+
+# R42 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round42-postdeploy/data/
+docs/laiyipao/audits/round42-postdeploy/admin-auth-init.js
+
+# R43 战斗HUD CTA只读审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round43-battle-hud-cta-honesty/data/
+docs/laiyipao/audits/round43-battle-hud-cta-honesty/admin-auth-init.js
+
+# R43 部署后独立回归审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round43-postdeploy/data/
+docs/laiyipao/audits/round43-postdeploy/admin-auth-init.js
+
+# R44 R22 CTA只读审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round44-r22-cta-honesty/data/
+docs/laiyipao/audits/round44-r22-cta-honesty/admin-auth-init.js
+
+# R44 部署后独立回归审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round44-postdeploy/data/
+docs/laiyipao/audits/round44-postdeploy/admin-auth-init.js
+
+# R47 R16验真CTA审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round47-r16-verify-cta/data/
+docs/laiyipao/audits/round47-r16-verify-cta/admin-auth-init.js
+
+# R47 部署后独立回归审计临时真值不入库（本地令牌注入脚本 / 浏览器证据）
+docs/laiyipao/audits/round47-postdeploy/data/
+docs/laiyipao/audits/round47-postdeploy/admin-auth-init.js
+
+# R48 R12成长CTA审计临时真值不入库
+docs/laiyipao/audits/round48-r12-growth-cta/data/
+docs/laiyipao/audits/round48-r12-growth-cta/admin-auth-init.js
+
+# R48 R12成长CTA部署后审计临时真值不入库
+docs/laiyipao/audits/round48-postdeploy/data/
+docs/laiyipao/audits/round48-postdeploy/admin-auth-init.js
+
+# R51 me页五维雷达审计临时真值不入库
+docs/laiyipao/audits/round51-me-radar-growth/data/
+docs/laiyipao/audits/round51-me-radar-growth/admin-auth-init.js
+
+# R51 me页五维雷达部署后审计临时真值不入库
+docs/laiyipao/audits/round51-postdeploy/data/
+docs/laiyipao/audits/round51-postdeploy/admin-auth-init.js
+
+# R53 首页pct取整审计临时真值不入库
+docs/laiyipao/audits/round53-home-pct-rounding/data/
+docs/laiyipao/audits/round53-home-pct-rounding/admin-auth-init.js
+
+# R53 首页pct取整部署后审计临时真值不入库
+docs/laiyipao/audits/round53-postdeploy/data/
+docs/laiyipao/audits/round53-postdeploy/admin-auth-init.js
+
+# R54 视觉走查审计临时真值不入库
+docs/laiyipao/audits/round54-visual-walk/data/
+docs/laiyipao/audits/round54-visual-walk/admin-auth-init.js
+
+# R55 视觉可读性修复审计临时真值不入库
+docs/laiyipao/audits/round55-visual-readability/data/
+docs/laiyipao/audits/round55-visual-readability/admin-auth-init.js
+
+# R55 视觉可读性修复部署后审计临时真值不入库
+docs/laiyipao/audits/round55-postdeploy/data/
+docs/laiyipao/audits/round55-postdeploy/admin-auth-init.js
+
+# R56 视觉走查补盲审计临时真值不入库
+docs/laiyipao/audits/round56-visual-walk/data/
+docs/laiyipao/audits/round56-visual-walk/admin-auth-init.js
+
+# R57 视觉截断修复审计临时真值不入库
+docs/laiyipao/audits/round57-visual-truncation/data/
+docs/laiyipao/audits/round57-visual-truncation/admin-auth-init.js
+
+docs/laiyipao/audits/round57-postdeploy/data/
+docs/laiyipao/audits/round57-postdeploy/admin-auth-init.js

@@ -106,3 +106,151 @@ describe('R12 跨系统成长优先级契约', () => {
     expect(bag).toContain('doUpgrade')
   })
 })
+
+// ===== R48：R12 成长优先级 CTA 自导航死循环修复（真实源码守卫，无内嵌参考实现） =====
+describe('R48 R12 优先级 CTA 自指防护契约', () => {
+  const W = { element_coverage: 1, reaction_coverage: 1, mastery_done: 1, equipment_synergy: 1, mechanic_depth: 1 }
+  // 五维等权 → 未补维度 gap 最大者胜出；下面四组 rating 各自只留一个短板
+  const RATINGS = {
+    element: { element_coverage: 0, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 18, mechanic_depth: 8 },
+    mechanic: { element_coverage: 5, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 18, mechanic_depth: 0 },
+    equipment: { element_coverage: 5, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 0, mechanic_depth: 8 },
+    reaction: { element_coverage: 5, reaction_coverage: 0, mastery_done: 8, equipment_synergy: 18, mechanic_depth: 8 },
+  }
+
+  // 从真实源码取 r12Go 函数体，避免把整页误判为已修复
+  const goBody = (src: string): string => {
+    const i = src.indexOf('function r12Go()')
+    if (i < 0) return ''
+    return src.slice(i, i + 700)
+  }
+
+  // 自指分支子串：从 if (r12Cta.value.self) 花括号配对闭合处截取，
+  // 仅覆盖自指 block，不含后续非自指 navigateTo —— 与整段 goBody 口径区分。
+  const selfBranch = (body: string): string => {
+    const marker = 'if (r12Cta.value.self)'
+    const i = body.indexOf(marker)
+    if (i < 0) return ''
+    const open = body.indexOf('{', i)
+    if (open < 0) return body.slice(i)
+    let depth = 0
+    for (let k = open; k < body.length; k++) {
+      if (body[k] === '{') depth++
+      else if (body[k] === '}') {
+        depth--
+        if (depth === 0) return body.slice(i, k + 1)
+      }
+    }
+    return body.slice(i)
+  }
+
+  it('R48-A helper 行为：真实导入 resolveR12Cta，自指时 self=true 且文案改为页内指引；非自指逐字保留 hintLabel；null 空态安全', async () => {
+    const mod = await import('../pages/_shared/r12GrowthPriority').catch(() => null)
+    expect(mod, '真实 helper 不存在').toBeTruthy()
+    const compute = mod!.computeGrowthPriority
+    const resolve = mod!.resolveR12Cta
+    expect(typeof compute, 'computeGrowthPriority 必须仍导出').toBe('function')
+    expect(typeof resolve, 'R48 必须在 helper 导出 resolveR12Cta 消费层纯函数').toBe('function')
+
+    // 缺口来源仍在：三条 hint 指向页面自身路由（算法不改）
+    const elem = compute(RATINGS.element, W)
+    expect(elem!.label).toBe('元素覆盖')
+    expect(elem!.hint).toBe('/pages/bag/bag')
+    const mech = compute(RATINGS.mechanic, W)
+    expect(mech!.label).toBe('机制深度')
+    expect(mech!.hint).toBe('/pages/bag/bag')
+    const eq = compute(RATINGS.equipment, W)
+    expect(eq!.label).toBe('装备契合')
+    expect(eq!.hint).toBe('/pages/equipment/equipment')
+    const react = compute(RATINGS.reaction, W)
+    expect(react!.label).toBe('反应链')
+    expect(react!.hint).toBe('/pages/reactions/reactions')
+
+    // 自指三例：self=true，label 为页内指引口径
+    const eView = resolve(elem, '/pages/bag/bag')
+    expect(eView.self).toBe(true)
+    expect(eView.label).toBe('在本页强化元素覆盖')
+    const mView = resolve(mech, '/pages/bag/bag')
+    expect(mView.self).toBe(true)
+    expect(mView.label).toBe('在本页强化机制深度')
+    const qView = resolve(eq, '/pages/equipment/equipment')
+    expect(qView.self).toBe(true)
+    expect(qView.label).toBe('在本页强化装备契合')
+
+    // 非自指跨页：self=false，label 逐字等于原 hintLabel
+    const cross = resolve(react, '/pages/bag/bag')
+    expect(cross.self).toBe(false)
+    expect(cross.label).toBe(react!.hintLabel)
+    expect(cross.label).toBe('看反应搭配')
+
+    // 防御性一致：目标路由等于当前路由也算自指
+    const selfReact = resolve(react, '/pages/reactions/reactions')
+    expect(selfReact.self).toBe(true)
+    expect(selfReact.label).toBe('在本页强化反应链')
+
+    // 空态安全
+    const empty = resolve(null, '/pages/bag/bag')
+    expect(empty.self).toBe(false)
+    expect(empty.label).toBe('')
+  })
+
+  it('R48-B bag 页：元素覆盖/机制深度自指时不 navigateTo 自身，改走页内切页签动作；CTA 用 r12Cta.label', () => {
+    const src = readSrc(PAGES.bag)
+    expect(src, 'bag 未导入 resolveR12Cta').toContain('resolveR12Cta')
+    expect(src, 'bag 未声明自身路由常量').toContain('/pages/bag/bag')
+    expect(src, 'bag 未派生 r12Cta').toMatch(/r12Cta\s*=\s*computed/)
+    expect(src, 'bag CTA 仍绑定 r12Priority.hintLabel').not.toContain('{{ r12Priority.hintLabel }}')
+    expect(src, 'bag CTA 未用 r12Cta.label').toContain('r12Cta.label')
+    const body = goBody(src)
+    expect(body, 'bag r12Go 未识别自指').toContain('r12Cta.value.self')
+    expect(body, 'bag 丢失非自指 navigateTo 跨页导航').toContain('navigateTo')
+    const self = selfBranch(body)
+    expect(self, 'bag 自指分支未提前返回').toContain('return')
+    expect(self, 'bag 自指分支内仍 navigateTo 自身').not.toContain('navigateTo')
+    expect(self, 'bag 自指未做页内切页签动作').toContain('bagTab.value =')
+  })
+
+  it('R48-C equipment 页：装备契合自指时不 navigateTo 自身，改走页内定位装备列表；CTA 用 r12Cta.label', () => {
+    const src = readSrc(PAGES.equipment)
+    expect(src, 'equipment 未导入 resolveR12Cta').toContain('resolveR12Cta')
+    expect(src, 'equipment 未声明自身路由常量').toContain('/pages/equipment/equipment')
+    expect(src, 'equipment 未派生 r12Cta').toMatch(/r12Cta\s*=\s*computed/)
+    expect(src, 'equipment CTA 仍绑定 r12Priority.hintLabel').not.toContain('{{ r12Priority.hintLabel }}')
+    expect(src, 'equipment CTA 未用 r12Cta.label').toContain('r12Cta.label')
+    const body = goBody(src)
+    expect(body, 'equipment r12Go 未识别自指').toContain('r12Cta.value.self')
+    expect(body, 'equipment 丢失非自指 navigateTo 跨页导航').toContain('navigateTo')
+    const self = selfBranch(body)
+    expect(self, 'equipment 自指分支未提前返回').toContain('return')
+    expect(self, 'equipment 自指分支内仍 navigateTo 自身').not.toContain('navigateTo')
+    expect(self, 'equipment 自指未做页内定位动作').toMatch(/r3Slot\.value\s*=|r12FocusInPage|scrollIntoView/)
+  })
+
+  it('R48-D 四页自指防护齐备，且非自指仍保留 navigateTo 跨页导航', () => {
+    for (const [name, path] of Object.entries(PAGES)) {
+      const src = readSrc(path)
+      expect(src, name + ' 未导入 resolveR12Cta').toContain('resolveR12Cta')
+      expect(src, name + ' 未派生 r12Cta').toMatch(/r12Cta\s*=\s*computed/)
+      const body = goBody(src)
+      expect(body, name + ' r12Go 未识别自指').toContain('r12Cta.value.self')
+      expect(body, name + ' 丢失非自指 navigateTo 跨页导航').toContain('navigateTo')
+      expect(body, name + ' 自指分支未提前 return').toContain('return')
+    }
+  })
+
+  it('R48-E 不回退：DIM_HINT 三自指路由、令牌三锚点、首页副本不动、无 r47/r48 令牌', () => {
+    const h = readSrc('pages/_shared/r12GrowthPriority.ts')
+    expect(h, 'helper 丢了元素覆盖自指路由').toContain('/pages/bag/bag')
+    expect(h, 'helper 丢了装备契合自指路由').toContain('/pages/equipment/equipment')
+    expect(h, 'helper 丢了跨页导航路由').toContain('/pages/reactions/reactions')
+    expect(h, 'computeGrowthPriority 被删').toContain('export function computeGrowthPriority')
+    const tokens = readSrc('styles/tokens.css')
+    expect(tokens).toContain('--lyp-token-version: lyp-tokens-v1')
+    expect(tokens).toContain('--lyp-r3-version: lyp-tokens-v3-r3')
+    expect(tokens).toContain('--lyp-r6-version: lyp-tokens-r6')
+    expect(tokens).not.toMatch(/--r47-/ )
+    expect(tokens).not.toMatch(/--r48-/ )
+    const index = readSrc('pages/index/index.vue')
+    expect(index, '首页副本不得改动').not.toContain('resolveR12Cta')
+  })
+})

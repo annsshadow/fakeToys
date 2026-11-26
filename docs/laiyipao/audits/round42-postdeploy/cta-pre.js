@@ -1,0 +1,1 @@
+(() => { const a=document.querySelector('.r41-ai-cta a'); return JSON.stringify({hash:location.hash,ctaHref:a?a.getAttribute('href'):null,ctaText:a?a.innerText.trim():null,sectionVisible:!!document.querySelector('.r41-chapter-mechanics')}); })()
