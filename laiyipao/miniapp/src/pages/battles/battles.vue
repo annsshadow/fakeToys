@@ -376,6 +376,8 @@ const nextCursor = ref(0)
  * 否则旧游标的页会 append 进新筛选的列表（服务端 result 是全量过滤的）。
  */
 let listReqSeq = 0
+/** R64：辅助面板（growthCompare / r14Advice）绑定当前展开战报的序号，旧响应直接丢弃。 */
+let detailPanelSeq = 0
 const expandedId = ref(0)
 
 /**
@@ -491,7 +493,8 @@ const detailDefeatReview = computed(() => {
 const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
 const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
 
-async function loadGrowthCompare(d: BattleDetail) {
+async function loadGrowthCompare(d: BattleDetail, seq?: number) {
+  if (seq !== undefined && seq !== detailPanelSeq) return
   let baseline: BattleDetail | null = null
   try {
     const history = await api.myBattleHistory(20)
@@ -501,6 +504,7 @@ async function loadGrowthCompare(d: BattleDetail) {
   } catch {
     baseline = null
   }
+  if (seq !== undefined && seq !== detailPanelSeq) return // 异步恢复后复核：过期响应不写 ref
   growthCompare.value = baseline ? normalizeGrowthCompare([baseline, d]) : normalizeGrowthCompare([])
 }
 
@@ -764,11 +768,14 @@ const r14Applying = ref(false)
 const r14ApplyError = ref('')
 const r14ApplyDone = ref('')
 
-async function loadR14Advice(d: BattleDetail) {
+async function loadR14Advice(d: BattleDetail, seq?: number) {
+  if (seq !== undefined && seq !== detailPanelSeq) return
   const entries = Object.entries(d.elements_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
   if (!entries.length) { r14Advice.value = null; return }
   const reactions = Object.entries(d.reactions_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
-  r14Advice.value = await fetchAdviceAction({ element: entries[0]![0], reaction: reactions[0]?.[0], source: 'battle' })
+  const advice = await fetchAdviceAction({ element: entries[0]![0], reaction: reactions[0]?.[0], source: 'battle' })
+  if (seq !== undefined && seq !== detailPanelSeq) return // 异步恢复后复核：过期建议不写 ref
+  r14Advice.value = advice
 }
 
 function r14OpenCompare() {
@@ -824,13 +831,14 @@ async function toggleDetail(it: BattleHistoryItem) {
 
 /** 拉取单局详情（已缓存则直接返回）。 */
 async function loadDetail(it: BattleHistoryItem): Promise<void> {
+  const seq = ++detailPanelSeq
   if (details.value[it.id]) return
   detailLoadingIds.value.add(it.id)
   try {
     const d = await api.myBattleDetail(it.id)
     details.value[it.id] = d
-    await loadGrowthCompare(d)
-    void loadR14Advice(d)
+    await loadGrowthCompare(d, seq)
+    void loadR14Advice(d, seq)
   } catch {
     // 详情加载失败：保留展开态，可再次点击重试
   } finally {
