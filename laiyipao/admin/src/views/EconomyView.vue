@@ -33,6 +33,18 @@ const orderPage = ref(1)
  * date_to 传 YYYY-MM-DD 即可，服务端 queryTimeEnd 含结束当天，前端不再 +1。
  */
 const orderStatus = ref('')
+
+/** 订单状态中文映射：与玩家端 me.vue orderStatusText 权威口径一致。 */
+function orderStatusText(s: string): string {
+  const map: Record<string, string> = {
+    pending: '待支付',
+    paid: '已支付',
+    delivered: '已发货',
+    refunded: '已退款',
+  }
+  return map[s] ?? s
+}
+
 const orderDateRange = ref<[string, string] | null>(null)
 // 渠道筛选（2026-11-01 新一轮第 67 轮）。
 const orderProvider = ref('')
@@ -449,10 +461,10 @@ loadOrders()
       <div class="toolbar" style="margin-bottom: 8px">
         <!-- 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 日期范围 -->
         <el-select v-model="orderStatus" placeholder="全部状态" clearable style="width: 130px" @change="applyOrderFilter">
-          <el-option label="pending" value="pending" />
-          <el-option label="paid" value="paid" />
-          <el-option label="delivered" value="delivered" />
-          <el-option label="refunded" value="refunded" />
+          <el-option label="待支付" value="pending" />
+          <el-option label="已支付" value="paid" />
+          <el-option label="已发货" value="delivered" />
+          <el-option label="已退款" value="refunded" />
         </el-select>
         <!-- 渠道筛选（2026-11-01 新一轮第 67 轮） -->
         <el-select v-model="orderProvider" placeholder="全部渠道" clearable style="width: 130px; margin-left: 8px" @change="applyOrderFilter">
@@ -505,7 +517,7 @@ loadOrders()
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.status === 'paid' || row.status === 'delivered' ? 'success' : 'info'" size="small">
-              {{ row.status }}
+              {{ orderStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
