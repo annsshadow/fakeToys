@@ -37,7 +37,7 @@
         <text class="dim" style="display: block; margin-top: 12rpx">
           请先启动后端：cd server && go run ./cmd/api
         </text>
-        <view class="btn btn-primary" style="margin-top: 20rpx" @click="retry">重试</view>
+        <view class="btn btn-primary" style="margin-top: 20rpx" role="button" tabindex="0" aria-label="重试" @click="retry" @keydown.enter="retry" @keydown.space.prevent="retry">重试</view>
       </view>
     </view>
 
@@ -59,13 +59,19 @@
           <text>公告</text>
           <!-- 全部公告入口（2026-11-01 新一轮第 42 轮）：首页只展示最新几条，
                历史公告在首页不可回看，这里提供公告列表页入口。 -->
-          <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
+          <text class="ann-all" role="link" tabindex="0" aria-label="查看全部公告" @click="goAnnouncements" @keydown.enter="goAnnouncements" @keydown.space.prevent="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
           v-for="(a, i) in visibleAnnouncements"
           :key="a.id"
           class="ann-item"
+          role="button"
+          tabindex="0"
+          :aria-label="a.title + (expanded.has(a.id) ? '，收起正文' : '，展开正文')"
+          :aria-expanded="expanded.has(a.id)"
           @click="toggleAnn(a.id)"
+          @keydown.enter="toggleAnn(a.id)"
+          @keydown.space.prevent="toggleAnn(a.id)"
         >
           <view class="ann-head">
             <!-- 第六批 R55：首页公告首条与公告页统一「最新」徽章 -->
@@ -138,7 +144,12 @@
             <text
               v-if="d.pct === 0 && d.hint"
               class="dim-hint link"
+              role="link"
+              tabindex="0"
+              :aria-label="'去补充' + d.label + '：' + d.hintLabel"
               @click="go(d.hint)"
+              @keydown.enter="go(d.hint)"
+              @keydown.space.prevent="go(d.hint)"
             >→ {{ d.hintLabel }}</text>
             <text v-else class="dim-empty-hint" v-if="d.pct === 0">待培养</text>
           </view>
@@ -159,7 +170,12 @@
           v-for="(m, i) in marginalGain.slice(0, 3)"
           :key="m.label"
           class="mg-row tap"
+          role="link"
+          tabindex="0"
+          :aria-label="m.label + '，收益' + m.gain + (m.hint ? '，' + m.hintLabel : '，无跳转入口')"
           @click="m.hint && go(m.hint)"
+          @keydown.enter="m.hint && go(m.hint)"
+          @keydown.space.prevent="m.hint && go(m.hint)"
         >
           <text class="mg-rank">{{ i + 1 }}</text>
           <text class="flex-1">{{ m.label }}<text class="dim">（还差 {{ m.gap }}）</text></text>
@@ -183,7 +199,7 @@
       </view>
 
       <!-- 主行动（v2 hero）：页面唯一的渐变强调块，一眼看到「该点哪里」 -->
-      <view class="action-card card-hero tap" @click="goStage">
+      <view class="action-card card-hero tap" role="link" tabindex="0" :aria-label="'开始第 ' + store.unlockedLevel + ' 关'" @click="goStage" @keydown.enter="goStage" @keydown.space.prevent="goStage">
         <view class="flex-1">
           <text class="action-kicker">当前关卡</text>
           <text class="action-title">第 {{ store.unlockedLevel }} 关</text>
@@ -224,7 +240,7 @@
           <text class="grid-group-count">{{ playMenus.length }}</text>
         </view>
         <view class="grid">
-          <view v-for="m in playMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+          <view v-for="m in playMenus" :key="m.path" class="grid-item tap" role="link" tabindex="0" :aria-label="m.label" @click="go(m.path)" @keydown.enter="go(m.path)" @keydown.space.prevent="go(m.path)">
             <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
@@ -237,7 +253,7 @@
           <text class="grid-group-count">{{ codexMenus.length }}</text>
         </view>
         <view class="grid">
-          <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+          <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" role="link" tabindex="0" :aria-label="m.label" @click="go(m.path)" @keydown.enter="go(m.path)" @keydown.space.prevent="go(m.path)">
             <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
@@ -253,7 +269,12 @@
             v-for="e in elements"
             :key="e.key"
             class="elem-chip tap"
+            role="link"
+            tabindex="0"
+            :aria-label="'查看' + e.name + '相关反应'"
             @click="go('/pages/reactions/reactions')"
+            @keydown.enter="go('/pages/reactions/reactions')"
+            @keydown.space.prevent="go('/pages/reactions/reactions')"
           >
             <view class="dot" :style="{ background: e.color }" />
             <text class="elem-name">{{ e.name }}</text>
