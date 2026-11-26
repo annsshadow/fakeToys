@@ -207,6 +207,8 @@ type SettleInput struct {
 	// ⚠️ 这是 I-6 重放闭环的最后一环：选牌会改变后续战斗，
 	// 缺了它第三方无法复现原局，验真会把正常对局判成伪造。
 	CardPicks []int `json:"card_picks"`
+	// ReactionTimeline 逐次反应归因仅用于战报展示；服务端归一化后落库，不参与结算裁决/score/loot/replay_hash。
+	ReactionTimeline []ReactionTimelineEvent `json:"reaction_timeline,omitempty"`
 }
 
 // SettleLimits 是校验阈值。

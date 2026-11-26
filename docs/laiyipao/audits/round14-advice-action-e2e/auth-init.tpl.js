@@ -1,0 +1,9 @@
+(function(){
+  try { localStorage.setItem('lyp_token', '__LYP_TOKEN__'); localStorage.removeItem('lyp_token_exp'); } catch(e) {}
+  var P={pageErrors:[],consoleErrors:[],apiFailures:[],failedRequests:[],adviceResponses:[]}; window.__LYP_PROBE__=P;
+  window.addEventListener('error',function(e){P.pageErrors.push(String(e.message||''))});
+  window.addEventListener('unhandledrejection',function(e){P.pageErrors.push('unhandled:'+String((e.reason&&e.reason.message)||e.reason||''))});
+  var oe=console.error; console.error=function(){try{P.consoleErrors.push(Array.prototype.map.call(arguments,function(a){return String(a)}).join(' '))}catch(e){} oe.apply(console,arguments)};
+  var of=window.fetch; window.fetch=function(){var args=arguments; var url=String((args[0]&&args[0].url)||args[0]||''); return of.apply(this,args).then(function(res){try{if(/advice\/action/.test(url)){res.clone().json().then(function(j){P.adviceResponses.push({status:res.status,element:(j&&j.element)||'',code:(j&&j.empty_reason&&j.empty_reason.code)||'',cand:(j&&j.candidate_id)||0,cn:(j&&j.candidate_name)||''})}).catch(function(){})} if(res.status>=400)P.apiFailures.push({url:url,status:res.status})}catch(e){} return res})};
+  var os=XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send=function(){var xhr=this; xhr.addEventListener('load',function(){try{var url=String(xhr.responseURL||''); if(/advice\/action/.test(url)){var j=JSON.parse(xhr.responseText); P.adviceResponses.push({status:xhr.status,element:j.element||'',code:(j&&j.empty_reason&&j.empty_reason.code)||'',cand:j.candidate_id||0,cn:j.candidate_name||''})} if(xhr.status>=400)P.apiFailures.push({url:url,status:xhr.status})}catch(e){}}); return os.apply(this,arguments)};
+})();

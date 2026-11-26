@@ -1,0 +1,1 @@
+(() => { const lines=document.querySelectorAll('.reaction-line').length; const rr=!!document.querySelector('.result-title'); const cards=document.querySelectorAll('.hand-card').length; const skip=[...document.querySelectorAll('.btn')].some(b=>b.textContent.includes('全部不要了'))?1:0; return [rr?'SETTLED':(cards?'CARD_PHASE':(skip?'SKIP_ONLY':'WAIT')),lines].join('|'); })()

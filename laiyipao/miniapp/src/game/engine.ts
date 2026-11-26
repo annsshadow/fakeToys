@@ -60,6 +60,31 @@ import type {
   SkillDef,
 } from './types'
 
+/** R15 逐次反应旁路记录的单条结构（展示性归因，不进 replay_hash） */
+export interface ReactionTimelineEvent {
+  wave: number
+  tick: number
+  reaction: ReactionKey
+  // R15 wire 契约：后端 ReactionTimelineEvent json tag 是 enemy_uid（snake_case）。
+  // 上报 camelCase 会被后端 fail loud 判为 enemy_uid<1 → settle 500。
+  enemy_uid: number
+  damage: number
+}
+
+/** 上限 200：超出保留最早 200 条并置 truncated */
+const REACTION_TIMELINE_LIMIT = 200
+
+/** R24 只读敌人元素层快照的单条结构（展示性预判，不进 replay_hash、不写回引擎） */
+export interface ElementLayerHudRow {
+  uid: number
+  defId: number
+  name: string
+  hp: number
+  maxHp: number
+  stacks: Partial<Record<Element, number>>
+  elementCap: number
+}
+
 /**
  * 回放前缀的 **S 段**（技能槽配置）—— 抽成纯函数。
  *
@@ -586,6 +611,12 @@ export class BattleEngine {
   kills = 0
   leaked = 0
   reactionsCount = 0
+  /**
+   * R15 逐次反应旁路采集（展示性归因，绝不进 replay_hash / settleInput 权威字段）。
+   * 仅保留最早 200 条；超出置 truncated，尾部丢弃以确保「哪一波先发生」可读。
+   */
+  private readonly reactionTimelineEvents: ReactionTimelineEvent[] = []
+  private didTruncateReactionTimeline = false
   score = 0
   heatMax = 0
 
@@ -746,6 +777,52 @@ export class BattleEngine {
    */
   hasReplayScript(): boolean {
     return this.replayScript !== null
+  }
+
+  /** R15：返回逐次反应旁路采集的快照（前 200 条，不进 replay_hash、不影响结算） */
+  reactionTimeline(): ReactionTimelineEvent[] {
+    return this.reactionTimelineEvents.slice()
+  }
+
+  /**
+   * R24：当前场上存活敌人的元素层只读快照（展示性预判，不进 replay_hash）。
+   * 只读取 this.enemies 与 stacks，返回深拷贝；层数 clamp 到当前 element_cap。
+   */
+  elementLayerHud(): ElementLayerHudRow[] {
+    const cap = Number(this.currentAttacker().elementCap)
+    return this.enemies.filter(e => !e.dead).map(e => {
+      const stacks: Partial<Record<Element, number>> = {}
+      for (const el of ELEMENT_ORDER) {
+        const n = e.stacks.get(el) ?? 0n
+        if (n > 0n) stacks[el] = Math.min(Number(n), cap)
+      }
+      return {
+        uid: e.uid,
+        defId: e.defId,
+        name: e.name,
+        hp: Number(e.hp),
+        maxHp: Number(e.maxHp),
+        stacks,
+        elementCap: cap,
+      }
+    })
+  }
+
+  /** R27：本波推进只读快照（波次总数 / 场上存活 / 待出场）。纯展示派生，不进 replay_hash。 */
+  waveProgressHud(): { waveIndex: number; waveTotal: number; onField: number; pending: number } {
+    const spawns = this.cfg.level.waves?.[this.waveIndex]?.spawns ?? []
+    const waveTotal = spawns.reduce((sum, sp) => sum + (Number(sp?.count) > 0 ? Number(sp.count) : 0), 0)
+    return {
+      waveIndex: this.waveIndex,
+      waveTotal,
+      onField: this.enemies.filter(e => !e.dead).length,
+      pending: this.spawnQueue.length,
+    }
+  }
+
+  /** 因超过 200 条而丢弃过尾部事件时为 true */
+  reactionTimelineTruncated(): boolean {
+    return this.didTruncateReactionTimeline
   }
 
   /** 取走并清空事件队列（渲染层调用） */
@@ -1428,6 +1505,7 @@ export class BattleEngine {
       pierceLeft: s.pierce + this.buffs.pierceBonus,
       chainLeft: s.chain + this.buffs.chainBonus,
       hitSet: new Set(),
+      hitCounted: false,
       aoeRadius: s.aoeRadius + this.buffs.aoeBonus,
       dead: false,
       trailLen: 0,
@@ -1518,12 +1596,19 @@ export class BattleEngine {
       if (p.hitSet.has(e.uid)) continue
       if (!this.hitEnemy(p, e)) continue
 
-      this.hits++
+      // 穿透弹丸一发可命中多只敌人；hits 口径是「有多少次开火命中了东西」，
+      // 所以只在首次主目标命中记一次，后续穿透 / 溅射 / 弹射都不再记。
+      // 旧实现每个被穿透的敌人都 hits++，高穿透局稳定产出 hits > shots，
+      // 服务端 ValidateSettle 以 ErrInvalidHitRate 拒掉合法战绩。
+      if (!p.hitCounted) {
+        this.hits++
+        p.hitCounted = true
+      }
       p.hitSet.add(e.uid)
 
       // 溅射
       //
-      // `this.hits` 只在**主目标**这里自增，applyAoe / 弹射内部**不**加。
+      // `this.hits` 只在**首次主目标**命中时自增一次，applyAoe / 弹射 / 后续穿透都不加。
       //
       // hits 的语义是「有多少次开火命中了东西」，不是「总共造成了几次伤害结算」。
       // 理由是一条跨端强约束：服务端 ValidateSettle 拒 in.Hits > in.Shots
@@ -1717,6 +1802,18 @@ export class BattleEngine {
     if (res.reaction) {
       this.reactionsCount++
       this.reactionsUsed[res.reaction] = (this.reactionsUsed[res.reaction] ?? 0) + 1
+      // R15 旁路：只读事件，不触碰 emit/record/replay_hash/score。
+      if (this.reactionTimelineEvents.length < REACTION_TIMELINE_LIMIT) {
+        this.reactionTimelineEvents.push({
+          wave: this.waveIndex + 1,
+          tick: this.tick,
+          reaction: res.reaction,
+          enemy_uid: e.uid,
+          damage: Number(res.reactionDamage),
+        })
+      } else {
+        this.didTruncateReactionTimeline = true
+      }
       const resisted = res.resistAppliedPermille < PERMILLE
       this.emit({
         type: 'reaction',

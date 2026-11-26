@@ -1,0 +1,1 @@
+(function(){var bs=[].slice.call(document.querySelectorAll('button'));var b=bs.filter(function(e){return(e.innerText||'').trim()==='登录'}).pop();if(b){b.click();return 'LOGIN_CLICKED'}return 'NO_BTN:'+bs.length})();

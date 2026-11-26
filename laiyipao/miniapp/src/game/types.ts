@@ -231,6 +231,8 @@ export interface Projectile {
   chainLeft: number
   /** 已命中的目标 uid，避免同一次穿透重复命中 */
   hitSet: Set<number>
+  /** 本发弹丸是否已记过 hits：穿透多目标也只算「一次开火命中」 */
+  hitCounted: boolean
   aoeRadius: number
   dead: boolean
   /** 表现用：拖尾长度 */

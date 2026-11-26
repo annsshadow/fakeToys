@@ -1,0 +1,1 @@
+(function(){var b=[].slice.call(document.querySelectorAll('button')).filter(function(e){return(e.innerText||'').trim().indexOf('登录')>=0}).pop();if(b){b.click();return 'CLICKED'}return 'NOBTN'})();

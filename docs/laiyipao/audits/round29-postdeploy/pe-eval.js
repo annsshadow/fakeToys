@@ -1,0 +1,1 @@
+(() => { var p=window.__LYP_PROBE__||{}; var list=(p.pageErrors||[]).map(function(x){return String(x)}); var real=list.filter(function(x){return !/Autoplay|play\(\)|NotAllowedError/i.test(x)}); return JSON.stringify({total:list.length,real:real.length,realList:real.slice(0,8),ce:(p.consoleErrors||[]).length,af:(p.apiFailures||[]).length,fr:(p.failedRequests||[]).length}); })()

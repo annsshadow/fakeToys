@@ -337,6 +337,40 @@
         <text class="muted" style="display: block; margin-top: 8rpx">{{ diagnoseInfo.detail }}</text>
         <text v-for="(s, i) in diagnoseInfo.suggestions" :key="i" class="diag-tip">· {{ s }}</text>
       </view>
+
+      <!-- R21：个人卡点教练（近 30 天关卡尝试聚合；辅助诊断不参与结算） -->
+      <view class="card r21-level-coach" role="region">
+        <text class="card-title">
+          <text>个人突破档案</text>
+          <text class="tag tag-neutral">近 {{ coachWindowDays }} 天</text>
+        </text>
+        <text class="muted r21-coach-window">{{ coachResp?.window_from }} ~ {{ coachResp?.window_to }}</text>
+
+        <view v-if="coachRows.length" class="r21-coach-list">
+          <view v-for="row in coachRows" :key="row.level_id" class="r21-coach-row" :data-r21-level="row.level_id">
+            <view class="r21-row-head">
+              <text class="r21-level-name">第 {{ row.level_id }} 关</text>
+              <text v-if="row.stuck" class="r21-stuck-tag">卡点</text>
+            </view>
+            <view class="r21-row-stats">
+              <text>尝试 {{ row.attempts }} 次</text>
+              <text>胜 {{ row.wins }} 次</text>
+              <text>最好第 {{ row.best_wave }} 波</text>
+              <text>平均 {{ r21Wave(row.avg_wave) }} 波</text>
+            </view>
+            <text class="r21-coach-tip">{{ row.coach.title }}：{{ row.coach.detail }}</text>
+          </view>
+        </view>
+        <view v-else class="r21-coach-empty">近 30 天无关卡尝试记录</view>
+
+        <view class="r21-ai-note" role="note">
+          <text class="r21-ai-title">AI · 卡点教练</text>
+          <text class="r21-ai-conclusion">{{ coachConclusion }}</text>
+          <text class="r21-ai-basis">依据：近 30 天 battle_records 的 level_id/result/wave_reached 聚合；连续失利沿用 StuckThreshold=2</text>
+          <text class="r21-coach-cta" @click="goCoachLevel">去补强 →</text>
+        </view>
+        <text class="r21-honesty-note">本卡为辅助诊断，不参与结算、score、星级、loot；权威结果以 replay_hash 为准。</text>
+      </view>
     </view>
   </view>
 </template>
@@ -372,6 +406,35 @@ const starsLoaded = ref(false)
 /** 开始战斗的导航在途锁：双击只进一个战斗页，避免叠加实例重复扣体力。 */
 const battleNavigating = ref(false)
 const diagnoseInfo = ref<any>(null)
+
+/** R21 个人卡点教练（近 30 天关卡聚合；辅助诊断，权威看 replay_hash）。 */
+const coachResp = ref<api.LevelCoachResp | null>(null)
+const coachWindowDays = computed(() => coachResp.value?.window_days ?? 30)
+const coachRows = computed<api.LevelCoachItem[]>(() => {
+  const items = coachResp.value?.items
+  if (!Array.isArray(items)) return []
+  return [...items].sort((a, b) => b.attempts - a.attempts)
+})
+function r21Wave(v: unknown): string {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n.toFixed(1) : '0.0'
+}
+const coachConclusion = computed(() => {
+  const top = coachRows.value[0]
+  if (!top) return '近30天暂无足够记录生成教练建议。'
+  return `近30天该关尝试 ${top.attempts} 次、胜 ${top.wins} 次、最好到第 ${top.best_wave} 波，建议先补强。`
+})
+function goCoachLevel() {
+  const top = coachRows.value[0]
+  if (!top) return
+  // 只在本页内切到目标关卡，不新造路由；权威状态仍由服务端裁定
+  const lv = store.levelMap.get(top.level_id)
+  if (lv) curChapter.value = lv.chapter
+  selectedId.value = top.level_id
+  void nextTick(() => {
+    uni.pageScrollTo({ selector: '#level-detail', duration: 250 })
+  })
+}
 
 const chapters = computed(() => store.config?.chapters ?? [])
 
@@ -766,6 +829,12 @@ onLoad(async (query) => {
     if (d && d.stuck && d.stage !== 'unclear') diagnoseInfo.value = d
   } catch {
     /* 诊断不可用不阻塞选关 */
+  }
+  // R21 个人卡点教练（辅助诊断，失败只走空态，不阻塞选关）
+  try {
+    coachResp.value = await api.fetchMyLevelCoach(30)
+  } catch {
+    coachResp.value = null
   }
 })
 
@@ -1299,4 +1368,22 @@ onMounted(() => {
   .level-cell.current,
   .play-glyph { animation: none; }
 }
+
+/* R21 个人卡点教练 */
+.r21-level-coach { border-left: 6rpx solid var(--accent, var(--border)); }
+.r21-coach-window { display: block; margin-top: 6rpx; }
+.r21-coach-list { margin-top: 12rpx; }
+.r21-coach-row { padding: 12rpx 0; border-bottom: 1rpx solid var(--border); }
+.r21-row-head { display: flex; align-items: center; gap: 10rpx; }
+.r21-level-name { font-weight: 600; }
+.r21-stuck-tag { color: var(--warn); font-size: 22rpx; }
+.r21-row-stats { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 6rpx; font-size: 24rpx; color: var(--text-2); }
+.r21-coach-tip { display: block; margin-top: 6rpx; color: var(--text-2); }
+.r21-coach-empty { margin-top: 12rpx; color: var(--text-2); }
+.r21-ai-note { margin-top: 14rpx; padding: 12rpx; background: rgba(88,166,255,.08); border-radius: var(--radius); }
+.r21-ai-title { display: block; font-weight: 600; color: var(--accent, var(--text-2)); }
+.r21-ai-conclusion { display: block; margin-top: 6rpx; }
+.r21-ai-basis { display: block; margin-top: 6rpx; font-size: 22rpx; color: var(--text-2); }
+.r21-coach-cta { display: inline-block; margin-top: 10rpx; color: var(--accent, var(--text-2)); }
+.r21-honesty-note { display: block; margin-top: 10rpx; font-size: 22rpx; color: var(--text-2); }
 </style>

@@ -306,6 +306,65 @@ const ELEMENT_LABEL: Record<string, string> = {
   kinetic: '动能',
 }
 
+/**
+ * R16 · 逐次反应时间线（reaction-timeline-v1 消费）。
+ * 展示性归因、非权威结算：仅叙事「发生了什么」，不参与 score/验真/结算。
+ * 缺字段 / 空数组 / schema 不符 / 结构异常一律走诚实空态，不编造。
+ */
+const TIMELINE_SCHEMA = 'reaction-timeline-v1'
+const TIMELINE_EMPTY_TEXT = '该战报无逐次反应记录（旧版本结算）'
+
+interface TimelineRow {
+  wave: number
+  tick: number
+  reaction: string
+  enemyUid: number
+  damageText: string
+}
+
+/** 伤害确定性格式化：整数不挂小数，非整数保留 1 位，非有限数破折号。 */
+function fmtTimelineDamage(n: number): string {
+  if (!Number.isFinite(n)) return '—'
+  return Number.isInteger(n) ? n.toFixed(0) : n.toFixed(1)
+}
+
+const reactionTimeline = computed(() => {
+  const empty = { ok: false as const, rows: [] as TimelineRow[], truncated: false, peakWave: 0, total: 0 }
+  const d = detail.value as unknown as {
+    reaction_timeline?: { schema_version?: string; events?: unknown[]; truncated?: boolean }
+  } | null
+  const tl = d?.reaction_timeline
+  if (!tl || tl.schema_version !== TIMELINE_SCHEMA || !Array.isArray(tl.events)) return empty
+
+  type Ev = Partial<{ wave: number; tick: number; reaction: string; enemy_uid: number; damage: number }>
+  const rows: TimelineRow[] = []
+  for (const raw of tl.events) {
+    if (!raw || typeof raw !== 'object') continue
+    const ev = raw as Ev
+    if (!Number.isInteger(ev.wave) || (ev.wave as number) <= 0) continue
+    if (!Number.isInteger(ev.tick) || (ev.tick as number) < 0) continue
+    if (typeof ev.reaction !== 'string' || ev.reaction.length === 0) continue
+    if (!Number.isInteger(ev.enemy_uid)) continue
+    if (typeof ev.damage !== 'number' || !Number.isFinite(ev.damage)) continue
+    rows.push({
+      wave: ev.wave as number,
+      tick: ev.tick as number,
+      reaction: ev.reaction,
+      enemyUid: ev.enemy_uid as number,
+      damageText: fmtTimelineDamage(ev.damage),
+    })
+  }
+  rows.sort((a, b) => a.wave - b.wave || a.tick - b.tick)
+  const peakWave = rows.length ? Math.max(...rows.map((r) => r.wave)) : 0
+  return {
+    ok: rows.length > 0,
+    rows,
+    truncated: tl.truncated === true,
+    peakWave,
+    total: rows.length,
+  }
+})
+
 onMounted(load)
 
 /**
@@ -608,6 +667,28 @@ const asRow = (r: unknown) => r as AdminBattleView
           </span>
         </div>
 
+        <!-- R16：逐次反应时间线（展示性归因，非权威结算凭证） -->
+        <div class="r16-reaction-timeline" role="status" aria-live="polite">
+          <div class="r16-timeline-head">
+            <span class="r16-timeline-title">AI · 反应时间线</span>
+            <span v-if="reactionTimeline.ok" class="r16-timeline-summary">
+              本局记录 {{ reactionTimeline.total }} 次逐次反应，集中在第 {{ reactionTimeline.peakWave }} 波
+            </span>
+          </div>
+          <p class="r16-timeline-basis">依据：reaction_timeline.events（wave/tick/reaction/enemy_uid/damage），展示性归因、非权威结算</p>
+          <div v-if="reactionTimeline.ok" class="r16-timeline-cta">发起验真 →</div>
+          <div v-if="!reactionTimeline.ok" class="r16-timeline-empty">{{ TIMELINE_EMPTY_TEXT }}</div>
+          <template v-else>
+            <div
+              v-for="(row, idx) in reactionTimeline.rows"
+              :key="row.wave + '-' + row.tick + '-' + row.enemyUid + '-' + idx"
+              class="r16-timeline-row"
+              :data-r16-wave="String(row.wave)"
+            >第 {{ row.wave }} 波 · {{ labelOfReaction(reactionLabel, row.reaction) }} · #{{ row.enemyUid }} · {{ row.damageText }}伤害</div>
+          </template>
+          <div v-if="reactionTimeline.truncated" class="r16-truncated-note">已截断，仅显示前 200 条</div>
+        </div>
+
         <div class="section-title">触发地形</div>
         <div class="chip-row">
           <span v-if="detail.terrain_used.length === 0" class="muted">—</span>
@@ -651,4 +732,14 @@ const asRow = (r: unknown) => r as AdminBattleView
   background: rgba(126, 231, 135, 0.14);
   color: #7ee787;
 }
+/* R16：逐次反应时间线（复用现有令牌，无新增视觉变量） */
+.r16-reaction-timeline { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--lyp-border); border-radius: 6px; background: var(--lyp-panel-2); }
+.r16-timeline-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+.r16-timeline-title { font-weight: 600; color: #7ee787; }
+.r16-timeline-summary { font-size: 12px; }
+.r16-timeline-basis { margin: 6px 0; font-size: 11px; opacity: 0.75; line-height: 1.5; }
+.r16-timeline-cta { font-size: 12px; color: var(--el-color-primary, #409eff); margin-bottom: 4px; }
+.r16-timeline-empty { font-size: 12px; opacity: 0.75; padding: 4px 0; }
+.r16-timeline-row { font-size: 12px; padding: 3px 0; border-top: 1px solid var(--lyp-border); font-variant-numeric: tabular-nums; }
+.r16-truncated-note { font-size: 11px; opacity: 0.8; margin-top: 6px; }
 </style>

@@ -112,6 +112,15 @@ func (s *Server) adminMe(c *fiber.Ctx) error {
 	return c.JSON(service.AdminMeResp{Admin: a})
 }
 
+// R18 反应伤害贡献聚合（辅助分析；次数权威仍看 dashboard）。
+func (s *Server) adminReactionDamageImpact(c *fiber.Ctx) error {
+	res, err := s.Svc.AdminReactionDamageImpact(c.Context())
+	if err != nil {
+		return err
+	}
+	return c.JSON(res)
+}
+
 func (s *Server) adminDashboard(c *fiber.Ctx) error {
 	d, err := s.Svc.AdminDashboard(c.Context())
 	if err != nil {

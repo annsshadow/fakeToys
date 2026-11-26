@@ -178,6 +178,7 @@ function fireAt(eng: BattleEngine, x: number, y: number, damage = 5_000n): void 
     chainLeft: s.chain,
     pierceLeft: s.pierce,
     hitSet: new Set<number>(),
+    hitCounted: false,
     dead: false,
     trailLen: 3,
     slot: 0,
@@ -227,6 +228,27 @@ describe('一颗弹丸命中多个敌人（第 65 轮）', () => {
     fireAt(eng, 200, 500)
     fly(eng)
     expect(es.filter((e) => e.hp < 1_000_000n).length).toBe(4)
+  })
+
+  it('穿透：一发弹丸命中 4 只敌人只能记 1 次命中（hits≤shots）', () => {
+    // R13-BUG-1：shots 每次 fire 才 +1，而旧 checkProjectileHit 对每个
+    // 被穿透弹丸命中的敌人都 hits++。一发穿 4 只就记 4 次命中，
+    // 服务端 ValidateSettle 拒 hits>shots，合法高穿透局战绩不入账。
+    const { eng, inner } = mkEngine({ chain: 0, pierce: 3, aoeRadius: 0 })
+    const es = [
+      placeEnemy(eng, 200, 500, 1),
+      placeEnemy(eng, 300, 500, 2),
+      placeEnemy(eng, 400, 500, 3),
+      placeEnemy(eng, 500, 500, 4),
+    ]
+    inner.shots = 1
+    fireAt(eng, 200, 500)
+    fly(eng)
+    expect(es.filter((e) => e.hp < 1_000_000n).length).toBe(4)
+    expect(
+      inner.hits,
+      `穿透一发命中 4 只却记 hits=${inner.hits} > shots=${inner.shots} —— 服务端会以 ErrInvalidHitRate 拒掉这局`,
+    ).toBeLessThanOrEqual(inner.shots)
   })
 
   it('单目标：chain=0 且 pierce=0 只打 1 只（守「不过度命中」）', () => {

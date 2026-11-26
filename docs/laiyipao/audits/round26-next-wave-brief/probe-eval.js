@@ -1,0 +1,26 @@
+(() => {
+  const brief=document.querySelector('.r26-wave-brief');
+  const head=document.querySelector('.r26-brief-head');
+  const rows=[...document.querySelectorAll('.r26-enemy-row')];
+  const empty=document.querySelector('.r26-brief-empty');
+  const title=document.querySelector('.r26-ai-title');
+  const concl=document.querySelector('.r26-ai-conclusion');
+  const basis=document.querySelector('.r26-ai-basis');
+  const cta=document.querySelector('.r26-ai-cta');
+  const honesty=document.querySelector('.r26-ai-honesty');
+  const cards=[...document.querySelectorAll('.hand-card')];
+  const r=document.querySelector('.result-title');
+  const skip=[...document.querySelectorAll('.btn')].find(b=>b.textContent.includes('全部不要了'));
+  const wm=(document.body.innerText||'').match(/波次\s*(\d+)\s*\/\s*(\d+)/);
+  const s={hasBrief:!!brief,head:head?head.textContent.trim():'',waveNow:wm?wm[1]:'',waveTotal:wm?wm[2]:'',
+    rows:rows.map(x=>({id:x.getAttribute('data-r26-enemy'),text:x.textContent.trim().replace(/\s+/g,' ').slice(0,120)})),
+    empty:empty?empty.textContent.trim():'',aiTitle:title?title.textContent.trim():'',aiConcl:concl?concl.textContent.trim():'',
+    basis:basis?basis.textContent.trim():'',cta:cta?cta.textContent.trim():'',honesty:honesty?honesty.textContent.trim():'',
+    cardCount:cards.length,hasSkip:!!skip,unknownTags:document.querySelectorAll('.r26-unknown-tag').length,
+    briefOverflowX:!!brief&&brief.scrollWidth>brief.clientWidth+1,
+    docOverflowX:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
+    hasUndefined:(document.body.innerText||'').includes('undefined'),hasNaN:(document.body.innerText||'').includes('NaN'),
+    result:r?r.textContent.trim():'',
+    state:r?'SETTLED':((brief&&cards.length)?'CARD_PHASE':((brief&&skip)?'SKIP_ONLY':'WAIT'))};
+  return JSON.stringify(s);
+})()

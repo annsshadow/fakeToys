@@ -1,0 +1,1 @@
+(() => { const p=window.__LYP_PROBE__||{}; return JSON.stringify({pe:(p.pageErrors||[]).slice(-3),ce:(p.consoleErrors||[]).slice(-3),af:(p.apiFailures||[]).slice(-3),fr:(p.failedRequests||[]).slice(-3),state:document.querySelector('.result-title')?'SETTLED':(document.querySelector('.hand-card')?'CARD':document.querySelector('.r26-wave-brief')?'BRIEF_WAIT':'WAIT')}); })()

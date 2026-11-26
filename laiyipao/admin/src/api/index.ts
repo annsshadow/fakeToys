@@ -65,6 +65,7 @@ import type {
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
+  ReactionDamageImpactResp,
   RecomputeLevelStat,
   RecomputeModeState,
   RecomputeSummary,
@@ -121,6 +122,7 @@ export type {
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
+  ReactionDamageImpactResp,
   RecomputeLevelStat,
   RecomputeModeState,
   RecomputeSummary,
@@ -191,6 +193,50 @@ export function adminLogout() {
 export function fetchDashboard() {
   return api.get<Dashboard>('/admin/dashboard')
 }
+
+/**
+ * R18：近 30 天反应伤害贡献聚合（辅助分析，非权威结算）。
+ * 次数权威仍取 dashboard_reaction_counts，伤害来自 reaction_timeline.events。
+ */
+export function fetchReactionDamageImpact() {
+  return api.get<ReactionDamageImpactResp>('/admin/reaction-damage-impact')
+}
+
+/**
+ * R20：全平台战斗效率聚合（辅助诊断，非权威结算）。
+ *
+ * 服务端 GET /admin/battle-efficiency 落地后由 cmd/tygen 接管此类型；
+ * 当前先在此声明前端消费形状，字段与 SPEC §1 逐字对齐（snake_case）。
+ */
+export interface BattleEfficiencyBucket {
+  bucket: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+}
+export interface BattleEfficiencyResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+  avg_heat_max: number
+  leaked_per_battle: number
+  avg_duration_ms: number
+  buckets: BattleEfficiencyBucket[]
+  ai_insight: Record<string, unknown>
+}
+
+/** R20：读取全平台（管理员鉴权）30 天战斗效率聚合。 */
+export function getBattleEfficiency() {
+  return api.get<BattleEfficiencyResp>('/admin/battle-efficiency')
+}
+
+/** 语义别名：与 SPEC §2 的 fetchAdminBattleEfficiency 命名对齐。 */
+export const fetchAdminBattleEfficiency = getBattleEfficiency
 
 /**
  * 「尽力而为」版看板：401 **不**触发跳转登录。

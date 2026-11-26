@@ -1,0 +1,1 @@
+(() => { var s=document.querySelector('.r29-timeline-scroll'); if(!s) return JSON.stringify({scroll:false}); s.scrollTop=s.scrollHeight; return JSON.stringify({scroll:true,top:s.scrollTop,h:s.scrollHeight,ch:s.clientHeight}); })()

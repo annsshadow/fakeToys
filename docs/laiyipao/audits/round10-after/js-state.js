@@ -1,0 +1,1 @@
+(function(){var t=document.body.innerText||'';return JSON.stringify({applied:/已应用|替换成功|已替换|应用成功/.test(t),configNow:[].slice.call(document.querySelectorAll('.skill-slot,.slot')).map(function(e){return(e.innerText||'').trim()}).slice(0,6),probeStatus:'ok'})})()

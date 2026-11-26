@@ -118,12 +118,22 @@ func (s *Server) Register(app *fiber.App) {
 	// 与 `/config`、`/leaderboard` 同级。
 	v1.Get("/announcements", s.announcements)
 
+	// R14：权威一键替换建议。游客也要拿到诚实空态而不是 401 中断页面，
+	// 因此挂在 /me 路径下但只做可选鉴权；id/replace 仍完全由服务端裁决。
+	v1.Get("/me/advice/action", optionalUser(s.Svc), s.meAdviceAction)
+
 	me := v1.Group("/me", requireUser(s.Svc))
 	me.Get("/", s.me)
 	// R6 §1E：真实数据驱动的个性化推荐（用户侧），沿用同一登录态。
 	me.Get("/recommendations", s.meRecommendations)
 	// R7 缺口3：推荐落地收益预估（只读，参数 kind/id/replace 缺一不可）。
 	me.Get("/recommendations/impact", s.meRecommendationImpact)
+	// R19 玩家反应伤害贡献聚合（辅助分析，非权威结算凭据）。
+	me.Get("/reaction-damage-impact", s.meReactionDamageImpact)
+	// R20 战斗效率趋势（辅助诊断，30 天 battle_records 全量聚合）。
+	me.Get("/battle-efficiency", s.meBattleEfficiency)
+	// R21 玩家卡点教练（近 30 天跨局诊断，辅助非权威）。
+	me.Get("/level-coach", s.meLevelCoach)
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
@@ -327,6 +337,10 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Post("/logout", s.adminLogout)
 	adm.Get("/me", s.adminMe)
 	adm.Get("/dashboard", s.adminDashboard)
+	// R18：反应伤害贡献聚合（辅助分析，管理员鉴权；次数权威仍看 dashboard）。
+	adm.Get("/reaction-damage-impact", s.adminReactionDamageImpact)
+	// R20 全平台战斗效率趋势（与 me 端点同口径）。
+	adm.Get("/battle-efficiency", s.adminBattleEfficiency)
 	// R6 §1E：管理侧聚合洞察；读端点，readonly 角色也允许查看。
 	adm.Get("/recommendations/:scope", s.adminRecommendations)
 	adm.Get("/levels", s.adminLevels)
@@ -603,7 +617,18 @@ func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
 	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"ok": true})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{
+		"ok":           true,
+		"power_before": nil,
+		"power_after":  nil,
+		"power_method": "not_applicable",
+		"power_snapshot": fiber.Map{
+			"applicable": false,
+			"before":     nil,
+			"after":      nil,
+			"note":       "游客转正只改账号凭据，不改变技能与专精构筑，战力不适用",
+		},
+	}))
 }
 
 // updateNickname 修改当前玩家的昵称。
@@ -659,17 +684,41 @@ func (s *Server) upgradeSkill(c *fiber.Ctx) error {
 	if err != nil || id <= 0 {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "技能 id 必须是正整数")
 	}
-	level, err := s.Svc.UpgradeSkill(c.Context(), userIDFrom(c), int64(id))
+	uid := userIDFrom(c)
+	beforeBuild, _, _, err := s.Svc.LoadMeProfile(c.Context(), uid)
 	if err != nil {
 		return err
 	}
+	beforePower := s.Svc.ComputePowerFor(beforeBuild)
+	level, err := s.Svc.UpgradeSkill(c.Context(), uid, int64(id))
+	if err != nil {
+		return err
+	}
+	afterBuild, _, _, err := s.Svc.LoadMeProfile(c.Context(), uid)
+	if err != nil {
+		return err
+	}
+	afterPower := s.Svc.ComputePowerFor(afterBuild)
 	// 余额一并回给客户端：升级必然花钱，让前端再发一次 /wallet 才能刷新余额
 	// 是个可避免的竞态（玩家连点两次会看到中间态）。
 	w, err := s.Svc.LoadWallet(c.Context(), userIDFrom(c))
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(fiber.Map{"skill_id": id, "level": level, "wallet": w}))
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{
+		"skill_id":     id,
+		"level":        level,
+		"wallet":       w,
+		"power_before": beforePower,
+		"power_after":  afterPower,
+		"power_method": "service.ComputePowerFor(build) / domain.computePower",
+		"power_snapshot": fiber.Map{
+			"applicable": true,
+			"before":     beforePower,
+			"after":      afterPower,
+			"method":     "service.ComputePowerFor(build) / domain.computePower",
+		},
+	}))
 }
 
 // synthesizeSkill 把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。

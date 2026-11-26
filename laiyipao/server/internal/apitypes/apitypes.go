@@ -107,10 +107,27 @@ var AdminRegistry = tygen.Registry{
 	{Name: "GameConfig", Go: service.GameConfig{}},
 	{Name: "Dashboard", Go: service.Dashboard{}},
 	{Name: "ReactionCount", Go: service.ReactionCount{}},
+	// R18 反应伤害贡献聚合（次数仍以 ReactionCount/物化视图为准）。
+	{Name: "ReactionDamageImpactItem", Go: service.ReactionDamageImpactItem{}},
+	{Name: "ReactionDamageImpactResp", Go: service.ReactionDamageImpactResp{}},
+	// R19 玩家反应伤害贡献（次数取 reactions_used，按当前 user + 30 天窗口）。
+	{Name: "MeReactionDamageImpactItem", Go: service.MeReactionDamageImpactItem{}},
+	{Name: "MeReactionDamageImpactResp", Go: service.MeReactionDamageImpactResp{}},
+	// R20 战斗效率趋势（me/admin 同结构）。
+	{Name: "BattleEfficiencyBucket", Go: service.BattleEfficiencyBucket{}},
+	{Name: "BattleEfficiencyAIInsight", Go: service.BattleEfficiencyAIInsight{}},
+	{Name: "BattleEfficiencyResp", Go: service.BattleEfficiencyResp{}},
+	// R21 玩家卡点教练（跨局真实数据聚合，辅助非权威）。
+	{Name: "LevelCoachAdvice", Go: service.LevelCoachAdvice{}},
+	{Name: "LevelCoachItem", Go: service.LevelCoachItem{}},
+	{Name: "LevelCoachResp", Go: service.LevelCoachResp{}},
 	{Name: "DauPoint", Go: service.DauPoint{}},
 	{Name: "StageFunnel", Go: service.StageFunnel{}},
 	{Name: "AdminUserView", Go: service.AdminUserView{}},
 	{Name: "AdminBattleView", Go: service.AdminBattleView{}},
+	// R15 战报逐次反应时间线（展示性归因，非结算凭据）。
+	{Name: "ReactionTimelineEvent", Go: domain.ReactionTimelineEvent{}},
+	{Name: "ReactionTimeline", Go: domain.ReactionTimeline{}},
 	{Name: "AdminBattleDetailView", Go: service.AdminBattleDetailView{}},
 	{Name: "AdminBattleDetailResp", Go: service.AdminBattleDetailResp{}},
 	{Name: "RecomputeSide", Go: service.RecomputeSide{}},

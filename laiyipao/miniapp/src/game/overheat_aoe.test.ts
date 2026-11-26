@@ -124,6 +124,7 @@ function fireAt(eng: BattleEngine, x: number, y: number, damage = 5_000n): void 
     chainLeft: s.chain,
     pierceLeft: s.pierce,
     hitSet: new Set<number>(),
+    hitCounted: false,
     dead: false,
     trailLen: 3,
     slot: 0,

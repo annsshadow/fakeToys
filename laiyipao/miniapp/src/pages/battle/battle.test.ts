@@ -48,6 +48,8 @@ vi.mock('@/api/client', () => ({
   startBattle: vi.fn(),
   settleBattle: vi.fn(),
   abandonBattle: vi.fn(),
+  myBattleHistory: vi.fn(),
+  myBattleDetail: vi.fn(),
 }))
 
 const TICK = 50
@@ -94,6 +96,11 @@ class FakeEngine {
   /** step() 返回的事件（音效接线的判据：页面必须把它们交给 playBattleEvents） */
   events: unknown[] = []
   settleToken = 0
+  /** R28 归因：只读 timeline 旁路（测试按步设置，模拟引擎 engine.reactionTimeline()） */
+  timeline: Array<{ wave: number; enemy_uid: number; reaction: string; damage: number }> = []
+  truncatedFlag = false
+  reactionTimeline() { return this.timeline as any }
+  reactionTimelineTruncated() { return this.truncatedFlag }
 
   constructor(options: any) {
     this.options = options
@@ -246,6 +253,8 @@ beforeEach(() => {
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.startBattle.mockResolvedValue(startBattleResp as any)
   mockApi.abandonBattle.mockResolvedValue({ refunded_energy: 6, abandoned: true } as any)
+  mockApi.myBattleHistory.mockResolvedValue({ items: [], next_cursor: 0 } as any)
+  mockApi.myBattleDetail.mockResolvedValue({} as any)
   mockApi.settleBattle.mockResolvedValue({
     win: true,
     stars: 3,
@@ -399,6 +408,17 @@ describe('battle.vue 战斗页', () => {
     expect(eng.stepCount).toBe(steps)
   })
 
+  it('R10 §1I.2：结算卡只在两次真实结算时给差值，缺历史显示诚实空态', async () => {
+    mockQueryNode(null)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    await new Promise((r) => setTimeout(r, TICK * 5))
+    await flushPromises()
+    expect(wrapper.text()).toContain('AI · 养成前后（同一关可信差值）')
+    expect(wrapper.text()).toContain('还缺养成前那局战报，先打一局同关')
+    expect(wrapper.text()).not.toContain('提升 +')
+  })
   it('帧循环驱动 won → 结算成功：结果卡、奖励、new_max_stage、停帧', async () => {
     const Battle = await loadPage()
     const { wrapper, store } = mountPage(Battle)
@@ -495,6 +515,38 @@ describe('battle.vue 战斗页', () => {
     expect(text).toContain('11941')
     expect(text).toContain('295')
     expect(text, '尚未拿到 1 星时不能空喊冲 3 星').not.toContain('冲 3 星')
+  })
+
+  it('R12 失败结算给出失守波次与可执行改进动作（不用空泛提示冒充复盘）', async () => {
+    // 2026-11-23 真浏览器：第 40 关弱构筑 8 波只推进到 7 波，
+    // 23 杀 / 24 漏 / 0 反应，结算卡只写「下一局可换元素搭配对比收益」。
+    mockApi.settleBattle.mockResolvedValue({
+      win: false, stars: 0, score: 11812, loot: { coin: 660 }, new_max_stage: 0,
+    } as any)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.endPhase = 'lost'
+    eng.winAtStep = 1
+    eng.waveIndex = 6
+    eng.cfg.level.wave_count = 8
+    eng.cardPicks = Array.from({ length: 6 }, () => -1)
+    eng.settleInput = () => ({
+      kills: 23, leaked: 24, reactions: 0,
+      card_picks: Array.from({ length: 6 }, () => -1),
+      replay_hash: 'r12-defeat',
+    })
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    const review = wrapper.find('.settle-defeat-review')
+    expect(review.exists()).toBe(true)
+    expect(review.text()).toContain('第 7/8 波失守')
+    expect(review.text()).toContain('漏怪 24/47')
+    expect(review.text()).toContain('跳过选卡 6 波')
+    expect(review.text()).toContain('下一局')
+    expect(review.text()).toContain('第二种元素')
   })
 
   it('R8 战斗 HUD 实时显示免钳分倒计时并在临近锚点时提示（来自关卡波次与战斗时钟）', async () => {
@@ -1219,6 +1271,44 @@ describe('battle.vue 倍速档位', () => {
 
 
 describe('battle.vue R9 战斗反馈与连连贯性（2026-11-22）', () => {
+  it('R28 归因汇总分母覆盖最终显示的三条记录（非当前步反应数）', async () => {
+    // 队长复核：本步只有 1 条反应时页面显示 3 条（2 旧 + 1 新），
+    // AI 却按当前步 1 条算分母 → "已归因 1/1"，与显示不一致。
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Number.POSITIVE_INFINITY
+    eng.winAtStep = Number.POSITIVE_INFINITY
+
+    // 第一步：2 条已归因反应
+    eng.timeline = [
+      { wave: 1, enemy_uid: 5, reaction: 'overheat', damage: 100 },
+      { wave: 1, enemy_uid: 6, reaction: 'steam_burst', damage: 200 },
+    ]
+    eng.events = [
+      { type: 'reaction', reaction: 'overheat', damage: 100n, resisted: false, existingElement: 'fire', incomingElement: 'lightning' },
+      { type: 'reaction', reaction: 'steam_burst', damage: 200n, resisted: false, existingElement: 'fire', incomingElement: 'ice' },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('.reaction-line').length).toBe(2)
+
+    // 第二步：1 条已归因反应，页面最终显示 3 条
+    eng.timeline = [
+      ...eng.timeline,
+      { wave: 1, enemy_uid: 7, reaction: 'superconduct', damage: 300 },
+    ]
+    eng.events = [
+      { type: 'reaction', reaction: 'superconduct', damage: 300n, resisted: false, existingElement: 'lightning', incomingElement: 'ice' },
+    ]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('.reaction-line').length).toBe(3)
+    expect(wrapper.find('.r28-feed-ai-conclusion').text()).toBe('已归因 3/3 条最近反应')
+  })
+
   it('R9 反应事件在 HUD 留下可读的最近反应记录，而不只是瞬时粒子', async () => {
     // 真浏览器第 1 关 8× 连拍：反应只在 canvas 上闪一下，HUD 没有任何
     // 「刚触发了什么」的可读记录。高层速下玩家根本看不清，事后只能看结算计数。
@@ -1380,5 +1470,119 @@ describe('battle.vue R9 战斗反馈与连连贯性（2026-11-22）', () => {
     expect(css, '钳分文案同样不得竖排').toMatch(/\.time-budget-text\s*\{[^}]*white-space:\s*nowrap/)
     expect(css, '移动视口应有专门收缩布局').toMatch(/@media\s*\(max-width:\s*430px\)/)
     expect(css, '窄屏下 spacer 不应把胶囊挤出可视宽度').toMatch(/@media\s*\(max-width:\s*430px\)[\s\S]*\.hud-spacer\s*\{\s*display:\s*none/)
+  })
+})
+
+describe('battle.vue R29 完整反应时间线抽屉（2026-11-24）', () => {
+  /** 造一条合法 timeline 事件；reaction 用 fixtures 中存在的 steam_burst */
+  function event(wave: number, uid: number, damage: number) {
+    return { wave, tick: wave * 10 + uid, reaction: 'steam_burst', enemy_uid: uid, damage }
+  }
+  /** 造一个 R9 reaction 事件（让 CTA 所在的 .reaction-feed 出现） */
+  function reactionEvent(damage: number) {
+    return { type: 'reaction', reaction: 'steam_burst', damage: BigInt(damage), resisted: false, x: 0n, y: 0n }
+  }
+  async function mountWithFeed() {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.cardAtStep = Number.POSITIVE_INFINITY
+    eng.winAtStep = Number.POSITIVE_INFINITY
+    eng.events = [reactionEvent(1234)]
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+    expect(wrapper.find('.r28-feed-cta').exists()).toBe(true)
+    return { wrapper, eng, renderer: FakeRenderer.instances[0]! }
+  }
+
+  it('未暂停打开抽屉会暂停并记账；关闭只恢复自己的暂停', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(2, 7, 1234)]
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.find('.r29-timeline-row').exists()).toBe(true)
+    expect(wrapper.text()).toContain('第2波')
+    expect(wrapper.text()).toContain('#7')
+    expect(wrapper.text()).toContain('1234.0')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+  })
+
+  it('玩家原有暂停不被抽屉夺取；关闭后仍保持暂停', async () => {
+    const { wrapper, renderer } = await mountWithFeed()
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(wrapper.text(), '手动暂停原因不被抽屉覆盖').not.toContain('切到后台时自动暂停了')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(renderer.paused).toBe(true)
+  })
+
+  it('图例与抽屉互斥：开抽屉自动关图例，开图例自动关抽屉', async () => {
+    const { wrapper } = await mountWithFeed()
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+  })
+
+  it('截断标记只在有数据时显示；空态走独立分支不编造记录', async () => {
+    const { wrapper, eng } = await mountWithFeed()
+    eng.truncatedFlag = true
+    eng.timeline = []
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-empty').exists()).toBe(true)
+    expect(wrapper.find('.r29-timeline-truncated').exists()).toBe(false)
+    expect(wrapper.text()).toContain('本局暂无逐次反应记录')
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    eng.timeline = [event(1, 3, 55)]
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-truncated').exists()).toBe(true)
+    expect(wrapper.text()).toContain('已截断，仅显示前 200 条')
+  })
+
+  it('结算结果页时间线入口可见可点：点击打开抽屉、关闭保持结算态不误 resume', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(1, 9, 77)]
+    eng.winAtStep = 1
+    renderer.loop!(TICK)
+    await flushPromises()
+    // 结果 sheet 必须渲染出独立入口（非战斗 feed CTA）
+    const resultCta = wrapper.find('.r29-result-timeline-cta')
+    expect(resultCta.exists()).toBe(true)
+    expect(resultCta.text()).toContain('查看完整反应时间线 →')
+    expect(renderer.paused).toBe(false)
+    await resultCta.trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(wrapper.find('.r29-timeline-row').exists()).toBe(true)
+    expect(wrapper.text()).toContain('77.0')
+    // 结算态打开不得暂停，关闭不得 resume
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(false)
+    expect(renderer.paused).toBe(false)
+  })
+
+  it('结算后仍可打开抽屉，关闭时不误恢复战斗', async () => {
+    const { wrapper, eng, renderer } = await mountWithFeed()
+    eng.timeline = [event(1, 9, 77)]
+    eng.winAtStep = 1
+    renderer.loop!(TICK)
+    await flushPromises()
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r28-feed-cta').trigger('click')
+    expect(wrapper.find('.r29-timeline-overlay').exists()).toBe(true)
+    expect(renderer.paused).toBe(false)
+    await wrapper.find('.r29-timeline-close').trigger('click')
+    expect(renderer.paused).toBe(false)
   })
 })

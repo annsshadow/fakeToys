@@ -89,3 +89,69 @@ write-skills-2-modal.png 与 write-equipment-2-modal.png 亲读：CTA 下发合�
 ## 复审结论
 
 verdict = pass。R7-BUG-1 与 R7-BUG-2 双闭环均经源码与真浏览器截图独立核实达标，门禁①②③④⑤⑥全部达标，真值 0 泄露、R1-R6 不回退。t72 的 needs_revision 已闭环，放行 R7 后续提交。低优先级观察（非阻塞）：t78 未拥有诚实空态截图以桌面 1258x588 视口呈现（uni-app H5 居中渲染、两侧黑边），已如实标注非物理真机，不影响 DOM/交互证据。
+
+---
+
+# 终审复核章节（t72，attempt 5，attempt_id b027ede7-e990-40a7-99a1-418873349f0f）
+
+## 独立复核方法（不采信任何自述，亲自读证据）
+- 截图：逐张查看 r7-after-index-guide / r7-battle-settle-2 / r7-after-skills / r7-real-rec-data-skills / r7b-01-hud-live-star-gap / honest-empty-equipment / write-skills-2-modal / write-skills-4-after-reload / write-equipment-2-modal / write-equipment-4-after-reload，逐张核对 sha256 与报告一致（详见前文哈希锚点）。
+- 源码：独立 grep/read battle.vue:458-553（HUD 门槛与结算归因）、recommendations.go（recOwnedIDs / recImpactCTA）、skills.vue / equipment.vue（impact 调用与两步确认写入）、r7ImpactApply.ts:146-155（impact 真接）、route_consumption_test.go（路由闭合守卫与豁免表）、tokens.css 契约（v4/--r7-* 不回退）。
+- 真值：ops_grep 全仓扫描 JWT/令牌字面量模式，命中 2 处并逐一判读（详见⑥）。
+- 测试：全量绿来自依赖报告（t70/t77），本轮未重跑，如实标注；路由守卫与测试契约以源码存在性独立核实。
+
+## 六门禁终判
+| 门禁 | 判定 | 决定性证据（本人亲读） |
+|---|---|---|
+| ①新玩家首屏引导卡 | PASS | r7-after-index-guide.png（390×844）顶部橙框「新玩家先打第1关／去第1关→」第一眼可见；index.vue v-if=maxStage===0 仅新玩家出现 |
+| ②HUD 实时星级差额/不遮挡/配置门槛 | PASS | r7b-01-hud-live-star-gap.png「距1星10424」顶部胶囊不遮战斗区；battle.vue:459/514 只读 engine.cfg.level.star_targets，无硬编码 |
+| ③结算归因串联可执行建议 | PASS | r7-battle-settle-2.png 钳分19773→13268 / 得分 / 距2星门槛16916还差3648 / 漏怪0 / 建议串联；battle.vue:542 只解析真实 clamp_note，测试 battle.test.ts:650 断言无 clamp_note 不编造上限 |
+| ④成长页两步确认+诚实空态+AI四判据 | PASS | write-skills-2-modal / write-equipment-2-modal 真弹层（含取消/确认、真实数值、负收益如实、stars=3 占比非胜率标注）；write-*-4-after-reload 写入持久；honest-empty-equipment 未拥有无 id/replace、不展示虚构数值 |
+| ⑤推荐收益接口真接+路由闭合 | PASS | r7ImpactApply.ts:153 真实 GET /me/recommendations/impact；impact 自动调用 200；route_consumption_test.go 已删 impact 临时豁免，TestEveryRouteHasClientCaller 源码守卫存在且依赖报告 PASS |
+| ⑥真值0泄露+R1-R6不回退 | PASS | JWT 模式命中 auth_test.go（伪造夹具 sub=9999/sig=forged，非凭据）与 oidc.rs（白名单假 token 夹具），无真值；tokens 契约断言无 lyp-tokens-v4 / --r7-*；探针 pe/ce/af/fr 全0 |
+
+## R7-BUG-1 / R7-BUG-2 双闭环确认
+- BUG-1（CTA 缺 id/replace 致两步确认不可达）：已修，write-*-2-modal 真弹层可见，门禁④⑤从 FAIL 转 PASS。
+- BUG-2（候选未校验拥有权）：源码确认 recOwnedIDs 读 user_skills/user_equipment、查库失败 fail closed；!owned[id] 过滤 + slot>=0 判重；test-first RED→GREEN 4 条 E2E（含真实 PUT 落库），全量 httpapi/service 串行 exit0（依赖报告）。
+- 写入端硬校验未放宽，防作弊语义不变。
+
+## 真值扫描判读
+- ops_grep 全仓命中 2 处：laiyipao/server/internal/auth/auth_test.go 的伪造令牌（载荷 sub=9999、signature=forged，属「改载荷应被拒绝」测试夹具，非真实凭据）；oa4rust/backend/crates/auth/src/oidc.rs（postdeploy 报告明确白名单的 OIDC 假 token 夹具）。均非真值，判定真值泄露 0。
+
+## 终审结论
+verdict = pass。六门禁全部达标，双 BUG 闭环经源码与截图独立核实，真值 0 泄露、R1-R6 不回退。t72 首轮 needs_revision 已闭环，放行 R7。低优先级观察（非阻塞）：t78 证据截图为桌面 1258×588 视口（非物理真机），已如实标注；全量测试绿灯来自依赖报告，本轮终审未重跑。
+
+---
+
+# 独立终审章节（t68，attempt 24a448a9-a9ab-483e-a55a-c0cca9d1a126）
+
+## 独立复核范围与方法
+
+本轮按队长派单独立重审 R7 设计硬门禁，不采信任何自述：
+- 完整读取 §1F 规范原文（AI_VISUAL_SYSTEM.md:538-583）与速查 §7D；
+- 逐张亲读 round7-after / round7-bugfix / round7-bug2fix 三批审计的决定性截图（write-skills-2-modal / write-equipment-2-modal / honest-empty-equipment / write-skills-4-after-reload / r7-battle-settle-2 / r7-after-index-guide / r7b-01-hud-live-star-gap / r7-09 / r7-10 / r7b-02 / r7b-03），sha256 前 8 位与报告逐张一致；
+- grep/read 源码独立核实误导文案清除、两步确认写入时序、AI 四判据、令牌锚点、R7-BUG-2 拥有权过滤实现；
+- 双端契约测试与后端 E2E 结果来自依赖报告与本轮源码核实，完整测试套件本轮未重跑，如实标注。
+
+## 五项硬门禁逐条判定
+
+| 门禁 | 结论 | 独立证据 |
+|---|---|---|
+| t62 Top3 玩法缺口闭环 | PASS | r7-after-index-guide.png 首屏橙框引导卡第一眼可见（index.vue:53 v-if=store.maxStage===0）；r7-battle-settle-2.png 钳分/真实得分/2 星门槛/漏怪/建议串联完整；r7b-01-hud-live-star-gap.png 顶部「距 1 星 10424」随波次更新不遮挡。 |
+| t63 §1F 五子条款达标 | PASS | 双端 r7GameplayFeedback.contract.test.ts 覆盖 1F.1-1F.5 五条款、真实数字 19726/10909/11941/74s、权威字段、诚实空态、HUD 服务端门槛、对比确认、AI 四判据与令牌锚点；令牌 v1/v3-r3/r6 保留、无 v4/--r7-*。 |
+| battle.vue「关系不大」口径清除 | PASS | 全仓该词仅存于注释反向说明（battle.vue:489）、测试禁止断言（battle.test.ts:653/675/1035-1036）、规范与历史审计；业务文案零命中，30% 权重上限口径在 settleAttribution/battle.vue:145/405 生效。 |
+| 推荐两步确认「无确认不写配置」 | PASS | skills.vue:530 r7OpenCompare() 仅置 r7CompareOpen=true、不写；:540 r7ConfirmApply() 内才 persistLoadout；取消按钮 :258 仅关弹层。equipment.vue:523/:533 同理，确认才 applyEquipmentImpact；写入失败保留原配置。弹层截图含取消/确认双按钮与真实数值。 |
+| AI 四判据硬下限 | PASS | battle.vue:566/568/576/581 与 skills/equipment 推荐卡均含可见汉字「AI」+真实数据结论+依据行（clamp_note/star_targets/leaked/reactions/replay_hash 或 evidence[]/basis[]）+可点击 CTA；无 GPT 宣称、无编造置信度。 |
+
+## 双缺陷闭环复核
+
+- R7-BUG-1（CTA 缺 id/replace，高危）：write-skills-2-modal.png / write-equipment-2-modal.png 亲读确认 CTA 下发 id=2/replace=4、id=11/replace=10，impact 自动 200，有数据态弹层真打开、真点确认写入。闭环。
+- R7-BUG-2（候选未校验拥有权，中）：源码独立核实 recommendations.go:134-137 recOwnedIDs(ctx,userID,kind) 读 user_skills/user_equipment、查库失败 fail closed；:215/:262 !owned[id] 过滤；:220 impactInt(m,"slot")>=0 使 slot=-1 未上槽候选可推荐。write-skills-4-after-reload.png 显示 skill2 占槽、skill4 清槽且 reload 保持，推荐刷新下一候选；honest-empty-equipment.png 未拥有时 CTA 仅 {slot:0}、无 id/replace、无虚构收益卡。闭环。
+
+## 非阻塞观察（不判 FAIL）
+
+§1F.5 验收门禁写「admin 交 1 张 1440×900 复盘归因截图」；round7* 审计目录未见该截图，admin BattlesView.vue 详情抽屉:507-548 复用 score/leaked/reactions/replay_hash 字段语义、未照搬战斗 HUD 归因卡（符合 §1F.1「admin 复盘行只复用同一字段语义，不照搬战斗 HUD」的适用范围界定），t63 依赖结果亦明确「未改业务视图」。此为新轮次可补强的证据项，不构成 R7 五项硬门禁与双缺陷闭环的失败；如实记录，不伪造截图。
+
+## 独立终审结论
+
+verdict = pass。五项硬门禁全部达标，R7-BUG-1 / R7-BUG-2 双闭环经源码与真浏览器截图独立核实成立，真值零泄露、R1-R6 不回退。t72 首轮 needs_revision 已彻底闭环。低优先级观察见上（admin 归因截图缺口），建议后续轮次补齐，本轮不阻塞放行。

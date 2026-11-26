@@ -1,0 +1,1 @@
+(function(){var a=[].slice.call(document.querySelectorAll('*'));var b=a.filter(function(e){return(e.innerText||'').trim()==='8x'}).pop();if(b){b.click();return 'SPEED8'}return 'NO8'})();

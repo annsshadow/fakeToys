@@ -19,6 +19,7 @@ import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { installUniMock } from '../../test/uni-mock'
 import { makeConfig } from '../../test/fixtures'
+import { fetchRecommendations } from '@/pages/_shared/r6Recommendation'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
@@ -35,6 +36,11 @@ vi.mock('@/api/client', () => ({
   login: vi.fn(),
   saveLastUsername: vi.fn(),
 }))
+
+vi.mock('@/pages/_shared/r6Recommendation', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@/pages/_shared/r6Recommendation')>()
+  return { ...orig, fetchRecommendations: vi.fn() }
+})
 
 const mockApi = vi.mocked(api, true)
 
@@ -91,6 +97,26 @@ function reactionFixturesWithAmplify() {
       armor_shred_permille: 0,
       knockback: 0,
       descr: '受击伤害 +60%',
+    },
+  ]
+}
+
+function reactionFixturesWithSpread() {
+  return [
+    ...reactionFixtures(),
+    {
+      key: 'corrosion_spread',
+      name: '腐蚀扩散',
+      base_coef: 35,
+      attack_weight_pct: 200,
+      status_duration_ms: 0,
+      aoe_radius: 120,
+      spread_stacks: 1,
+      dispel_shield: false,
+      amplify_pct: 0,
+      armor_shred_permille: 0,
+      knockback: 0,
+      descr: '造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应）',
     },
   ]
 }
@@ -200,6 +226,42 @@ describe('reactions.vue 反应图鉴', () => {
     const rows = wrapper.findAll('.sr-row')
     const sc = rows.find((r) => r.find('.sr-name')?.text() === '超导')
     expect(sc?.find('.sr-val').text()).toBe('80')
+    wrapper.unmount()
+  })
+
+  it('R6 evidence 长浮点显示一位小数，字符串型证据原样保留', async () => {
+    vi.mocked(fetchRecommendations).mockResolvedValue({
+      status: 'api', context: 'reactions', badge: 'AI', headline: '反应构筑建议',
+      engineLabel: '本地规则引擎 · 当前页面数据',
+      evidence: [
+        { metric: '胜率', value: 79.62962962962963, unit: '%', source: 'battle_records', window: '7d' },
+        { metric: '战力增益', value: 0.30000000000000004, unit: '', source: 'battle_records', window: '7d' },
+        { metric: '可达反应', value: '3/7', unit: '条', source: 'config/store', window: 'now' },
+      ],
+      basis: [], cta: { label: '去调整技能', route: '/pages/skills/skills', params: {} },
+    })
+    const wrapper = await mountReactions()
+    const evText = wrapper.findAll('.r6-ev-val').map((w) => w.text()).join(' | ')
+    expect(evText).not.toContain('79.62962962962963')
+    expect(evText).not.toContain('0.30000000000000004')
+    expect(evText).toContain('79.6')
+    expect(evText).toContain('0.3')
+    expect(evText).toContain('3/7')
+  })
+
+  it('R13 反应图鉴把传播半径与伤害溅射区分开，速查表也有对应列', async () => {
+    const wrapper = await mountReactions('fire_ice', reactionFixturesWithSpread())
+    const text = wrapper.text()
+    expect(text).toContain('传播半径 120')
+    expect(text).not.toContain('腐蚀扩散 当前不可达 电 + 毒 毒 + 电 造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应） 系数 35 攻击力权重 20% 溅射半径 120')
+    const rows = wrapper.findAll('.mech-row')
+    expect(rows[0]!.text()).toContain('传播')
+    expect(rows[0]!.text()).toContain('溅射')
+    const spread = rows.find((r) => r.find('.mech-name')?.text() === '腐蚀扩散')
+    expect(spread?.findAll('.mech-cell')[5]?.classes()).toContain('on')
+    expect(spread?.findAll('.mech-cell')[6]?.classes()).not.toContain('on')
+    const steam = rows.find((r) => r.find('.mech-name')?.text() === '蒸汽爆发')
+    expect(steam?.findAll('.mech-cell')[6]?.classes()).toContain('on')
     wrapper.unmount()
   })
 })

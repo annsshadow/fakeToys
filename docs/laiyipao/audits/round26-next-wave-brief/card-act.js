@@ -1,0 +1,1 @@
+(() => { const c=document.querySelector('.hand-card'); if(c){c.click();return 'CARD'} return 'NONE' })()

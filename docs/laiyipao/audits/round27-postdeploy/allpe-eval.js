@@ -1,0 +1,1 @@
+(() => { const p=window.__LYP_PROBE__||{}; const all=(p.pageErrors||[]); const noise=all.filter(x=>/play\(\)|Autoplay|goo\.gl/.test(String(x))); const real=all.filter(x=>!/play\(\)|Autoplay|goo\.gl/.test(String(x))); return JSON.stringify({total:all.length,noise:noise.length,real:real.length,realSamples:real.slice(0,10)}); })()

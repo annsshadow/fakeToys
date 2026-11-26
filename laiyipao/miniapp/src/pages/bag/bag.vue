@@ -1,6 +1,17 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom">
+      <!-- R12 跨系统成长优先级：与首页 aiInsight 同源口径，四页统一短板结论 -->
+      <view v-if="r12Priority" class="r12-priority r12-priority-enter">
+        <view class="r12-priority-head">
+          <text class="r12-priority-badge">AI</text>
+          <text class="r12-priority-title">当前最该强化 · 跨系统优先级</text>
+        </view>
+        <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
+        <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
+        <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
+      </view>
+
       <!-- R4：指标带 → 筛选 → 数据格 → 智能空态（复用 §1B 组件） -->
       <view v-if="!loading && r4AiBag" class="r3-kpi r4-kpi r4-enter">
         <view class="r3-kpi-main">
@@ -483,6 +494,7 @@
 </template>
 
 <script setup lang="ts">
+import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
 import { qualityName, affixName, gemAttrBadge, gemQualityBadge } from '@/utils/labels'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
@@ -490,12 +502,19 @@ import * as api from '@/api/client'
 import { skillBaseDamageAtLevel } from '@/game/skill'
 import { HEAT_MAX } from '@/game/heatmap'
 import type { OwnedGem } from '@/api/client'
+import { captureGemGain, r10GemGainCacheKey } from '@/pages/_shared/r10GemGain'
 import type { SkillDef } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
 
 /** 加载中（2026-10-21 P6-1）。 */
 const loading = ref(false)
 const store = useGameStore()
+// R12 跨系统成长优先级：口径与首页 aiInsight 一致，四页指向同一短板
+const r12Priority = computed(() => computeGrowthPriority(store.buildRating, store.config?.rating_weights))
+function r12Go() {
+  const p = r12Priority.value
+  if (p?.hint) uni.navigateTo({ url: p.hint })
+}
 
 /**
  * 背包页签（2026-11-16）。默认页签 = 原首屏内容（出战技能），
@@ -851,11 +870,17 @@ async function doEquipGem(g: OwnedGem) {
   gemBusyId.value = g.id
   presetWriteBusy.value = true
   try {
+    const beforeMe = await api.fetchMe()
     const r = await api.equipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
     if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
     // 佩戴改变构筑 → 刷新档案（power/rating 以服务端为准）。
     await store.refreshProfile()
+    // 差分结果按服务端 /me 的 user_id（store.userId）与宝石 id 建缓存键；不写真值到代码或日志。
+    captureGemGain(beforeMe).then((data) => {
+      if (!data) return
+      try { localStorage.setItem(r10GemGainCacheKey(store.userId, g.id), JSON.stringify(data)) } catch { /* 隐私模式下写入失败不影响佩戴 */ }
+    })
     uni.showToast({ title: '已佩戴，词条已生效', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
@@ -871,10 +896,15 @@ async function doUnequipGem(g: OwnedGem) {
   gemBusyId.value = g.id
   presetWriteBusy.value = true
   try {
+    const beforeMe = await api.fetchMe()
     const r = await api.unequipGem(g.id)
     const i = ownedGems.value.findIndex((x) => x.id === g.id)
     if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
     await store.refreshProfile()
+    captureGemGain(beforeMe).then((data) => {
+      if (!data) return
+      try { localStorage.setItem(r10GemGainCacheKey(store.userId, g.id), JSON.stringify(data)) } catch { /* 隐私模式下写入失败不影响卸下 */ }
+    })
     uni.showToast({ title: '已卸下', icon: 'none' })
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })

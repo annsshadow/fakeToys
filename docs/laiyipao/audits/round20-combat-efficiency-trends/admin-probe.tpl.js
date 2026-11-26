@@ -1,0 +1,11 @@
+(function(){
+  try { localStorage.setItem('lyp_admin_token','__R20_TOKEN__'); } catch(e){}
+  var P={pageErrors:[],consoleErrors:[],apiFailures:[],failedRequests:[],efficiencyResponses:[]}; window.__R20_ADMIN_PROBE__=P;
+  window.addEventListener('error',function(e){P.pageErrors.push(String(e.message||''))});
+  window.addEventListener('unhandledrejection',function(e){var m=String((e.reason&&e.reason.message)||e.reason||'');if(/ResizeObserver|Autoplay/i.test(m))return;P.pageErrors.push('unhandled:'+m)});
+  var oe=console.error; console.error=function(){try{P.consoleErrors.push(Array.prototype.map.call(arguments,function(a){return String(a)}).join(' '))}catch(e){} oe.apply(console,arguments)};
+  var of=window.fetch;
+  if(of) window.fetch=function(u,o){return of.apply(this,arguments).then(function(r){try{var url=String(u||'');if(/battle-efficiency/.test(url)){if(r.status>=400)P.apiFailures.push({url:url,status:r.status});r.clone().json().then(function(j){var d=(j&&j.data)||j||{};P.efficiencyResponses.push({url:url,status:r.status,window_days:d.window_days,window_from:d.window_from,window_to:d.window_to,battles:d.battles,shots:d.shots,hits:d.hits,accuracy_pct:d.accuracy_pct,avg_heat_max:d.avg_heat_max,leaked_per_battle:d.leaked_per_battle,avg_duration_ms:d.avg_duration_ms,buckets:(d.buckets||[]).map(function(b){return {bucket:b.bucket,battles:b.battles,shots:b.shots,hits:b.hits,accuracy_pct:b.accuracy_pct}}),ai:d.ai_insight})}).catch(function(){})}}catch(e){}return r})};
+  var ox=window.XMLHttpRequest.prototype.open;
+  window.XMLHttpRequest.prototype.open=function(m,u){var self=this;try{var url=String(u||'');if(/battle-efficiency/.test(url)){self.addEventListener('load',function(){try{if(self.status>=400)P.apiFailures.push({url:url,status:self.status});var j=JSON.parse(self.responseText);var d=(j&&j.data)||j||{};P.efficiencyResponses.push({url:url,status:self.status,window_days:d.window_days,window_from:d.window_from,window_to:d.window_to,battles:d.battles,shots:d.shots,hits:d.hits,accuracy_pct:d.accuracy_pct,avg_heat_max:d.avg_heat_max,leaked_per_battle:d.leaked_per_battle,avg_duration_ms:d.avg_duration_ms,buckets:d.buckets,ai:d.ai_insight})}catch(e){}})}}catch(e){}return ox.apply(this,arguments)};
+})();

@@ -119,6 +119,48 @@
         <text class="dim">点开任意战报后，这里会统计命中率与热量效率。</text>
       </view>
 
+      <!-- R20 服务端全量效率趋势卡（G132 本地即时卡保留，两者口径不同） -->
+      <view v-if="r20Efficiency" class="r20-efficiency-trend" role="region">
+        <view class="r20-eff-head">
+          <text class="r20-eff-title">战斗效率趋势 · 全量战报</text>
+          <text class="r20-eff-window">窗口 {{ r20Efficiency.window_from }} ~ {{ r20Efficiency.window_to }}（近 {{ r20Efficiency.window_days }} 天）</text>
+        </view>
+        <template v-if="r20Efficiency.battles > 0">
+          <view class="r20-efficiency-row">
+            <text>命中率 {{ r20Accuracy }}%</text>
+            <text>平均峰值热量 {{ r20Heat }}</text>
+            <text>场均漏怪 {{ r20Leak }}</text>
+            <text>场均时长 {{ r20Duration }}ms</text>
+          </view>
+          <view class="r20-trend-list">
+            <view
+              v-for="b in r20Efficiency.buckets"
+              :key="b.bucket"
+              class="r20-trend-bar"
+              :data-r20-bucket="b.bucket"
+            >
+              <text class="r20-trend-bucket">{{ b.bucket }}</text>
+              <view class="r20-trend-track"><view class="r20-trend-fill" :style="{ width: b.accuracy_pct + '%' }" /></view>
+              <text class="r20-trend-value">{{ b.accuracy_pct.toFixed(1) }}% · {{ b.battles }} 场</text>
+            </view>
+          </view>
+          <view v-if="r20Ai" class="r20-ai-note">
+            <text class="r20-ai-title">AI · 战斗效率诊断</text>
+            <text class="r20-ai-conclusion">{{ r20Ai.conclusion }}</text>
+            <text class="r20-ai-basis">依据：数据来自全量battle_records近30天；近 30 天 battle_records 的 shots/hits/heat_max 聚合；场次以 battle_records 行数为准</text>
+            <text class="r20-ai-cta" data-r20-cta role="button" @click="goStage()">去战斗→</text>
+          </view>
+          <text class="r20-honest-note">辅助诊断非权威结算依据，权威请看 replay_hash</text>
+        </template>
+        <view v-else class="r20-efficiency-empty" role="status" aria-live="polite">
+          <text>近 30 天无战斗记录</text>
+          <text class="r20-eff-window">窗口 {{ r20Efficiency.window_from }} ~ {{ r20Efficiency.window_to }}（近 {{ r20Efficiency.window_days }} 天）</text>
+        </view>
+      </view>
+      <view v-else-if="r20Error" class="r20-efficiency-empty" role="status" aria-live="polite">
+        <text>效率数据加载失败，稍后重试</text>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -168,6 +210,10 @@
                 <text class="mono">{{ detail.shots }} / {{ detail.hits }}</text>
               </view>
               <view class="kv"><text class="muted">波次</text><text class="mono">{{ detail.wave_reached }}</text></view>
+              <view v-if="detailDefeatReview" class="defeat-review" role="status" aria-live="polite">
+                <text class="defeat-review-label">AI · 失败复盘</text>
+                <text class="defeat-review-text">{{ detailDefeatReview }}</text>
+              </view>
               <view class="kv"><text class="muted">峰值热量</text><text class="mono">{{ detail.heat_max }}</text></view>
               <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ detail.hp_left }}</text></view>
               <view class="kv">
@@ -180,10 +226,88 @@
                 <view v-for="(m, i) in elementMix" :key="i" class="mix-seg" :style="{ width: m.pct + '%' }" :title="m.name" />
               </view>
               <view v-if="reactionText" class="kv"><text class="muted">反应</text><text class="flex-1">{{ reactionText }}</text></view>
+              <view v-if="reactionLearning" class="reaction-learning" role="status" aria-live="polite">
+                <text class="reaction-learning-label">AI · 反应搭配建议</text>
+                <text class="reaction-learning-text">{{ reactionLearning }}</text>
+              </view>
+              <!-- R15：逐次反应归因（服务端展示性字段，不是结算输入）；旧战报显示诚实空态 -->
+              <view class="r15-reaction-timeline" role="status" aria-live="polite">
+                <text class="r15-timeline-label">AI · 反应时间线</text>
+                <template v-if="reactionTimeline.length">
+                  <view
+                    v-for="(ev, i) in reactionTimeline"
+                    :key="i"
+                    class="r15-timeline-row"
+                    :data-r15-wave="ev.wave"
+                  >
+                    <text class="r15-timeline-text">第 {{ ev.wave }} 波 · {{ ev.reactionName }} · #{{ ev.enemy_uid }} · {{ fmt(ev.damage) }} 伤害</text>
+                  </view>
+                  <text v-if="reactionTimelineTruncated" class="r15-truncated-note">已截断，仅显示前 200 条</text>
+                </template>
+                <text v-else class="r15-timeline-empty">该战报无逐次反应记录（旧版本结算）</text>
+              </view>
+              <!-- R25：单局反应伤害主力聚合（纯前端派生，count 取权威 reactions_used，events 不冒充次数） -->
+              <view class="r25-reaction-impact" role="status" aria-live="polite">
+                <text class="r25-impact-label">AI · 反应伤害主力</text>
+                <view v-if="reactionImpact.length" class="r25-impact-rows">
+                  <view
+                    v-for="row in reactionImpact"
+                    :key="row.reaction"
+                    class="r25-impact-row"
+                    :data-r25-reaction="row.reaction"
+                  >
+                    <text class="r25-impact-name">{{ row.reactionName }}</text>
+                    <text class="r25-impact-damage">{{ fmt(row.total_damage) }} 伤害</text>
+                    <text class="r25-impact-share">{{ row.damage_share_pct.toFixed(1) }}%</text>
+                    <text class="r25-impact-count">权威{{ row.count }}次</text>
+                    <text class="r25-impact-events">事件{{ row.events }}条</text>
+                  </view>
+                  <text v-if="reactionTimelineTruncated" class="r25-truncated-note">已截断，仅统计前 200 条</text>
+                </view>
+                <text v-else class="r25-impact-empty">本局无逐次反应伤害记录</text>
+                <view class="r25-ai-note">
+                  <text class="r25-ai-conclusion">{{ r25Conclusion }}</text>
+                  <text class="r25-ai-basis">依据：本局 reaction_timeline.events 的 damage 聚合；触发次数以 reactions_used 为准</text>
+                  <text class="r25-ai-cta">下一局优先凑齐该元素组合 →</text>
+                  <text class="r25-ai-honesty">辅助展示非伤害权威,权威以 replay_hash 为准</text>
+                </view>
+              </view>
+              <!-- R14 §C.1：建议下方给服务端权威 CTA；E2E 选择器 #r14-advice-action-btn.r14-advice-cta[data-r14-source=battle]，空态 .r14-advice-empty -->
+              <view v-if="r14Advice" class="r14-advice r14-enter">
+                <text class="r14-advice-badge">{{ r14Advice.badge }} · 可执行建议</text>
+                <block v-if="r14Advice.status === 'ready'">
+                  <text class="r14-advice-text">依据 {{ r14Advice.basedOn[0] }}：一键换上「{{ r14Advice.candidateName }}」</text>
+                  <text v-if="r14Advice.impact" class="r14-advice-text">预计每波伤害 {{ fmt(r14Advice.impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r14Advice.impact.candidate.estimatedDamagePerWave) }}（服务端收益预估）</text>
+                  <text class="r14-advice-basis">依据：{{ r14Advice.basedOn.join(' · ') }} · 服务端五条件裁决（不伪造 id）</text>
+                  <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="battle" @click="r14OpenCompare()">一键替换为 {{ r14Advice.candidateName }} →</text>
+                  <text v-if="r14ApplyDone" class="apply-done r14-advice-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。</text>
+                </block>
+                <view v-else class="r14-advice-empty" data-r14-source="battle" aria-live="polite" role="status">
+                  <text class="r14-advice-empty-title">{{ r14Advice.empty?.headline }}</text>
+                  <text class="r14-advice-empty-msg">{{ r14Advice.empty?.message }}</text>
+                  <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty()">{{ r14Advice.empty?.cta }}</text>
+                </view>
+              </view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
               <view class="kv">
                 <text class="muted">回放哈希</text>
                 <text class="mono hash">{{ detail.replay_hash }}</text>
+              </view>
+              <view class="r10-growth r10-enter">
+                <text class="r10-growth-title">AI · 养成前后（同一关可信差值）</text>
+                <template v-if="growthCompare.available">
+                  <text class="r10-growth-text">{{ growthCompare.text }}</text>
+                  <view class="r10-growth-grid">
+                    <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
+                      <text class="r10-growth-label">{{ row.label }}</text>
+                      <text class="r10-growth-num">{{ fmt(row.before) }} → {{ fmt(row.after) }}</text>
+                      <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ fmtSigned(row.delta) }}</text>
+                    </view>
+                  </view>
+                  <text class="r10-hashes">hash：{{ growthHashes }}</text>
+                  <text class="r10-growth-basis">依据：{{ growthCompare.basis }}</text>
+                </template>
+                <text v-else class="r10-growth-empty" aria-live="polite" role="status">还缺养成前那局战报，先打一局同关 · 构筑变更点未上报，不做估算。</text>
               </view>
               <!-- 复制哈希（2026-11-01 新一轮第 87 轮）：用外部工具验真时无需手选 -->
               <view class="btn copy-hash-btn" @click="copyHash(detail.replay_hash)">复制回放哈希</view>
@@ -199,6 +323,28 @@
       <view v-if="hasMore" class="load-more" @click="loadMore">
         {{ loadingMore ? '加载中…' : '加载更多' }}
       </view>
+    <!-- R14 §C.3：复用 R7 两步确认浮层；首次点击只预览，确认才写入 -->
+    <view v-if="r14CompareOpen" class="r7-compare-mask" @click="r14CompareOpen = false">
+      <view class="r7-compare r7-enter" @click.stop>
+        <text class="r7-compare-title">当前 vs 推荐 · 确认替换</text>
+        <view class="r7-vs-row">
+          <text class="r7-vs-label">{{ r14Advice?.replacedName }}（当前）</text>
+          <text class="r7-vs-arrow">→</text>
+          <text class="r7-vs-label">{{ r14Advice?.candidateName }}（推荐）</text>
+        </view>
+        <view v-if="r14Advice?.impact" class="r7-vs-row">
+          <text class="r7-vs-label">每波伤害 {{ fmt(r14Advice.impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r14Advice.impact.candidate.estimatedDamagePerWave) }}</text>
+        </view>
+        <text v-if="r14Advice" class="r7-basis">依据：{{ r14Advice.basedOn.join(' · ') }}</text>
+        <text v-if="r14ApplyError" class="r7-error">{{ r14ApplyError }}</text>
+        <text v-if="r14ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
+        <view class="r7-actions">
+          <text class="r7-btn" role="button" @click="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
+        </view>
+      </view>
+    </view>
     </view>
   </view>
 </template>
@@ -208,9 +354,12 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import type { BattleHistoryItem, BattleDetail } from '@/api/client'
+import type { BattleHistoryItem, BattleDetail, BattleEfficiency, BattleEfficiencyBucket } from '@/api/client'
+import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
 import { ELEMENT_NAME } from '@/game/elements'
 import { TERRAIN_NAME } from '@/game/terrain'
+import { defeatReview, reactionLearningAdvice } from '@/game/feedback'
+import { fetchAdviceAction, applyAdviceAction, type R14AdviceAction } from '@/pages/_shared/r14AdviceAction'
 
 const store = useGameStore()
 
@@ -323,6 +472,37 @@ onLoad((query) => {
 const detail = computed<BattleDetail | undefined>(() =>
   expandedId.value ? details.value[expandedId.value] : undefined,
 )
+
+/** R12 失败复盘：战报详情用服务端权威字段给出根因与下一动作；胜利不误报。 */
+const detailDefeatReview = computed(() => {
+  const d = detail.value
+  if (!d || d.result !== 'lose') return null
+  return defeatReview({
+    wave: Number(d.wave_reached ?? 0) || null,
+    kills: Number(d.kills ?? 0),
+    leaked: Number(d.leaked ?? 0),
+    reactions: Number(d.reactions ?? 0),
+    heatMax: Number(d.heat_max ?? 0) || null,
+    elementsUsed: d.elements_used,
+  })
+})
+
+/** R10 §1I.2：同关相邻两次真实结算的确定性差值；详情加载后按 level_id 从历史里配对。 */
+const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
+const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
+
+async function loadGrowthCompare(d: BattleDetail) {
+  let baseline: BattleDetail | null = null
+  try {
+    const history = await api.myBattleHistory(20)
+    const sameLevel = (history.items ?? []).filter((x) => x.level_id === d.level_id && x.replay_hash && x.id !== d.id)
+    const priorId = sameLevel[0]?.id
+    if (priorId) baseline = await api.myBattleDetail(priorId)
+  } catch {
+    baseline = null
+  }
+  growthCompare.value = baseline ? normalizeGrowthCompare([baseline, d]) : normalizeGrowthCompare([])
+}
 
 const CURRENCY_NAME: Record<string, string> = {
   coin: '金币',
@@ -491,6 +671,76 @@ const reactionText = computed(() => {
     .join('、')
 })
 
+/** R13：反应次数不是教学，必须把权威使用记录翻译成下一局补哪种元素。 */
+const reactionLearning = computed(() => {
+  const d = detail.value
+  if (!d) return ''
+  return reactionLearningAdvice({ reactionsUsed: d.reactions_used, elementsUsed: d.elements_used })
+})
+
+/**
+ * R15：服务端可选逐次反应归因；旧战报无字段/结构异常时一律空态，
+ * 不用聚合 reactions_used 反推波次与敌人（那是编造）。只做展示，不参与任何结算。
+ */
+const reactionTimeline = computed(() => {
+  const raw = detail.value?.reaction_timeline
+  const events = raw && Array.isArray(raw.events) ? raw.events : []
+  const valid = events.filter((ev) =>
+    ev && Number.isInteger(ev.wave) && ev.wave >= 1 &&
+    Number.isInteger(ev.tick) && ev.tick >= 0 &&
+    typeof ev.reaction === 'string' && ev.reaction.length > 0 &&
+    Number.isInteger(ev.enemy_uid) &&
+    typeof ev.damage === 'number' && Number.isFinite(ev.damage),
+  )
+  return valid
+    .sort((a, b) => a.wave - b.wave || a.tick - b.tick)
+    .map((ev) => ({
+      reaction: ev.reaction,
+      wave: ev.wave,
+      enemy_uid: ev.enemy_uid,
+      damage: ev.damage,
+      reactionName: reactionNameMap.value.get(ev.reaction) ?? ev.reaction,
+    }))
+})
+
+const reactionTimelineTruncated = computed(() => detail.value?.reaction_timeline?.truncated === true)
+
+/** R25：单局反应伤害主力聚合。只读派生，count 取权威 reactions_used，绝不用 events 条数冒充。 */
+const reactionImpact = computed(() => {
+  const events = reactionTimeline.value
+  if (!events.length) return []
+  const groups = new Map<string, { total: number; events: number }>()
+  for (const ev of events) {
+    if (typeof ev.reaction !== 'string' || !ev.reaction || typeof ev.damage !== 'number' || !Number.isFinite(ev.damage)) continue
+    const g = groups.get(ev.reaction) ?? { total: 0, events: 0 }
+    g.total += ev.damage
+    g.events += 1
+    groups.set(ev.reaction, g)
+  }
+  if (!groups.size) return []
+  let sum = 0
+  for (const g of groups.values()) sum += g.total
+  const used = detail.value?.reactions_used ?? {}
+  const rows = [...groups.entries()].map(([reaction, g]) => ({
+    reaction,
+    reactionName: reactionNameMap.value.get(reaction) ?? reaction,
+    total_damage: g.total,
+    damage_share_pct: Number((sum > 0 ? (g.total / sum) * 100 : 0).toFixed(1)),
+    events: g.events,
+    count: typeof used[reaction] === 'number' ? used[reaction] : 0,
+  }))
+  rows.sort((a, b) => b.total_damage - a.total_damage || a.reaction.localeCompare(b.reaction))
+  return rows
+})
+const r25Conclusion = computed(() => {
+  const rows = reactionImpact.value
+  if (!rows.length) return '本局无逐次反应伤害记录，不编造主力'
+  const top = rows[0]!
+  if (top.total_damage <= 0) return 'AI：本局反应伤害为 0，无可归因主力'
+  const leaders = rows.filter(r => r.damage_share_pct === top.damage_share_pct)
+  return 'AI：本局' + leaders.map(r => r.reactionName).join('、') + '造成 ' + top.damage_share_pct.toFixed(1) + '% 反应伤害，是伤害主力'
+})
+
 const terrainText = computed(() => {
   const d = detail.value
   if (!d) return ''
@@ -499,6 +749,57 @@ const terrainText = computed(() => {
     .join('、')
 })
 
+/** R11：战报差值数值统一格式化，避免长浮点尾数；不改差值本身。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
+
+/* R14 §C.1：战报建议 → 服务端权威可执行 CTA；元素取自战报权威 elements_used。 */
+const r14Advice = ref<R14AdviceAction | null>(null)
+const r14CompareOpen = ref(false)
+const r14Applying = ref(false)
+const r14ApplyError = ref('')
+const r14ApplyDone = ref('')
+
+async function loadR14Advice(d: BattleDetail) {
+  const entries = Object.entries(d.elements_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+  if (!entries.length) { r14Advice.value = null; return }
+  const reactions = Object.entries(d.reactions_used || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+  r14Advice.value = await fetchAdviceAction({ element: entries[0]![0], reaction: reactions[0]?.[0], source: 'battle' })
+}
+
+function r14OpenCompare() {
+  if (!r14Advice.value || r14Advice.value.status !== 'ready') return
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  r14CompareOpen.value = true
+}
+
+function r14GoEmpty() {
+  const route = r14Advice.value?.empty?.route || '/pages/stage/stage'
+  uni.navigateTo({ url: route.startsWith('/pages/') ? route : '/pages/stage/stage' })
+}
+
+async function r14ConfirmApply() {
+  const a = r14Advice.value
+  if (!a || a.status !== 'ready' || r14Applying.value) return
+  r14Applying.value = true
+  r14ApplyError.value = ''
+  r14ApplyDone.value = ''
+  try {
+    const res = await applyAdviceAction(a, store)
+    if (!res.ok) { r14ApplyError.value = res.error; return }
+    r14ApplyDone.value = res.doneName
+    if (detail.value) await loadR14Advice(detail.value)
+  } catch (e) {
+    r14ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原配置未改动。请重试'
+  } finally {
+    r14Applying.value = false
+  }
+}
 function fmtTime(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
@@ -526,7 +827,10 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
   if (details.value[it.id]) return
   detailLoadingIds.value.add(it.id)
   try {
-    details.value[it.id] = await api.myBattleDetail(it.id)
+    const d = await api.myBattleDetail(it.id)
+    details.value[it.id] = d
+    await loadGrowthCompare(d)
+    void loadR14Advice(d)
   } catch {
     // 详情加载失败：保留展开态，可再次点击重试
   } finally {
@@ -616,9 +920,76 @@ async function loadMore() {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* R20 全量效率趋势：服务端 battle_records 聚合，G132 本地即时卡继续保留。       */
+/* -------------------------------------------------------------------------- */
+const r20Efficiency = ref<BattleEfficiency | null>(null)
+const r20Error = ref(false)
+
+function r20Num(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+async function loadR20Efficiency(): Promise<void> {
+  try {
+    // 老测试可能只 mock 了部分 api 导出；缺函数时诚实不渲染，绝不本地造数。
+    if (typeof api.fetchBattleEfficiency !== 'function') return
+    const raw = await api.fetchBattleEfficiency(30)
+    if (!raw || typeof raw !== 'object') return
+    const rawBuckets = Array.isArray(raw.buckets) ? raw.buckets : []
+    const buckets: BattleEfficiencyBucket[] = rawBuckets
+      .filter((b) => b && typeof b.bucket === 'string' && b.bucket.length > 0)
+      .map((b) => ({
+        bucket: b.bucket,
+        battles: r20Num(b.battles),
+        shots: r20Num(b.shots),
+        hits: r20Num(b.hits),
+        accuracy_pct: r20Num(b.accuracy_pct),
+      }))
+      .sort((a, b) => a.bucket.localeCompare(b.bucket))
+    r20Efficiency.value = {
+      window_days: 30,
+      window_from: typeof raw.window_from === 'string' ? raw.window_from : '',
+      window_to: typeof raw.window_to === 'string' ? raw.window_to : '',
+      battles: r20Num(raw.battles),
+      shots: r20Num(raw.shots),
+      hits: r20Num(raw.hits),
+      accuracy_pct: r20Num(raw.accuracy_pct),
+      avg_heat_max: r20Num(raw.avg_heat_max),
+      leaked_per_battle: r20Num(raw.leaked_per_battle),
+      avg_duration_ms: r20Num(raw.avg_duration_ms),
+      buckets,
+      ai_insight: raw.ai_insight && typeof raw.ai_insight === 'object' ? raw.ai_insight : {},
+    }
+  } catch {
+    r20Error.value = true
+  }
+}
+
+const r20Accuracy = computed(() => r20Num(r20Efficiency.value?.accuracy_pct).toFixed(1))
+const r20Heat = computed(() => r20Num(r20Efficiency.value?.avg_heat_max).toFixed(1))
+const r20Leak = computed(() => r20Num(r20Efficiency.value?.leaked_per_battle).toFixed(1))
+const r20Duration = computed(() => r20Num(r20Efficiency.value?.avg_duration_ms).toFixed(1))
+
+/** 结论只由服务端真实字段与趋势桶推导；空数据不产出结论。 */
+const r20Ai = computed(() => {
+  const d = r20Efficiency.value
+  if (!d || d.battles <= 0) return null
+  const acc = r20Num(d.accuracy_pct)
+  const heat = r20Num(d.avg_heat_max)
+  const leak = r20Num(d.leaked_per_battle)
+  const first = d.buckets.length ? d.buckets[0]!.accuracy_pct : acc
+  const last = d.buckets.length ? d.buckets[d.buckets.length - 1]!.accuracy_pct : acc
+  const trend = last > first ? '命中率呈上升趋势' : last < first ? '命中率呈下降趋势' : '命中率保持稳定'
+  const advice = acc < 70 ? '建议优先提升命中与清漏效率' : '保持当前节奏，继续关注热量管理'
+  return { conclusion: `近 30 天命中率 ${acc.toFixed(1)}%，场均漏怪 ${leak.toFixed(1)}，平均峰值热量 ${heat.toFixed(1)}；${trend}，${advice}。` }
+})
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
   await reload()
+  void loadR20Efficiency()
 })
 </script>
 
@@ -780,7 +1151,117 @@ onMounted(async () => {
   border-top: 1rpx dashed var(--border);
 }
 
+.defeat-review {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(255, 123, 114, 0.08);
+  border: 1rpx solid rgba(255, 123, 114, 0.3);
+  border-radius: 10rpx;
+}
 
+.defeat-review-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.defeat-review-text {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.reaction-learning {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(88, 166, 255, 0.08);
+  border: 1rpx solid rgba(88, 166, 255, 0.28);
+  border-radius: 10rpx;
+}
+
+.reaction-learning-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.reaction-learning-text {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+/* R15 · 逐次反应时间线：沿用 AI 卡令牌，不新增视觉变量 */
+.r15-reaction-timeline {
+  margin: 10rpx 0;
+  padding: 12rpx 14rpx;
+  background: rgba(88, 166, 255, 0.08);
+  border: 1rpx solid rgba(88, 166, 255, 0.28);
+  border-radius: 10rpx;
+}
+
+.r15-timeline-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.r15-timeline-row {
+  display: block;
+  margin-top: 6rpx;
+  padding: 6rpx 8rpx;
+  border-left: 3rpx solid var(--accent);
+  background: rgba(88, 166, 255, 0.05);
+  border-radius: 6rpx;
+}
+
+.r15-timeline-text {
+  display: block;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.r15-timeline-empty,
+.r15-truncated-note {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.r15-truncated-note {
+  color: var(--bad);
+}
+
+
+
+/* R20 服务端全量效率趋势卡：沿用现有令牌，不新增视觉变量 */
+.r20-efficiency-trend { margin: 16rpx 0; padding: 16rpx; background: var(--panel); border: 1rpx solid var(--border); border-radius: 14rpx; }
+.r20-eff-head { display: flex; flex-direction: column; gap: 4rpx; }
+.r20-eff-title { font-size: 26rpx; font-weight: 700; color: var(--fire); }
+.r20-eff-window { font-size: 20rpx; color: var(--dim); }
+.r20-efficiency-row { display: flex; flex-wrap: wrap; gap: 8rpx 16rpx; margin: 12rpx 0; font-size: 22rpx; color: var(--text); }
+.r20-trend-list { display: flex; flex-direction: column; gap: 8rpx; }
+.r20-trend-bar { display: flex; flex-direction: row; align-items: center; gap: 10rpx; font-size: 20rpx; }
+.r20-trend-bucket { width: 150rpx; color: var(--dim); }
+.r20-trend-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.r20-trend-fill { height: 100%; background: var(--ice); border-radius: 999rpx; }
+.r20-trend-value { width: 170rpx; text-align: right; color: var(--text); }
+.r20-ai-note { margin-top: 14rpx; padding: 12rpx 14rpx; background: rgba(88, 166, 255, 0.08); border: 1rpx solid rgba(88, 166, 255, 0.28); border-radius: 10rpx; display: flex; flex-direction: column; gap: 6rpx; }
+.r20-ai-title { font-size: 22rpx; font-weight: 700; color: var(--accent); }
+.r20-ai-conclusion, .r20-ai-basis { font-size: 21rpx; line-height: 1.5; color: var(--text); }
+.r20-ai-cta { font-size: 22rpx; color: var(--fire); }
+.r20-honest-note { display: block; margin-top: 10rpx; font-size: 20rpx; color: var(--dim); }
+.r20-efficiency-empty { display: flex; flex-direction: column; gap: 6rpx; margin: 16rpx 0; padding: 16rpx; font-size: 22rpx; color: var(--dim); background: var(--panel); border: 1rpx dashed var(--border); border-radius: 14rpx; }
 
 /* 复制回放哈希（2026-11-01 新一轮第 87 轮） */
 .copy-hash-btn {
@@ -836,4 +1317,25 @@ onMounted(async () => {
   border-color: var(--fire);
   color: var(--fire);
 }
+
+/* R25 单局反应伤害主力聚合：沿用既有 token，零新增视觉令牌 */
+.r25-reaction-impact {
+  margin-top: 12rpx;
+  padding: 10rpx 12rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+}
+.r25-impact-label { color: var(--accent); font-size: 22rpx; font-weight: 700; }
+.r25-impact-rows { display: flex; flex-direction: column; gap: 6rpx; margin-top: 8rpx; }
+.r25-impact-row { display: flex; flex-wrap: wrap; gap: 10rpx; font-size: 21rpx; }
+.r25-impact-name { color: var(--text); font-weight: 700; }
+.r25-impact-damage, .r25-impact-events { color: var(--muted); }
+.r25-impact-share { color: var(--fire); font-weight: 700; }
+.r25-impact-count { color: var(--accent); }
+.r25-truncated-note, .r25-impact-empty { color: var(--muted); font-size: 20rpx; }
+.r25-ai-note { display: flex; flex-direction: column; gap: 4rpx; margin-top: 10rpx; padding-top: 8rpx; border-top: 1rpx solid var(--border); }
+.r25-ai-conclusion { color: var(--text); font-size: 21rpx; }
+.r25-ai-basis, .r25-ai-honesty { color: var(--muted); font-size: 19rpx; }
+.r25-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
 </style>

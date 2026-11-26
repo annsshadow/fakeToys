@@ -73,6 +73,7 @@ export interface AdminBattleDetailView {
   elements_used: { [key: string]: number }
   reactions_used: { [key: string]: number }
   terrain_used: string[]
+  reaction_timeline: ReactionTimeline
   replay_hash: string
   seed: string
   power_after: number
@@ -401,6 +402,36 @@ export interface AdminWavesResp {
   waves: AdminLevelWaveView[]
 }
 
+export interface BattleEfficiencyAIInsight {
+  title?: string
+  conclusion?: string
+  evidence?: string
+  cta?: string
+}
+
+export interface BattleEfficiencyBucket {
+  bucket: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+}
+
+export interface BattleEfficiencyResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  battles: number
+  shots: number
+  hits: number
+  accuracy_pct: number
+  avg_heat_max: number
+  leaked_per_battle: number
+  avg_duration_ms: number
+  buckets: BattleEfficiencyBucket[]
+  ai_insight: BattleEfficiencyAIInsight
+}
+
 export interface ChapterInfo {
   id: number
   name: string
@@ -449,6 +480,31 @@ export interface GameConfig {
   server_time: string
 }
 
+export interface LevelCoachAdvice {
+  title: string
+  detail: string
+  suggestions: string[]
+  confidence: number
+}
+
+export interface LevelCoachItem {
+  level_id: number
+  attempts: number
+  wins: number
+  best_wave: number
+  avg_wave: number
+  last_result: string
+  stuck: boolean
+  coach: LevelCoachAdvice
+}
+
+export interface LevelCoachResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  items: LevelCoachItem[]
+}
+
 export interface LevelSummary {
   id: number
   chapter: number
@@ -485,6 +541,22 @@ export interface MasteryNode {
   prereq_layer: number
 }
 
+export interface MeReactionDamageImpactItem {
+  reaction: string
+  total_damage: number
+  damage_share_pct: number
+  events: number
+  count: number
+}
+
+export interface MeReactionDamageImpactResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  excluded_old_battles: number
+  items: MeReactionDamageImpactItem[]
+}
+
 export interface QualityInfo {
   name: string
   affix_count: number
@@ -504,6 +576,22 @@ export interface ReactionCount {
   count: number
 }
 
+export interface ReactionDamageImpactItem {
+  reaction: string
+  total_damage: number
+  damage_share_pct: number
+  events: number
+  count: number
+}
+
+export interface ReactionDamageImpactResp {
+  window_days: number
+  window_from: string
+  window_to: string
+  excluded_old_battles: number
+  items: ReactionDamageImpactItem[]
+}
+
 export interface ReactionSpec {
   key: string
   name: string
@@ -517,6 +605,21 @@ export interface ReactionSpec {
   armor_shred_permille: number
   knockback: number
   descr: string
+}
+
+export interface ReactionTimeline {
+  schema_version: string
+  events: ReactionTimelineEvent[]
+  truncated: boolean
+  total: number
+}
+
+export interface ReactionTimelineEvent {
+  wave: number
+  tick: number
+  reaction: string
+  enemy_uid: number
+  damage: number
 }
 
 export interface RecomputeEngineCounters {

@@ -12,7 +12,7 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
-import { fetchDashboard, type Dashboard } from '@/api'
+import { fetchDashboard, fetchReactionDamageImpact, getBattleEfficiency, type Dashboard, type ReactionDamageImpactResp, type BattleEfficiencyResp } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 import { describeDashboardChart, type ChartRow } from '@/utils/chartA11y'
 import { buildAiInsight, type AiInsight } from '@/utils/aiInsight'
@@ -57,9 +57,91 @@ let reactionChart: echarts.ECharts | null = null
  */
 const reactionLabel = ref<ReactionLabels>({})
 
+/** R18：近 30 天反应伤害聚合（辅助分析），与权威次数图独立加载。 */
+const damageImpact = ref<ReactionDamageImpactResp | null>(null)
+const damageView = ref<'count' | 'damage'>('count')
+
+function fmtImpactNumber(value: number, digits = 1): string {
+  if (!Number.isFinite(value)) return '—'
+  return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(digits)
+}
+
+const damageRows = computed(() => {
+  const items = damageImpact.value?.items ?? []
+  return [...items]
+    .filter((x) => typeof x.reaction === 'string' && x.reaction.length > 0)
+    .sort((a, b) => {
+      const av = Number.isFinite(a.damage_share_pct) ? a.damage_share_pct : -1
+      const bv = Number.isFinite(b.damage_share_pct) ? b.damage_share_pct : -1
+      return bv - av
+    })
+})
+
+/** AI 辅助洞察：由 items 的 count / damage_share_pct 确定性推导，非权威结算。 */
+const damageAiConclusion = computed(() => {
+  const rows = damageRows.value
+  if (rows.length === 0) return '近 30 天无逐次反应伤害记录，暂无洞察。'
+  const totalCount = rows.reduce((sum, x) => sum + (Number.isFinite(x.count) ? Math.max(x.count, 0) : 0), 0)
+  if (totalCount <= 0) return '近 30 天权威触发次数为 0，暂无可对比的伤害洞察。'
+  let high: { key: string; countPct: number; dmgPct: number } | null = null
+  let low: { key: string; countPct: number; dmgPct: number } | null = null
+  for (const x of rows) {
+    const countPct = (Math.max(x.count, 0) / totalCount) * 100
+    const dmgPct = Number.isFinite(x.damage_share_pct) ? x.damage_share_pct : 0
+    if (countPct >= 40 && dmgPct <= 25 && (!high || countPct - dmgPct > high.countPct - high.dmgPct)) {
+      high = { key: x.reaction, countPct, dmgPct }
+    }
+    if (countPct <= 25 && dmgPct >= 40 && (!low || dmgPct - countPct > low.dmgPct - low.countPct)) {
+      low = { key: x.reaction, countPct, dmgPct }
+    }
+  }
+  const pct = (n: number) => (Number.isFinite(n) ? n.toFixed(1) : '—')
+  const highText = high
+    ? `${labelOf(high.key)}（${high.key}）触发占比 ${pct(high.countPct)}% 但伤害贡献仅 ${pct(high.dmgPct)}%，疑似高频低伤`
+    : ''
+  const lowText = low
+    ? `另有 ${labelOf(low.key)}（${low.key}）触发占比仅 ${pct(low.countPct)}% 但伤害贡献达 ${pct(low.dmgPct)}%，疑似低频高伤`
+    : ''
+  if (highText && lowText) return `${highText}；${lowText}。`
+  if (highText) return `${highText}。`
+  if (lowText) return `${lowText}。`
+  const top = rows[0]
+  return `伤害贡献最高的是 ${labelOf(top.reaction)}（${fmtImpactNumber(top.damage_share_pct)}%），未见明显高频低伤或低频高伤失衡。`
+})
+
 function labelOf(key: string): string {
   return labelOfReaction(reactionLabel.value, key)
 }
+
+/** R20：全平台战斗效率聚合（辅助诊断，非权威结算），失败走空态不影响权威看板。 */
+const efficiency = ref<BattleEfficiencyResp | null>(null)
+const efficiencyView = ref<'summary' | 'trend'>('summary')
+
+function effNum(value: number, digits = 1): string {
+  if (!Number.isFinite(value)) return '—'
+  return value.toFixed(digits)
+}
+
+const effBuckets = computed(() =>
+  [...(efficiency.value?.buckets ?? [])].sort((a, b) => String(a.bucket).localeCompare(String(b.bucket))),
+)
+
+const effConclusion = computed(() => {
+  const e = efficiency.value
+  if (!e || e.battles <= 0) return '近 30 天无战斗记录，暂无效率洞察。'
+  const acc = Number.isFinite(e.accuracy_pct) ? e.accuracy_pct.toFixed(1) : '—'
+  const bs = effBuckets.value
+  let trend = '平稳'
+  if (bs.length >= 2) {
+    const first = bs[0].accuracy_pct
+    const last = bs[bs.length - 1].accuracy_pct
+    if (Number.isFinite(first) && Number.isFinite(last)) {
+      if (last > first + 1) trend = '上升'
+      else if (last < first - 1) trend = '下降'
+    }
+  }
+  return `近 30 天命中率 ${acc}%，峰值热量呈${trend}趋势，建议关注 heat 管理。`
+})
 
 const verificationRate = computed(() => {
   const v = data.value?.verification
@@ -183,6 +265,24 @@ async function load() {
     if (seq !== loadSeq) return
     data.value = dash
     reactionLabel.value = labels
+    // R18：伤害聚合是辅助维度，失败不影响权威看板；超序号守卡防旧快照回灌。
+    void (async () => {
+      try {
+        const impact = await fetchReactionDamageImpact()
+        if (seq === loadSeq) damageImpact.value = impact
+      } catch {
+        if (seq === loadSeq) damageImpact.value = null
+      }
+    })()
+    // R20：全平台战斗效率聚合（辅助诊断），同样不阻塞权威看板。
+    void (async () => {
+      try {
+        const eff = await getBattleEfficiency()
+        if (seq === loadSeq) efficiency.value = eff
+      } catch {
+        if (seq === loadSeq) efficiency.value = null
+      }
+    })()
     await new Promise((r) => setTimeout(r, 30))
     if (seq !== loadSeq) return
     renderCharts()
@@ -339,6 +439,38 @@ load()
               description="若上线后该分布长期集中在一两种反应，说明 5 元素设计没有真正生效，需要调整抗性矩阵。"
               style="margin-top: 8px"
             />
+            <section class="r18-damage-impact" role="region" aria-label="AI · 反应伤害贡献洞察">
+              <div class="r18-impact-head">
+                <div class="r18-impact-title">AI · 反应伤害贡献洞察（近 30 天）</div>
+                <div class="r18-view-toggle" role="group" aria-label="反应分布视图切换">
+                  <button type="button" class="r18-view-count" :aria-pressed="damageView === 'count'" @click="damageView = 'count'">次数</button>
+                  <button type="button" class="r18-view-damage" :aria-pressed="damageView === 'damage'" @click="damageView = 'damage'">伤害贡献</button>
+                </div>
+              </div>
+              <template v-if="damageView === 'damage'">
+                <div class="r18-window-note">统计窗口：近 {{ damageImpact?.window_days ?? 30 }} 天（{{ damageImpact?.window_from ?? '—' }} 至 {{ damageImpact?.window_to ?? '—' }}）</div>
+                <div class="r18-excluded-note">已排除 {{ damageImpact?.excluded_old_battles ?? 0 }} 条无逐次记录的旧战报（不计入伤害）</div>
+                <div v-if="damageRows.length === 0" class="r18-impact-empty">近 30 天无逐次反应伤害记录</div>
+                <table v-else class="r18-damage-table">
+                  <thead><tr><th scope="col">反应</th><th scope="col">伤害贡献</th><th scope="col">总伤害</th><th scope="col">权威次数</th></tr></thead>
+                  <tbody>
+                    <tr v-for="row in damageRows" :key="row.reaction" class="r18-damage-row" :data-r18-reaction="row.reaction">
+                      <th scope="row">{{ labelOf(row.reaction) }}</th>
+                      <td>{{ fmtImpactNumber(row.damage_share_pct) }}%</td>
+                      <td>{{ fmtImpactNumber(row.total_damage) }}</td>
+                      <td>{{ fmtImpactNumber(row.count, 0) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="r18-ai-note" role="note" aria-label="AI · 反应伤害洞察">
+                  <div class="r18-ai-title">AI · 反应伤害洞察</div>
+                  <div class="r18-ai-conclusion">{{ damageAiConclusion }}</div>
+                  <div class="r18-ai-basis">依据：近 30 天 reaction_timeline.events 的 damage 聚合；触发次数以 dashboard_reaction_counts 为准</div>
+                  <a class="r18-ai-cta" href="#/admin/battles">前往战报列表验真 →</a>
+                </div>
+                <div class="r18-honesty-note">伤害贡献为辅助分析；触发次数以物化视图为准，不参与结算与 replay_hash</div>
+              </template>
+            </section>
           </el-card>
           <el-card shadow="never" class="chart-card" header="关卡漏斗（前 30 关）">
             <div ref="funnelRef" class="chart-canvas" role="img" :aria-label="funnelDesc.label" style="height: 240px" />
@@ -353,6 +485,46 @@ load()
             </table>
           </el-card>
         </div>
+      </section>
+
+      <section v-if="efficiency" class="stat-section r20-section">
+        <div class="section-kicker"><span class="section-kicker-bar" />战斗效率趋势<em>BATTLE EFFICIENCY</em></div>
+        <section class="r20-efficiency-trend" role="region" aria-label="AI · 战斗效率趋势诊断">
+          <div class="r20-head">
+            <div class="r20-title">AI · 战斗效率诊断</div>
+            <div class="r20-view-toggle" role="group" aria-label="效率视图切换">
+              <button type="button" class="r20-view-summary" :aria-pressed="efficiencyView === 'summary'" @click="efficiencyView = 'summary'">汇总</button>
+              <button type="button" class="r20-view-trend" :aria-pressed="efficiencyView === 'trend'" @click="efficiencyView = 'trend'">趋势</button>
+            </div>
+          </div>
+          <div class="r20-window-note">统计窗口：近 {{ efficiency.window_days }} 天（{{ efficiency.window_from }} 至 {{ efficiency.window_to }}）</div>
+
+          <template v-if="efficiency.battles > 0">
+            <div v-if="efficiencyView === 'summary'" class="r20-efficiency-row">
+              <span>场次 {{ efficiency.battles }}</span>
+              <span>命中率 {{ effNum(efficiency.accuracy_pct) }}%</span>
+              <span>平均峰值热量 {{ effNum(efficiency.avg_heat_max) }}</span>
+              <span>场均漏怪 {{ effNum(efficiency.leaked_per_battle) }}</span>
+              <span>场均时长 {{ effNum(efficiency.avg_duration_ms / 1000) }}s</span>
+            </div>
+            <div v-else class="r20-trend-bars">
+              <div v-for="b in effBuckets" :key="b.bucket" class="r20-trend-bar" :data-r20-bucket="b.bucket">
+                <span class="r20-bucket-label">{{ b.bucket }}</span>
+                <span class="r20-bucket-fill" :style="{ width: (Number.isFinite(b.accuracy_pct) ? Math.max(0, Math.min(100, b.accuracy_pct)) : 0) + '%' }" />
+                <span class="r20-bucket-value">{{ effNum(b.accuracy_pct) }}%</span>
+              </div>
+            </div>
+          </template>
+          <div v-else class="r20-efficiency-empty">近 30 天无战斗记录</div>
+
+          <div class="r20-ai-note" role="note" aria-label="AI · 战斗效率洞察">
+            <div class="r20-ai-title">AI · 战斗效率诊断</div>
+            <div class="r20-ai-conclusion">{{ effConclusion }}</div>
+            <div class="r20-ai-basis">依据：近 30 天 battle_records 的 shots/hits/heat_max 聚合；场次以 battle_records 行数为准</div>
+            <a class="r20-ai-cta" href="#/admin/battles">查看战报 →</a>
+          </div>
+          <div class="r20-honesty-note">效率趋势为辅助诊断；不参与结算、score、星级、loot，也不覆盖 replay_hash</div>
+        </section>
       </section>
     </template>
   </div>
@@ -402,6 +574,36 @@ load()
 @media (max-width: 900px) {
   .kpi-primary, .kpi-secondary, .charts-grid { grid-template-columns: 1fr; }
 }
+.r18-damage-impact {
+  margin-top: 10px; padding: 10px 12px;
+  border: 1px solid var(--lyp-border); border-radius: 6px;
+  background: var(--lyp-panel);
+}
+.r18-impact-title { font-size: 13px; font-weight: 600; color: var(--lyp-text-1); margin-bottom: 8px; }
+.r18-impact-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.r18-view-toggle { display: inline-flex; gap: 4px; }
+.r18-view-toggle button {
+  font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+  border: 1px solid var(--lyp-border); border-radius: 4px;
+  background: var(--lyp-panel-2); color: var(--lyp-text-2);
+}
+.r18-view-toggle button[aria-pressed='true'] { border-color: var(--lyp-accent); color: var(--lyp-accent); }
+.r18-window-note, .r18-excluded-note, .r18-honesty-note {
+  font-size: 11px; color: var(--lyp-dim); margin-top: 6px; line-height: 1.5;
+}
+.r18-impact-empty { font-size: 12px; color: var(--lyp-text-2); padding: 12px 0; }
+.r18-damage-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+.r18-damage-table th, .r18-damage-table td { padding: 5px 8px; border-bottom: 1px solid var(--lyp-border); text-align: left; }
+.r18-damage-table thead th { color: var(--lyp-dim); font-weight: 500; }
+.r18-ai-note {
+  margin-top: 10px; padding: 8px 10px; border-left: 2px solid var(--lyp-accent);
+  background: var(--lyp-panel-2); font-size: 12px; line-height: 1.55;
+}
+.r18-ai-title { font-weight: 600; color: var(--lyp-text-1); }
+.r18-ai-conclusion { color: var(--lyp-text-1); margin-top: 4px; }
+.r18-ai-basis { color: var(--lyp-dim); margin-top: 4px; }
+.r18-ai-cta { display: inline-block; margin-top: 6px; color: var(--lyp-accent); text-decoration: none; }
+.r18-ai-cta:hover { text-decoration: underline; }
 .chart-data-sr {
   position: absolute;
   width: 1px;
@@ -413,5 +615,38 @@ load()
   white-space: nowrap;
   border: 0;
 }
+.r20-efficiency-trend {
+  margin-top: 2px; padding: 12px 14px;
+  border: 1px solid var(--lyp-border); border-radius: 6px;
+  background: var(--lyp-panel);
+}
+.r20-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.r20-title { font-size: 13px; font-weight: 600; color: var(--lyp-text-1); }
+.r20-view-toggle { display: inline-flex; gap: 4px; }
+.r20-view-toggle button {
+  font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+  border: 1px solid var(--lyp-border); border-radius: 4px;
+  background: var(--lyp-panel-2); color: var(--lyp-text-2);
+}
+.r20-view-toggle button[aria-pressed='true'] { border-color: var(--lyp-accent); color: var(--lyp-accent); }
+.r20-window-note { font-size: 11px; color: var(--lyp-dim); margin: 8px 0; }
+.r20-efficiency-row { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12px; color: var(--lyp-text-1); }
+.r20-efficiency-row span { padding: 4px 8px; border-radius: 4px; background: var(--lyp-panel-2); }
+.r20-trend-bars { display: flex; flex-direction: column; gap: 6px; }
+.r20-trend-bar { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.r20-bucket-label { width: 88px; color: var(--lyp-dim); }
+.r20-bucket-fill { display: inline-block; height: 8px; border-radius: 4px; background: var(--lyp-accent); min-width: 2px; }
+.r20-bucket-value { color: var(--lyp-text-2); }
+.r20-efficiency-empty { font-size: 12px; color: var(--lyp-text-2); padding: 12px 0; }
+.r20-ai-note {
+  margin-top: 12px; padding: 8px 10px; border-left: 2px solid var(--lyp-accent);
+  background: var(--lyp-panel-2); font-size: 12px; line-height: 1.55;
+}
+.r20-ai-title { font-weight: 600; color: var(--lyp-text-1); }
+.r20-ai-conclusion { color: var(--lyp-text-1); margin-top: 4px; }
+.r20-ai-basis { color: var(--lyp-dim); margin-top: 4px; }
+.r20-ai-cta { display: inline-block; margin-top: 6px; color: var(--lyp-accent); text-decoration: none; }
+.r20-ai-cta:hover { text-decoration: underline; }
+.r20-honesty-note { font-size: 11px; color: var(--lyp-dim); margin-top: 8px; line-height: 1.5; }
 </style>
 

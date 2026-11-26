@@ -1621,4 +1621,162 @@ page {
 @media (prefers-reduced-motion: reduce) {
   .r7-causal-enter { animation: none !important; }
 }
+/* -------------------------------------------------------------------------- */
+/* LYP-R10-CAUSAL-V1：养成前后可信差值 + 宝石佩戴属性差分 + 收益不可用依据       */
+/* 只消费 v1/v3-r3/r6 既有令牌，不新增视觉变量；诚实空态与正常卡等高。          */
+/* -------------------------------------------------------------------------- */
+.r10-growth {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 16rpx 18rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+}
+.r10-growth-title { display: block; font-size: 24rpx; font-weight: 600; color: var(--ai-ink); }
+.r10-growth-text { display: block; margin-top: 8rpx; font-size: 22rpx; line-height: 1.55; color: var(--text); }
+.r10-growth-grid { display: flex; flex-direction: column; gap: 6rpx; margin-top: 10rpx; }
+.r10-growth-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 10rpx;
+  background: var(--panel);
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+.r10-growth-label { flex: 1; }
+.r10-growth-num { min-width: 96rpx; text-align: right; font-variant-numeric: tabular-nums; }
+.r10-growth-delta { min-width: 88rpx; text-align: right; font-variant-numeric: tabular-nums; color: var(--ok); }
+.r10-growth-delta.negative { color: var(--bad); }
+.r10-growth-empty {
+  margin-top: 8rpx;
+  padding: 14rpx;
+  background: var(--panel);
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.r10-hashes, .r10-growth-basis { display: block; margin-top: 8rpx; font-size: 19rpx; line-height: 1.5; color: var(--dim); word-break: break-all; }
+.r10-gem-gain {
+  position: relative;
+  margin: 14rpx 0;
+  padding: 14rpx 16rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 12rpx;
+}
+.r10-gem-title { display: block; font-size: 23rpx; font-weight: 600; color: var(--ai-ink); }
+.r10-gem-row { display: flex; align-items: center; gap: 8rpx; margin-top: 6rpx; font-size: 21rpx; color: var(--text-2); }
+.r10-gem-row .r10-gem-key { flex: 1; }
+.r10-gem-row .r10-gem-delta { min-width: 110rpx; text-align: right; font-variant-numeric: tabular-nums; color: var(--ok); }
+.r10-gem-empty { display: block; margin-top: 8rpx; font-size: 21rpx; line-height: 1.5; color: var(--muted); }
+.r10-basis-note { display: block; margin-top: 8rpx; font-size: 19rpx; line-height: 1.5; color: var(--dim); }
+.r10-enter { animation: r3-enter 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .r10-enter { animation: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LYP-R12-GROWTH-PRIORITY-V1 — 跨系统成长优先级（R12 玩法实测）
+   真浏览器实测：四页各自给互相矛盾的「推荐」。此层在四页顶部呈现
+   与首页 aiInsight 同源的一条短板结论，给瓶颈 / 推荐动作 / 补分收益。
+   令牌零新增：复用 --ai-accent / --ai-ink / --ai-halo / --panel-2 / --border。
+   ───────────────────────────────────────────────────────────── */
+.r12-priority {
+  position: relative;
+  display: block;
+  margin: 0 0 20rpx;
+  padding: 20rpx 22rpx;
+  background: linear-gradient(135deg, var(--ai-halo), rgba(0,0,0,0) 62%), var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+  box-shadow: var(--ai-glow);
+}
+.r12-priority-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+.r12-priority-badge {
+  color: var(--ai-ink);
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+.r12-priority-title { color: var(--text); font-size: 26rpx; font-weight: 700; }
+.r12-priority-text { display: block; color: var(--text-2); font-size: 26rpx; line-height: 1.6; }
+.r12-priority-basis { display: block; margin-top: 8rpx; color: var(--dim); font-size: 21rpx; line-height: 1.5; }
+.r12-priority-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 14rpx;
+  border-radius: 10rpx;
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  color: var(--ai-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.r12-priority-cta:active { opacity: 0.78; }
+.r12-priority-enter { animation: r12-priority-in 240ms ease-out both; }
+@keyframes r12-priority-in { from { opacity: 0; transform: translateY(10rpx); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .r12-priority-enter { animation: none !important; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LYP-R14-ADVICE-ACTION-V1 — AI 建议一键执行闭环（战报/图鉴）               */
+/* -------------------------------------------------------------------------- */
+.r14-advice {
+  margin: 16rpx 0;
+  padding: 20rpx 22rpx;
+  background: linear-gradient(135deg, var(--ai-halo), rgba(0,0,0,0) 62%), var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-left: 6rpx solid var(--ai-accent);
+  border-radius: 14rpx;
+  box-shadow: var(--ai-glow);
+}
+.r14-advice-badge {
+  display: inline-block;
+  padding: 2rpx 10rpx;
+  color: var(--ai-ink);
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 6rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+.r14-advice-text { display: block; margin-top: 10rpx; color: var(--text); font-size: 26rpx; line-height: 1.55; }
+.r14-advice-basis { display: block; margin-top: 6rpx; color: var(--dim); font-size: 21rpx; line-height: 1.5; }
+.r14-advice-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  background: var(--ai-halo);
+  border: 1rpx solid var(--ai-accent);
+  border-radius: 10rpx;
+  color: var(--ai-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.r14-advice-cta:active { opacity: 0.78; }
+.r14-advice-empty { margin-top: 12rpx; padding: 16rpx; background: var(--panel); border: 1rpx dashed var(--border); border-radius: 10rpx; }
+.r14-advice-empty-title { display: block; color: var(--text-2); font-size: 24rpx; font-weight: 600; }
+.r14-advice-empty-msg { display: block; margin-top: 6rpx; color: var(--dim); font-size: 22rpx; line-height: 1.5; }
+.r14-advice-empty-cta { display: inline-block; min-height: 88rpx; line-height: 88rpx; padding: 0 20rpx; margin-top: 10rpx; color: var(--ai-ink); border: 1rpx solid var(--ai-accent); border-radius: 10rpx; font-size: 24rpx; }
+.r14-enter { animation: r14-advice-in 240ms ease-out both; }
+@keyframes r14-advice-in { from { opacity: 0; transform: translateY(10rpx); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .r14-enter { animation: none !important; }
+}
+
 

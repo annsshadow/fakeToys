@@ -37,6 +37,26 @@
         >
           <text class="time-budget-text">{{ timeBudget.text }}</text>
         </view>
+        <!-- R27 实时波次推进：只读快照派生，紧凑单行不挤压既有胶囊 -->
+        <view v-if="r27Progress" class="r27-wave-progress" :data-r27-progress="r27Progress.waveIndex">
+          <view v-if="r27Progress.empty" class="r27-progress-body">
+            <text class="r27-progress-empty">本波暂无敌人进度数据</text>
+          </view>
+          <view v-else class="r27-progress-body">
+            <view class="r27-progress-track">
+              <view class="r27-progress-fill" :style="{ width: r27Progress.clearedPct + '%' }" />
+            </view>
+            <text class="r27-progress-text">本波 {{ r27Progress.resolved }}/{{ r27Progress.waveTotal }} · {{ r27Progress.clearedPct.toFixed(1) }}%</text>
+          </view>
+        </view>
+      </view>
+      <!-- R27 AI 波次推进解读：同源只读快照；只读展示不拦截点击 -->
+      <view v-if="r27Progress && !r27Progress.empty" class="r27-ai-note">
+        <text class="r27-ai-title">AI · 波次推进</text>
+        <text class="r27-ai-conclusion">{{ r27Progress.ai }}</text>
+        <text class="r27-ai-basis">依据：引擎 waveProgressHud() 只读快照（当前波 spawns 总数 − 场上存活 − 待出场）；只读派生不进 replay_hash</text>
+        <text class="r27-ai-cta" @click="openHelp">继续清理场上敌人 →</text>
+        <text class="r27-ai-honesty">辅助进度提示非权威战斗判定，已处理含击败与漏怪（漏怪已扣防线）；权威以 replay_hash 为准</text>
       </view>
       <!-- R9：最近反应记录。与星级/钳分胶囊同属顶部浮层，不拦截点击。 -->
       <view v-if="recentReactions.length" class="reaction-feed" aria-live="polite">
@@ -45,7 +65,35 @@
             <text class="reaction-name">{{ r.pair }} → {{ r.name }}</text>
             <text class="reaction-damage">{{ r.resisted ? '抗性削减 ' : '' }}-{{ r.damage }}</text>
           </view>
+          <text class="r28-attribution" :data-r28-wave="r.available ? r.wave : 'unknown'" :data-r28-enemy="r.available ? r.enemy_uid : 'unknown'">{{ r.attribution }}</text>
           <text class="reaction-cue">AI {{ r.cue }}</text>
+        </view>
+        <!-- R28：每条反应附波次/敌人归因，截断或不匹配诚实标注；AI 说明不拦截点击 -->
+        <view class="r28-feed-ai">
+          <text class="r28-feed-ai-title">AI · 反应归因</text>
+          <text class="r28-feed-ai-conclusion">{{ r28Ai.conclusion }}</text>
+          <text class="r28-feed-ai-basis">依据：R15 reactionTimeline 逐次事件（wave/enemy_uid/reaction/damage）按事件发射顺序配对；截断或不匹配如实标注归因不可用</text>
+          <text class="r28-feed-ai-honesty">辅助归因非权威判据，权威以 replay_hash 为准</text>
+          <text class="r28-feed-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</text>
+        </view>
+      </view>
+      <!-- R24 实时元素层与反应触发预判：只读快照派生，纯展示不拦截点击 -->
+      <view class="r24-element-hud">
+        <view v-if="r24ElementRows.length" class="r24-hud-rows">
+          <view v-for="row in r24ElementRows" :key="row.uid" class="r24-enemy-row" :data-r24-uid="row.uid">
+            <text class="r24-enemy-name">{{ row.name }}</text>
+            <text class="r24-enemy-stacks">{{ row.elements.length ? row.elements.map(el => r24StackText(el, row.stackCounts[el])).join('·') : '无元素层' }}</text>
+            <text v-for="h in row.hints" :key="row.uid + '-' + h.reaction + '-' + h.incoming" class="r24-reaction-hint">{{ r24HintText(h) }}</text>
+          </view>
+          <text v-if="!r24HasHints" class="r24-hud-empty">当前场上无可预判的元素反应</text>
+        </view>
+        <text v-else class="r24-hud-empty">当前场上无可预判的元素反应</text>
+        <view class="r24-ai-note">
+          <text class="r24-ai-title">AI · 实时元素层预判</text>
+          <text class="r24-ai-conclusion">{{ r24Conclusion }}</text>
+          <text class="r24-ai-basis">依据：敌人 stacks 元素层 × REACTION_PAIRS(源自引擎 lookupReaction) 派生；只读快照不进 replay_hash</text>
+          <text class="r24-ai-cta" @click="openHelp">去释放对应元素技能 →</text>
+          <text class="r24-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
         </view>
       </view>
       <view class="hud-row">
@@ -205,6 +253,33 @@
       </view>
     </view>
 
+    <!-- R29：完整反应时间线抽屉（R28 CTA 打开；只读派生，不改引擎权威） -->
+    <view v-if="reactionTimelineVisible" class="r29-timeline-overlay" @click="closeReactionTimeline">
+      <view class="r29-timeline-box" @click.stop>
+        <view class="r29-timeline-head">
+          <text class="r29-timeline-title">AI · 完整反应时间线</text>
+          <view class="r29-timeline-close" @click="closeReactionTimeline"><text>×</text></view>
+        </view>
+        <text v-if="r29Timeline.empty" class="r29-timeline-empty">本局暂无逐次反应记录</text>
+        <block v-else>
+          <text v-if="!r29Timeline.empty" class="r29-timeline-conclusion">本局显示 {{ rows.length }} 条逐次反应记录</text>
+          <text v-if="r29Timeline.truncated" class="r29-timeline-truncated">已截断，仅显示前 200 条</text>
+          <scroll-view scroll-y class="r29-timeline-scroll">
+            <view
+              v-for="row in rows"
+              :key="row.index"
+              class="r29-timeline-row"
+              :data-r29-index="row.index"
+              :data-r29-wave="row.wave"
+              :data-r29-enemy="row.enemy_uid"
+            >第{{ row.wave }}波 · {{ row.tick }} · {{ row.reactionName }} · #{{ row.enemy_uid }} · {{ row.damage.toFixed(1) }} 伤害</view>
+          </scroll-view>
+        </block>
+        <text class="r29-timeline-basis">依据：引擎 reactionTimeline() 只读旁路（前 200 条，不进 replay_hash）；反应名以服务端 config.reactions 为准</text>
+        <text class="r29-timeline-honesty">辅助展示非权威判据，权威以 replay_hash 为准</text>
+      </view>
+    </view>
+
     <!-- 选牌界面（I-2） -->
     <view v-if="showCards" class="sheet">
       <view class="card-header">
@@ -215,6 +290,26 @@
           <text> 本波还能弃 {{ deck.discardsLeft }} 张，牌堆剩 {{ deck.size }} 张。</text>
         </text>
         <text v-if="cardChoiceFeedback" class="card-choice-feedback">{{ cardChoiceFeedback }}</text>
+      </view>
+      <!-- R26 下一波敌情简报：只读派生展示，先看敌情再选卡；不碰引擎/结算/replay_hash -->
+      <view v-if="r26Brief" class="r26-wave-brief" role="region">
+        <text class="r26-brief-head">下一波 · 第 {{ r26Brief.waveIndex + 1 }} 波</text>
+        <view v-if="r26Brief.empty" class="r26-brief-empty">暂无下一波敌情信息</view>
+        <view v-else class="r26-enemy-list">
+          <view v-for="row in r26Brief.rows" :key="row.enemy_id" class="r26-enemy-row" :data-r26-enemy="row.enemy_id">
+            <text class="r26-enemy-name">{{ row.name }}</text>
+            <text v-if="row.unknown" class="r26-unknown-tag">[未知敌种]</text>
+            <text class="r26-enemy-count">×{{ row.count }}</text>
+            <text v-if="row.threat" class="r26-enemy-threat">{{ row.threat }}</text>
+          </view>
+        </view>
+        <view v-if="!r26Brief.empty" class="r26-ai-note" role="note">
+          <text class="r26-ai-title">AI · 下一波敌情</text>
+          <text class="r26-ai-conclusion">{{ r26Brief.ai }}</text>
+          <text class="r26-ai-basis">依据：当前关卡 waves[waveIndex+1].spawns 按 enemy_id 聚合；敌种名与威胁标签来自 /config.enemies</text>
+          <text class="r26-ai-cta">结合本波威胁与手牌元素协同选卡</text>
+          <text class="r26-ai-honesty">辅助简报非权威战斗数据，实际敌情以引擎波次为准；权威回放以 replay_hash 为准</text>
+        </view>
       </view>
       <view class="cards">
         <view
@@ -242,9 +337,33 @@
             >{{ elementName(c.element) }}</text>
             <text class="dim" @click.stop="discardCard(c.id)">弃</text>
           </view>
+          <!-- R22 选卡反应协同预判：纯展示派生，不改卡牌点击/弃牌行为 -->
+          <view class="r22-synergy-card">
+            <template v-if="synergyOf(c).kind === 'added'">
+              <text class="r22-synergy-line">AI · 新增【{{ synergyOf(c).addedNames[0] }}】等{{ synergyOf(c).added.length }}种反应</text>
+              <view class="r22-synergy-tags">
+                <text v-for="k in synergyOf(c).added" :key="k" class="r22-synergy-tag" :data-r22-reaction="k">{{ reactionName(k) }}</text>
+              </view>
+              <text class="r22-synergy-match">可搭配 {{ synergyOf(c).partners.map(elementName).join('·') }}</text>
+            </template>
+            <template v-else-if="synergyOf(c).kind === 'reinforced'">
+              <text class="r22-synergy-line">AI · 强化已有【{{ synergyOf(c).reinforcedNames[0] }}】</text>
+              <view class="r22-synergy-tags">
+                <text v-for="k in synergyOf(c).reinforced" :key="k" class="r22-synergy-tag" :data-r22-reaction="k">{{ reactionName(k) }}</text>
+              </view>
+            </template>
+            <text v-else class="r22-synergy-empty">{{ synergyOf(c).emptyText }}</text>
+          </view>
         </view>
       </view>
       <view class="btn" @click="skipCards">全部不要了，直接下一波</view>
+      <view class="r22-ai-note" role="note">
+        <text class="r22-ai-title">AI · 协同预判</text>
+        <text class="r22-ai-conclusion">{{ synergyNoteConclusion }}</text>
+        <text class="r22-ai-basis">依据：已装备元素 × 手牌元素，经 REACTION_PAIRS(源自引擎 lookupReaction)派生</text>
+        <text class="r22-ai-cta">去装备/选它</text>
+        <text class="r22-ai-honesty">辅助预判非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
+      </view>
     </view>
 
     <!-- 结算界面 -->
@@ -288,6 +407,23 @@
         服务端已修正本次结算：{{ settleResult.clamp_note }}
       </view>
       <text v-if="settleAttribution && !settleFailed" class="settle-attribution">{{ settleAttribution }}</text>
+      <text v-if="settleDefeatReview" class="settle-defeat-review">{{ settleDefeatReview }}</text>
+      <view v-if="!settleFailed" class="r10-growth r10-enter">
+        <text class="r10-growth-title">AI · 养成前后（同一关可信差值）</text>
+        <template v-if="growthCompare.available">
+          <text class="r10-growth-text">{{ growthCompare.text }}</text>
+          <view class="r10-growth-grid">
+            <view v-for="row in growthCompare.rows" :key="row.label" class="r10-growth-row">
+              <text class="r10-growth-label">{{ row.label }}</text>
+              <text class="r10-growth-num">{{ fmt(row.before) }} → {{ fmt(row.after) }}</text>
+              <text class="r10-growth-delta" :class="{ negative: row.delta < 0 }">{{ fmtSigned(row.delta) }}</text>
+            </view>
+          </view>
+          <text class="r10-hashes">hash：{{ growthHashes }}</text>
+          <text class="r10-growth-basis">依据：{{ growthCompare.basis }}</text>
+        </template>
+        <text v-else class="r10-growth-empty" aria-live="polite" role="status">还缺养成前那局战报，先打一局同关 · 构筑变更点未上报，不做估算。</text>
+      </view>
       <text v-if="settleCardFeedback" class="settle-card-feedback">{{ settleCardFeedback }}</text>
       <!-- 结算接口失败：先说人话，再留原始串排障。绝不能把未入账的一局伪装成通关。 -->
       <view v-if="settleFailed" class="settle-error">
@@ -305,6 +441,8 @@
       </view>
       <text v-if="settleFailed" class="hash-note">本地回放哈希 {{ settleResult.replay_hash }}（未入账，仅供排障）</text>
       <text v-else class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
+      <!-- t227：结算 sheet 遮挡战斗态 R28 feed CTA，结果页提供真实可见可点的时间线入口 -->
+      <view class="r29-result-timeline-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</view>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
            跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
       <view
@@ -344,8 +482,13 @@ import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import { BattleEngine } from '@/game/engine'
+import { normalizeGrowthCompare, type GrowthCompareView } from '@/pages/_shared/r10GrowthCompare'
+import { BattleEngine, type ElementLayerHudRow } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
+import { buildNextWaveBrief } from './nextWaveBrief'
+import { buildWaveProgress } from './waveProgressHud'
+import { attributeLiveReactions, attributionText, buildLiveFeedAi } from './liveReactionFeed'
+import { buildReactionTimelineView } from './reactionTimelineView'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
 // 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
@@ -363,10 +506,10 @@ import {
   logicIntervalMs,
   normalizeSpeed,
 } from '@/render/canvas'
-import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
+import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, lookupReaction, type Element, type ReactionKey } from '@/game/elements'
 import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import { scoreRulesFromServer, scoreTimeBudget } from '@/game/score'
-import { damageShareFromEvents, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
+import { damageShareFromEvents, defeatReview, reactionCue, summarizeCardPicks, type DamageShare } from '@/game/feedback'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 import DefIcon from '@/components/DefIcon.vue'
@@ -380,16 +523,101 @@ const inst = getCurrentInstance()
 const canvasW = ref(375)
 const canvasH = ref(667)
 const engine = ref<BattleEngine | null>(null)
+
+/** R24：引擎只读元素层快照，tick 后刷新；纯展示，不写回引擎。 */
+const r24ElementHud = ref<ElementLayerHudRow[]>([])
+interface R24Hint { reaction: ReactionKey; existing: Element; incoming: Element }
+function refreshElementHud(eng: BattleEngine): void {
+  const rows = typeof eng.elementLayerHud === 'function' ? eng.elementLayerHud() : []
+  r24ElementHud.value = Array.isArray(rows) ? rows : []
+}
+
+/** R27：引擎只读波次推进快照，step 后刷新；纯展示，不写回引擎。 */
+const r27ProgressRaw = ref<{ waveIndex: number; waveTotal: number; onField: number; pending: number } | null>(null)
+function refreshWaveProgress(eng: BattleEngine): void {
+  r27ProgressRaw.value = typeof eng.waveProgressHud === 'function' ? eng.waveProgressHud() : null
+}
+const r27Progress = computed(() => r27ProgressRaw.value ? buildWaveProgress(r27ProgressRaw.value) : null)
+
+const r24ElementRows = computed(() => r24ElementHud.value.map(row => {
+  const elements = (Object.keys(row.stacks) as Element[]).filter(el => (row.stacks[el] ?? 0) > 0)
+  const hints: R24Hint[] = []
+  const seen = new Set<string>()
+  for (const reaction of Object.keys(REACTION_PAIRS) as ReactionKey[]) {
+    for (const [existing, incoming] of REACTION_PAIRS[reaction]) {
+      if (!elements.includes(existing) || elements.includes(incoming)) continue
+      if (lookupReaction(existing, incoming) !== reaction) continue
+      const id = reaction + '|' + existing + '|' + incoming
+      if (seen.has(id)) continue
+      seen.add(id)
+      hints.push({ reaction, existing, incoming })
+    }
+  }
+  const stackCounts: Partial<Record<Element, number>> = {}
+  for (const el of elements) stackCounts[el] = row.stacks[el] ?? 0
+  return { ...row, elements, stackCounts, hints }
+}))
+const r24HasHints = computed(() => r24ElementRows.value.some(row => row.hints.length > 0))
+function r24StackText(el: Element, count: number | undefined): string {
+  const name: Record<Element, string> = ELEMENT_NAME
+  return String(name[el]) + String(count ?? 0)
+}
+function r24HintText(h: R24Hint): string {
+  return '已附着 ' + ELEMENT_NAME[h.existing] + ' + 再补 ' + ELEMENT_NAME[h.incoming] + ' → ' + REACTIONS[h.reaction].name + ' 反应'
+}
+const r24Conclusion = computed(() => {
+  const first = r24ElementRows.value.find(row => row.hints.length > 0)
+  if (!first) return '当前场上无可预判的元素反应，不编造建议'
+  const priority = ['superconduct', 'overheat', 'steam_burst'] as ReactionKey[]
+  const sorted = [...first.hints].sort((a, b) => {
+    const ia = priority.indexOf(a.reaction), ib = priority.indexOf(b.reaction)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+  const actions = sorted.slice(0, 2).map(h => '再补 ' + ELEMENT_NAME[h.incoming] + ' 可触发' + REACTIONS[h.reaction].name).join('、')
+  return 'AI 提示：' + first.name + '已附着' + ELEMENT_NAME[first.hints[0]!.existing] + '，' + actions
+})
 const renderer = ref<BattleRenderer | null>(null)
 const startError = ref('')
 const settleResult = ref<any>(null)
+
+/** R10 §1I.2：结算卡上的养成前后视图只认同关两次真实结算的确定性差值。 */
+const growthCompare = ref<GrowthCompareView>(normalizeGrowthCompare([]))
+const growthHashes = computed(() => growthCompare.value.hashes.join(' / ') || '—')
+
+/** R11：养成前后差值只改展示格式，不改差值本身或结算逻辑。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
+
+async function loadGrowthCompare(detail: import('@/api/client').BattleDetail) {
+  let baseline: import('@/api/client').BattleDetail | null = null
+  try {
+    const history = await api.myBattleHistory(20)
+    const prior = (history.items ?? []).filter((x) => x.level_id === detail.level_id && x.replay_hash && x.replay_hash !== detail.replay_hash)[0]
+    if (prior) baseline = await api.myBattleDetail(prior.id)
+  } catch {
+    baseline = null
+  }
+  growthCompare.value = baseline ? normalizeGrowthCompare([baseline, detail]) : normalizeGrowthCompare([])
+}
 
 /**
  * R9：最近反应的可读记录。canvas 粒子只在几帧内闪现，8× 下几乎看不清；
  * HUD 这三条短记录不拦截点击、不盖住战场，让玩家知道「刚刚打出了什么」。
  */
-interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean }
+interface ReactionLog { id: number; key: ReactionKey; name: string; pair: string; cue: string; damage: number; resisted: boolean; wave: number | null; enemy_uid: number | null; available: boolean; attribution: string }
 const recentReactions = ref<ReactionLog[]>([])
+/** R28：最近三条反应的归因 AI 说明（来自真实匹配计数，纯只读派生）。 */
+const r28Ai = ref(buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 }))
+/** R29：完整反应时间线抽屉的只读展示快照（打开时从引擎只读旁路派生一次）。 */
+const reactionTimelineVisible = ref(false)
+let timelinePausedByDrawer = false
+const r29Timeline = ref(buildReactionTimelineView(null, false, []))
+/** 抽屉列表行；模板逐字用 {{ rows.length }} 显示过滤后的真实条数。 */
+const rows = computed(() => r29Timeline.value.rows)
 let reactionSeq = 0
 /** R9：累计本局真实 hit/reaction 事件金额，只用于展示「反应伤害占比」，不进回放哈希。 */
 const damageShare = ref<DamageShare>({ reactionDamage: 0, totalDamage: 0, ratioPct: null })
@@ -538,6 +766,23 @@ const settleCardFeedback = computed(() => {
   const shareText = share.ratioPct === null ? '本局无完整伤害记录' : `反应伤害占比 ${share.ratioPct}%`
   return `AI 本局取卡 ${s.taken} 张、弃 ${s.discarded} 张、跳过 ${s.skipped} 波，反应 ${reactions} 次；${shareText}；依据 card_picks / hit+reaction 事件；下一局可换元素搭配对比收益。`
 })
+
+/** R12 失败复盘：把真实结算数据翻译成「为什么输 + 下一局改什么」，成功/结算失败不冒充。 */
+const settleDefeatReview = computed(() => {
+  const r = settleResult.value
+  if (!r || r.win || settleFailed.value) return null
+  const eng = engine.value
+  const level = eng?.cfg?.level
+  return defeatReview({
+    wave: eng ? Number(eng.waveIndex ?? 0) + 1 : null,
+    totalWaves: level ? Number(level.wave_count ?? level.waves?.length ?? 0) || null : null,
+    kills: Number(r.kills ?? 0),
+    leaked: Number(r.leaked ?? 0),
+    reactions: Number(r.reactions ?? 0),
+    cardPicks: settleCardPicks.value,
+  })
+})
+
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
 
@@ -631,11 +876,97 @@ const levelTitle = computed(() => {
   return `第 ${lv.id} 关 · ${lv.name}`
 })
 const showCards = computed(() => engine.value?.phase === 'card_select' && !settleResult.value)
+/** R26 下一波敌情简报：只读派生自 eng.cfg.level.waves 与 store.config.enemies，不写回引擎。 */
+const r26Brief = computed(() => {
+  const eng = engine.value
+  if (!eng) return null
+  return buildNextWaveBrief(eng.cfg.level.waves, eng.waveIndex, store.enemyMap)
+})
 const deck = computed(() => engine.value?.deck ?? { discardsLeft: 0, size: 0 } as any)
 
 function elementName(e: Element): string {
   return ELEMENT_NAME[e]
 }
+
+/** R22：反应名只取引擎真源 REACTIONS，禁止硬编码。 */
+function reactionName(k: ReactionKey): string {
+  return REACTIONS[k].name
+}
+
+/**
+ * R22 选卡反应协同预判（纯展示派生，不落库/不进 replay_hash/不改结算）。
+ * 覆盖集 C(E)：以 REACTION_PAIRS（源自引擎 lookupReaction）为唯一真源，
+ * 对元素集两两查表，非空者收入集合；新卡 e 的差集 A = C(E∪{e}) − C(E)
+ * 按 REACTION_ORDER 稳定排序；B = E 中与 e 组合产生 A 的元素。
+ */
+type R22Synergy = {
+  kind: 'added' | 'reinforced' | 'empty'
+  added: ReactionKey[]
+  addedNames: string[]
+  reinforced: ReactionKey[]
+  reinforcedNames: string[]
+  partners: Element[]
+  emptyText: string
+}
+const equippedElements = ref<Element[]>([])
+
+function r22Covered(elements: Element[]): Set<ReactionKey> {
+  const out = new Set<ReactionKey>()
+  for (const a of elements) {
+    for (const b of elements) {
+      if (a === b) continue
+      for (const k of REACTION_ORDER) {
+        if (REACTION_PAIRS[k].some(([x, y]) => x === a && y === b)) out.add(k)
+      }
+    }
+  }
+  return out
+}
+
+function r22Partners(e: Element, added: Set<ReactionKey>): Element[] {
+  return equippedElements.value.filter((a) =>
+    REACTION_ORDER.some((k) => added.has(k) && REACTION_PAIRS[k].some(([x, y]) => x === a && y === e)),
+  )
+}
+
+function r22Synergy(c: Card): R22Synergy {
+  const empty = (emptyText: string): R22Synergy => ({
+    kind: 'empty', added: [], addedNames: [], reinforced: [], reinforcedNames: [], partners: [], emptyText,
+  })
+  if (equippedElements.value.length === 0) return empty('当前构筑还没有元素技能，无法预判反应')
+  if (c.kind !== 'skill' || !c.element) return empty('该卡无元素，无法预判反应（属性/机制卡）')
+  const before = r22Covered(equippedElements.value)
+  const after = r22Covered([...equippedElements.value, c.element])
+  const added = REACTION_ORDER.filter((k) => after.has(k) && !before.has(k))
+  const reinforced = REACTION_ORDER.filter((k) => after.has(k) && before.has(k))
+  if (added.length > 0) {
+    return {
+      kind: 'added', added, addedNames: added.map(reactionName),
+      reinforced: [], reinforcedNames: [], partners: r22Partners(c.element, new Set(added)), emptyText: '',
+    }
+  }
+  if (reinforced.length > 0) {
+    return {
+      kind: 'reinforced', added: [], addedNames: [], reinforced, reinforcedNames: reinforced.map(reactionName),
+      partners: [], emptyText: '',
+    }
+  }
+  return empty('该卡无元素，无法预判反应（属性/机制卡）')
+}
+
+function synergyOf(c: Card): R22Synergy {
+  return r22Synergy(c)
+}
+
+/** AI 结论取当前手牌首张有预判的卡，真实来自差集，不虚构夸张结论。 */
+const synergyNoteConclusion = computed(() => {
+  for (const c of hand.value) {
+    const s = r22Synergy(c)
+    if (s.kind === 'added') return `当前手牌「${c.name}」可新增【${s.addedNames[0]}】等${s.added.length}种反应`
+    if (s.kind === 'reinforced') return `当前手牌「${c.name}」可强化已有【${s.reinforcedNames[0]}】`
+  }
+  return '当前手牌暂无可预判的新反应，去装备元素技能或换一张卡'
+})
 
 function kindLabel(k: string): string {
   return k === 'skill' ? '技能' : k === 'attribute' ? '属性' : '机制'
@@ -649,6 +980,8 @@ const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
 let helpPausedByPage = false
 
 function openHelp() {
+  // R29 互斥：打开图例前无条件关闭时间线抽屉（函数声明 hoisting 可用）
+  closeReactionTimeline()
   if (helpVisible.value) {
     closeHelp()
     return
@@ -669,6 +1002,44 @@ function closeHelp() {
   helpVisible.value = false
   if (helpPausedByPage) {
     helpPausedByPage = false
+    doResume()
+  }
+}
+
+/**
+ * R29：打开完整反应时间线抽屉。
+ *
+ * 先无条件 closeHelp() 保证与图例互斥（图例暂停会被它自己恢复）；
+ * 再从引擎只读旁路 + 服务端反应名构建展示快照；仅当当前未暂停且未结算时
+ * 才代为暂停，并只记「由本抽屉暂停」，绝不碰图例/倍速的记账。
+ */
+function openReactionTimeline() {
+  closeHelp()
+  if (reactionTimelineVisible.value) {
+    closeReactionTimeline()
+    return
+  }
+  const eng = engine.value as BattleEngine | null
+  const reactionDefs = store.config ? store.config.reactions : []
+  const events = eng ? eng.reactionTimeline() : []
+  const truncated = eng ? eng.reactionTimelineTruncated() : false
+  r29Timeline.value = buildReactionTimelineView(
+    events,
+    Boolean(truncated),
+    reactionDefs,
+  )
+  reactionTimelineVisible.value = true
+  if (!paused.value && !settled.value) {
+    doPause()
+    timelinePausedByDrawer = true
+  }
+}
+
+/** R29：关闭抽屉；只恢复本抽屉造成的暂停，不覆盖玩家原有暂停/图例/倍速。 */
+function closeReactionTimeline() {
+  reactionTimelineVisible.value = false
+  if (timelinePausedByDrawer) {
+    timelinePausedByDrawer = false
     doResume()
   }
 }
@@ -748,7 +1119,7 @@ function getCanvas(): Promise<any | null> {
  * 抽成具名函数是为了换挡时能重建定时器 —— 此前它是 setup() 里的一个
  * 内联闭包，倍速改不到它，于是「兼容模式」下档位是个摆设。
  */
-function noteReactions(events: unknown[]): void {
+function noteReactions(events: unknown[], eng: BattleEngine | null): void {
   const d = damageShareFromEvents(events as Array<{ type?: string; damage?: bigint | number }>)
   if (d.reactionDamage > 0 || d.totalDamage > 0) {
     const prev = damageShare.value
@@ -765,8 +1136,15 @@ function noteReactions(events: unknown[]): void {
       (e as { type?: string })?.type === 'reaction',
   )
   if (!reactions.length) return
-  const fresh = reactions.slice(-3).map((e) => {
+  const recent = reactions.slice(-3)
+  const attribution = attributeLiveReactions(
+    recent,
+    eng?.reactionTimeline?.(),
+    Boolean(eng?.reactionTimelineTruncated?.()),
+  )
+  const fresh = recent.map((e, idx) => {
     const cue = reactionCue(e.reaction, e.existingElement, e.incomingElement, e.damage)
+    const row = attribution.rows[idx]
     return {
       id: ++reactionSeq,
       key: e.reaction,
@@ -775,9 +1153,29 @@ function noteReactions(events: unknown[]): void {
       cue: cue.cue,
       damage: Math.max(0, Number(e.damage)),
       resisted: Boolean(e.resisted),
+      wave: row?.wave ?? null,
+      enemy_uid: row?.enemy_uid ?? null,
+      available: Boolean(row?.available),
+      attribution: attributionText(row),
     }
   })
-  recentReactions.value = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+  // R28 修复：AI 汇总分母必须与页面最终显示的记录一致，
+  // 而不是当前 step 的反应数（否则本步只有 1 条时误报「已归因 1/1」）。
+  const merged = [...fresh.reverse(), ...recentReactions.value].slice(0, 3)
+  recentReactions.value = merged
+  const mergedRows = merged.map(r => ({
+    reaction: String(r.key),
+    damage: r.damage,
+    wave: r.available ? r.wave : null,
+    enemy_uid: r.available ? r.enemy_uid : null,
+    available: Boolean(r.available),
+  }))
+  const matchedCount = mergedRows.filter(r => r.available).length
+  r28Ai.value = buildLiveFeedAi({
+    rows: mergedRows,
+    matchedCount,
+    unavailableCount: mergedRows.length - matchedCount,
+  })
 }
 
 function fallbackTick(): void {
@@ -791,7 +1189,9 @@ function fallbackTick(): void {
   if (paused.value) return
   const events = eng.step()
   playBattleEvents(events)
-  noteReactions(events)
+  noteReactions(events, eng)
+  refreshElementHud(eng)
+  refreshWaveProgress(eng)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -864,6 +1264,11 @@ async function setup() {
       return
     }
     store.setEquippedSkills(equipped.map((e) => e.skillId))
+    // R22：已装备元素集合 E 直接取同一份权威快照的 applyElement，过滤空串去重；
+    // 绝不凭卡牌 optimistic UI 重拼（与伤害/哈希同源，预判才可信）。
+    equippedElements.value = Array.from(new Set(
+      equipped.map((e) => e.applyElement).filter((e): e is Element => e !== ''),
+    ))
     // 攻方属性以服务端下发为准（I-6 的前提）
     store.setBuild(bt.build)
 
@@ -895,6 +1300,10 @@ async function setup() {
         : undefined,
     })
     recentReactions.value = []
+    r28Ai.value = buildLiveFeedAi({ rows: [], matchedCount: 0, unavailableCount: 0 })
+    reactionTimelineVisible.value = false
+    timelinePausedByDrawer = false
+    r29Timeline.value = buildReactionTimelineView(null, false, [])
     damageShare.value = { reactionDamage: 0, totalDamage: 0, ratioPct: null }
     settleCardPicks.value = []
     cardChoiceVersion.value++
@@ -931,7 +1340,9 @@ async function setup() {
         const events = eng.step()
         // 音效与视觉同源：都从同一批事件来，不另算一份状态
         playBattleEvents(events)
-        noteReactions(events)
+        noteReactions(events, eng)
+        refreshElementHud(eng)
+        refreshWaveProgress(eng)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -986,6 +1397,11 @@ async function settle(eng: BattleEngine) {
   }
   try {
     let payload = eng.settleInput(tokenId.value)
+    // R15：逐次反应证据随结算旁路上传；不改变权威字段，不改变 replay_hash。
+    const timeline = eng.reactionTimeline?.()
+    if (timeline !== undefined) {
+      payload = { ...payload, reaction_timeline: timeline } as typeof payload
+    }
     const reportedPicks = (payload as { card_picks?: unknown }).card_picks
     settleCardPicks.value = Array.isArray(reportedPicks) ? [...reportedPicks] : []
     let res: any
@@ -1015,6 +1431,22 @@ async function settle(eng: BattleEngine) {
     }
     if (res.new_max_stage) store.setMaxStage(res.new_max_stage)
     await store.refreshProfile()
+    // R10：本局是真实结算（带权威 replay_hash），用它和同关上一局做确定性差值。
+    // 只填服务端/引擎已确证的字段，缺字段留在空态里，不补零冒充数据。
+    if (!settleResult.value.error) {
+      const current = {
+        level_id: levelId.value,
+        result: res.win ? 'win' : 'lose',
+        stars: Number(res.stars ?? 0),
+        score: Number(res.score ?? 0),
+        kills: Number(payload.kills ?? 0),
+        leaked: Number(payload.leaked ?? 0),
+        reactions: Number(payload.reactions ?? 0),
+        replay_hash: payload.replay_hash,
+        created_at: new Date().toISOString(),
+      } as import('@/api/client').BattleDetail
+      await loadGrowthCompare(current)
+    }
   } catch (e) {
     settleResult.value = {
       win: eng.phase === 'won',
@@ -1843,6 +2275,9 @@ onShareAppMessage(() =>
   font-weight: 600;
 }
 
+/* R28 归因：行内紧凑不换行；说明块可换行且不拦截画布点击，CTA 单独放行 */
+.r28-attribution { font-size: 18rpx; color: #ffd33d; white-space: nowrap; }
+
 /* t95：390×844 移动视口是 H5 主场景。让 HUD 行换行、胶囊内文字保持单行，
    并给反应因果链留出宽度；pointer-events 仍由 .overlay-top 关闭，不挡战场。 */
 @media (max-width: 430px) {
@@ -1873,17 +2308,32 @@ onShareAppMessage(() =>
     row-gap: 2rpx;
     padding: 4rpx 10rpx;
     width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
   }
   .reaction-line-main {
     gap: 8rpx;
+    min-width: 0;
+    flex-wrap: wrap;
   }
   .reaction-name,
   .reaction-damage {
     font-size: 20rpx;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .r28-attribution {
+    font-size: 18rpx;
+    color: #ffd33d;
+    white-space: normal;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
   .reaction-cue {
     font-size: 18rpx;
     max-width: 100%;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -1965,6 +2415,32 @@ onShareAppMessage(() =>
   line-height: 1.6;
   color: var(--dim);
 }
+
+/* R26 下一波敌情简报：限制高度可滚动，390×844 下手卡与按钮始终可见可点 */
+.r26-wave-brief {
+  max-height: 160rpx;
+  overflow-y: auto;
+  margin-bottom: 14rpx;
+  padding: 8rpx 12rpx;
+  border: 1rpx solid var(--border-soft);
+  background: var(--panel-2);
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  line-height: 1.4;
+}
+.r26-brief-head { display: block; font-weight: 700; color: var(--accent); margin-bottom: 4rpx; }
+.r26-enemy-list { display: flex; flex-direction: column; gap: 2rpx; }
+.r26-enemy-row { display: flex; flex-direction: row; align-items: center; gap: 8rpx; white-space: nowrap; overflow: hidden; }
+.r26-enemy-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.r26-enemy-count { color: var(--text); }
+.r26-enemy-threat { color: var(--warn); }
+.r26-unknown-tag { color: var(--muted); border: 1rpx solid var(--border-soft); border-radius: 6rpx; padding: 0 4rpx; }
+.r26-brief-empty { color: var(--muted); }
+.r26-ai-note { display: flex; flex-direction: column; gap: 2rpx; margin-top: 6rpx; padding-left: 8rpx; border-left: 3rpx solid var(--accent); }
+.r26-ai-title { color: var(--accent); font-weight: 700; }
+.r26-ai-conclusion { color: var(--text); }
+.r26-ai-basis, .r26-ai-honesty { color: var(--text-2); }
+.r26-ai-cta { color: var(--accent); }
 
 .cards {
   display: flex;
@@ -2129,6 +2605,15 @@ onShareAppMessage(() =>
   margin: -6rpx 20rpx 16rpx;
 }
 
+.settle-defeat-review {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--bad);
+  line-height: 1.55;
+  margin: 0 20rpx 16rpx;
+}
+
 .settle-card-feedback {
   display: block;
   text-align: center;
@@ -2237,4 +2722,125 @@ onShareAppMessage(() =>
   color: var(--text-2);
   white-space: nowrap;
 }
+
+/* R22 选卡反应协同预判：沿用既有 token，零新增视觉令牌 */
+.r22-synergy-card {
+  margin-top: 8rpx;
+  padding-top: 6rpx;
+  border-top: 1rpx solid var(--border-soft);
+  font-size: 19rpx;
+  line-height: 1.4;
+}
+.r22-synergy-line { color: var(--accent); font-weight: 700; }
+.r22-synergy-tags { display: flex; flex-wrap: wrap; gap: 4rpx; margin: 3rpx 0; }
+.r22-synergy-tag {
+  padding: 2rpx 6rpx;
+  border: 1rpx solid var(--fire);
+  border-radius: 8rpx;
+  color: var(--fire);
+}
+.r22-synergy-match, .r22-synergy-empty { color: var(--text-2); }
+.r22-ai-note {
+  margin-top: 14rpx;
+  padding: 10rpx 12rpx;
+  border-left: 4rpx solid var(--accent);
+  background: var(--panel-2);
+  border-radius: 8rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.r22-ai-title { color: var(--accent); font-weight: 700; font-size: 21rpx; }
+.r22-ai-conclusion { color: var(--text); font-size: 20rpx; }
+.r22-ai-basis, .r22-ai-honesty { color: var(--text-2); font-size: 19rpx; }
+.r22-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
+
+/* R24 实时元素层 HUD：沿用既有 token，零新增视觉令牌；顶部浮层不拦截点击 */
+.r24-element-hud {
+  margin-top: 8rpx;
+  padding: 8rpx 10rpx;
+  background: var(--panel-2);
+  border-left: 4rpx solid var(--accent);
+  border-radius: 8rpx;
+  font-size: 19rpx;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.r24-enemy-row { display: flex; flex-wrap: wrap; gap: 6rpx; margin-bottom: 4rpx; }
+.r24-enemy-name { color: var(--text); font-weight: 700; }
+.r24-enemy-stacks { color: var(--fire); }
+.r24-reaction-hint { color: var(--accent); flex-basis: 100%; }
+.r24-hud-empty { color: var(--text-2); }
+.r24-ai-note { display: flex; flex-direction: column; gap: 3rpx; margin-top: 6rpx; }
+.r24-ai-title { color: var(--accent); font-weight: 700; font-size: 20rpx; }
+.r24-ai-conclusion { color: var(--text); font-size: 19rpx; }
+.r24-ai-basis, .r24-ai-honesty { color: var(--text-2); font-size: 18rpx; }
+.r24-ai-cta { color: var(--accent); font-size: 19rpx; font-weight: 700; pointer-events: auto; }
+
+/* R27 波次推进：容器自身单行紧凑、不抢占既有胶囊；hud-row 仍保留 flex-wrap: wrap */
+.r27-wave-progress {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex-shrink: 0;
+  max-height: 52rpx;
+  overflow: hidden;
+  padding: 0 12rpx;
+  border-radius: 999rpx;
+  background: var(--panel-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.r27-progress-body { display: inline-flex; flex-direction: row; align-items: center; gap: 8rpx; flex-shrink: 0; }
+.r27-progress-track { width: 90rpx; height: 6rpx; border-radius: 999rpx; background: rgba(88,166,255,.16); overflow: hidden; flex-shrink: 0; }
+.r27-progress-fill { height: 100%; background: var(--accent); }
+.r27-progress-text, .r27-progress-empty { color: var(--text); font-size: 19rpx; flex-shrink: 0; }
+.r27-progress-empty { color: var(--text-2); }
+.r27-ai-note { display: flex; flex-direction: column; gap: 2rpx; margin-top: 6rpx; padding: 6rpx 10rpx; background: var(--panel-2); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
+.r27-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
+.r27-ai-conclusion { color: var(--text); font-size: 18rpx; }
+.r27-ai-basis, .r27-ai-honesty { color: var(--text-2); font-size: 17rpx; }
+.r27-ai-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
+.r28-feed-ai { display: flex; flex-direction: column; gap: 2rpx; max-width: 100%; margin-top: 4rpx; padding: 6rpx 10rpx; background: rgba(13, 17, 23, 0.82); border-left: 4rpx solid var(--accent); border-radius: 8rpx; font-size: 18rpx; line-height: 1.35; pointer-events: none; }
+.r28-feed-ai-title { color: var(--accent); font-weight: 700; font-size: 19rpx; }
+.r28-feed-ai-conclusion { color: var(--text); font-size: 18rpx; }
+.r28-feed-ai-basis, .r28-feed-ai-honesty { color: var(--text-2); font-size: 17rpx; }
+.r28-feed-cta { color: var(--accent); font-size: 18rpx; font-weight: 700; pointer-events: auto; }
+/* R29 完整反应时间线抽屉：z-index 40 高于图例/暂停(30)与结算 sheet(auto) */
+.r29-timeline-overlay {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.r29-timeline-box {
+  width: 90%;
+  max-height: 84vh;
+  padding: 24rpx 24rpx 18rpx;
+  border-radius: 20rpx;
+  background: var(--glass-bg);
+  border: 1rpx solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  box-shadow: var(--shadow-2);
+  pointer-events: auto;
+}
+.r29-timeline-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.r29-timeline-title { color: var(--accent); font-weight: 700; font-size: 30rpx; }
+.r29-timeline-close { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--panel-2); color: var(--muted); font-size: 34rpx; }
+.r29-timeline-conclusion { color: var(--text); font-size: 20rpx; }
+.r29-timeline-empty { color: var(--text-2); font-size: 20rpx; padding: 20rpx 0; }
+.r29-timeline-truncated { color: var(--warn); font-size: 18rpx; }
+.r29-timeline-scroll { max-height: 70vh; overflow-y: auto; width: 100%; }
+.r29-timeline-row { display: block; padding: 8rpx 0; border-bottom: 1rpx solid var(--border-soft); color: var(--text); font-size: 19rpx; line-height: 1.35; }
+.r29-timeline-basis, .r29-timeline-honesty { color: var(--text-2); font-size: 17rpx; line-height: 1.35; }
+/* t227 结算结果页时间线入口：可见可点，沿用现有 token，不新增 --r29- */
+.r29-result-timeline-cta { margin-top: 20rpx; padding: 18rpx 24rpx; border-radius: 14rpx; background: var(--panel-2); border: 1rpx solid var(--glass-border); color: var(--accent); font-size: 20rpx; font-weight: 700; text-align: center; pointer-events: auto; }
 </style>

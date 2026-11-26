@@ -1,0 +1,1 @@
+(function(){var t=document.body.innerText||'';return JSON.stringify({hasImpact:t.indexOf('收益对比')>=0||t.indexOf('先看收益')>=0,buttons:[].slice.call(document.querySelectorAll('.r7-impact button,.r7-btn,.r7-impact [role=button]')).map(function(e){return(e.innerText||'').trim()}).filter(Boolean)})})()

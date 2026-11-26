@@ -23,6 +23,7 @@
  */
 
 import { BattleEngine, TICK_MS } from './engine'
+import type { ReactionTimelineEvent } from './engine'
 import { type Attacker } from './damage'
 import type { EquippedSkill } from './heatmap'
 import type { Element } from './elements'
@@ -56,6 +57,16 @@ export interface ReplayInfo {
    * 空数组表示旧记录没有该字段 —— 此时无法复现，只能看哈希是否巧合相符。
    */
   card_picks?: number[]
+  /**
+   * R17：R15 已落库的逐次反应序列（reaction-timeline-v1），仅作验真辅助对照。
+   * 旧记录缺该字段时空态处理；不参与也不覆盖 replay_hash。
+   */
+  reaction_timeline?: {
+    schema_version: string
+    events: ReactionTimelineEvent[]
+    truncated: boolean
+    total: number
+  }
 }
 
 /** 构筑快照里单个技能的形态（对齐 loadSkillsAndSlots） */
@@ -152,6 +163,10 @@ export interface ReplayOutcome {
   }
   /** 构筑缺失等前置问题 */
   error?: string
+  /** R17：本地重放同帧旁路采集的逐次反应序列（不进哈希、不改 matched） */
+  reactionTimeline: ReactionTimelineEvent[]
+  /** R17：超过 200 条尾部截断标记 */
+  reactionTimelineTruncated?: boolean
 }
 
 /**
@@ -305,6 +320,7 @@ export function replay(info: ReplayInfo, deps: ReplayDeps): ReplayOutcome {
     matched: false,
     stats: { kills: 0, leaked: 0, score: 0, waves: 0, durationMs: 0 },
     error: err,
+    reactionTimeline: [],
   })
 
   if (!info?.level) return empty('缺少关卡数据，无法重放')
@@ -351,6 +367,9 @@ export function replay(info: ReplayInfo, deps: ReplayDeps): ReplayOutcome {
   }
   engine.start()
   runToEnd(engine, MAX_TICKS_PER_REPLAY)
+  // R17：runToEnd 后同帧采集，纯旁路——绝不触碰 computedHash / matched。
+  const reactionTimeline = engine.reactionTimeline()
+  const reactionTimelineTruncated = engine.reactionTimelineTruncated()
 
   const computed = engine.replayHash()
   return {
@@ -363,6 +382,8 @@ export function replay(info: ReplayInfo, deps: ReplayDeps): ReplayOutcome {
       waves: engine.waveIndex + 1,
       durationMs: Math.round(engine.elapsedMs),
     },
+    reactionTimeline,
+    reactionTimelineTruncated,
   }
 }
 

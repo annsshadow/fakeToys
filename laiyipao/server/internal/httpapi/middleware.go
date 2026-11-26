@@ -420,6 +420,21 @@ func requireUser(s *service.Service) fiber.Handler {
 	}
 }
 
+// optionalUser 只在凭证有效时写入 user_id；无效或缺失继续以游客身份执行。
+// 用途限于 R14 /me/advice/action 这类**只读且必须给游客诚实空态**的端点：
+// 不写任何用户数据，也不把用户标识回给客户端，因此不会绕过 requireUser 的保护。
+func optionalUser(s *service.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token := bearerToken(c)
+		if token != "" {
+			if userID, err := s.ResolveUser(c.Context(), token); err == nil {
+				c.Locals("user_id", userID)
+			}
+		}
+		return c.Next()
+	}
+}
+
 // bearerToken 从请求头提取令牌。
 func bearerToken(c *fiber.Ctx) string {
 	h := c.Get("Authorization")

@@ -196,6 +196,15 @@ augmentor/up.json
 augmentor/checkpoints/
 
 
+# R20 audit evidence (temporary credentials/dumps; never commit)
+docs/laiyipao/audits/round20-combat-efficiency-trends/data/
+docs/laiyipao/audits/round20-combat-efficiency-trends/auth-init.js
+docs/laiyipao/audits/round20-combat-efficiency-trends/admin-probe.js
+
+# R21 E2E 复查审计临时真值（guest_token / dump / 注入脚本）不入库
+docs/laiyipao/audits/round21-player-level-coach/data/
+docs/laiyipao/audits/round21-player-level-coach/auth-init.js
+
 # OpenCode
 .backups/
 .opencode/
@@ -270,3 +279,93 @@ site/
 # DSH 会话产物：agent 工作树与团队状态目录，只留在本机，不入库。
 .agents/
 .agent-teams/
+
+# laiyipao R15 审计运行时产物：数据库 dump 含真实用户 guest_token，探针 token 由
+# mint-token.sh 运行时注入（模板 auth-init.tpl.js 用 __LYP_TOKEN__ 占位）。一律不入库。
+docs/laiyipao/audits/round15-reaction-timeline/data/
+docs/laiyipao/audits/round15-reaction-timeline/auth-init.js
+
+# laiyipao R16 审计运行时产物：数据库 dump 含真实用户 guest_token，一律不入库。
+docs/laiyipao/audits/round16-admin-reaction-timeline/data/
+# laiyipao R17 审计运行时产物：dump 含真实 guest_token，探针 token 运行时注入，不入库。
+docs/laiyipao/audits/round17-verify-reaction-diff/data/
+docs/laiyipao/audits/round17-verify-reaction-diff/auth-init.js
+
+docs/laiyipao/audits/round18-reaction-damage-impact/data/
+docs/laiyipao/audits/round18-reaction-damage-impact/auth-init.js
+
+docs/laiyipao/audits/round18-reaction-damage-impact/mint-probe.sh
+docs/laiyipao/audits/round18-reaction-damage-impact/probe.js
+# R19 E2E 复查审计临时真值（guest_token / dump / 注入脚本）不入库
+docs/laiyipao/audits/round19-player-reaction-impact/data/
+docs/laiyipao/audits/round19-player-reaction-impact/auth-init.js
+
+# R20/R21/R22 E2E 复查审计临时真值不入库
+docs/laiyipao/audits/round20-combat-efficiency-trends/data/
+docs/laiyipao/audits/round20-combat-efficiency-trends/auth-init.js
+docs/laiyipao/audits/round20-combat-efficiency-trends/admin-probe.js
+docs/laiyipao/audits/round21-player-level-coach/data/
+docs/laiyipao/audits/round21-player-level-coach/auth-init.js
+
+# R22 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round22-card-reaction-synergy/data/
+docs/laiyipao/audits/round22-card-reaction-synergy/auth-init.js
+
+# R23 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round23-loadout-reaction-coverage/data/
+docs/laiyipao/audits/round23-loadout-reaction-coverage/auth-init.js
+
+# R24 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round24-live-element-hud/data/
+docs/laiyipao/audits/round24-live-element-hud/auth-init.js
+
+# R25 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round25-battle-reaction-impact/data/
+docs/laiyipao/audits/round25-battle-reaction-impact/auth-init.js
+
+# R26 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round26-next-wave-brief/data/
+docs/laiyipao/audits/round26-next-wave-brief/auth-init.js
+
+# R27 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round27-wave-progress-hud/data/
+docs/laiyipao/audits/round27-wave-progress-hud/auth-init.js
+
+# R27 部署后证据补采审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round27-postdeploy/data/
+docs/laiyipao/audits/round27-postdeploy/auth-init.js
+
+# R28 E2E 复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round28-live-reaction-attribution/data/
+docs/laiyipao/audits/round28-live-reaction-attribution/auth-init.js
+
+# R28 部署后证据补采审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round28-postdeploy/data/
+docs/laiyipao/audits/round28-postdeploy/auth-init.js
+
+# R29 完整反应时间线复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round29-live-reaction-timeline/data/
+docs/laiyipao/audits/round29-live-reaction-timeline/auth-init.js
+
+# R29 修复后复查审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round29-postfix-recheck/data/
+docs/laiyipao/audits/round29-postfix-recheck/auth-init.js
+
+# R29 部署后独立回归审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round29-postdeploy/data/
+docs/laiyipao/audits/round29-postdeploy/auth-init.js
+
+docs/laiyipao/audits/round30-reaction-feed-mobile-fit/data/
+docs/laiyipao/audits/round30-reaction-feed-mobile-fit/auth-init.js
+
+# R30 部署后独立回归审计临时真值不入库（guest_token / dump / 注入脚本）
+docs/laiyipao/audits/round30-postdeploy/data/
+docs/laiyipao/audits/round30-postdeploy/auth-init.js
+
+# R31 Wiki机制字段复查审计临时真值不入库（本地admin令牌 / config快照）
+docs/laiyipao/audits/round31-wiki-reaction-mechanics/data/
+docs/laiyipao/audits/round31-wiki-reaction-mechanics/admin-auth-init.js
+
+# R31 部署后独立回归审计临时真值不入库（本地admin令牌 / config快照 / dump）
+docs/laiyipao/audits/round31-postdeploy/data/
+docs/laiyipao/audits/round31-postdeploy/admin-auth-init.js

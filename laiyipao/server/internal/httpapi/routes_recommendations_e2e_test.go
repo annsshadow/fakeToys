@@ -172,8 +172,10 @@ func TestE2EAdminRecommendationsFromDashboard(t *testing.T) {
 	requireRecEnvelope(t, body, "battles")
 
 	// 制造一条真实战报后立即重读（DashboardCacheTTL=0）。
+	// 自己建玩家，不能依赖测试库里“恰好有用户”——那是测试顺序耦合。
+	playerID, _ := e.newPlayer(t, "recadmplayer")
 	e.exec(t, `INSERT INTO battle_records (user_id, level_id, result, stars, replay_hash)
-		VALUES ((SELECT id FROM users ORDER BY id LIMIT 1), 5, 'win', 3, 'recadmtest')`)
+		VALUES ($1, 5, 'win', 3, 'recadmtest')`, playerID)
 	status, body = e.get(t, "/api/v1/admin/recommendations/battles", token)
 	if status != 200 {
 		t.Fatalf("有战报 GET recommendations = %d %v", status, body)

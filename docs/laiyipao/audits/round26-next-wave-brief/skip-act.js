@@ -1,0 +1,1 @@
+(() => { const s=[...document.querySelectorAll('.btn')].find(b=>b.textContent.includes('全部不要了')); if(s){s.click();return 'SKIP'} return 'NONE' })()

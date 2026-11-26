@@ -87,4 +87,19 @@ describe('宝石图鉴与背包共用同一套译名', () => {
     expect(texts).toContain('暴击')
     expect(texts).not.toContain('暴击率')
   })
+
+  it('R10 宝石图鉴给出背包镶嵌入口，避免把图鉴误当成镶嵌页', async () => {
+    mockFetchGems.mockResolvedValue({ gems: [] })
+    const { wrapper } = mountPage(Gems, (store) => {
+      store.config = cfg()
+      store.loggedIn = true
+    })
+    await flushPromises()
+
+    const cta = wrapper.find('.r3-ai-cta.secondary')
+    expect(cta.exists()).toBe(true)
+    expect(cta.text()).toContain('去背包镶嵌')
+    await cta.trigger('click')
+    expect((globalThis as unknown as { uni: { navigateTo: ReturnType<typeof vi.fn> } }).uni.navigateTo).toHaveBeenCalledWith({ url: '/pages/bag/bag' })
+  })
 })

@@ -5,6 +5,35 @@
         <text class="section-kicker-cn">技能构筑台</text>
         <text class="section-kicker-en">SKILL LOADOUT</text>
       </view>
+
+      <!-- R12 跨系统成长优先级：与首页 aiInsight 同源口径，四页统一短板结论 -->
+      <view v-if="r12Priority" class="r12-priority r12-priority-enter">
+        <view class="r12-priority-head">
+          <text class="r12-priority-badge">AI</text>
+          <text class="r12-priority-title">当前最该强化 · 跨系统优先级</text>
+        </view>
+        <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
+        <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
+        <view class="r12-priority-cta" @click="r12Go()">{{ r12Priority.hintLabel }} →</view>
+      </view>
+      <!-- R23 备战态构筑反应覆盖诊断：纯客户端派生，只读不写构筑 -->
+      <view class="r23-coverage-card">
+        <view v-if="r23Coverage.status === 'ok'">
+          <text class="r23-coverage-head">当前构筑可触发反应</text>
+          <view class="r23-coverage-tags">
+            <text v-for="k in r23Coverage.covered" :key="k" class="r23-coverage-tag" :data-r23-reaction="k">{{ r23ReactionName(k) }}</text>
+          </view>
+          <text class="r23-gap-suggest" v-if="r23Coverage.gap">{{ r23Coverage.gap }}</text>
+        </view>
+        <text v-else class="r23-coverage-empty" role="status" aria-live="polite">{{ r23Coverage.emptyText }}</text>
+        <view class="r23-ai-note">
+          <text class="r23-ai-badge">AI · 构筑反应诊断</text>
+          <text class="r23-ai-conclusion">{{ r23Coverage.aiConclusion }}</text>
+          <text class="r23-ai-basis">依据：构筑槽元素 × REACTION_PAIRS(源自引擎 lookupReaction)派生</text>
+          <text class="r23-ai-cta" @click="r23GoLoadout">去调整出战配置 →</text>
+          <text class="r23-ai-honesty">辅助诊断非伤害承诺，实际触发取决于释放顺序/命中/层数，权威以 replay_hash 为准</text>
+        </view>
+      </view>
       <view class="r3-kpi r3-enter">
         <view class="r3-kpi-main">
           <text class="r3-kpi-num">{{ r3AiSkill ? r3AiSkill.name : '待配置' }}</text>
@@ -40,7 +69,7 @@
         <view v-if="r6Rec.evidence.length" class="r6-evidence">
           <view v-for="(ev, i) in r6Rec.evidence" :key="'e' + i" class="r6-ev">
             <text class="r6-ev-metric">{{ ev.metric }}</text>
-            <text class="r6-ev-val">{{ ev.value }}{{ ev.unit }}</text>
+            <text class="r6-ev-val">{{ fmtEv(ev.value) }}{{ ev.unit }}</text>
             <text class="r6-ev-src">{{ ev.source }} · {{ ev.window }}</text>
           </view>
         </view>
@@ -65,7 +94,7 @@
         <text class="r7-causal-title">AI 因果链 · 本局靠什么拿分 → 换上后预计提升</text>
         <text class="r7-causal-text">{{ r7Causal.text }}</text>
         <text v-if="r7Causal.hasHistory" class="r7-causal-next">
-          换上推荐：{{ r7Impact ? r7Impact.candidateName + '，预期每波伤害 ' + r7Impact.baseline.estimatedDamagePerWave + ' → ' + r7Impact.candidate.estimatedDamagePerWave + '（' + r7Impact.changes.damagePerWavePct + '%）' : '收益数据不可用：没有真实收益预估，不展示预计数值' }}
+          换上推荐：{{ r7Impact ? r7Impact.candidateName + '，预期每波伤害 ' + fmt(r7Impact.baseline.estimatedDamagePerWave) + ' → ' + fmt(r7Impact.candidate.estimatedDamagePerWave) + '（' + fmt(r7Impact.changes.damagePerWavePct) + '%）' : '收益数据不可用：没有真实收益预估，不展示预计数值' }}
         </text>
         <view v-else class="r7-causal-empty" aria-live="polite" role="status">
           <text>{{ r7Causal.text }}</text>
@@ -85,19 +114,19 @@
           <view class="r7-bar-row">
             <text class="r7-bar-label">当前每波伤害</text>
             <view class="r7-bar"><view class="r7-bar-fill" :style="{ width: r7BaseWidth + '%' }" /></view>
-            <text class="r7-bar-val">{{ r7Impact.baseline.estimatedDamagePerWave }}</text>
+            <text class="r7-bar-val">{{ fmt(r7Impact.baseline.estimatedDamagePerWave) }}</text>
           </view>
           <view class="r7-bar-row">
             <text class="r7-bar-label">推荐每波伤害</text>
             <view class="r7-bar r7-bar-next"><view class="r7-bar-fill" :style="{ width: r7NextWidth + '%' }" /></view>
-            <text class="r7-bar-val">{{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+            <text class="r7-bar-val">{{ fmt(r7Impact.candidate.estimatedDamagePerWave) }}</text>
           </view>
-          <text class="r7-delta">每波 {{ r7Impact.changes.damagePerWaveDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWaveDelta }}（{{ r7Impact.changes.damagePerWavePct >= 0 ? '+' : '' }}{{ r7Impact.changes.damagePerWavePct }}%）· 战力 {{ r7Impact.changes.powerDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.powerDelta }} · 评分 {{ r7Impact.changes.ratingTotalDelta >= 0 ? '+' : '' }}{{ r7Impact.changes.ratingTotalDelta }}</text>
+          <text class="r7-delta">每波 {{ fmtSigned(r7Impact.changes.damagePerWaveDelta) }}（{{ fmtSigned(r7Impact.changes.damagePerWavePct) }}%）· 战力 {{ fmtSigned(r7Impact.changes.powerDelta) }} · 评分 {{ fmtSigned(r7Impact.changes.ratingTotalDelta) }}</text>
         </view>
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）· {{ r7Impact.starRateNote }}</text>
         <text v-if="r7Impact" class="r7-why">为什么是它：{{ r7Impact.replacedName }} → {{ r7Impact.candidateName }} · {{ r7Impact.method }}</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }} · 近 {{ r7Impact.windowDays }} 天 {{ r7Impact.battleCount }} 场</text>
-        <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7Error || '接口未提供真实预估' }}。不展示虚构数值。</text>
+        <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7WhyUnavailable }}。不展示虚构数值。</text>
         <text v-if="r7Impact" class="r7-btn primary" role="button" @click="r7OpenCompare()">应用推荐 · 先看收益对比 →</text>
       </view>
       <view v-if="r6Rec && r6Rec.status === 'local' && r3AiSkill" class="r3-ai r6-local r3-enter">
@@ -234,18 +263,19 @@
           <text class="r7-vs-label">{{ r7Impact.candidateName }}（推荐）</text>
         </view>
         <view v-if="r7Impact" class="r7-vs-row">
-          <text class="r7-vs-label">每波伤害 {{ r7Impact.baseline.estimatedDamagePerWave }} → {{ r7Impact.candidate.estimatedDamagePerWave }}</text>
+          <text class="r7-vs-label">每波伤害 {{ fmt(r7Impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r7Impact.candidate.estimatedDamagePerWave) }}</text>
         </view>
         <view v-if="r7Impact" class="r7-vs-row">
-          <text class="r7-vs-label">攻击 {{ r7Impact.baseline.attackPermille }}‰ → {{ r7Impact.candidate.attackPermille }}‰ · 评分 {{ r7Impact.baseline.ratingTotal }} → {{ r7Impact.candidate.ratingTotal }}</text>
+          <text class="r7-vs-label">攻击 {{ fmt(r7Impact.baseline.attackPermille) }}‰ → {{ fmt(r7Impact.candidate.attackPermille) }}‰ · 评分 {{ fmt(r7Impact.baseline.ratingTotal) }} → {{ fmt(r7Impact.candidate.ratingTotal) }}</text>
         </view>
         <text v-if="r7Impact" class="r7-star">历史三星率 {{ r7StarText }}%（stars=3 场数占比，不是胜率）</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }}</text>
         <text v-if="r7ApplyError" class="r7-error">{{ r7ApplyError }}</text>
-        <text v-if="r7ApplyDone" class="r7-error">已替换为「{{ r7ApplyDone }}」，出战配置已更新。</text>
+        <text v-if="r7ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r7ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r7CompareOpen = false">取消</text>
-          <text class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
+          <text class="r7-btn" role="button" @click="r7CompareOpen = false">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="r7CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
     </view>
@@ -253,16 +283,24 @@
 </template>
 
 <script setup lang="ts">
+import { computeGrowthPriority } from '@/pages/_shared/r12GrowthPriority'
 import { computed, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
-import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, type Element } from '@/game/elements'
+import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
+import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import DefIcon from '@/components/DefIcon.vue'
 import { fetchRecommendations, localFallbackCard, type R6Card } from '@/pages/_shared/r6Recommendation'
 import { fetchRecommendationImpact, type R7ImpactView } from '@/pages/_shared/r7ImpactApply'
 import { fetchLatestBattleCausal, normalizeBattleCausal, type BattleCausalView } from '@/pages/_shared/r7GameplayCausal'
 
 const store = useGameStore()
+// R12 跨系统成长优先级：口径与首页 aiInsight 一致，四页指向同一短板
+const r12Priority = computed(() => computeGrowthPriority(store.buildRating, store.config?.rating_weights))
+function r12Go() {
+  const p = r12Priority.value
+  if (p?.hint) uni.navigateTo({ url: p.hint })
+}
 
 /**
  * 技能图鉴（2026-10-31 新一轮第 25 轮）。
@@ -307,6 +345,72 @@ const allSkillDefs = computed(() => [
   ...(store.config?.skills ?? []),
   ...(store.config?.composite_skills ?? []),
 ])
+
+/* -------------------------------------------------------------------------- */
+/* R23 备战态构筑反应覆盖诊断（纯客户端派生，只读不写 loadout）                  */
+/* -------------------------------------------------------------------------- */
+function r23ReactionName(k: ReactionKey): string {
+  return REACTIONS[k].name
+}
+
+function r23Covered(elements: Element[]): ReactionKey[] {
+  const set = new Set<ReactionKey>()
+  for (const a of elements) {
+    for (const b of elements) {
+      if (a === b) continue
+      for (const k of REACTION_ORDER) {
+        if (REACTION_PAIRS[k].some(([x, y]) => x === a && y === b)) set.add(k)
+      }
+    }
+  }
+  return REACTION_ORDER.filter((k) => set.has(k))
+}
+
+function r23BestGap(elements: Element[]): { element: Element; added: ReactionKey[] } | null {
+  if (elements.length === 0) return null
+  const before = r23Covered(elements)
+  let best: { element: Element; added: ReactionKey[] } | null = null
+  for (const e of ELEMENT_ORDER) {
+    const added = r23Covered([...elements, e]).filter((k) => !before.includes(k))
+    if (added.length === 0) continue
+    if (!best || added.length > best.added.length) best = { element: e, added }
+  }
+  return best
+}
+
+const r23Coverage = computed(() => {
+  const byId = new Map(allSkillDefs.value.map((s) => [s.id, s]))
+  // captain 口径：apply_element 是引擎 applyElement 实际施加元素，与 R22 battle.vue 同源；
+  // element 与之同源但 apply_element 才是引擎真值，空串过滤。
+  const elements = Array.from(new Set(
+    store.loadout.slice(0, 4)
+      .map((id) => byId.get(id)?.apply_element)
+      .filter((e): e is Element => !!e && ELEMENT_ORDER.includes(e as Element)),
+  ))
+  const covered = r23Covered(elements)
+  const gap = r23BestGap(elements)
+  const base = { covered, gap: null as string | null, status: 'ok' as 'ok' | 'empty', emptyText: '' }
+  if (elements.length === 0) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑没有元素技能，无法诊断反应覆盖', aiConclusion: '当前构筑还没有元素技能，无法诊断反应覆盖' }
+  }
+  if (!gap && covered.length && covered.length >= 5) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑已覆盖全部可触发反应，无需补齐', aiConclusion: '本套构筑已覆盖全部可触发反应，无需补齐' }
+  }
+  if (!gap) {
+    return { ...base, status: 'empty' as const, emptyText: '当前构筑已覆盖全部可触发反应，无需补齐', aiConclusion: '本套构筑已覆盖全部可触发反应，无需补齐' }
+  }
+  const gapText = `补【${ELEMENT_NAME[gap.element]}】可新增【${r23ReactionName(gap.added[0]!)}】等${gap.added.length}种反应`
+  return {
+    ...base,
+    gap: gapText,
+    aiConclusion: `本套构筑覆盖 ${covered.length} 种反应（${covered.map(r23ReactionName).join('、')}）；${gapText}`,
+  }
+})
+
+function r23GoLoadout() {
+  // 本页即出战构筑页，CTA 只做聚焦提示，不写入任何 store 状态。
+  uni.showToast?.({ title: '调整下方出战槽位即可切换元素', icon: 'none' })
+}
 const compositeSkills = computed(() => {
   const byId = new Map(allSkillDefs.value.map((s) => [s.id, s]))
   const recipes = store.config?.recipes ?? []
@@ -433,14 +537,30 @@ const r7NextWidth = computed(() => {
   const max = Math.max(v.baseline.estimatedDamagePerWave, v.candidate.estimatedDamagePerWave, 1)
   return Math.round(v.candidate.estimatedDamagePerWave / max * 100)
 })
-const r7StarText = computed(() => {
-  const n = r7Impact.value?.changes.starRateObserved
-  return typeof n === 'number' ? n.toFixed(1) : '—'
+/** R11：收益数值统一格式化，避免 5.400000000000001 这类长浮点尾数出现在界面。 */
+function fmt(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : '—'
+}
+function fmtSigned(n: number | null | undefined): string {
+  return typeof n === 'number' && Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(1) : '—'
+}
+/** R11补丁：evidence.value 为 number|string；数字走 fmt，字符串（配置版本 sha）原样保留。 */
+function fmtEv(v: number | string | null | undefined): string {
+  return typeof v === 'number' ? fmt(v) : (v == null ? '—' : String(v))
+}
+const r7StarText = computed(() => fmt(r7Impact.value?.changes.starRateObserved))
+/** R10：无候选 id/replace 时，用服务端 insights[].basis 解释「为什么收益不可用」。 */
+const r7WhyUnavailable = computed(() => {
+  if (r7Error.value) return r7Error.value
+  const b = r6Rec.value?.basis ?? []
+  const why = b.filter((x) => /没有|不足|尚|未|缺口|不符合|不满足|优先|需要|缺少/.test(x)).join('；') || b.join('；')
+  return why ? '服务端依据：' + why : '推荐接口未提供可执行的候选与替换参数'
 })
+
 const r7BasisText = computed(() => {
   const v = r7Impact.value
   if (!v) return '服务端未提供依据'
-  const evidence = v.evidence.map((e) => e.metric + ' ' + e.value + e.unit + '（' + e.source + ' · ' + e.window + '）')
+  const evidence = v.evidence.map((e) => e.metric + ' ' + fmtEv(e.value) + e.unit + '（' + e.source + ' · ' + e.window + '）')
   return v.basis.concat(evidence).join('；')
 })
 
@@ -451,6 +571,7 @@ async function loadR6Recommendation() {
   const rec = await fetchRecommendations('skills')
   if (rec) {
     r6Rec.value = rec
+    r7Error.value = ''
     const candidateId = Number(rec.cta.params?.id ?? 0)
     const replacedId = Number(rec.cta.params?.replace ?? 0)
     if (candidateId && replacedId) {
@@ -458,6 +579,12 @@ async function loadR6Recommendation() {
       if (result.card) r6Rec.value = result.card
       r7Impact.value = result.impact
       if (!result.impact) r7Error.value = result.error || '收益数据不可用：服务端未提供真实预估'
+    } else {
+      // R10 §1I.1：权威参数缺失是防作弊设计，不伪造 id/replace；直接展示服务端依据。
+      const why = rec.basis.filter((x) => /没有|不足|尚|未|缺口|不符合|不满足|优先|需要|缺少/.test(x)).join('；') || rec.basis.join('；')
+      r7Error.value = why
+        ? '服务端依据：' + why + '；本次没有可执行的候选/替换参数'
+        : '推荐接口未提供可执行的候选与替换参数'
     }
   } else {
     r6Rec.value = localFallbackCard({
@@ -521,7 +648,7 @@ async function r7ConfirmApply() {
       return
     }
     r7ApplyDone.value = impact.candidateName
-    r7CompareOpen.value = false
+    // R10：成功提示只在这个遮罩里；若立即关闭，玩家看不到写入结果。等玩家点「完成」。
     void loadR6Recommendation()
   } catch (e) {
     r7ApplyError.value = '写入失败：' + ((e as Error)?.message || '未知错误') + '，原出战配置未改动。请重试'
@@ -549,6 +676,10 @@ async function doLoadPage(): Promise<void> {
       return
     }
   }
+  // R23-BUG：深链接/刷新直入时 loadout 仍是默认 [0,0,0,0]，
+  // 诊断卡会把「尚未加载权威构筑」谎报成空构筑。必须同幂等路径拉一次权威槽位。
+  // loadLoadout 自带序号守卫且失败回退本地值，幂等安全。
+  await store.loadLoadout()
   pageLoaded = true
 }
 
@@ -592,4 +723,35 @@ onShow(() => { void loadPage() })
 .kind-tag { font-size: 22rpx; }
 .kind-active { color: var(--fire); }
 .kind-passive { color: var(--ice); }
+
+/* R10 写入成功反馈：与错误色区分，保持遮罩内可见直到玩家关闭 */
+.apply-done { display: block; margin-top: 10rpx; font-size: 22rpx; line-height: 1.5; color: var(--ok); }
+
+/* R23 构筑反应覆盖诊断：沿用既有 token，零新增视觉令牌 */
+.r23-coverage-card {
+  margin: 12rpx 0;
+  padding: 12rpx;
+  border-left: 4rpx solid var(--accent);
+  border-radius: 10rpx;
+  background: var(--panel-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.r23-coverage-head { font-size: 22rpx; font-weight: 700; color: var(--accent); }
+.r23-coverage-tags { display: flex; flex-wrap: wrap; gap: 6rpx; }
+.r23-coverage-tag {
+  padding: 3rpx 8rpx;
+  border: 1rpx solid var(--fire);
+  border-radius: 8rpx;
+  color: var(--fire);
+  font-size: 20rpx;
+}
+.r23-gap-suggest { color: var(--warn); font-size: 21rpx; }
+.r23-coverage-empty { color: var(--text-2); font-size: 21rpx; }
+.r23-ai-note { display: flex; flex-direction: column; gap: 3rpx; margin-top: 6rpx; }
+.r23-ai-badge { color: var(--accent); font-weight: 700; font-size: 21rpx; }
+.r23-ai-conclusion { color: var(--text); font-size: 21rpx; }
+.r23-ai-basis, .r23-ai-honesty { color: var(--text-2); font-size: 19rpx; }
+.r23-ai-cta { color: var(--accent); font-size: 20rpx; font-weight: 700; }
 </style>

@@ -423,3 +423,170 @@ describe('battles.vue 切换筛选作废在飞 loadMore 后必须复位加载更
     expect(mockApi.myBattleHistory.mock.calls.length).toBe(before + 1)
   })
 })
+
+/**
+ * R12（2026-11-23 真浏览器）：失败战报详情只有波次/漏怪等数字，
+ * 玩家点开「查看本局战报」仍看不到「为什么在第几波失守、下一局改什么」。
+ */
+describe('battles.vue 失败战报详情给出失守波次与可执行复盘', () => {
+  it('败局详情显示真实波次/漏怪/元素链缺口与具体动作，胜利详情不误报', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [{
+        id: 2, result: 'lose', stars: 0, level_id: 40, score: 11812,
+        kills: 23, leaked: 24, created_at: '2026-11-23T14:42:00Z',
+      }],
+      next_cursor: 0,
+    } as any)
+    mockApi.myBattleDetail.mockResolvedValue({
+      id: 2, level_id: 40, result: 'lose', stars: 0, score: 11812,
+      kills: 23, leaked: 24, hp_left: 0, wave_reached: 7, duration_ms: 82_000,
+      shots: 219, hits: 174, reactions: 0, heat_max: 92,
+      elements_used: { fire: 351 }, reactions_used: {}, terrain_used: [],
+      loot: { coin: 660 }, replay_hash: 'r12-report', created_at: '2026-11-23T14:42:00Z',
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+
+    const review = wrapper.find('.defeat-review')
+    expect(review.exists()).toBe(true)
+    expect(review.text()).toContain('第 7 波失守')
+    expect(review.text()).toContain('漏怪 24/47')
+    expect(review.text()).toContain('仅焰 1 种元素')
+    expect(review.text()).toContain('下一局')
+    expect(review.text()).toContain('第二种元素')
+  })
+})
+
+/**
+ * R13：战报详情的反应行只列「过热 ×N」，玩家不知道该换成什么元素组合。
+ */
+describe('battles.vue 战报详情给出可执行的元素组合建议', () => {
+  it('胜利详情按权威 reactions_used/elements_used 给出下一局补哪元素', async () => {
+    mockApi.myBattleHistory.mockResolvedValue({
+      items: [{
+        id: 3, result: 'win', stars: 2, level_id: 1, score: 15000,
+        kills: 39, leaked: 0, created_at: '2026-11-23T15:30:00Z',
+      }],
+      next_cursor: 0,
+    } as any)
+    mockApi.myBattleDetail.mockResolvedValue({
+      id: 3, level_id: 1, result: 'win', stars: 2, score: 15000,
+      kills: 39, leaked: 0, hp_left: 300, wave_reached: 5, duration_ms: 70_000,
+      shots: 300, hits: 260, reactions: 4, heat_max: 70,
+      elements_used: { fire: 90, lightning: 80 }, reactions_used: { overheat: 4 },
+      terrain_used: [], loot: { coin: 100 }, replay_hash: 'r13-report',
+      created_at: '2026-11-23T15:30:00Z',
+    } as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+    const box = wrapper.find('.reaction-learning')
+    expect(box.exists()).toBe(true)
+    expect(box.text()).toContain('AI · 反应搭配建议')
+    expect(box.text()).toContain('焰+电')
+    expect(box.text()).toContain('补 冰')
+    expect(box.text()).toContain('蒸汽爆发')
+    expect(box.text()).toContain('依据：reactions_used/elements_used')
+  })
+})
+
+/**
+ * R15：战报详情只有聚合 reactions_used，玩家看不到「第几波对哪个敌人触发什么反应、造成多少伤害」。
+ * 服务端新增可选 reaction_timeline 后，H5 必须按波次/敌人展示逐次归因；
+ * 旧战报无该字段时走逐字诚实空态，不得拿聚合 map 反推编造。
+ */
+describe('battles.vue 战报详情 AI 反应时间线（R15）', () => {
+  const row = {
+    id: 9, result: 'win', stars: 3, level_id: 1, score: 15000,
+    kills: 39, leaked: 0, created_at: '2026-11-23T16:00:00Z',
+  }
+  function detailWith(timeline: unknown): Record<string, unknown> {
+    const d: Record<string, unknown> = {
+      id: 9, level_id: 1, result: 'win', stars: 3, score: 15000,
+      kills: 39, leaked: 0, hp_left: 300, wave_reached: 5, duration_ms: 70_000,
+      shots: 300, hits: 260, reactions: 3, heat_max: 70,
+      elements_used: { fire: 90, lightning: 80 }, reactions_used: { overheat: 2 },
+      terrain_used: [], loot: { coin: 100 }, replay_hash: 'r15-report',
+      created_at: '2026-11-23T16:00:00Z',
+    }
+    if (timeline !== undefined) d.reaction_timeline = timeline
+    return d
+  }
+  async function openDetail(timeline: unknown) {
+    mockApi.myBattleHistory.mockResolvedValue({ items: [row], next_cursor: 0 } as any)
+    mockApi.myBattleDetail.mockResolvedValue(detailWith(timeline) as any)
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+    await wrapper.find('.battle-row').trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('有逐次记录时按波次/tick 升序渲染行，带波次属性/敌人uid/伤害与截断提示', async () => {
+    const wrapper = await openDetail({
+      schema_version: 'reaction-timeline-v1',
+      events: [
+        { wave: 2, tick: 9, reaction: 'overload', enemy_uid: 33, damage: 210 },
+        { wave: 1, tick: 3, reaction: 'steam', enemy_uid: 11, damage: 150 },
+        { wave: 2, tick: 5, reaction: 'overheat', enemy_uid: 22, damage: 320 },
+      ],
+      truncated: true,
+      total: 37,
+    })
+    const card = wrapper.find('.r15-reaction-timeline')
+    expect(card.exists()).toBe(true)
+    expect(card.text()).toContain('反应时间线')
+
+    const rows = wrapper.findAll('.r15-timeline-row')
+    expect(rows.length).toBe(3)
+    // 按 wave/tick 升序：wave1 → wave2 tick5 → wave2 tick9
+    expect(rows.map((r) => r.attributes('data-r15-wave'))).toEqual(['1', '2', '2'])
+    expect(rows[0]!.text()).toContain('第 1 波')
+    expect(rows[0]!.text()).toContain('steam')
+    expect(rows[0]!.text()).toContain('#11')
+    expect(rows[0]!.text()).toContain('150.0 伤害')
+    expect(rows[1]!.text()).toContain('#22')
+    expect(rows[2]!.text()).toContain('#33')
+    expect(wrapper.find('.r15-timeline-empty').exists()).toBe(false)
+
+    const note = wrapper.find('.r15-truncated-note')
+    expect(note.exists()).toBe(true)
+    expect(note.text()).toBe('已截断，仅显示前 200 条')
+  })
+
+  it('旧战报无 reaction_timeline 字段时显示逐字诚实空态，不编造行', async () => {
+    const wrapper = await openDetail(undefined)
+    const empty = wrapper.find('.r15-timeline-empty')
+    expect(empty.exists()).toBe(true)
+    expect(empty.text()).toBe('该战报无逐次反应记录（旧版本结算）')
+    expect(wrapper.findAll('.r15-timeline-row').length).toBe(0)
+    expect(wrapper.find('.r15-truncated-note').exists()).toBe(false)
+  })
+
+  it('字段为空数组或结构异常时走空态而非崩溃', async () => {
+    for (const bad of [
+      { schema_version: 'reaction-timeline-v1', events: [], truncated: false },
+      null,
+      { events: 'broken' },
+    ]) {
+      const wrapper = await openDetail(bad)
+      expect(wrapper.find('.r15-timeline-empty').exists()).toBe(true)
+      expect(wrapper.find('.r15-timeline-empty').text()).toBe('该战报无逐次反应记录（旧版本结算）')
+      expect(wrapper.findAll('.r15-timeline-row').length).toBe(0)
+    }
+  })
+
+  it('truncated=false 时不渲染截断提示', async () => {
+    const wrapper = await openDetail({
+      schema_version: 'reaction-timeline-v1',
+      events: [{ wave: 1, tick: 1, reaction: 'overheat', enemy_uid: 7, damage: 88 }],
+      truncated: false,
+      total: 1,
+    })
+    expect(wrapper.findAll('.r15-timeline-row').length).toBe(1)
+    expect(wrapper.find('.r15-truncated-note').exists()).toBe(false)
+  })
+})
