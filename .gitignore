@@ -563,3 +563,9 @@ docs/laiyipao/audits/round64-battles-detail-race/data/
 docs/laiyipao/audits/round64-battles-detail-race/admin-auth-init.js
 docs/laiyipao/audits/round64-battles-detail-race-postdeploy/data/
 docs/laiyipao/audits/round64-battles-detail-race-postdeploy/admin-auth-init.js
+
+# R66 宝石缓存损坏兜底修复与部署后真值不入库
+docs/laiyipao/audits/round66-gem-cache-guard/data/
+docs/laiyipao/audits/round66-gem-cache-guard/admin-auth-init.js
+docs/laiyipao/audits/round66-gem-cache-guard-postdeploy/data/
+docs/laiyipao/audits/round66-gem-cache-guard-postdeploy/admin-auth-init.js
