@@ -509,3 +509,15 @@ docs/laiyipao/audits/round53-home-pct-rounding/admin-auth-init.js
 # R53 首页pct取整部署后审计临时真值不入库
 docs/laiyipao/audits/round53-postdeploy/data/
 docs/laiyipao/audits/round53-postdeploy/admin-auth-init.js
+
+# R54 视觉走查审计临时真值不入库
+docs/laiyipao/audits/round54-visual-walk/data/
+docs/laiyipao/audits/round54-visual-walk/admin-auth-init.js
+
+# R55 视觉可读性修复审计临时真值不入库
+docs/laiyipao/audits/round55-visual-readability/data/
+docs/laiyipao/audits/round55-visual-readability/admin-auth-init.js
+
+# R55 视觉可读性修复部署后审计临时真值不入库
+docs/laiyipao/audits/round55-postdeploy/data/
+docs/laiyipao/audits/round55-postdeploy/admin-auth-init.js
