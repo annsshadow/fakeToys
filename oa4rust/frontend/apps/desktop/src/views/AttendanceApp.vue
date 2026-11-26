@@ -2,11 +2,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="attendance-view modern-page" data-testid="attendance-page">
-    <header class="view-header glass-card modern-hero">
+  <div class="attendance-view modern-page ai-page" data-testid="attendance-page">
+    <header class="view-header glass-card modern-hero ai-panel ai-page">
       <div class="hero-copy">
         <h1>考勤管理</h1>
-        <p class="subtitle">按月查看出勤、请假与排班，日常操作使用下方业务分区，端点调试请展开高级操作。</p>
+        <p class="subtitle">按月查看出勤、请假与排班，更多维护操作可展开高级操作。</p>
       </div>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
@@ -154,7 +154,7 @@
     <section class="modern-section glass-card content-panel">
       <div class="pt"><span class="th">姓名</span><span class="th">日期</span><span class="th">上班</span><span class="th">下班</span><span class="th">工时</span><span class="th">状态</span></div>
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 8" :key="i"></div></div>
-      <div v-else-if="records.length===0" class="es"><div class="ei">📋</div><p>暂无考勤记录</p></div>
+      <div v-else-if="records.length===0" class="es" data-testid="attendance-empty-cta"><div class="ei">📋</div><p>暂无考勤记录，可刷新后查看最新数据</p><button class="eb eb-primary" @click="loadData">刷新记录</button></div>
       <template v-else>
         <div v-for="r in records" :key="r.id" class="tr" :class="{late:r.isLate}">
           <span class="td">{{r.personName||r.name||'—'}}</span>
@@ -326,12 +326,30 @@ const month = ref(businessTodayYM()),
   totalPages = ref(1),
   appealsError = ref(''),
   qc = useQueryClient()
-const stats = computed(() => [
-  { label: '应出勤', value: 45, color: 'var(--color-info)' },
-  { label: '实际出勤', value: 42, color: 'var(--color-success)' },
-  { label: '迟到', value: 3, color: 'var(--color-warning)' },
-  { label: '请假', value: 2, color: 'var(--color-accent)' },
-])
+/**
+ * R300 P1：统计卡由当月真实明细派生，统一「人员×日期」去重口径；
+ * 明细为空时四项归零，不再展示与明细不一致的固定 45/42/3/2。
+ */
+function deriveAttendanceStats(rows: R[]): Array<{ label: string; value: number; color: string }> {
+  const keyOf = (r: R) => `${(r.personName ?? r.name ?? r.id ?? '').trim()}|${(r.date ?? '').slice(0, 10)}`
+  const unique = new Map<string, R>()
+  for (const r of rows) {
+    const key = keyOf(r)
+    if (!unique.has(key)) unique.set(key, r)
+  }
+  const all = [...unique.values()]
+  const actual = all.filter((r) => Boolean(r.checkInTime ?? r.checkOutTime) || r.status === '1' || r.status === '2')
+  const late = all.filter((r) => r.isLate === true || r.status === '2')
+  const leave = all.filter((r) => r.status === '3')
+  return [
+    { label: '应出勤', value: all.length, color: 'var(--color-info)' },
+    { label: '实际出勤', value: actual.length, color: 'var(--color-success)' },
+    { label: '迟到', value: late.length, color: 'var(--color-warning)' },
+    { label: '请假', value: leave.length, color: 'var(--color-accent)' },
+  ]
+}
+
+const stats = computed(() => deriveAttendanceStats(records.value))
 useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
@@ -1785,7 +1803,12 @@ async function loadAttTwin2() {
 }
 </script>
 <style scoped>
-.attendance-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.attendance-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.ai-page .view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur)}
+.ai-page .stat-card{background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.ai-page .eb-primary{background:var(--ai-gradient-brand);color:#fff}
+.ai-page .sk{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%)}
+.ai-page .advanced-groups{gap:var(--ai-grid-2)}
 .view-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;flex-wrap:wrap;gap:12px}
 .hero-copy{min-width:0}
 .hero-copy h1{white-space:nowrap}

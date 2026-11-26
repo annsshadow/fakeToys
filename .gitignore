@@ -12,6 +12,9 @@ unpackage/
 .mvn/
 *.class
 *.jar
+*.tgz
+# Local cargo vendoring config (environment-specific)
+oa4rust/backend/.cargo/config-vendor.toml
 *.war
 
 # Python
@@ -23,6 +26,7 @@ __pycache__/
 # Node
 node_modules/
 oa4rust/test-results/
+oa4rust/mobile/test-results/
 oa4rust/e2e/screenshots/
 oa4rust/playwright-report/
 oa4rust/coverage/

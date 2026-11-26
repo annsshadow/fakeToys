@@ -2,18 +2,19 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
+  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="CMS 索引设计" />
     <AdminFormSection title="业务工作台" description="原有操作入口与能力完整保留">
       <div class="crud-view">
-    <div class="view-header glass-card">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <h2 class="ai-gradient-text" data-testid="cms-index-page-title">CMS 索引设计</h2>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索索引 / 目标..." class="search-input" />
-      <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="cms-index-endpoint-fold">
+      <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="cms-index-endpoint-fold">
         <template #group-read>
           <button class="btn-refresh" @click="loadData">🔄 刷新</button>
           <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
@@ -889,7 +890,7 @@ void AdminPageHeader
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.view-header h2.ai-gradient-text{margin:0;background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px;font-weight:700}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .content-panel{padding:16px}

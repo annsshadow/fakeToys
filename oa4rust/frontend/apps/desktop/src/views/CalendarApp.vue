@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="calendar-view" data-testid="calendar-business-view">
-    <div class="cal-header view-header glass-card" data-testid="calendar-header">
+  <div class="calendar-view ai-page" data-testid="calendar-business-view">
+    <div class="cal-header view-header glass-card ai-panel" data-testid="calendar-header">
       <div>
         <h1>工作日历</h1>
         <p class="subtitle">查看日程安排、管理日程事件</p>
@@ -321,7 +321,6 @@ async function loadCalendars(scope: 'my' | 'public') {
     calListError.value = describeListError('日历列表加载失败', e)
   }
 }
-loadCalendars('my')
 
 // ── 选中日历 → 事件管理（消费 core calendar 事件族真实路由）──────────
 interface CalDetail {
@@ -337,6 +336,10 @@ const calEvents = ref<CalendarEvent[]>([])
 const calEventsError = ref('')
 const calListError = ref('')
 const evtForm = ref({ title: '', startTime: '', endTime: '', location: '' })
+
+// 初始加载必须晚于 calListError 等 ref 声明：loadCalendars 首行写 calListError.value，
+// 提前调用会触发暂时性死区（浏览器报 Cannot access 'calListError' before initialization）。
+loadCalendars('my')
 
 async function selectCalendar(c: CalItem): Promise<void> {
   activeCal.value = c
@@ -723,4 +726,18 @@ async function loadCalTwin() {
   .view-header { flex-direction: column; gap: 8px; }
   .day-num { font-size: 11px; }
 }
+/* R300 B3：日程域 AI 令牌覆盖。 */
+.ai-page.calendar-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .view-header { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
+.ai-page .view-header h1 { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 20px; font-weight: 700; }
+.ai-page .days-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--ai-grid-1); }
+.ai-page .day-cell { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); border-radius: var(--ai-grid-1); min-height: 72px; transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .day-cell:hover { transform: translateY(-2px); box-shadow: var(--ai-shadow-2); }
+.ai-page .day-cell.today { background: var(--ai-gradient-surface); border-color: var(--ai-indigo); box-shadow: var(--ai-shadow-1); }
+.ai-page .cal-scope,
+.ai-page .calendar-grid,
+.ai-page .event-panel,
+.ai-page .event-mgr { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); }
+.ai-page .cll-tab.on,
+.ai-page .today-btn { background: var(--ai-gradient-brand); color: #fff; border-color: transparent; }
 </style>

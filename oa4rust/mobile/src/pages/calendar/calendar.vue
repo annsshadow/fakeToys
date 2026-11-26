@@ -18,6 +18,7 @@ import { parseServerDate } from '@/utils/datetime'
 import { createLatestGate } from '@/utils/latest'
 import { describeLoadError } from '@/utils/loadList'
 import { validateEventTimeRange } from './eventTime'
+import { normalizeCalendarRows } from './calendarEnvelope'
 
 interface EventRow {
   id?: string
@@ -161,7 +162,8 @@ async function load(): Promise<void> {
   try {
     const cals = await calendarApi.myCalendars()
     if (!listGate.isLatest(token)) return
-    calendars.value = (cals.data ?? []) as CalendarRow[]
+    // 真接口 data 是 {myCalendars,unitCalendars} 对象，运行时归一化防 .map 崩溃
+    calendars.value = normalizeCalendarRows(cals.data)
     const all: EventRow[] = []
     // 并行拉取各日历事件（后端 filter 只按 calendarId 过滤），再在客户端做时间窗筛选；
     // allSettled 保持「单个日历失败不影响其余」语义且结果按日历序拼接。
@@ -249,9 +251,9 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
 </script>
 
 <template>
-  <view class="page">
-    <view class="tabs">
-      <view v-for="r in ranges" :key="r.key" class="tab" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
+  <view class="page ai-surface-gradient">
+    <view class="tabs ai-brand-fill">
+      <view v-for="r in ranges" :key="r.key" class="tab ai-brand-fill" :class="{ on: range === r.key }" @tap="switchRange(r.key)">
         {{ r.label }}
       </view>
     </view>
@@ -276,7 +278,10 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view class="c-submit" :class="{ disabled: creating }" @tap="submitEvent">保存事件</view>
     </view>
 
-    <view v-if="eventsView === 'loading'" class="tip">加载中…</view>
+    <view v-if="eventsView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="eventsView === 'error'" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
@@ -296,7 +301,10 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view v-if="e.content" class="content">{{ e.content }}</view>
     </view>
 
-    <view v-if="detailLoading" class="tip">详情加载中…</view>
+    <view v-if="detailLoading" class="ai-skeleton-list" aria-hidden="true">
+      <view class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="detail" class="card detail">
       <view class="detail-head">
         <text class="title">{{ detail.title || '未命名日程' }}</text>

@@ -2,18 +2,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
-      <div>
-        <h1>笔记管理</h1>
-        </div>
+  <div class="crud-view modern-page ai-panel">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <div class="hero-copy">
+        <h1 class="ai-gradient-text">笔记管理</h1><p class="subtitle">沉淀团队知识与待办线索</p>
+      </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
-    <div class="content-panel glass-card">
+    <div class="content-panel glass-card modern-section modern-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 内容..." class="search-input" />
-        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="note-endpoint-fold">
+        <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="note-endpoint-fold">
           <template #group-read>
             <button class="btn-refresh" @click="loadData">🔄 刷新</button>
           </template>
@@ -21,14 +21,14 @@
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📓</div><p>暂无笔记</p></div>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📓</div><p>暂无笔记</p><button class="empty-cta" type="button" @click="openCreate">✏️ 新建第一条笔记</button></div>
       <table v-else class="data-table">
         <thead><tr><th>标题</th><th>内容摘要</th><th>成员</th><th>更新时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
             <td>{{ item.title||'—' }}</td>
             <td class="desc-cell">{{ item.content||'—' }}</td>
-            <td class="mono">{{ item.personId||'—' }}</td>
+            <td data-testid="note-member-cell">{{ item.personName || '团队成员' }}</td>
             <td>{{ fmtTime(item.updateTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
@@ -43,7 +43,7 @@
         <h3>{{ showEdit?'编辑':'新建' }}笔记</h3>
         <div class="form-group"><label>标题</label><input v-model="form.title" placeholder="标题" class="form-input" /></div>
         <div class="form-group"><label>内容</label><textarea v-model="form.content" rows="4" placeholder="笔记内容" class="form-textarea"></textarea></div>
-        <div class="form-group"><label>成员 ID</label><input v-model="form.personId" placeholder="personId" class="form-input mono" /></div>
+        <div class="form-group"><label>成员</label><input v-model="form.personId" data-testid="note-member-input" placeholder="成员姓名 / 工号（可选）" class="form-input" /></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="closeModal">取消</button>
           <button class="btn-save" :disabled="!form.title?.trim()||saving" @click="saveItem">{{ saving?'保存中…':'保存' }}</button>
@@ -176,7 +176,12 @@ function fmtTime(t?: string) {
 }
 </script>
 <style scoped>
-.crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.crud-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary,.btn-save{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.skel{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
@@ -195,6 +200,8 @@ function fmtTime(t?: string) {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
+.empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.empty-cta:hover{transform:translateY(-1px)}
 .modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:480px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}

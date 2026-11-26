@@ -38,10 +38,13 @@ type Manifest = {
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest
 const sorted = (values: string[]) => [...values].sort()
 const readRepositoryFile = (file: string) => readFileSync(resolve(repositoryRoot, file), 'utf8')
+const hasCrudViewToken = (source: string) =>
+  [...source.matchAll(/class="([^"]*)"/g)].some((match) => match[1].split(/\s+/).includes('crud-view'))
+
 const exactCrudViews = () =>
   readdirSync(viewsDir)
     .filter((file) => file.endsWith('.vue'))
-    .filter((file) => readFileSync(resolve(viewsDir, file), 'utf8').includes('class="crud-view"'))
+    .filter((file) => hasCrudViewToken(readFileSync(resolve(viewsDir, file), 'utf8')))
 
 const w14Prefixes = ['x_component_Minder', 'x_component_service_', 'x_component_AppMarketV2', 'x_component_Forum']
 const discoveredW14Families = () =>

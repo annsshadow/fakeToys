@@ -2,10 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="file-view modern-page">
-    <header class="modern-hero">
+  <div class="file-view modern-page ai-page ai-panel">
+    <header class="modern-hero ai-panel ai-page">
       <div class="hero-copy">
-        <h1>文件管理</h1>
+        <h1 class="ai-gradient-text">文件管理</h1>
         <p class="subtitle">我的文件 · 共享 · 回收</p>
       </div>
       <span class="modern-chip hero-chip">FILES</span>
@@ -14,6 +14,7 @@
     <section class="modern-section modern-card file-toolbar">
       <div class="toolbar-actions">
         <button class="modern-btn primary" @click="handleUpload">📤 上传</button>
+        <button class="modern-btn ghost" data-testid="file-create-json" @click="createRecyclableFile">🗂️ 新建可清理文件</button>
         <button class="modern-btn ghost" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </section>
@@ -39,12 +40,13 @@
             <ListLoadError mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
           </div>
           <div v-if="loading" class="loading-state">
-            <div class="skeleton-row" v-for="i in 6" :key="i"></div>
+            <div class="skeleton-row ai-skeleton-line" v-for="i in 6" :key="i"></div>
           </div>
           <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
           <div v-else-if="files.length === 0" class="empty-state modern-empty">
             <div class="empty-icon">📁</div>
             <p>当前文件夹为空</p>
+            <button class="empty-cta" type="button" @click="handleUpload">📤 上传文件，开始协作</button>
           </div>
           <div v-else class="file-content">
             <ul v-if="viewType === 'list'" class="file-list" data-testid="files-mine-list">
@@ -74,6 +76,18 @@
         </div>
       </section>
 
+      <section class="files-recyclable modern-section modern-card">
+        <h2 class="section-title modern-section-title">可清理文件</h2>
+        <p class="muted">通过上方「新建可清理文件」创建的真实文件，删除后进入回收站</p>
+        <ul class="item-list" data-testid="files-recyclable-list">
+          <li v-for="f in recyclableFiles" :key="f.id" class="item-body">
+            <span class="item-title">{{ f.name }}</span>
+            <button class="icon-action danger" :disabled="deletingId === f.id" @click="deleteFile(f)" title="删除（进入回收站）">🗑</button>
+          </li>
+        </ul>
+        <p v-if="!recyclableFiles.length" class="muted modern-empty">尚未新建文件</p>
+      </section>
+
       <section class="files-shared modern-section modern-card">
         <h2 class="section-title modern-section-title">共享</h2>
         <form class="file-search" @submit.prevent="loadSharedFiles">
@@ -81,7 +95,7 @@
         </form>
         <ul class="item-list" data-testid="files-shared-list">
           <li v-for="item in sharedFiles" :key="item.id" class="item-body">
-            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="item-title">{{ item.name || '未命名文件' }}</span>
             <span class="muted">{{ formatFileSize(item.size) }}</span>
           </li>
         </ul>
@@ -95,7 +109,7 @@
         </form>
         <ul class="item-list" data-testid="files-recycle-list">
           <li v-for="item in recycleFiles" :key="item.id" class="item-body">
-            <span class="item-title">{{ item.name || item.id }}</span>
+            <span class="item-title">{{ item.name || '未命名文件' }}</span>
             <span class="muted">{{ fmtTime(item.updateTime) }}</span>
           </li>
         </ul>
@@ -154,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { formatServerDateTime } from '../utils/date'
@@ -164,6 +178,8 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+
+const session = useSession()
 
 interface FileItem {
   id: string
@@ -189,6 +205,25 @@ const queryClient = useQueryClient()
 const fileKeyword = ref('')
 const sharedFiles = ref<FileItem[]>([])
 const recycleFiles = ref<FileItem[]>([])
+const recyclableFiles = ref<FileItem[]>([])
+
+async function createRecyclableFile(): Promise<void> {
+  const name = prompt('新建文件名称:', '') || ''
+  if (!name.trim()) return
+  try {
+    const resp = await api.post('/api/file/core/entity/file', {
+      name,
+      person: session.state.user?.unique ?? '',
+      reference_type: 'attachment',
+    })
+    const created = (resp as { data?: { id?: string } })?.data
+    const id = String(created?.id ?? '')
+    recyclableFiles.value = [{ id, name, type: 'file' }, ...recyclableFiles.value]
+    toast.success('文件已创建，可删除进入回收站')
+  } catch (e: any) {
+    toast.error(`新建文件失败: ${e?.message ?? ''}`)
+  }
+}
 
 const visibleFiles = computed(() => {
   const kw = fileKeyword.value.trim().toLowerCase()
@@ -863,7 +898,10 @@ async function deleteFile(f: FileItem): void {
   if (!(await confirmMsg(`确定删除「${f.name}」？`))) return
   deletingId.value = f.id
   deleteMutation.mutate(f.id, {
-    onSuccess: () => toast.success('文件已删除'),
+    onSuccess: () => {
+      recyclableFiles.value = recyclableFiles.value.filter((x) => x.id !== f.id)
+      toast.success('文件已删除')
+    },
     onError: () => toast.error('删除失败'),
     onSettled: () => (deletingId.value = ''),
   })
@@ -1426,8 +1464,11 @@ async function loadFileTwin3() {
 
 <style scoped>
 /* Layout/geometry layered on shared ModernUI classes. */
-.file-view.modern-page { display: flex; flex-direction: column; gap: 16px }
-.modern-hero { display: flex; align-items: center; justify-content: space-between }
+.file-view.modern-page.ai-page { display: flex; flex-direction: column; gap: var(--ai-grid-2) }
+.modern-hero { display: flex; align-items: center; justify-content: space-between; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border) }
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn-primary{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
 .hero-copy { display: flex; flex-direction: column }
 .modern-chip { font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border-radius: 999px; background: var(--color-primary-soft); color: var(--color-primary) }
 .file-toolbar { display: flex; justify-content: flex-end }
@@ -1442,9 +1483,12 @@ async function loadFileTwin3() {
 .btn-sm{padding:4px 10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);cursor:pointer;font-size:12px;background:var(--bg-elevated);color:var(--text-primary)}
 .btn-primary{padding:6px 14px;background:var(--color-primary);color:#000;border:none;border-radius:var(--radius-md);cursor:pointer;font-size:13px;font-weight:500}
 .loading-state,.empty-state{display:flex;flex-direction:column;align-items:center;padding:40px;color:var(--text-muted);gap:12px}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
+.skeleton-row{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+.sk{height:40px;border-radius:var(--radius-md);background:var(--ai-skeleton-base);animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
 .empty-icon{font-size:48px;opacity:.4}
+.empty-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid transparent;border-radius:var(--radius-md);background:var(--ai-gradient-brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.empty-cta:hover{transform:translateY(-1px)}
 .ref-panel{padding:16px;margin-top:8px}
 .ref-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;color:var(--color-primary)}
 .ref-chips{display:flex;gap:8px;flex-wrap:wrap}

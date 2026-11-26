@@ -169,7 +169,7 @@ function pickFromFilePicker(): void {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="toolbar">
       <button class="tool" size="mini" :disabled="uploading" @tap="pickFromAlbumOrCamera">
         拍照 / 相册
@@ -178,16 +178,31 @@ function pickFromFilePicker(): void {
         上传文件
       </button>
     </view>
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-if="loading && !loaded" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else class="page-body">
       <view class="section">
         <view class="section-title">我的附件（附件存储 FILE_FILE，上传落点）</view>
-        <view v-if="attachView === 'loading'" class="tip">加载中…</view>
+        <view v-if="attachView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+          <view class="ai-skeleton-line short"></view>
+        </view>
         <view v-else-if="attachView === 'error'" class="tip tip-error">
           <view class="error-text">{{ attachError }}</view>
           <view class="retry-btn" @tap="load()">重试</view>
         </view>
-        <view v-else-if="attachView === 'empty'" class="tip">暂无附件</view>
+        <view v-else-if="attachView === 'empty'" class="empty-guide ai-brand-fill">
+          <view class="empty-guide-emoji" aria-hidden="true">📎</view>
+          <text class="empty-guide-text">还没有附件</text>
+          <text class="empty-guide-hint">拍照或上传文件后，附件会显示在这里</text>
+          <view class="empty-guide-actions">
+            <button class="o2-btn" size="mini" @tap="pickFromAlbumOrCamera">拍照 / 相册</button>
+            <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
+            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+          </view>
+        </view>
         <view v-if="attachError && attachRows.length > 0" class="tip-error error-banner">
           <text class="error-text">{{ attachError }}</text>
           <view class="retry-btn" @tap="load()">重试</view>
@@ -204,12 +219,23 @@ function pickFromFilePicker(): void {
       </view>
       <view class="section">
         <view class="section-title">我的文件（文档库 x_file）</view>
-        <view v-if="filesView === 'loading'" class="tip">加载中…</view>
+        <view v-if="filesView === 'loading'" class="ai-skeleton-list" aria-hidden="true">
+          <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+          <view class="ai-skeleton-line short"></view>
+        </view>
         <view v-else-if="filesView === 'error'" class="tip tip-error">
           <view class="error-text">{{ filesError }}</view>
           <view class="retry-btn" @tap="load()">重试</view>
         </view>
-        <view v-else-if="filesView === 'empty'" class="tip">暂无文件</view>
+        <view v-else-if="filesView === 'empty'" class="empty-guide">
+          <view class="empty-guide-emoji" aria-hidden="true">📄</view>
+          <text class="empty-guide-text">文档库暂无文件</text>
+          <text class="empty-guide-hint">上传一份文件，或刷新查看最新文档</text>
+          <view class="empty-guide-actions">
+            <button class="o2-btn" size="mini" @tap="pickFromFilePicker">上传文件</button>
+            <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+          </view>
+        </view>
         <view v-if="filesError && rows.length > 0" class="tip-error error-banner">
           <text class="error-text">{{ filesError }}</text>
           <view class="retry-btn" @tap="load()">重试</view>
@@ -229,6 +255,54 @@ function pickFromFilePicker(): void {
 </template>
 
 <style scoped>
+/* t32 空态引导：明确文案 + 可点击入口，不伪造数据 */
+.empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 56rpx 32rpx;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.empty-guide-emoji {
+  font-size: 64rpx;
+  line-height: 1.2;
+}
+.empty-guide-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.empty-guide-hint {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+.empty-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+.empty-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 26rpx;
+}
+.empty-guide-link.primary {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .page {
   min-height: 100vh;
   background: var(--color-bg-page);

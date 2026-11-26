@@ -2,9 +2,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="im-view" data-testid="im-root">
+  <div class="im-view ai-grid-2" data-testid="im-root">
     <!-- 会话列表：搜索与会话切换 -->
-    <aside class="im-sidebar glass-card" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
+    <aside class="im-sidebar glass-card ai-page" :class="{ collapsed: selectedChat }" data-testid="im-conversation-list">
       <div class="sidebar-header">
         <h2 data-testid="im-conversation-title">消息</h2>
         <button class="new-chat-btn" title="发起会话" aria-label="发起会话" data-testid="im-new-chat" @click="loadRoomStats">✉</button>
@@ -15,13 +15,13 @@
           aria-label="搜索会话" data-testid="im-conversation-search" />
       </div>
       <div class="conversation-list" role="list">
-        <div v-for="conv in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
+        <div v-for="(conv, convIndex) in filteredConversations" :key="conv.id" class="conv-item" role="listitem"
           :class="{ active: selectedChat?.id === conv.id }"
-          :data-testid="'im-conv-' + conv.id" @click="selectConversation(conv)">
-          <div class="conv-avatar">{{ conv.avatar || conv.name?.[0] }}</div>
+          :data-testid="'im-conv-' + (convIndex + 1)" @click="selectConversation(conv)">
+          <div class="conv-avatar">{{ conv.avatar || displayConversationName(conv)?.[0] }}</div>
           <div class="conv-info">
-            <div class="conv-name">{{ conv.name }}</div>
-            <div class="conv-preview">{{ conv.lastMessage || '暂无消息' }}</div>
+            <div class="conv-name">{{ displayConversationName(conv) }}</div>
+            <div class="conv-preview">{{ displayConversationPreview(conv) }}</div>
           </div>
           <div class="conv-meta">
             <span class="conv-time">{{ conv.time }}</span>
@@ -39,13 +39,13 @@
     </aside>
 
     <!-- 消息区：聊天头部与消息记录 -->
-    <main class="im-main glass-card" :class="{ 'no-chat': !selectedChat }" data-testid="im-message-pane">
+    <main class="im-main glass-card ai-page" :class="{ 'no-chat': !selectedChat }" data-testid="im-message-pane">
       <div v-if="selectedChat" class="chat-content">
         <div class="chat-header">
           <button class="back-btn" aria-label="返回会话列表" @click="selectedChat = null">←</button>
-          <div class="chat-avatar">{{ selectedChat.avatar || selectedChat.name?.[0] }}</div>
+          <div class="chat-avatar">{{ selectedChat.avatar || displayConversationName(selectedChat)?.[0] }}</div>
           <div class="chat-info">
-            <div class="chat-name" data-testid="im-chat-name">{{ selectedChat.name }}</div>
+            <div class="chat-name" data-testid="im-chat-name">{{ displayConversationName(selectedChat) }}</div>
             <div class="chat-status" :class="{ online: selectedChat.online }">
               {{ selectedChat.online ? '在线' : '离线' }}
             </div>
@@ -65,14 +65,14 @@
 
         <div ref="messageContainer" class="message-list" @scroll="handleScroll" data-testid="im-message-list">
           <div v-if="msgLoading" class="loading-state">
-            <div class="skeleton-row" v-for="i in 4" :key="i"></div>
+            <div class="skeleton-row ai-skeleton-line" v-for="i in 4" :key="i"></div>
           </div>
           <div v-else-if="msgLoadMoreError" class="empty-messages">
             <p>{{ msgLoadMoreError }}</p>
             <button class="load-more-retry" @click="loadFirstPage">重试</button>
           </div>
           <div v-else-if="messages.length === 0" class="empty-messages">
-            <p>开始对话吧 💬</p>
+            <p>当前会话还没有消息，先从常用语开始</p>
           </div>
           <div v-else class="message-records">
             <div v-for="msg in messages" :key="msg.id" class="message"
@@ -90,7 +90,7 @@
         </div>
 
         <!-- 消息输入框 -->
-        <form class="message-input" data-testid="im-message-composer" @submit.prevent="sendMessage">
+        <form class="message-input ai-panel" data-testid="im-message-composer" @submit.prevent="sendMessage">
           <button type="button" class="input-btn" title="表情" aria-label="表情">😊</button>
           <button type="button" class="input-btn" title="发送文件" aria-label="发送文件" @click="sendFileMessage">📎</button>
           <textarea v-model="inputText" @keydown.enter.ctrl="sendMessage"
@@ -150,6 +150,7 @@
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { displayConversationName as readableConversationName, displayConversationPreview as readableConversationPreview } from '../utils/processTitle'
 import { confirmMsg, toast } from '../utils/toast'
 import { fetchImPagingPage, type ImPagingRow } from './imMessagePaging'
 import { fetchMessagePage, mergeMessagePages } from './imPaging'
@@ -158,6 +159,7 @@ import { mutationErrorMessage } from './mutationError'
 interface Conversation {
   id: string
   name: string
+  type?: string
   avatar?: string
   lastMessage?: string
   time: string
@@ -291,6 +293,14 @@ function endCall(notify = true): void {
   if (notify && convId) wsClient.value?.send(convId, { webrtc: 'end', to: convId })
 }
 
+// R302 DR-06-R：机器会话名与摘要统一走共享工具，禁止随机尾号冒充姓名。
+function displayConversationName(c: Conversation): string {
+  return readableConversationName(c.name, c.type, c.id)
+}
+function displayConversationPreview(c: Conversation): string {
+  return readableConversationPreview(c.lastMessage)
+}
+
 function toggleCall(): void {
   if (callState.value === 'idle') void startCall()
   else endCall()
@@ -318,7 +328,7 @@ const filteredConversations = computed(() => {
   if (!searchMsg.value) return conversations.value
   const q = searchMsg.value.toLowerCase()
   return conversations.value.filter(
-    (c) => c.name.toLowerCase().includes(q) || (c.lastMessage ?? '').toLowerCase().includes(q),
+    (c) => c.name.toLowerCase().includes(q) || displayConversationName(c).toLowerCase().includes(q) || (c.lastMessage ?? '').toLowerCase().includes(q),
   )
 })
 
@@ -1109,11 +1119,14 @@ async function loadImTwin() {
 </script>
 
 <style scoped>
-.im-view { display: flex; height: 100%; gap: 16px; }
+.im-view { display: flex; height: 100%; gap: var(--ai-grid-2); padding: var(--ai-grid-1); }
+.typing-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.typing-indicator::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ai-indigo); animation: ai-shimmer 1.2s var(--ai-ease-spring) infinite; }
 
 .im-sidebar {
   width: 300px; flex-shrink: 0; display: flex; flex-direction: column;
-  transition: all var(--transition-normal);
+  background: var(--ai-glass-bg); border-color: var(--ai-glass-border);
+  transition: all var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .im-sidebar.collapsed { width: 0; overflow: hidden; }
 
@@ -1152,7 +1165,7 @@ async function loadImTwin() {
 .conv-item.active { background: var(--color-primary-soft); box-shadow: inset 3px 0 0 var(--color-primary); }
 .conv-avatar {
   width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: var(--ai-gradient-brand);
   color: white; display: flex; align-items: center; justify-content: center;
   font-weight: 600; font-size: 16px;
 }
@@ -1178,7 +1191,8 @@ async function loadImTwin() {
 
 .im-main {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
-  transition: all var(--transition-normal);
+  background-image: var(--ai-gradient-surface); border-color: var(--ai-glass-border);
+  transition: all var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .im-main.no-chat { border-color: transparent; }
 
@@ -1218,8 +1232,9 @@ async function loadImTwin() {
 .icon-btn:hover { background: var(--color-primary-soft); color: var(--color-primary); }
 
 .message-list {
-  flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: var(--ai-grid-2);
 }
+.message-list .skeleton-row { background: var(--ai-skeleton-base) }
 .empty-messages { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .skeleton-row { height: 48px; border-radius: var(--radius-md); margin-bottom: 8px; }
@@ -1285,7 +1300,8 @@ async function loadImTwin() {
 
 .message-input {
   display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--ai-glass-border);
+  transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
 }
 .input-btn {
   background: none; border: none; font-size: 20px; cursor: pointer;
@@ -1312,7 +1328,7 @@ async function loadImTwin() {
 
 .no-chat-placeholder {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; color: var(--text-muted);
+  gap: var(--ai-grid-2); color: var(--text-muted);
 }
 .placeholder-icon { font-size: 64px; opacity: 0.3; }
 .no-chat-placeholder h2 { font-family: 'Orbitron', sans-serif; color: var(--text-secondary); font-size: 18px; }

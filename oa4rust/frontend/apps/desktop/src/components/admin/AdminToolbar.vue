@@ -3,7 +3,7 @@
 
 <!-- R298 标准列表工具条：搜索框(v-model) + 筛选插槽 + 刷新/新建 -->
 <template>
-  <div class="admin-toolbar glass-card">
+  <div class="admin-toolbar glass-card ai-page-b5">
     <input
       :value="modelValue"
       class="admin-toolbar-search"
@@ -49,7 +49,10 @@ const emit = defineEmits<{
 </script>
 
 <style scoped>
-.admin-toolbar {
+.admin-toolbar.ai-page-b5 {
+  background: var(--ai-glass-bg);
+  border: 1px solid var(--ai-glass-border);
+  border-radius: var(--ai-radius-lg, 12px);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -103,7 +106,7 @@ const emit = defineEmits<{
 }
 
 .admin-toolbar-btn.primary {
-  background: var(--color-primary);
+  background: var(--ai-gradient-brand);
   border-color: var(--color-primary);
   color: var(--bg-base);
 }

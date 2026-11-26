@@ -2,9 +2,13 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
-      <button class="btn-primary" @click="openCreate">+ 新建</button>
+  <div class="crud-view modern-page ai-panel ai-page-b5">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <div class="hero-copy">
+        <h1 class="ai-gradient-text" data-testid="deployment-page-title">部署管理</h1>
+        <p class="subtitle">维护应用部署记录与运行状态</p>
+      </div>
+      <button class="btn-primary" data-testid="deployment-create" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
@@ -19,9 +23,9 @@
         <thead><tr><th>应用 ID</th><th>应用名</th><th>程序</th><th>分类</th><th>禁用</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
-            <td class="mono">{{ item.appId||'—' }}</td>
+            <td>{{ item.appId||'—' }}</td>
             <td>{{ item.appName||'—' }}</td>
-            <td class="mono">{{ item.application||'—' }}</td>
+            <td>{{ item.application||'—' }}</td>
             <td>{{ item.category||'—' }}</td>
             <td>{{ item.disable==='true'?'是':'否' }}</td>
             <td>{{ fmtTime(item.createTime) }}</td>
@@ -52,7 +56,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
+import { ADMIN_LAYOUT_HIDE_TITLE } from '../components/admin/adminInjection'
 import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -60,6 +65,10 @@ import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 import { mutationErrorMessage } from './mutationError'
+
+// 本页自带唯一 h1；隐藏 AdminLayout 的同名 shell h1，避免标题重复。
+const hideTitle = inject(ADMIN_LAYOUT_HIDE_TITLE, undefined)
+if (hideTitle) hideTitle.value = true
 
 interface Item {
   id: string
@@ -170,7 +179,8 @@ function fmtTime(t?: string) {
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.view-header h1.ai-gradient-text{margin:0 0 4px;background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px;font-weight:700}
+.view-header p.subtitle{margin:0;font-size:12px;font-weight:500;color:var(--text-muted)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .content-panel{padding:16px}

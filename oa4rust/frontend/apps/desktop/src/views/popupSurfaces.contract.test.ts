@@ -57,9 +57,10 @@ describe('R294 弹层表面统一', () => {
 
   it('AppShell 用户下拉具备玻璃表面，不再透明叠影', () => {
     const dropdown = ruleOf(read(appShell), '.user-dropdown')
-    expect(dropdown).toContain('var(--bg-glass)')
-    expect(dropdown).toContain('var(--glass-blur)')
-    expect(dropdown).toContain('var(--glass-border)')
+    // R304：旧 --bg-glass/--glass-blur/--glass-border 已迁移为 --ai-glass-* 三件套（t41 审计 / §219 裁决）。
+    expect(dropdown).toContain('var(--ai-glass-bg)')
+    expect(dropdown).toContain('var(--ai-glass-blur)')
+    expect(dropdown).toContain('var(--ai-glass-border)')
   })
 })
 

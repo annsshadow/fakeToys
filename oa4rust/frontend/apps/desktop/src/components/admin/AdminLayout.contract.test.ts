@@ -31,7 +31,7 @@ describe('R298 AdminLayout 结构契约', () => {
     expect(source).toMatch(/class="admin-breadcrumb"/)
     expect(source).toContain('系统管理')
     expect(source).toMatch(/route\.meta\.title/)
-    expect(source).toMatch(/<h1[^>]*class="admin-title"/)
+    expect(source).toMatch(/<h1[^>]*class="[^"]*admin-title/)
   })
 
   it('视觉全部走设计令牌，不重复定义 glass-card，不写裸 hex 颜色', () => {

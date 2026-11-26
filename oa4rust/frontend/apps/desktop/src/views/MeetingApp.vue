@@ -2,10 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="meeting-view modern-page">
-    <header class="meeting-hero modern-hero">
+  <div class="meeting-view modern-page ai-page">
+    <header class="meeting-hero modern-hero ai-panel">
       <div class="hero-copy">
-        <h1 class="admin-title">会议管理</h1>
+        <h1 class="admin-title ai-gradient-text">会议管理</h1>
         <p class="subtitle">会议室预订 · 我的会议 · 日程安排</p>
       </div>
       <div class="modern-hero-actions"><button class="new-btn" @click="showCreate=true">+ 新建会议</button></div>
@@ -46,7 +46,7 @@
         <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
         <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
         <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
-        <div v-else-if="meetings.length===0" class="es modern-empty"><div class="ei">👥</div><p>暂无会议</p></div>
+        <div v-else-if="meetings.length===0" class="es modern-empty"><div class="ei">👥</div><p>暂无会议，点击「新建会议」预订第一场</p></div>
         <ul v-else class="ml">
           <li v-for="m in meetings" :key="m.id" class="mc modern-card" @click="viewMeeting(m)">
             <div class="ms modern-chip" :class="statusCls(m)">{{statusTxt(m)}}</div>
@@ -1011,7 +1011,12 @@ async function loadMeetingTwin() {
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}
-.meeting-hero{position:relative}
+.meeting-hero{position:relative;background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.meeting-view .ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.ai-gradient-text{background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.new-btn{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.calendar-day{transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.calendar-day:hover{transform:translateY(-2px)}
 .meeting-hero h1{margin:0 0 4px;font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);text-shadow:0 0 15px var(--color-primary-glow)}
 .meeting-hero .hero-copy{display:flex;flex-direction:column}
 .meeting-hero .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
@@ -1081,4 +1086,19 @@ async function loadMeetingTwin() {
 .meeting-view .ma { flex-wrap: wrap; justify-content: flex-end; }
 .meeting-view .calendar-day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .meeting-view .calendar-day-head .modern-stat { font-size: 13px; font-weight: 600; }
+/* R300 B3：会议域 AI 令牌覆盖，仅改视觉，不动业务结构。 */
+.ai-page.meeting-view { transition: background var(--ai-motion-fast) var(--ai-ease-spring), color var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .meeting-hero { position: relative; overflow: hidden; background: var(--ai-gradient-surface); border: 1px solid var(--ai-glass-border); box-shadow: var(--ai-shadow-1); backdrop-filter: blur(var(--ai-glass-blur)); border-radius: var(--ai-grid-2); padding: var(--ai-grid-3); }
+.ai-page .meeting-hero .admin-title { background: var(--ai-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ai-page .new-btn,
+.ai-page .bs { background: var(--ai-gradient-brand); color: #fff; border: 0; border-radius: calc(var(--ai-grid-1) + 2px); transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring); }
+.ai-page .new-btn:hover,
+.ai-page .bs:hover { transform: translateY(-2px); box-shadow: var(--ai-shadow-2); }
+.ai-page .booking,
+.ai-page .mine,
+.ai-page .content-panel { background: var(--ai-glass-bg); border: 1px solid var(--ai-glass-border); backdrop-filter: blur(var(--ai-glass-blur)); box-shadow: var(--ai-shadow-1); border-radius: var(--ai-grid-2); }
+.ai-page .sk { background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); background-size: 200% 100%; animation: ai-shimmer 1.4s ease-in-out infinite; }
+@keyframes ai-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.ai-page .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--ai-grid-1); }
+.ai-page .modern-empty { background: var(--ai-glass-bg); border: 1px dashed var(--ai-glass-border); border-radius: var(--ai-grid-2); padding: var(--ai-grid-4); text-align: center; color: var(--text-muted); }
 </style>

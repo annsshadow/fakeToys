@@ -79,8 +79,11 @@ onLoad(async (options) => {
 </script>
 
 <template>
-  <view class="page">
-    <view v-if="loading" class="tip">加载中…</view>
+  <view class="page ai-surface-gradient">
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="!topic && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
@@ -108,7 +111,7 @@ onLoad(async (options) => {
       </view>
       <view class="composer">
         <input v-model="text" class="composer-input" placeholder="写下你的回帖…" confirm-type="send" @confirm="send" />
-        <view class="composer-send" :class="{ disabled: sending || !text.trim() }" @tap="send">
+        <view class="composer-send ai-brand-fill" :class="{ disabled: sending || !text.trim() }" @tap="send">
           {{ sending ? '发送中…' : '发送' }}
         </view>
       </view>

@@ -1,0 +1,139 @@
+/**
+ * R300 AI-native 设计令牌（AI Style Tokens）
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * 对标 Linear / Vercel / Raycast / Notion：深中性底、靛蓝→青渐变、8px 布局栅格、
+ * 14px 基准字号、克制玻璃面板、命令面板与骨架屏微交互，并适配企业办公的克制密度。
+ *
+ * 分层原则（与 docs/plans/design-tokens.md 一致）：
+ *  - 色彩权威仍是 dark.css 的 --color-* / --bg-* / --text-*（受 WCAG 契约守护）。
+ *    本文件只新增 --ai-* 前缀令牌，不覆盖任何既有令牌，因此不改既有对比度结论。
+ *  - 8px 栅格是宏观布局节奏（区块/卡片间距），4px 基础步进来自 tokens.css；
+ *    8 是 4 的整数倍，两者叠加而非冲突：4px 做微调，8px 做主节奏。
+ *  - 所有 .ai-* 组件类只消费令牌，不写死色值；动效沿用全局 reduced-motion 守卫。
+ */
+
+[data-theme="dark"] {
+  /* 8px 宏观布局栅格（4px 子步进的整数倍） */
+  --ai-grid-unit: 8px;
+  --ai-grid-1: 8px;
+  --ai-grid-2: 16px;
+  --ai-grid-3: 24px;
+  --ai-grid-4: 32px;
+  --ai-grid-5: 40px;
+  --ai-grid-6: 48px;
+  --ai-grid-8: 64px;
+
+  /* 品牌渐变：靛蓝 → 青（对标 Linear/Raycast；不覆盖 --color-primary） */
+  --ai-indigo: #6366f1;
+  --ai-cyan: #22d3ee;
+  --ai-gradient-brand: linear-gradient(135deg, var(--ai-indigo) 0%, var(--ai-cyan) 100%);
+  --ai-gradient-surface: linear-gradient(160deg, rgba(99, 102, 241, 0.12) 0%, rgba(34, 211, 238, 0.04) 100%);
+  --ai-gradient-text: linear-gradient(120deg, #a5b4fc 0%, #67e8f9 100%);
+
+  /* 克制玻璃面板：低饱和、细边框、轻模糊 */
+  --ai-glass-bg: rgba(13, 21, 37, 0.55);
+  --ai-glass-border: rgba(148, 163, 184, 0.16);
+  --ai-glass-blur: blur(12px);
+  --ai-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* 阴影层级 */
+  --ai-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --ai-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.32);
+  --ai-shadow-3: 0 16px 48px rgba(0, 0, 0, 0.4);
+
+  /* 微交互：spring 缓动 + 短时长，覆盖于全局 reduced-motion 守卫之下 */
+  --ai-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-motion-fast: 140ms;
+  --ai-motion-normal: 220ms;
+
+  /* 骨架屏 */
+  --ai-skeleton-base: var(--bg-elevated);
+  --ai-skeleton-shine: rgba(148, 163, 184, 0.18);
+
+  /* 命令面板（Ctrl/Cmd+K；底层焦点由 globalSearchShortcut.ts 提供） */
+  --ai-cmd-width: 640px;
+  --ai-cmd-item-height: 44px;
+  --ai-cmd-backdrop: rgba(6, 9, 19, 0.6);
+  --ai-cmd-radius: 16px;
+}
+
+[data-theme="light"] {
+  --ai-grid-unit: 8px;
+  --ai-grid-1: 8px;
+  --ai-grid-2: 16px;
+  --ai-grid-3: 24px;
+  --ai-grid-4: 32px;
+  --ai-grid-5: 40px;
+  --ai-grid-6: 48px;
+  --ai-grid-8: 64px;
+
+  --ai-indigo: #4f46e5;
+  --ai-cyan: #0891b2;
+  --ai-gradient-brand: linear-gradient(135deg, var(--ai-indigo) 0%, var(--ai-cyan) 100%);
+  --ai-gradient-surface: linear-gradient(160deg, rgba(79, 70, 229, 0.06) 0%, rgba(8, 145, 178, 0.02) 100%);
+  --ai-gradient-text: linear-gradient(120deg, #4338ca 0%, #0e7490 100%);
+
+  --ai-glass-bg: rgba(255, 255, 255, 0.72);
+  --ai-glass-border: rgba(15, 23, 42, 0.1);
+  --ai-glass-blur: blur(12px);
+  --ai-glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  --ai-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --ai-shadow-2: 0 4px 16px rgba(15, 23, 42, 0.1);
+  --ai-shadow-3: 0 16px 48px rgba(15, 23, 42, 0.14);
+
+  --ai-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-motion-fast: 140ms;
+  --ai-motion-normal: 220ms;
+
+  --ai-skeleton-base: var(--bg-elevated);
+  --ai-skeleton-shine: rgba(15, 23, 42, 0.08);
+
+  --ai-cmd-width: 640px;
+  --ai-cmd-item-height: 44px;
+  --ai-cmd-backdrop: rgba(240, 244, 248, 0.7);
+  --ai-cmd-radius: 16px;
+}
+
+/* ===== 可复用 AI 组件类（只消费令牌，不写死色值） ===== */
+.ai-panel {
+  background: var(--ai-glass-bg);
+  backdrop-filter: var(--ai-glass-blur);
+  -webkit-backdrop-filter: var(--ai-glass-blur);
+  border: 1px solid var(--ai-glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ai-glass-shadow);
+}
+
+.ai-gradient-text {
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ai-brand-fill {
+  background: var(--ai-gradient-brand);
+}
+
+.ai-surface-gradient {
+  background: var(--ai-gradient-surface);
+}
+
+.ai-skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%);
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.6s var(--ai-ease-spring) infinite;
+}
+
+@keyframes ai-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

@@ -105,3 +105,28 @@ xs<576 / sm≥576 / md≥768 / lg≥992 / xl≥1200 / 2xl≥1536；CSS 变量 `-
 | 日期 | 变更 | 文件 |
 |---|---|---|
 | 2026-11-19 | 初版：审计双端现状，建立统一令牌层、UnoCSS 映射、组件规范文档 | `packages/ui/src/theme/tokens.css`（新增）、`packages/ui/src/unocss.config.ts`（扩展主题与快捷类）、`packages/ui/src/index.ts`（导入令牌）、本文档（新增） |
+| 2026-11-21 | R300 AI 风格令牌层：新增 ai-tokens.css（8px 栅格/靛蓝青渐变/克制玻璃/骨架屏/命令面板令牌 + .ai-* 类）与契约测试，接入 ui 入口；明确 8px 宏观栅格与 4px 基础步进叠加策略 | `packages/ui/src/theme/ai-tokens.css`（新增）、`packages/ui/src/index.ts`（导入）、`frontend/apps/desktop/src/utils/aiDesignTokens.contract.test.ts`（新增）、本文档（R300 章节） |
+
+## 8. R300 AI 风格令牌层（2026-11-21）
+
+对齐团队 R300 设计方向：深中性底 + 靛蓝/青渐变 + 8px 栅格 + 14px 基准 + 克制玻璃面板 + 命令面板 + 骨架屏微交互 + 暗亮双主题。实现在 `packages/ui/src/theme/ai-tokens.css`（`--ai-*` 前缀令牌 + `.ai-*` 组件类），由 `packages/ui/src/index.ts` 导入，随 `@oa4rust/ui/style.css` 产出。
+
+### 8.1 对标与取舍
+
+| 参考 | 借鉴 | 适配企业办公的取舍 |
+|---|---|---|
+| Linear | 深中性底、靛蓝紫渐变、细腻边框、紧凑排版 | 保留渐变但降低饱和，避免长时间办公视觉疲劳 |
+| Vercel | 极简中性灰阶、高对比几何 | 用中性底承接信息密度，强调色只用于关键动作 |
+| Raycast | 命令面板、玻璃背板、渐变光晕 | 提供 `--ai-cmd-*` 令牌，项高 44px 对齐触控下限 |
+| Notion | 温和留白、克制强调 | 玻璃面板做"轻模糊 + 细边框"，不做重拟物 |
+
+### 8.2 令牌层次冲突处理：8px vs 4px
+
+现有 `tokens.css` 用 4px 基础步进；R300 要求 8px 栅格。决策：**8px 作为宏观布局节奏**（区块/卡片间距），**4px 保留为微观微调**；8 = 4×2，两者叠加不冲突。`--ai-grid-unit` = 8px，`--ai-grid-1..8` = 8..64px（全为 8 的整数倍）。
+
+### 8.3 落地与消费
+
+- 后续页面重构任务用 `.ai-panel` 替代重玻璃、`.ai-gradient-text` 强调标题、`.ai-skeleton-line` 表达加载态。
+- 命令面板：底层 `globalSearchShortcut.ts` 已捕获 Ctrl/Cmd+K 聚焦顶栏搜索框；令牌层提供 `--ai-cmd-*`（宽度/项高/背板/圆角）供外壳任务落地真正 palette，不改现有快捷键行为。
+- 所有 `.ai-*` 类只消费令牌；动效走全局 reduced-motion 守卫；不改 dark.css 受测色值，既有 WCAG 契约保持全绿。
+- 本轮为令牌奠基层，不改页面视觉；逐页真浏览器实测由 R300 基线实测任务与重构后实测任务承担。

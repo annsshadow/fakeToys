@@ -24,10 +24,17 @@ function conversationId(row: Record<string, unknown>): string {
   }
   return ''
 }
+// R302 DR-06：源数据 name 为机器生成键，只在检索/追踪中使用；显示层降级为类型 + 脱敏尾号。
+function isRawConversationName(name: string): boolean {
+  return /^im-conv-[0-9]+-[a-z0-9]+$/i.test(name) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(name)
+}
 function conversationTitle(row: Record<string, unknown>): string {
   for (const k of ['name', 'title', 'subject']) {
     const v = row[k]
-    if (typeof v === 'string' && v) return v
+    if (typeof v === 'string' && v) {
+      if (isRawConversationName(v)) return `单聊 · ${v.slice(-4)}`
+      return v
+    }
   }
   return '会话'
 }
@@ -72,8 +79,8 @@ function openConversation(row: Record<string, unknown>) {
 </script>
 
 <template>
-  <view class="page">
-    <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
+  <view class="page ai-surface-gradient">
+    <view v-if="networkOffline" class="offline-banner ai-brand-fill">{{ NETWORK_OFFLINE_TEXT }}</view>
     <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
       <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>
     </view>
@@ -81,9 +88,11 @@ function openConversation(row: Record<string, unknown>) {
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="o2-empty">
+    <view v-else-if="rows.length === 0" class="o2-empty empty-guide">
       <view class="o2-empty-icon" aria-hidden="true"></view>
-      <text class="o2-empty-text">暂无会话</text>
+      <text class="o2-empty-text">暂无会话，还没有聊天记录</text>
+      <text class="empty-guide-hint">去发起一条聊天，或刷新后再看看</text>
+      <view class="empty-guide-link" @tap="load">刷新会话</view>
     </view>
     <view v-else class="list">
       <view v-if="loadError" class="tip-error error-banner">

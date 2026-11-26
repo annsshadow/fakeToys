@@ -112,22 +112,37 @@ function detailText(): string {
     return String(detail.value)
   }
 }
+function goSearch() {
+  uni.navigateTo({ url: '/pages/search/search' })
+}
+
 </script>
 
 <template>
-  <view class="page">
-    <view class="tabs">
-      <view v-for="t in tabs" :key="t.key" class="tab" :class="{ on: tab === t.key }" @tap="switchTab(t.key)">
+  <view class="page ai-surface-gradient">
+    <view class="tabs ai-brand-fill">
+      <view v-for="t in tabs" :key="t.key" class="tab ai-brand-fill" :class="{ on: tab === t.key }" @tap="switchTab(t.key)">
         {{ t.label }}
       </view>
     </view>
 
-    <view v-if="loading" class="tip">加载中…</view>
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
       <view class="retry-btn" @tap="load()">重试</view>
     </view>
-    <view v-else-if="rows.length === 0" class="tip">暂无数据</view>
+    <view v-else-if="rows.length === 0" class="empty-guide">
+      <view class="empty-guide-emoji" aria-hidden="true">🔎</view>
+      <text class="empty-guide-text">暂无数据</text>
+      <text class="empty-guide-hint">暂无浏览数据，换个页签或去搜索找找看</text>
+      <view class="empty-guide-actions">
+        <view class="empty-guide-link ai-pressable" @tap="load()">刷新</view>
+        <view class="empty-guide-link ai-pressable primary" @tap="goSearch">去搜索</view>
+      </view>
+    </view>
 
     <view v-else>
       <view v-if="loadError" class="tip-error error-banner">
@@ -140,7 +155,10 @@ function detailText(): string {
       </view>
     </view>
 
-    <view v-if="detailLoading" class="tip">详情加载中…</view>
+    <view v-if="detailLoading" class="ai-skeleton-list" aria-hidden="true">
+      <view class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="detail" class="detail">
       <view class="detail-head">
         <text class="detail-title">详情</text>
@@ -152,6 +170,54 @@ function detailText(): string {
 </template>
 
 <style scoped>
+/* t32 空态引导：明确文案 + 可点击入口，不伪造数据 */
+.empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 56rpx 32rpx;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.empty-guide-emoji {
+  font-size: 64rpx;
+  line-height: 1.2;
+}
+.empty-guide-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.empty-guide-hint {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+.empty-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+.empty-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 26rpx;
+}
+.empty-guide-link.primary {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .page {
   min-height: 100vh;
   background: var(--color-bg-page);

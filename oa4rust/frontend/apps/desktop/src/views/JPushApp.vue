@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="mod-view">
-    <div class="content-panel glass-card">
+  <div class="mod-view modern-page ai-page">
+    <div class="content-panel glass-card ai-page ai-panel">
       <div class="tabs">
         <button :class="{active:tab==='device'}" @click="tab='device'">设备管理</button>
         <button :class="{active:tab==='template'}" @click="tab='template'">推送模板</button>
@@ -43,7 +43,7 @@
           <ListLoadError v-if="devices.length > 0 && deviceError" mode="banner" :message="deviceError" @retry="loadDevices" />
           <div v-if="loadingD" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
           <ListLoadError v-else-if="devices.length===0 && deviceError" mode="empty" :message="deviceError" @retry="loadDevices" />
-          <div v-else-if="devices.length===0" class="empty"><div class="ei">📱</div><p>暂无设备</p></div>
+          <div v-else-if="devices.length===0" class="empty ai-empty"><div class="ei">📱</div><p>暂无设备</p><p class="ai-empty-hint">请通过「注册实体设备」或「绑设备」添加第一台设备</p></div>
           <div v-else class="item-grid">
             <div v-for="d in devices" :key="d.id" class="item-card glass-card">
               <div class="ic">{{ d.online ? '📱' : '⚫' }}</div>
@@ -295,11 +295,11 @@ loadTemplates() // rev478 注：jpush alias 轨 3 条（create/jpush·update/con
 </script>
 
 <style scoped>
-.mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.mod-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%;padding:var(--ai-grid-3);background:var(--ai-gradient-surface);border-radius:var(--ai-grid-2)}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
-.content-panel{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.content-panel{flex:1;overflow-y:auto;padding:var(--ai-grid-2);display:flex;flex-direction:column;gap:var(--ai-grid-2);background:var(--ai-glass-bg);border:1px solid var(--ai-glass-border);backdrop-filter:var(--ai-glass-blur);box-shadow:var(--ai-glass-shadow);border-radius:var(--ai-grid-2)}
 .tabs{display:flex;gap:8px}
 .tabs button{padding:8px 20px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all var(--transition-fast)}
 .tabs button.active{background:var(--color-primary);color:#000;border-color:var(--color-primary);font-weight:600}
@@ -324,7 +324,10 @@ loadTemplates() // rev478 注：jpush alias 轨 3 条（create/jpush·update/con
 .btn-del:hover{background:var(--color-error);color:#fff}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
-.sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.sk{height:40px;border-radius:var(--radius-md);background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media(max-width:768px){.stats-row{grid-template-columns:1fr}}
+.ai-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ai-grid-1);padding:var(--ai-grid-6);text-align:center;color:var(--text-secondary);background:var(--ai-glass-bg);border:1px dashed var(--ai-glass-border);border-radius:var(--ai-grid-2)}
+.btn-primary{background:var(--ai-gradient-brand);box-shadow:var(--ai-shadow-1);transition:transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.ai-empty-hint{font-size:12px;opacity:.75}
 </style>

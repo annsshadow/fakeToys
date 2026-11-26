@@ -17,6 +17,7 @@ type PageCase = {
   endpoints: string[]
   actions: string[]
   keep?: string[]
+  selfHeldTitle?: boolean
 }
 
 const pages: PageCase[] = [
@@ -113,6 +114,8 @@ const pages: PageCase[] = [
     file: 'DeploymentApp.vue',
     endpoints: ['/api/server/deploy/list', '/api/server/deploy/create'],
     actions: ['@click="openCreate"'],
+    // t38 a8cc1a56c：页面自持唯一 h1 + 注入 ADMIN_LAYOUT_HIDE_TITLE 隐藏 shell h1（合法第二模式）。
+    selfHeldTitle: true,
   },
   {
     file: 'ThreeMemberApp.vue',
@@ -136,9 +139,18 @@ const adminHeaderPages = [
 ]
 
 describe('R300 t3 流程/门户/运维/组织页标题去重', () => {
-  it.each(pages)('$file 不渲染重复标题，且保留操作与 API', ({ file, endpoints, actions, keep }) => {
+  it.each(pages)('$file 不渲染重复标题，且保留操作与 API', ({ file, endpoints, actions, keep, selfHeldTitle }) => {
     const src = read(file)
-    expect(src, file + ' 不得保留本地 h1 大标题').not.toMatch(/<h1[\s>]/)
+    if (selfHeldTitle) {
+      // 页面自持唯一 h1 合法模式：允许恰好 1 个本地 h1，但必须注入并开启隐藏 shell 标题开关。
+      expect((src.match(/<h1[\s>]/g) ?? []).length).toBe(1)
+      expect(src, file + ' 自持 h1 须 inject ADMIN_LAYOUT_HIDE_TITLE').toMatch(
+        /inject\(ADMIN_LAYOUT_HIDE_TITLE, undefined\)/,
+      )
+      expect(src, file + ' 自持 h1 须开启隐藏 shell 标题').toMatch(/\.value = true/)
+    } else {
+      expect(src, file + ' 不得保留本地 h1 大标题').not.toMatch(/<h1[\s>]/)
+    }
     expect(src, file + ' 不得保留 /api 副标题').not.toMatch(/<p class="subtitle">\s*\/api/)
     for (const endpoint of endpoints) {
       expect(src, file + ' 必须保留端点 ' + endpoint).toContain(endpoint)

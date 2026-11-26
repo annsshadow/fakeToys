@@ -76,7 +76,7 @@ onLoad(async () => {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="form-card">
       <view class="field">
         <text class="label">版块</text>
@@ -95,7 +95,7 @@ onLoad(async () => {
         <textarea v-model="content" class="textarea" placeholder="请输入内容" />
       </view>
     </view>
-    <view class="submit" :class="{ disabled: !canSubmit() }" @tap="submit">
+    <view class="submit ai-brand-fill" :class="{ disabled: !canSubmit() }" @tap="submit">
       {{ submitting ? '发布中…' : '发布主题' }}
     </view>
   </view>

@@ -190,7 +190,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="search">
       <input
         v-model="keyword"
@@ -200,7 +200,7 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         confirm-type="search"
         @confirm="doSearch"
       />
-      <button class="go" size="mini" type="primary" :disabled="loading" @tap="doSearch">
+      <button class="go ai-brand-fill" size="mini" type="primary" :disabled="loading" @tap="doSearch">
         搜索
       </button>
     </view>

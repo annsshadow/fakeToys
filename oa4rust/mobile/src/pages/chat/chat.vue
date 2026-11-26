@@ -228,15 +228,18 @@ async function send() {
 </script>
 
 <template>
-  <view class="chat">
-    <view class="head">
+  <view class="chat ai-surface-gradient">
+    <view class="head ai-brand-fill">
       {{ title }}
     </view>
 
     <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
 
     <scroll-view class="body" scroll-y :scroll-into-view="scrollIntoView" @scroll="onScroll">
-      <view v-if="loading" class="tip">加载中…</view>
+      <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+        <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+        <view class="ai-skeleton-line short"></view>
+      </view>
       <view v-else-if="msgs.length === 0 && historyError" class="tip tip-error">
         <view class="error-text">{{ historyError }}</view>
         <view class="retry-btn" @tap="loadHistory">重试</view>

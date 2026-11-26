@@ -1,19 +1,19 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>  <div class="mod-view">
+<template>
+  <div class="mod-view modern-page ai-panel">
     <AdminPageHeader title="流程任务中心" />
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="search" search-placeholder="搜索标题 / 流程 / 处理人..." />
 
   <div class="crud-view">
-    <div class="view-header glass-card">
-    </div>
-    <div class="content-panel glass-card">
+    <div class="view-header glass-card modern-hero ai-panel"><h2 class="ai-gradient-text" data-testid="process-task-center-page-title">流程任务中心</h2></div>
+    <div class="content-panel glass-card modern-section modern-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
-        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="ptc-endpoint-fold">
+        <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="ptc-endpoint-fold">
           <template #group-read>
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
         <button class="btn-refresh" @click="loadCounts">📊 计数</button>
@@ -53,7 +53,7 @@
       <div v-if="surfaceMoreText" class="wk-chips"><span class="wk-chip">{{ surfaceMoreText }}</span></div>
       <div v-if="snapText" class="wk-chips"><span class="wk-chip">{{ snapText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
-        <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
+        <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ workTitle(w) }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
@@ -62,8 +62,8 @@
         <thead><tr><th>标题</th><th>流程</th><th>环节</th><th>处理人</th><th>状态</th><th>开始时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
-            <td>{{ displayTitle(item) }}</td>
-            <td class="mono">{{ item.work||'—' }}</td>
+            <td data-testid="ptc-title-cell"><span class="task-title">{{ displayTitle(item) }}</span><span class="task-id" :title="item.title || item.work || item.id">{{ shortId(item.title || item.work || item.id) }}</span></td>
+            <td class="mono">{{ item.workName || '流程任务' }}</td>
             <td>{{ item.activity||'—' }}</td>
             <td>{{ item.person||'—' }}</td>
             <td class="mono">{{ item.taskStatus||'—' }}</td>
@@ -700,16 +700,35 @@ const filtered = computed(() =>
     : items.value,
 )
 
+// 原始流程 ID/实例键只用于检索与追踪，不占据列表主视觉。
+function isRawProcessKey(value: string): boolean {
+  return /^start:/i.test(value) || /^(?:s3-process-|work-|work-reject-|probe-w-|task-|process-|node-|job-|snap-|activity-|reply-|data-)/i.test(value) || /^[0-9a-f][0-9a-f-]{15,}$/i.test(value)
+}
+function shortId(value?: string): string {
+  const raw = String(value ?? '')
+  if (!raw) return ''
+  return raw.length > 24 ? `${raw.slice(0, 12)}…${raw.slice(-8)}` : raw
+}
 function displayTitle(item: Item): string {
-  const raw = String(item.title ?? item.work ?? item.id ?? '')
-  if (/^start:/.test(raw)) {
-    const rest = raw.slice(6)
-    const workPart = rest.match(/\bwork-[^\s]+/)?.[0]
+  const candidates = [item.title, item.work, item.id].map((v) => String(v ?? '').trim()).filter(Boolean)
+  const raw = candidates[0] ?? ''
+  if (/^start:/i.test(raw) || /^s3-process/i.test(raw)) {
+    const rest = raw.replace(/^start:[\s\S]*?(?=work-|task-|process-|node-|job-|snap-|activity-|reply-|data-|[0-9a-f]{16,})/i, '').replace(/^start:[\s:：]*/i, '').replace(/^s3-process[\s:：]*/i, '')
+    const workPart = rest.match(/\b(?:work|work-reject|task|process|node|job|snap)-[^\s]+/i)?.[0]
     const name = workPart ? rest.slice(0, rest.indexOf(workPart)).trim() : rest.trim()
-    return name || 'S3 运行闭环'
+    if (!isRawProcessKey(name)) return name || 'S3 运行闭环'
+    return 'S3 运行闭环'
   }
-  if (/^work-/.test(raw) || /^work-reject-/.test(raw)) return '工作实例'
+  if (isRawProcessKey(raw)) {
+    const readable = candidates.slice(1).find((v) => !isRawProcessKey(v))
+    return readable ?? (raw.startsWith('work-reject-') ? '退回工作' : raw.startsWith('work-') ? '工作实例' : /^start:/i.test(raw) ? '运行闭环' : '流程任务')
+  }
   return raw || '—'
+}
+function workTitle(row: { id?: string; title?: string }): string {
+  const candidates = [row.title, row.id].map((v) => String(v ?? '').trim()).filter(Boolean)
+  const readable = candidates.find((v) => !isRawProcessKey(v))
+  return readable ?? '工作实例'
 }
 
 const startM = useMutation({
@@ -746,9 +765,13 @@ function fmtTime(t?: string) {
 }
 </script>
 <style scoped>
-.crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.crud-view{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.ai-panel{background:var(--ai-glass-bg);border-color:var(--ai-glass-border);box-shadow:var(--ai-shadow-2)}
+.view-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border)}
+.btn-refresh{background: var(--ai-gradient-brand); transition: transform var(--ai-motion-fast) var(--ai-ease-spring)}
+.skel{background:linear-gradient(90deg,var(--ai-skeleton-base) 25%,var(--ai-skeleton-shine) 50%,var(--ai-skeleton-base) 75%);background-size:200% 100%;animation:ai-shimmer 1.6s var(--ai-ease-spring) infinite}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.view-header h2.ai-gradient-text{margin:0;background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px;font-weight:700}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .btn-refresh{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
 .content-panel{padding:16px}
@@ -759,6 +782,8 @@ function fmtTime(t?: string) {
 .data-table th{color:var(--text-muted);font-weight:600;font-size:12px;text-transform:uppercase}
 .data-table tr:hover{background:var(--bg-hover)}
 .mono{font-family:'Fira Code',monospace;font-size:12px;color:var(--color-secondary)}
+.task-title{display:block;font-weight:600;color:var(--text-primary)}
+.task-id{display:block;margin-top:2px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text-muted);max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
 .btn-sm:disabled{opacity:0.5;cursor:not-allowed}
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}

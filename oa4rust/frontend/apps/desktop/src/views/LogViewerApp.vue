@@ -2,8 +2,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
+  <div class="crud-view ai-page-b5" data-testid="log-viewer-page">
+    <div class="view-header glass-card ai-page-b5">
+      <p class="ai-gradient-text b5-title b5-subtitle">日志查看器</p>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
@@ -112,4 +113,32 @@ function loadData() {
 .empty-icon{font-size:32px;margin-bottom:8px}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* R300 B5: AI 令牌统一视觉，仅覆盖样式，不改变数据绑定与接口。 */
+.ai-page-b5.ai-page-b5, .ai-page-b5 .ai-page-b5 {
+  background: var(--ai-surface-gradient);
+  border: 1px solid var(--ai-glass-border);
+  box-shadow: var(--ai-shadow-2);
+  border-radius: var(--ai-radius-lg, 12px);
+}
+.ai-page-b5 .b5-title {
+  margin: 0 0 var(--ai-grid-2, 8px);
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 0.02em;
+}
+.ai-page-b5 .glass-card {
+  background: var(--ai-glass-bg);
+  border-color: var(--ai-glass-border);
+  backdrop-filter: var(--ai-glass-blur);
+  transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
+}
+.ai-page-b5 .glass-card:hover { box-shadow: var(--ai-shadow-2); }
+.ai-page-b5 .skel, .ai-page-b5 .skeleton {
+  background: var(--ai-skeleton-base);
+}
+
 </style>

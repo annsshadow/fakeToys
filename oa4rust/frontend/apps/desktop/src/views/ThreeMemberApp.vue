@@ -2,8 +2,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="crud-view">
-    <div class="view-header glass-card">
+  <div class="crud-view ai-page-b5" data-testid="three-member-page">
+    <div class="view-header glass-card ai-page-b5">
+      <p class="ai-gradient-text b5-title b5-subtitle" aria-label="三方成员管理">三方成员管理</p>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
@@ -14,7 +15,7 @@
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
-      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">👥</div><p>暂无三方成员</p></div>
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">👥</div><p>暂无三方成员，点击下方「新建」添加第一位成员。</p><button class="btn-primary" data-testid="three-empty-create" @click="openCreate">+ 新建成员</button></div>
       <table v-else class="data-table">
         <thead><tr><th>姓名</th><th>手机</th><th>邮箱</th><th>单位</th><th>状态</th><th>操作</th></tr></thead>
         <tbody>
@@ -22,8 +23,8 @@
             <td>{{ item.name||'—' }}</td>
             <td class="mono">{{ item.mobile||'—' }}</td>
             <td>{{ item.email||'—' }}</td>
-            <td class="mono">{{ item.unitId||'—' }}</td>
-            <td>{{ item.statusDes||item.status||'—' }}</td>
+            <td data-testid="three-unit-cell">{{ unitLabel(item) }}</td>
+            <td><span class="status-badge" :class="statusClass(item)" data-testid="three-status-badge">{{ statusLabel(item) }}</span></td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
               <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
@@ -38,8 +39,8 @@
         <div class="form-group"><label>姓名</label><input v-model="form.name" placeholder="姓名" class="form-input" /></div>
         <div class="form-group"><label>手机</label><input v-model="form.mobile" placeholder="手机号" class="form-input mono" /></div>
         <div class="form-group"><label>邮箱</label><input v-model="form.email" placeholder="邮箱" class="form-input mono" /></div>
-        <div class="form-group"><label>单位 ID</label><input v-model="form.unitId" placeholder="unitId" class="form-input mono" /></div>
-        <div class="form-group"><label>状态</label><input v-model="form.status" placeholder="active / disabled" class="form-input mono" /></div>
+        <div class="form-group"><label>所属单位</label><input v-model="form.unitId" data-testid="three-unit-input" placeholder="单位名称或编号" class="form-input" /></div>
+        <div class="form-group"><label>状态</label><select v-model="form.status" data-testid="three-status-select" class="form-input"><option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option></select></div>
         <div class="modal-actions">
           <button class="btn-cancel" @click="closeModal">取消</button>
           <button class="btn-save" :disabled="!form.name?.trim()||saving" @click="saveItem">{{ saving?'保存中…':'保存' }}</button>
@@ -75,6 +76,31 @@ interface MemberForm {
   email?: string
   unitId?: string
   status?: string
+}
+
+const statusOptions = [
+  { value: 'active', label: '已启用' },
+  { value: 'disabled', label: '已停用' },
+  { value: 'pending', label: '待审核' },
+]
+const statusLabels: Record<string, string> = {
+  active: '已启用', disabled: '已停用', pending: '待审核',
+  normal: '正常', enabled: '已启用', valid: '有效',
+  inactive: '已停用', cancel: '已停用', invalid: '已失效',
+}
+function statusLabel(item: Item): string {
+  const raw = (item.statusDes || item.status || '').trim()
+  if (!raw) return '—'
+  return statusLabels[raw] || statusLabels[raw.toLowerCase()] || raw
+}
+function statusClass(item: Item): string {
+  const raw = (item.status || '').toLowerCase()
+  if (raw === 'active' || raw === 'normal' || raw === 'enabled') return 'status-active'
+  if (raw === 'disabled' || raw === 'inactive' || raw === 'cancel') return 'status-disabled'
+  return 'status-pending'
+}
+function unitLabel(item: Item): string {
+  return (item as any).unitName || (item as any).departmentName || item.unitId || '—'
 }
 
 const listEp = '/api/organization/assemble/control/threemember/list'
@@ -204,6 +230,10 @@ function loadData() {
 .btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
+.status-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg-elevated);color:var(--text-secondary)}
+.status-active{background:var(--color-primary-soft);color:var(--color-primary)}
+.status-disabled{background:var(--bg-elevated);color:var(--text-muted)}
+.status-pending{background:var(--color-primary-soft);color:var(--color-primary)}
 .modal-overlay{position:fixed;inset:0;background:var(--bg-overlay);display:flex;align-items:center;justify-content:center;z-index:100}
 .modal{padding:24px;width:460px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
@@ -216,4 +246,32 @@ function loadData() {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* R300 B5: AI 令牌统一视觉，仅覆盖样式，不改变数据绑定与接口。 */
+.ai-page-b5.ai-page-b5, .ai-page-b5 .ai-page-b5 {
+  background: var(--ai-surface-gradient);
+  border: 1px solid var(--ai-glass-border);
+  box-shadow: var(--ai-shadow-2);
+  border-radius: var(--ai-radius-lg, 12px);
+}
+.ai-page-b5 .b5-title {
+  margin: 0 0 var(--ai-grid-2, 8px);
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 0.02em;
+}
+.ai-page-b5 .glass-card {
+  background: var(--ai-glass-bg);
+  border-color: var(--ai-glass-border);
+  backdrop-filter: var(--ai-glass-blur);
+  transition: box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
+}
+.ai-page-b5 .glass-card:hover { box-shadow: var(--ai-shadow-2); }
+.ai-page-b5 .skel, .ai-page-b5 .skeleton {
+  background: var(--ai-skeleton-base);
+}
+
 </style>

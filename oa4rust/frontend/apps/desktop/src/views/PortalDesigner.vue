@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="designer-shell">
-    <header class="designer-header glass-card">
+  <div class="designer-shell modern-page ai-page">
+    <header class="designer-header glass-card ai-page ai-panel">
       <div class="header-actions">
         <button class="btn" @click="showCreate = true">新建设计</button>
         <button class="btn" :disabled="!activeId" @click="loadDesignerAssets">资产明细</button>
@@ -34,7 +34,7 @@
         >
           <strong>{{ item.name }}</strong><span>{{ item.description || '无描述' }}</span>
         </button>
-        <p v-if="loading" class="muted">加载中…</p>
+        <div v-if="loading" class="sk-wrap"><div class="sk" v-for="i in 3" :key="i"></div></div>
         <p v-else-if="!designs.length" class="muted">暂无设计</p>
       </aside>
       <section class="workspace glass-card">
@@ -412,4 +412,13 @@ loadDesigns()
 
 <style scoped>
 .designer-shell{display:flex;flex-direction:column;gap:14px;height:100%;min-height:0}.designer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px}.designer-header h1,.panel h2,.palette h2,.inspector h2,.canvas h2,.modal h2{margin:0;color:var(--color-primary);font-size:16px}.designer-header p{margin:4px 0 0;color:var(--text-muted);font-size:12px}.header-actions,.modal-actions{display:flex;gap:8px}.designer-main{display:grid;grid-template-columns:220px 1fr;gap:14px;flex:1;min-height:0}.panel,.workspace{padding:14px;overflow:auto}.design-item{display:flex;flex-direction:column;gap:3px;width:100%;padding:10px;margin-top:8px;text-align:left;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}.design-item.active{border-color:var(--color-primary)}.design-item span,.palette-item span,.muted{font-size:11px;color:var(--text-muted)}.workspace-grid{display:grid;grid-template-columns:150px minmax(300px,1fr) 220px;gap:14px;height:100%}.palette,.inspector{padding:12px;border:1px solid var(--border-color);border-radius:10px}.palette-item{display:flex;flex-direction:column;gap:3px;padding:10px;margin-top:8px;border:1px solid var(--border-color);border-radius:8px;cursor:grab;background:var(--bg-elevated)}.canvas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:10px;padding:12px;border:1px dashed var(--color-primary);border-radius:10px;min-height:360px}.canvas-head,.drop-hint{grid-column:1/-1}.canvas-head{display:flex;justify-content:space-between}.canvas-head span{font-size:11px;color:var(--text-muted)}.drop-hint{text-align:center;padding:80px 10px;color:var(--text-muted)}.widget{min-width:0;padding:12px;border:1px solid var(--border-color);border-radius:9px;background:var(--bg-elevated);cursor:move}.widget.selected{border-color:var(--color-primary)}.widget.span-1{grid-column:span 1}.widget.span-2{grid-column:span 2}.widget.span-3{grid-column:span 3}.widget.span-4{grid-column:span 4}.widget-head{display:flex;justify-content:space-between;gap:8px}.widget-head span{font-size:10px;color:var(--color-secondary)}.widget p{overflow:hidden;margin:12px 0 0;color:var(--text-muted);font-size:12px;text-overflow:ellipsis}.inspector label,.modal label{display:flex;flex-direction:column;gap:5px;margin-top:12px;color:var(--text-muted);font-size:12px}.inspector input,.inspector select,.inspector textarea,.modal input,.modal textarea{box-sizing:border-box;width:100%;padding:8px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-elevated);color:var(--text-primary)}.btn{padding:8px 13px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}.btn.primary{border-color:var(--color-primary);background:var(--color-primary);color:#fff}.btn.danger{width:100%;margin-top:16px;border-color:var(--color-danger);color:var(--color-danger)}.btn:disabled{opacity:.5}.empty{display:grid;height:100%;place-items:center;color:var(--text-muted)}.modal-mask{position:fixed;inset:0;display:grid;place-items:center;background:#0009;z-index:100}.modal{width:420px;max-width:90vw;padding:22px}.modal-actions{justify-content:flex-end;margin-top:18px}@media(max-width:1000px){.workspace-grid{grid-template-columns:130px 1fr}.inspector{grid-column:1/-1}.designer-main{grid-template-columns:180px 1fr}}
+
+/* R306-B AI 令牌深度消费：玻璃 / 渐变 / 8px 栅格 / 骨架 / 微交互 */
+.designer-shell{display:flex;flex-direction:column;gap:var(--ai-grid-2);height:100%}
+.designer-header{background:var(--ai-gradient-surface);border:1px solid var(--ai-glass-border);border-radius:var(--radius-lg)}
+.panel{background:var(--ai-glass-bg);backdrop-filter:var(--ai-glass-blur);-webkit-backdrop-filter:var(--ai-glass-blur);border:1px solid var(--ai-glass-border)}
+.btn.primary{background:var(--ai-gradient-brand);color:#fff;border:none}
+.sk{background:var(--ai-skeleton-base);background-image:linear-gradient(90deg,transparent,var(--ai-skeleton-shine),transparent);background-size:200% 100%;animation:ai-shimmer var(--ai-motion-normal) linear infinite}
+@keyframes ai-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-spring{transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 </style>

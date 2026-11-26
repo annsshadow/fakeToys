@@ -1,19 +1,20 @@
 <!-- Copyright (C) 2026 annsshadow -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<template>  <div class="mod-view">
+<template>  <div class="mod-view modern-page ai-page-b5 ai-panel">
     <AdminPageHeader title="流程实例管理" />
     <AdminFormSection title="业务列表" description="原有操作入口与能力完整保留">
       <AdminToolbar v-model="search" search-placeholder="搜索流程 / 分类 / 创建人..." />
 
   <div class="crud-view">
-    <div class="view-header glass-card">
+    <div class="view-header glass-card modern-hero ai-panel">
+      <h2 class="ai-gradient-text" data-testid="process-manager-page-title">流程实例管理</h2>
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
-        <EndpointFold label="端点调试" :groups="foldGroups" :total-count="endpointCount" test-id="pm-endpoint-fold">
+        <EndpointFold label="高级操作" :groups="foldGroups" :total-count="endpointCount" test-id="pm-endpoint-fold">
           <template #group-read>
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
@@ -1201,7 +1202,7 @@ async function loadDesignerFile() {
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
 .view-header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 24px}
-.view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
+.view-header h2.ai-gradient-text{margin:0;background:var(--ai-gradient-text);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px;font-weight:700}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
 .btn-refresh{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
 .content-panel{padding:16px}

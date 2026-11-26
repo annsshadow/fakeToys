@@ -7,7 +7,8 @@
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
-    <div class="settings-layout">
+    <span class="sr-only" role="status" aria-live="polite" data-a11y-hidden="true" data-testid="settings-section-status">当前设置分组：{{ activeSectionLabel }}</span>
+    <div class="settings-layout ai-grid-2">
       <aside class="s-sidebar glass-card" data-testid="settings-sidebar">
         <h2 class="section-title">设置分组</h2>
         <ul class="s-nav" role="tablist" aria-label="设置分组">
@@ -74,7 +75,7 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
 
 const activeSection = ref('basic')
@@ -88,6 +89,7 @@ const sections = [
   { id: 'notify', label: '通知配置', icon: '🔔' },
   { id: 'about', label: '关于', icon: 'ℹ' },
 ]
+const activeSectionLabel = computed(() => sections.find((item) => item.id === activeSection.value)?.label ?? '')
 
 const cfg = ref({
   systemName: 'OA4Rust',
@@ -165,7 +167,8 @@ function saveToggles() {
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
-.settings-layout{display:flex;flex:1;gap:16px;min-height:0}
+.settings-layout.ai-grid-2{display:flex;flex:1;gap:var(--ai-grid-2);min-height:0;padding:var(--ai-grid-1) 0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .s-sidebar{width:200px;flex-shrink:0;padding:12px}
 .s-nav{list-style:none;padding:0;margin:0}
 .s-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);cursor:pointer;color:var(--text-secondary);transition:all var(--transition-fast);margin-bottom:4px}
@@ -187,7 +190,7 @@ function saveToggles() {
 .slider:before{content:'';position:absolute;height:18px;width:18px;left:2px;bottom:2px;background:white;border-radius:50%;transition:all var(--transition-fast)}
 input:checked+.slider{background:var(--color-primary);border-color:var(--color-primary)}
 input:checked+.slider:before{transform:translateX(20px)}
-.save-btn{padding:10px 24px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--color-primary),var(--color-primary-deep));color:white;font-weight:600;cursor:pointer;font-size:14px;transition:all var(--transition-fast)}
+.save-btn{padding:10px 24px;border-radius:var(--radius-md);border:none;background:var(--ai-gradient-brand);color:white;font-weight:600;cursor:pointer;font-size:14px;transition:all var(--ai-motion-fast) var(--ai-ease-spring)}
 .save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px var(--color-primary-glow)}
 .save-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 .about-info{display:flex;align-items:center;gap:20px;padding:20px}

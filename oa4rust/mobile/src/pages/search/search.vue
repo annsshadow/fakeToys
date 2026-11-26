@@ -71,7 +71,7 @@ function openRow(r: Row) {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="searchbar">
       <input
         v-model="keyword"
@@ -80,10 +80,13 @@ function openRow(r: Row) {
         confirm-type="search"
         @confirm="doSearch"
       />
-      <button class="btn" :disabled="loading" @tap="doSearch">搜索</button>
+      <button class="btn ai-brand-fill" :disabled="loading" @tap="doSearch">搜索</button>
     </view>
 
-    <view v-if="loading" class="tip">搜索中…</view>
+    <view v-if="loading" class="ai-skeleton-list" aria-hidden="true">
+      <view v-for="i in 3" :key="i" class="ai-skeleton-line"></view>
+      <view class="ai-skeleton-line short"></view>
+    </view>
     <view v-else-if="rows.length === 0 && searchError" class="tip tip-error">
       <view class="error-text">{{ searchError }}</view>
       <view class="retry-btn" @tap="doSearch">重试</view>

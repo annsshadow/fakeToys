@@ -3,7 +3,7 @@
 
 <!-- R301 端点折叠容器：把密集的 API 调试按钮默认收纳，按需展开；支持读/写/配置分组。 -->
 <template>
-  <section class="endpoint-fold" :data-testid="testId">
+  <section v-if="devToolsEnabled" class="endpoint-fold" :data-testid="testId">
     <button
       type="button"
       class="endpoint-fold-trigger"
@@ -14,7 +14,7 @@
       <span class="endpoint-fold-icon" aria-hidden="true">⚙</span>
       <span class="endpoint-fold-label">{{ label }}</span>
       <span class="endpoint-fold-badge">{{ totalCount }}</span>
-      <span class="endpoint-fold-hint">{{ open ? '点击收起' : '展开查看全部端点' }}</span>
+      <span class="endpoint-fold-hint">{{ open ? '点击收起' : '展开查看全部操作' }}</span>
       <span class="endpoint-fold-chevron" aria-hidden="true">{{ open ? '▾' : '▸' }}</span>
     </button>
     <div v-show="open" class="endpoint-fold-panel" :data-testid="testId + '-panel'">
@@ -44,13 +44,15 @@ interface EndpointFoldGroup {
 const props = withDefaults(
   defineProps<{
     label?: string
+    devToolsEnabled?: boolean
     groups?: EndpointFoldGroup[]
     totalCount?: number
     testId?: string
     defaultOpen?: boolean
   }>(),
   {
-    label: '端点调试',
+    label: '高级操作',
+    devToolsEnabled: import.meta.env.DEV,
     groups: () => [],
     totalCount: 0,
     testId: 'endpoint-fold',
@@ -58,6 +60,7 @@ const props = withDefaults(
   },
 )
 
+// 仅开发模式显示调试面板；生产/测试构建不渲染触发器与插槽内容。
 // 默认折叠；仅在显式 defaultOpen 时展开，确保页面首屏清爽。
 const open = ref(props.defaultOpen)
 </script>

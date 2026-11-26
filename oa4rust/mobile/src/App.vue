@@ -37,6 +37,38 @@ page {
   --color-success-text: #1e7e34;
   --color-placeholder: #c0c4cc;
 
+  /* ── R300 AI 视觉令牌（与桌面 packages/ui/src/theme/ai-tokens.css light 同值）──
+   * 色彩权威仍是上方 --color-*；AI 渐变/玻璃/shimmer 独立命名空间，只做增强。 */
+  --ai-grid-unit: 8px;
+  --ai-grid-1: 8px;
+  --ai-grid-2: 16px;
+  --ai-grid-3: 24px;
+  --ai-grid-4: 32px;
+  --ai-grid-5: 40px;
+  --ai-grid-6: 48px;
+  --ai-grid-8: 64px;
+  --ai-indigo: #4f46e5;
+  --ai-cyan: #0891b2;
+  --ai-gradient-brand: linear-gradient(135deg, var(--ai-indigo) 0%, var(--ai-cyan) 100%);
+  --ai-gradient-surface: linear-gradient(160deg, rgba(79, 70, 229, 0.06) 0%, rgba(8, 145, 178, 0.02) 100%);
+  --ai-gradient-text: linear-gradient(120deg, #4338ca 0%, #0e7490 100%);
+  --ai-glass-bg: rgba(255, 255, 255, 0.72);
+  --ai-glass-border: rgba(15, 23, 42, 0.1);
+  --ai-glass-blur: blur(12px);
+  --ai-glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --ai-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --ai-shadow-2: 0 4px 16px rgba(15, 23, 42, 0.1);
+  --ai-shadow-3: 0 16px 48px rgba(15, 23, 42, 0.14);
+  --ai-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-motion-fast: 140ms;
+  --ai-motion-normal: 220ms;
+  --ai-skeleton-base: var(--color-divider);
+  --ai-skeleton-shine: rgba(15, 23, 42, 0.08);
+  --ai-cmd-width: 640px;
+  --ai-cmd-item-height: 44px;
+  --ai-cmd-backdrop: rgba(240, 244, 248, 0.7);
+  --ai-cmd-radius: 16px;
+
   /* ── 增补令牌：与桌面端 tokens.css 一一对应 ─────────────────────────── */
   /* 断点（文档与媒体查询共用） */
   --breakpoint-xs: 0px;
@@ -258,5 +290,67 @@ textarea {
 }
 .o2-empty-text {
   color: var(--color-text-muted);
+}
+
+/* ── R300 AI 组件类（只消费令牌，不改既有 o2-* 合同）────────────────── */
+.ai-brand-fill {
+  background: var(--ai-gradient-brand);
+}
+/* H5 实测：scoped 规则 .x[data-v] 特异性 (0,2,0)；容器前缀+重复类 (0,2,1) 才能稳定压过。 */
+uni-page-body .ai-brand-fill.ai-brand-fill,
+body .ai-brand-fill.ai-brand-fill {
+  background: var(--ai-gradient-brand);
+}
+.ai-panel {
+  background: var(--ai-glass-bg);
+  border: 1px solid var(--ai-glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ai-glass-shadow);
+  backdrop-filter: var(--ai-glass-blur);
+  -webkit-backdrop-filter: var(--ai-glass-blur);
+}
+.ai-gradient-text {
+  background: var(--ai-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ai-surface-gradient {
+  background: var(--ai-gradient-surface);
+}
+.ai-skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%);
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.6s var(--ai-ease-spring) infinite;
+}
+@keyframes ai-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+/* R301 结构化骨架屏：列表占位替代裸「加载中」灰字，仅占位不伪造业务数据。 */
+.ai-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+.ai-skeleton-line.short {
+  width: 58%;
+}
+/* R301 按压微交互：触控即刻反馈，减弱动效偏好下自动关闭。 */
+.ai-pressable {
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), opacity var(--ai-motion-fast) var(--ai-ease-spring);
+}
+.ai-pressable:active {
+  transform: scale(0.97);
+  opacity: 0.82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-pressable, .ai-pressable:active {
+    transition: none;
+    transform: none;
+  }
 }
 </style>

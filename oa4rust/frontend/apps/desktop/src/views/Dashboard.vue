@@ -2,11 +2,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <template>
-  <div class="dashboard" data-testid="dashboard-business-view">
-    <header class="welcome-bar glass-card" data-testid="dashboard-welcome">
+  <div class="dashboard ai-page ai-page-dashboard" data-testid="dashboard-business-view">
+    <header class="welcome-bar glass-card ai-panel" data-testid="dashboard-welcome">
       <div class="welcome-text">
-        <span class="greeting">早安，</span>
-        <span class="user-name">{{ user?.name ?? '用户' }}</span>
+        <h1 class="welcome-heading ai-gradient-text" data-testid="dashboard-h1"><span class="greeting">早安，</span><span class="user-name">{{ user?.name ?? '用户' }}</span></h1>
         <span class="welcome-msg">欢迎回来，今天的工作从这里开始</span>
       </div>
       <div class="datetime">
@@ -22,11 +21,33 @@
     <div class="stats-grid" data-testid="dashboard-overview">
       <div v-for="s in stats" :key="s.label" class="stat-card glass-card" :style="{ '--glow': s.color }">
         <div class="stat-icon">{{ s.icon }}</div>
-        <div class="stat-value">{{ s.value ?? '—' }}</div>
+        <div class="stat-value" :class="{ 'stat-placeholder': s.value === null }">{{ s.value ?? null }}</div>
         <div class="stat-label">{{ s.label }}</div>
         <div class="stat-trend" :class="s.trendDir">{{ s.trendText }}</div>
+        <div class="stat-distribution" :style="{ '--bar-color': s.color }" :aria-label="s.label + ' 占比'">
+          <span class="stat-bar" :style="{ width: (statDistribution[s.label] ?? 0) + '%' }"></span>
+        </div>
       </div>
     </div>
+
+    <section class="quick-access-section glass-card" data-testid="dashboard-quick-section">
+      <div class="panel-header">
+        <h2>快捷入口</h2>
+        <span class="quick-hint">常用功能一键直达</span>
+      </div>
+      <div class="quick-access" data-testid="dashboard-quick-grid">
+        <router-link
+          v-for="app in quickApps"
+          :key="app.id"
+          :to="app.path"
+          class="quick-card"
+          :data-testid="'dashboard-quick-' + app.id"
+        >
+          <span class="quick-icon">{{ app.icon }}</span>
+          <span class="quick-label">{{ app.label }}</span>
+        </router-link>
+      </div>
+    </section>
 
     <section class="todo-section glass-card" data-testid="dashboard-todo-section">
       <div class="panel-header">
@@ -41,14 +62,15 @@
         <button type="button" class="retry-btn" data-testid="dashboard-todo-retry" @click="loadPending">重新加载待办</button>
       </div>
       <div v-else-if="pendingItems.length === 0" class="empty-state">
-        <p>🎉 暂无待办事项</p>
+        <p>暂无待办，去流程中心发起</p>
+        <router-link to="/app/process" class="empty-cta" data-testid="dashboard-todo-empty-cta">去发起流程</router-link>
       </div>
       <ul v-else class="item-list" data-testid="dashboard-todo-list">
         <li v-for="item in pendingItems" :key="item.id" class="pending-item">
           <div class="pending-icon">📋</div>
           <div class="pending-info">
-            <div class="pending-title">{{ item.title || item.processName || '新审批' }}</div>
-            <div class="pending-meta">{{ item.appName || '未知应用' }} · {{ fmtTime(item.createTime) }}</div>
+            <div class="pending-title">{{ displayTodoTitle(item.title, item.processName) }}</div>
+            <div class="pending-meta"><span v-if="foldRawKeySubtext(item.title)" class="raw-key-subtext">{{ foldRawKeySubtext(item.title) }}</span>{{ item.appName || '' }}{{ item.appName && item.createTime ? ' · ' : '' }}{{ fmtTime(item.createTime) }}</div>
           </div>
           <button type="button" class="handle-btn" data-testid="dashboard-todo-handle" @click="navigateTo('/app/process')">去处理</button>
         </li>
@@ -62,13 +84,16 @@
       </div>
       <p class="section-subtitle">{{ currentDate }} · 今日时间安排</p>
       <div class="schedule-grid" data-testid="dashboard-schedule-grid">
-        <div
-          v-for="slot in ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']"
-          :key="slot"
-          class="schedule-slot"
-        >
-          <span class="slot-time">{{ slot }}</span>
-          <span class="slot-desc">{{ slot === '10:00' ? '部门例会' : slot === '14:00' ? '项目评审' : '空闲' }}</span>
+        <div v-if="scheduleLoading" class="empty-state">日程加载中…</div>
+        <div v-else-if="scheduleItems.length === 0" class="empty-state">
+          <p>暂无日程安排</p>
+          <router-link to="/app/calendar" class="empty-cta">去日历添加</router-link>
+        </div>
+        <div v-else class="schedule-slots">
+          <div v-for="item in scheduleItems" :key="item.id" class="schedule-slot">
+            <span class="slot-time">{{ item.time }}</span>
+            <span class="slot-desc">{{ item.title }}</span>
+          </div>
         </div>
       </div>
     </section>
@@ -81,14 +106,15 @@
           <router-link to="/app/bbs" class="panel-more" data-testid="dashboard-notice-more">查看全部</router-link>
         </div>
       </div>
-      <ul class="recent-list" data-testid="dashboard-notice-list">
+      <div v-if="recentLoading" class="loading-state"><div class="skeleton-row"></div></div>
+      <ul v-else class="recent-list" data-testid="dashboard-notice-list">
         <li v-for="(item, i) in recentItems" :key="i" class="recent-item">
           <span class="recent-icon">{{ item.icon }}</span>
           <span class="recent-text">{{ item.text }}</span>
           <span class="recent-time">{{ item.time }}</span>
         </li>
       </ul>
-      <div v-if="recentItems.length === 0" class="empty-state"><p>暂无通知公告</p></div>
+      <div v-if="!recentLoading && recentItems.length === 0" class="empty-state"><p>暂无通知公告</p></div>
     </section>
   </div>
 </template>
@@ -99,6 +125,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { formatServerDateTime } from '../utils/date'
+import { displayTodoTitle, foldRawKeySubtext } from '../utils/processTitle'
 import { describeListError } from './listQuery'
 
 const router = useRouter()
@@ -136,6 +163,64 @@ const quickApps = [
   { id: 'bbs', label: '论坛', icon: '💭', path: '/app/bbs' },
   { id: 'ai', label: 'AI助手', icon: '🤖', path: '/app/admin' },
 ]
+
+// 今日日程：先取本人可见日历，再按日历拉事件；无日历/无事件均走真实空态，不展示硬编码安排。
+interface DashboardScheduleItem { id: string; time: string; title: string }
+const scheduleItems = ref<DashboardScheduleItem[]>([])
+const scheduleLoading = ref(false)
+const scheduleLoaded = ref(false)
+
+function eventTime(raw: unknown): string {
+  const matched = String(raw ?? '').match(/(\d{2}:\d{2})/)
+  return matched ? matched[1] : '--:--'
+}
+
+function eventMatchesToday(raw: unknown, todayKey: string): boolean {
+  const text = String(raw ?? '')
+  return text.startsWith(todayKey) || text.includes('T') && text.slice(0, 10) === todayKey
+}
+
+async function loadTodaySchedule(): Promise<void> {
+  scheduleLoading.value = true
+  try {
+    const calendarsResp = await api.get('/api/calendar/calendar/list/my') as any
+    const calendars: any[] = [
+      ...(calendarsResp?.data?.my_calendars ?? []),
+      ...(calendarsResp?.data?.unit_calendars ?? []),
+      ...(calendarsResp?.data?.follow_calendars ?? []),
+    ]
+    if (calendars.length === 0) {
+      scheduleItems.value = []
+      scheduleLoaded.value = true
+      return
+    }
+    const lists = await Promise.all(
+      calendars.slice(0, 3).map((cal) =>
+        api.get('/api/calendar/event/list/' + encodeURIComponent(String(cal.id))).catch(() => ({ data: [] })),
+      ),
+    )
+    const now = new Date()
+    const todayKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+    const events = lists.flatMap((resp: any) => (Array.isArray(resp?.data) ? resp.data : []))
+    scheduleItems.value = events
+      .filter((e: any) => {
+        const raw = e.startTime ?? e.start ?? e.beginTime ?? e.time ?? ''
+        return eventMatchesToday(raw, todayKey)
+      })
+      .map((e: any, i: number) => ({
+        id: String(e.id ?? i),
+        time: eventTime(e.startTime ?? e.start ?? e.beginTime ?? e.time),
+        title: String(e.title ?? e.name ?? e.summary ?? '日程'),
+      }))
+      .sort((a: DashboardScheduleItem, b: DashboardScheduleItem) => a.time.localeCompare(b.time))
+    scheduleLoaded.value = true
+  } catch {
+    scheduleItems.value = []
+    scheduleLoaded.value = true
+  } finally {
+    scheduleLoading.value = false
+  }
+}
 
 // 实时统计数据
 // 失败时 data 仍是 undefined，`?? 0` 会把「取数失败」渲染成真实的 0；因此单独暴露
@@ -181,7 +266,7 @@ const stats = computed(() => [
   {
     icon: '📋',
     label: '待审批',
-    value: statCount(0, procFailed.value, procCounts.value),
+    value: approvalCount.value,
     color: 'var(--color-warning)',
     trendText: '↑ 较昨日',
     trendDir: 'up',
@@ -202,8 +287,27 @@ const stats = computed(() => [
     trendText: '本月累计',
     trendDir: 'neutral',
   },
-  { icon: '📅', label: '今日会议', value: 0, color: 'var(--color-accent)', trendText: '暂无安排', trendDir: 'neutral' },
+  {
+    icon: '📅',
+    label: '今日日程',
+    value: scheduleLoaded.value ? scheduleItems.value.length : null,
+    color: 'var(--color-accent)',
+    trendText: scheduleItems.value.length ? '今日安排' : '暂无安排',
+    trendDir: 'neutral',
+  },
 ])
+
+// 统计卡分布条：按同源计数占比计算，全部为 0 时不画条，避免制造虚假的「满格」错觉。
+const statDistribution = computed<Record<string, number>>(() => {
+  const values = stats.value.map((s) => (typeof s.value === 'number' && s.value > 0 ? s.value : 0))
+  // 分布条按「相对最大值」归一，表达同屏卡片间的量级对比；
+  // 不使用各卡占比之和为 100% 的口径，避免单项非零就被误读为独占全部。
+  const max = Math.max(...values)
+  if (max === 0) return {}
+  return Object.fromEntries(
+    stats.value.map((s, i) => [s.label, Math.round((values[i] / max) * 100)]),
+  )
+})
 
 // 待办列表
 const pendingLoading = ref(false)
@@ -211,6 +315,13 @@ const pendingError = ref('')
 const pendingItems = ref<
   Array<{ id: string; title?: string; processName?: string; appName?: string; createTime?: string }>
 >([])
+const pendingLoaded = ref(false)
+
+// DR-02: 「待审批」统计卡与「我的待办」列表同源，避免同屏出现「统计 0 / 列表 5 条」矛盾。
+// 首次加载完成前与取数失败时返回 null（模板渲染占位），成功后返回真实分页待办条数。
+const approvalCount = computed<number | null>(() =>
+  !pendingLoaded.value || pendingError.value ? null : pendingItems.value.length,
+)
 
 async function loadPending(): Promise<void> {
   pendingLoading.value = true
@@ -220,6 +331,7 @@ async function loadPending(): Promise<void> {
     // 旧的 work/list/filter/manage 路由为 3 占位符坏桩（handler 仅 2 参），必 500，弃用。
     const resp = await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
+    pendingLoaded.value = true
   } catch (e) {
     // 失败保留旧待办并显式报错，不能和「真的没有待办」混成同一种空态。
     pendingError.value = describeListError('待办加载失败', e)
@@ -228,17 +340,24 @@ async function loadPending(): Promise<void> {
   }
 }
 
-// 最近动态
+// 通知公告：取本人即时消息流，真正没有消息才显示空态。
 const recentItems = ref<Array<{ icon: string; text: string; time: string }>>([])
+const recentLoading = ref(false)
 async function loadRecent(): Promise<void> {
-  await loadPending()
-  // Simulate dynamic events (in production would come from /api/message/unread/count or similar)
-  recentItems.value = [
-    { icon: '📋', text: '您的报销申请已通过审批', time: '10 分钟前' },
-    { icon: '💬', text: '张三 给您发了一条消息', time: '30 分钟前' },
-    { icon: '📅', text: '明天 14:00 有部门例会', time: '1 小时前' },
-    { icon: '🔔', text: '系统通知：本月考勤已生成', time: '2 小时前' },
-  ]
+  recentLoading.value = true
+  try {
+    const resp = await api.get('/api/message/assemble/communicate/instant/list/currentperson/count/20/desc') as any
+    const rows: any[] = Array.isArray(resp?.data) ? resp.data : []
+    recentItems.value = rows.slice(0, 5).map((message) => ({
+      icon: '💬',
+      text: String(message.content ?? message.text ?? '消息').slice(0, 80),
+      time: fmtTime(String(message.createTime ?? '')),
+    }))
+  } catch {
+    recentItems.value = []
+  } finally {
+    recentLoading.value = false
+  }
 }
 
 function navigateTo(path: string): void {
@@ -248,7 +367,11 @@ function fmtTime(ts?: string): string {
   return ts ? formatServerDateTime(ts) : ''
 }
 
-onMounted(loadPending)
+onMounted(() => {
+  void loadPending()
+  void loadTodaySchedule()
+  void loadRecent()
+})
 
 const api_data_doc_692_data = ref<any[]>([])
 const api_document_46_data = ref<any[]>([])
@@ -264,7 +387,16 @@ const api_data_doc_386_data = ref<any[]>([])
 .welcome-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--space-5) var(--space-6);
+  background: var(--ai-gradient-surface);
+  border-radius: var(--ai-cmd-radius);
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), box-shadow var(--ai-motion-fast) var(--ai-ease-spring);
 }
+.welcome-heading { display: flex; align-items: baseline; margin: 0; font-size: 20px; }
+.welcome-bar:hover { transform: translateY(-1px); box-shadow: var(--ai-shadow-2); }
+.stat-placeholder { color: var(--text-muted); font-size: 22px; }
+.raw-key-subtext { color: var(--text-muted); font-size: 11px; margin-right: 6px; }
+.empty-cta { display: inline-block; margin-top: 8px; color: var(--color-primary); font-size: 12px; text-decoration: none; transition: color var(--ai-motion-fast) var(--ai-ease-spring); }
+.empty-cta:hover { color: var(--color-accent); }
 .greeting { font-size: 14px; color: var(--text-muted); }
 .user-name { font-size: 20px; font-weight: 700; color: var(--color-primary); margin: 0 8px; font-family: 'Orbitron', sans-serif; }
 .welcome-msg { font-size: 13px; color: var(--text-secondary); }
@@ -272,24 +404,30 @@ const api_data_doc_386_data = ref<any[]>([])
 .time { font-family: 'Orbitron', sans-serif; font-size: 28px; color: var(--color-primary); text-shadow: 0 0 20px var(--color-primary-glow); }
 .date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-.quick-access { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.quick-access-section { padding: var(--space-5); }
+.quick-hint { font-size: 11px; color: var(--text-muted); }
+.quick-access { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; }
 .quick-card {
+  display: block; text-decoration: none; position: relative;
   padding: 16px 12px; text-align: center; cursor: pointer; transition: all var(--transition-fast);
   border: 1px solid var(--border-subtle);
 }
 .quick-card:hover { transform: translateY(-4px); border-color: var(--color-primary); box-shadow: var(--shadow-glow); }
 .quick-icon { font-size: 28px; margin-bottom: 6px; }
-.quick-label { font-size: 11px; color: var(--text-secondary); }
+.quick-label { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
 .quick-badge {
   position: absolute; top: 6px; right: 6px; background: var(--color-error); color: white;
   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
 }
 
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ai-grid-4); padding: var(--ai-grid-1) 0; }
 .stat-card {
   padding: var(--space-5); text-align: center; position: relative; overflow: hidden;
   border: 1px solid var(--border-subtle);
+  gap: var(--ai-grid-4);
+  transition: transform var(--ai-motion-fast) var(--ai-ease-spring), border-color var(--ai-motion-fast) var(--ai-ease-spring);
 }
+.stat-card:hover { transform: translateY(-2px); border-color: var(--ai-glass-border); }
 .stat-card::before {
   content: ''; position: absolute; inset: 0;
   background: radial-gradient(circle at 50% 0%, var(--glow, transparent), transparent 70%);
@@ -303,6 +441,15 @@ const api_data_doc_386_data = ref<any[]>([])
 .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .stat-trend { font-size: 11px; margin-top: 6px; }
 .stat-trend.up { color: var(--color-success); }
+.stat-distribution {
+  height: 4px; margin-top: 8px; border-radius: var(--radius-sm);
+  background: var(--bg-elevated); overflow: hidden;
+}
+.stat-bar {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--bar-color, var(--color-primary));
+  transition: width var(--ai-motion-fast) var(--ai-ease-spring);
+}
 
 .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); flex: 1; min-height: 0; }
 .panel { display: flex; flex-direction: column; padding: 16px; overflow: hidden; }
@@ -310,6 +457,18 @@ const api_data_doc_386_data = ref<any[]>([])
 .panel-header h2 { font-size: 15px; color: var(--color-primary); margin: 0; font-family: 'Orbitron', sans-serif; }
 .panel-more { font-size: 12px; color: var(--text-muted); text-decoration: none; cursor: pointer; transition: color var(--transition-fast); }
 .panel-more:hover { color: var(--color-primary); }
+.notice-actions { display: flex; align-items: center; gap: 10px; }
+
+.section-subtitle { font-size: 12px; color: var(--text-muted); margin: 0 0 8px; }
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--ai-grid-2); }
+.schedule-slots { display: contents; }
+.schedule-slot {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: var(--bg-elevated); border-radius: var(--radius-md);
+  border-left: 2px solid var(--color-primary);
+}
+.slot-time { font-family: 'Orbitron', sans-serif; font-size: 13px; color: var(--color-primary); }
+.slot-desc { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pending-item {
   display: flex; align-items: center; gap: 10px; padding: 10px 12px;
@@ -343,7 +502,7 @@ const api_data_doc_386_data = ref<any[]>([])
 .error-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); background: var(--bg-elevated); border: 1px solid var(--color-error); border-radius: var(--radius-md); }
 .error-banner .error-text { margin: 0; }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
-.skeleton-row { height: 40px; border-radius: var(--radius-md); background: var(--bg-elevated); }
+.skeleton-row { height: 40px; border-radius: var(--radius-md); background: linear-gradient(90deg, var(--ai-skeleton-base) 25%, var(--ai-skeleton-shine) 50%, var(--ai-skeleton-base) 75%); background-size: 200% 100%; animation: ai-shimmer 1.6s var(--ai-ease-spring) infinite; }
 
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }

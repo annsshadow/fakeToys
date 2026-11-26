@@ -79,10 +79,10 @@ function newTopic() {
 </script>
 
 <template>
-  <view class="page">
+  <view class="page ai-surface-gradient">
     <view class="toolbar">
       <view class="toolbar-title">最新主题</view>
-      <view class="new-btn" @tap="newTopic">发帖</view>
+      <view class="new-btn ai-brand-fill" @tap="newTopic">发帖</view>
     </view>
     <view v-if="loading && !loaded" class="skeleton" aria-hidden="true">
       <view v-for="i in 4" :key="i" class="o2-skeleton skeleton-row"></view>

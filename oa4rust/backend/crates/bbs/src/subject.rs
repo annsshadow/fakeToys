@@ -109,9 +109,12 @@ pub async fn list(
 
     let rows = client
         .query(
-            "SELECT id, title, author_id, section_id, reply_count, view_count, is_top, create_time \
-             FROM bbs_subject_info \
-             WHERE section_id = $1 AND disable = false \
+            // R303 BBS 版块筛选回显：create 已写 x_bbs_topic，list 必须读同一张现役表，
+            // 否则按 section_id 筛选看不到新帖。字段映射对齐 u2 列表，响应键保持不变。
+            "SELECT id, title, author_id, section_id, content, creator, forum_id, section_name, \
+             subject_type, reply_count, view_count, is_top, create_time::text \
+             FROM x_bbs_topic \
+             WHERE section_id = $1 AND deleted_at IS NULL \
              ORDER BY create_time DESC LIMIT 50",
             &[&section_id],
         )
@@ -287,11 +290,38 @@ pub async fn create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // R302 BBS 回显缺陷：PC 默认/我的/版块筛选列表读 x_bbs_topic 现役表。
+    // 这里与 assemble_control u2_subject_save 的 INSERT 字段保持一致，作者身份仍以会话为权威；
+    // sectionName/subjectType/forumId 只从请求体读取展示元数据，不参与身份判定。
+    let body_str = |keys: &[&str]| -> String {
+        keys.iter()
+            .find_map(|key| {
+                payload
+                    .get(*key)
+                    .and_then(|value| value.as_str())
+                    .map(|value| value.trim().to_string())
+                    .filter(|value| !value.is_empty())
+            })
+            .unwrap_or_default()
+    };
+    let forum_id = body_str(&["forumId", "forum_id"]);
+    let section_name = body_str(&["sectionName", "section_name"]);
+    let subject_type = body_str(&["subjectType", "subject_type"]);
 
     client
         .execute(
-            "INSERT INTO bbs_subject_info (id, title, author_id, section_id, content, reply_count, view_count, is_top, disable, create_time) VALUES ($1, $2, $3, $4, $5, 0, 0, false, false, NOW())",
-            &[&id, &title, &author_id, &section_id, &content],
+            "INSERT INTO x_bbs_topic (id, title, content, author_id, creator, forum_id, section_id, section_name, subject_type, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
+            &[
+                &id,
+                &title,
+                &content,
+                &author_id,
+                &author_id,
+                &forum_id,
+                &section_id,
+                &section_name,
+                &subject_type,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

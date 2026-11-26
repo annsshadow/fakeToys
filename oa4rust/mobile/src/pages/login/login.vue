@@ -42,7 +42,7 @@ onShow(onShowGuard)
 </script>
 
 <template>
-  <view class="login">
+  <view class="login ai-surface-gradient">
     <view class="brand">OA4Rust Mobile</view>
     <view class="form">
       <view class="field">
@@ -54,7 +54,7 @@ onShow(onShowGuard)
         <input v-model="password" type="password" placeholder="密码" />
       </view>
       <text v-if="error" class="error">{{ error }}</text>
-      <button class="submit" :disabled="submitting" @tap="submit">
+      <button class="submit ai-brand-fill" :disabled="submitting" @tap="submit">
         {{ submitting ? '登录中…' : '登 录' }}
       </button>
     </view>
