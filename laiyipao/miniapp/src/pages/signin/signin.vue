@@ -30,7 +30,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r5AiSignin.conclusion }}</text>
         <text class="r3-ai-basis">依据：签到记录 · 本周期 · 更新于本次进入</text>
-        <text class="r3-ai-cta" role="button" @click="r5GoTask()">{{ r5AiSignin.ctaText }}</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoTask()" tabindex="0" @keydown.enter="r5GoTask()">{{ r5AiSignin.ctaText }}</text>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card">
@@ -193,7 +193,7 @@
           <view class="r3-empty-slot">AI</view>
           <text class="r3-empty-title">今日任务已领完，明天再来</text>
           <text class="r3-empty-reason">当前筛选周期内没有待办任务；离线收益仍可能待领取。</text>
-          <text class="r3-empty-action" role="button" @click="r5GoTask()">去看首页建议 →</text>
+          <text class="r3-empty-action" role="button" @click="r5GoTask()" tabindex="0" @keydown.enter="r5GoTask()">去看首页建议 →</text>
         </view>
       </view>
 

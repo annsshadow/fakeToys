@@ -33,7 +33,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r5AiAnn.conclusion }}</text>
         <text class="r3-ai-basis">依据：公告列表 · 近 30 天 · 更新于本次进入</text>
-        <text class="r3-ai-cta" role="button" @click="r5GoBattles()">去看变更影响 →</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoBattles()" tabindex="0" @keydown.enter="r5GoBattles()">去看变更影响 →</text>
       </view>
       <!-- 第六批 R41：总数一眼可见（首页入口有「全部 N 条」，本页此前没有） -->
       <text v-if="!loading && !loadFailed && items.length" class="result-count">
@@ -68,7 +68,7 @@
           <view class="r3-empty-slot">AI</view>
           <text class="r3-empty-title">近 30 天没有公告，去看看战报</text>
           <text class="r3-empty-reason">公告列表为空或均超出 30 天，无法从版本记录推导更新影响。</text>
-          <text class="r3-empty-action" role="button" @click="r5GoBattles()">去看战报 →</text>
+          <text class="r3-empty-action" role="button" @click="r5GoBattles()" tabindex="0" @keydown.enter="r5GoBattles()">去看战报 →</text>
         </view>
       </view>
 

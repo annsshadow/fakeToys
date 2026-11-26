@@ -66,14 +66,14 @@
         </view>
         <text class="r3-ai-conclusion">{{ r3AiGem.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiGem.basis }}</text>
-        <text class="r3-ai-cta" role="button" @click="r3GoShop">去商城找宝石 →</text>
-        <text class="r3-ai-cta secondary" role="button" @click="r3GoBag">去背包镶嵌 →</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoShop" tabindex="0" @keydown.enter="r3GoShop">去商城找宝石 →</text>
+        <text class="r3-ai-cta secondary" role="button" @click="r3GoBag" tabindex="0" @keydown.enter="r3GoBag">去背包镶嵌 →</text>
       </view>
       <view v-else-if="!store.configLoading && gems.length === 0" class="r3-empty" aria-live="polite" role="status">
         <view class="r3-empty-slot">AI</view>
         <text class="r3-empty-title">还没有宝石图鉴数据</text>
         <text class="r3-empty-reason">配置尚未到达或网络请求未完成，暂时无法判断收集缺口。</text>
-        <text class="r3-empty-action" role="button" @click="loadPage()">重新加载图鉴</text>
+        <text class="r3-empty-action" role="button" @click="loadPage()" tabindex="0" @keydown.enter="loadPage()">重新加载图鉴</text>
       </view>
 
       <!-- 宝石图鉴（服务端下发的权威表） -->

@@ -57,7 +57,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r3AiShop.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiShop.basis }}</text>
-        <text class="r3-ai-cta" role="button" @click="r3FocusShopItem(r3AiShop.id)">定位到该商品 →</text>
+        <text class="r3-ai-cta" role="button" @click="r3FocusShopItem(r3AiShop.id)" tabindex="0" @keydown.enter="r3FocusShopItem(r3AiShop.id)">定位到该商品 →</text>
       </view>
 
       <!-- G82 今日产出总览：今天还能补哪些资源 -->
@@ -151,7 +151,7 @@
           <view class="r3-empty-slot empty-glyph">AI</view>
           <text class="r3-empty-title">商城还没有可售商品</text>
           <text class="r3-empty-reason">服务端商品表为空或尚未下发，暂时没有价格可比较。运营上新后会自动出现，稍后再来看看。</text>
-          <text class="r3-empty-action" role="button" @click="load()">重新加载商城</text>
+          <text class="r3-empty-action" role="button" @click="load()" tabindex="0" @keydown.enter="load()">重新加载商城</text>
         </view>
       </view>
     </view>

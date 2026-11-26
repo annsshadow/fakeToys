@@ -64,7 +64,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r5AiStage.conclusion }}</text>
         <text class="r3-ai-basis">依据：关卡曲线/地形/星数 · 当前存档 · 更新于本次进入 · 机制字段 is_boss / 敌种 id / 地形 id</text>
-        <text class="r3-ai-cta" role="button" @click="r5GoLevel()">{{ r5AiStage.ctaText }}</text>
+        <text class="r3-ai-cta" role="button" @click="r5GoLevel()" tabindex="0" @keydown.enter="r5GoLevel()">{{ r5AiStage.ctaText }}</text>
       </view>
 
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
@@ -79,7 +79,7 @@
           <view class="r3-empty-slot">AI</view>
           <text class="r3-empty-title">章节数据同步中</text>
           <text class="r3-empty-reason">没有关卡曲线与星数就无法计算推进建议，请稍后重试。</text>
-          <text class="r3-empty-action" role="button" @click="r5GoLevel()">去看已解锁关卡 →</text>
+          <text class="r3-empty-action" role="button" @click="r5GoLevel()" tabindex="0" @keydown.enter="r5GoLevel()">去看已解锁关卡 →</text>
         </view>
       </view>
       <!-- 章节选择 -->

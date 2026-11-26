@@ -25,8 +25,8 @@
           <text class="r5-note-title">AI 复核提示</text>
           <text class="r5-note-text">{{ r5AiVerify.conclusion }}</text>
           <text class="r5-note-basis">依据：复现信息 · 本次验真 · 更新于本次进入</text>
-          <text class="r5-note-cta" role="button" @click="r5FocusReplay">去本地重放 →</text>
-          <text v-if="result" class="r5-note-cta" role="button" @click="r5GoBattles">去战报对照 →</text>
+          <text class="r5-note-cta" role="button" @click="r5FocusReplay" tabindex="0" @keydown.enter="r5FocusReplay">去本地重放 →</text>
+          <text v-if="result" class="r5-note-cta" role="button" @click="r5GoBattles" tabindex="0" @keydown.enter="r5GoBattles">去战报对照 →</text>
         </view>
       </view>
 
@@ -172,7 +172,7 @@
   <view v-else class="r17-diff-empty">该战报无逐次反应记录，暂无法对照（旧版本结算）</view>
   <text class="r17-diff-basis">依据：本地重放 reaction_timeline.events 与服务端 reaction_timeline.events 逐条比对，辅助对照线索</text>
   <text class="r17-diff-note">辅助对照线索，非验真判据；权威裁定仍以 replay_hash 为准</text>
-  <view class="btn r17-diff-cta" role="button" @click="r17GoAuthority">查看权威裁定 ↑</view>
+  <view class="btn r17-diff-cta" role="button" @click="r17GoAuthority" tabindex="0" @keydown.enter="r17GoAuthority">查看权威裁定 ↑</view>
 </view>
 <view v-if="result" id="r17-authority-card" class="card pop-in" :style="{ borderColor: result.matched ? 'var(--ok)' : 'var(--bad)' }">
         <text class="card-title">服务端裁定</text>

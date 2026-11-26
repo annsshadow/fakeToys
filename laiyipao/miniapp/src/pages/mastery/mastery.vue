@@ -33,13 +33,13 @@
         </view>
         <text class="r3-ai-conclusion">{{ r3AiMastery.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiMastery.basis }}</text>
-        <text class="r3-ai-cta" role="button" @click="r3FocusMastery(r3AiMastery.family)">切到该系树 →</text>
+        <text class="r3-ai-cta" role="button" @click="r3FocusMastery(r3AiMastery.family)" tabindex="0" @keydown.enter="r3FocusMastery(r3AiMastery.family)">切到该系树 →</text>
       </view>
       <view v-else-if="!loading && !families.length" class="r3-empty" aria-live="polite" role="status">
         <view class="r3-empty-slot">AI</view>
         <text class="r3-empty-title">还没有专精系数据</text>
         <text class="r3-empty-reason">服务端配置尚未下发，无法计算推荐投入方向。</text>
-        <text class="r3-empty-action" role="button" @click="load()">重新加载专精</text>
+        <text class="r3-empty-action" role="button" @click="load()" tabindex="0" @keydown.enter="load()">重新加载专精</text>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card">

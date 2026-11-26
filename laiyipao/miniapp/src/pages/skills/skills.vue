@@ -74,7 +74,7 @@
           </view>
         </view>
         <view class="r6-why">
-          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
+          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open" tabindex="0" @keydown.enter="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
           <block v-if="r6Open">
             <text v-for="(line, i) in r6Rec.basis" :key="'b' + i" class="r6-why-line">{{ line }}</text>
             <text class="r6-why-line">目标：{{ r6Rec.cta.route }}</text>
@@ -84,9 +84,9 @@
           <view class="r3-empty-slot">AI</view>
           <text class="r3-empty-title">{{ r6Rec.headline }}</text>
           <text class="r3-empty-reason">{{ r6Rec.basis[0] }} · {{ r6Rec.basis[1] }}</text>
-          <text class="r3-empty-action" role="button" @click="r6Go()">{{ r6Rec.cta.label }}</text>
+          <text class="r3-empty-action" role="button" @click="r6Go()" tabindex="0" @keydown.enter="r6Go()">{{ r6Rec.cta.label }}</text>
         </view>
-        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()">{{ r6Rec.cta.label }} →</text>
+        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()" tabindex="0" @keydown.enter="r6Go()">{{ r6Rec.cta.label }} →</text>
       </view>
 
       <!-- R7 §1F.4：先讲清本局靠什么拿分，再说推荐换上后的预期收益 -->
@@ -127,7 +127,7 @@
         <text v-if="r7Impact" class="r7-why">为什么是它：{{ r7Impact.replacedName }} → {{ r7Impact.candidateName }} · {{ r7Impact.method }}</text>
         <text v-if="r7Impact" class="r7-basis">依据：{{ r7BasisText }} · 配置 {{ r7Impact.configVersion }} · 近 {{ r7Impact.windowDays }} 天 {{ r7Impact.battleCount }} 场</text>
         <text v-if="!r7Impact" class="r7-empty-note">收益数据不可用：{{ r7WhyUnavailable }}。不展示虚构数值。</text>
-        <text v-if="r7Impact" class="r7-btn primary" role="button" @click="r7OpenCompare()">应用推荐 · 先看收益对比 →</text>
+        <text v-if="r7Impact" class="r7-btn primary" role="button" @click="r7OpenCompare()" tabindex="0" @keydown.enter="r7OpenCompare()">应用推荐 · 先看收益对比 →</text>
       </view>
       <view v-if="r6Rec && r6Rec.status === 'local' && r3AiSkill" class="r3-ai r6-local r3-enter">
         <view class="r3-ai-head">
@@ -137,7 +137,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r3AiSkill.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiSkill.basis }}</text>
-        <text class="r3-ai-cta" role="button" @click="r3GoBag">去背包查看解锁 →</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoBag" tabindex="0" @keydown.enter="r3GoBag">去背包查看解锁 →</text>
       </view>
       <!-- 加载中 / 空态（与敌人图鉴同款）-->
       <view v-if="store.configLoading" class="card">
@@ -273,9 +273,9 @@
         <text v-if="r7ApplyError" class="r7-error">{{ r7ApplyError }}</text>
         <text v-if="r7ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r7ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r7CompareOpen = false">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
-          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="r7CompareOpen = false">完成</text>
-          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
+          <text class="r7-btn" role="button" @click="r7CompareOpen = false" tabindex="0" @keydown.enter="r7CompareOpen = false">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="r7CompareOpen = false" tabindex="0" @keydown.enter="r7CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()" tabindex="0" @keydown.enter="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
     </view>

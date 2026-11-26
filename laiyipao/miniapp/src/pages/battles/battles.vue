@@ -148,7 +148,7 @@
             <text class="r20-ai-title">AI · 战斗效率诊断</text>
             <text class="r20-ai-conclusion">{{ r20Ai.conclusion }}</text>
             <text class="r20-ai-basis">依据：数据来自全量battle_records近30天；近 30 天 battle_records 的 shots/hits/heat_max 聚合；场次以 battle_records 行数为准</text>
-            <text class="r20-ai-cta" data-r20-cta role="button" @click="goStage()">去战斗→</text>
+            <text class="r20-ai-cta" data-r20-cta role="button" @click="goStage()" tabindex="0" @keydown.enter="goStage()">去战斗→</text>
           </view>
           <text class="r20-honest-note">辅助诊断非权威结算依据，权威请看 replay_hash</text>
         </template>
@@ -279,13 +279,13 @@
                   <text class="r14-advice-text">依据 {{ r14Advice.basedOn[0] }}：一键换上「{{ r14Advice.candidateName }}」</text>
                   <text v-if="r14Advice.impact" class="r14-advice-text">预计每波伤害 {{ fmt(r14Advice.impact.baseline.estimatedDamagePerWave) }} → {{ fmt(r14Advice.impact.candidate.estimatedDamagePerWave) }}（服务端收益预估）</text>
                   <text class="r14-advice-basis">依据：{{ r14Advice.basedOn.join(' · ') }} · 服务端五条件裁决（不伪造 id）</text>
-                  <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="battle" @click="r14OpenCompare()">一键替换为 {{ r14Advice.candidateName }} →</text>
+                  <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="battle" @click="r14OpenCompare()" tabindex="0" @keydown.enter="r14OpenCompare()">一键替换为 {{ r14Advice.candidateName }} →</text>
                   <text v-if="r14ApplyDone" class="apply-done r14-advice-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。</text>
                 </block>
                 <view v-else class="r14-advice-empty" data-r14-source="battle" aria-live="polite" role="status">
                   <text class="r14-advice-empty-title">{{ r14Advice.empty?.headline }}</text>
                   <text class="r14-advice-empty-msg">{{ r14Advice.empty?.message }}</text>
-                  <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty()">{{ r14Advice.empty?.cta }}</text>
+                  <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty()" tabindex="0" @keydown.enter="r14GoEmpty()">{{ r14Advice.empty?.cta }}</text>
                 </view>
               </view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
@@ -339,9 +339,9 @@
         <text v-if="r14ApplyError" class="r7-error">{{ r14ApplyError }}</text>
         <text v-if="r14ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
-          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false">完成</text>
-          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
+          <text class="r7-btn" role="button" @click="r14CompareOpen = false" tabindex="0" @keydown.enter="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false" tabindex="0" @keydown.enter="r14CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()" tabindex="0" @keydown.enter="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
     </view>

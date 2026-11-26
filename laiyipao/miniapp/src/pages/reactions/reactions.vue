@@ -78,7 +78,7 @@
           </view>
         </view>
         <view class="r6-why">
-          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
+          <text class="r6-why-toggle" role="button" @click="r6Open = !r6Open" tabindex="0" @keydown.enter="r6Open = !r6Open">为什么推荐 {{ r6Open ? '▴' : '▾' }}</text>
           <block v-if="r6Open">
             <text v-for="(line, i) in r6Rec.basis" :key="'b' + i" class="r6-why-line">{{ line }}</text>
             <text class="r6-why-line">目标：{{ r6Rec.cta.route }}</text>
@@ -88,9 +88,9 @@
           <view class="r3-empty-slot">AI</view>
           <text class="r3-empty-title">{{ r6Rec.headline }}</text>
           <text class="r3-empty-reason">{{ r6Rec.basis[0] }} · {{ r6Rec.basis[1] }}</text>
-          <text class="r3-empty-action" role="button" @click="r6Go()">{{ r6Rec.cta.label }}</text>
+          <text class="r3-empty-action" role="button" @click="r6Go()" tabindex="0" @keydown.enter="r6Go()">{{ r6Rec.cta.label }}</text>
         </view>
-        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()">{{ r6Rec.cta.label }} →</text>
+        <text v-else class="r6-cta" role="button" :data-route="r6Rec.cta.route" @click="r6Go()" tabindex="0" @keydown.enter="r6Go()">{{ r6Rec.cta.label }} →</text>
       </view>
       <view v-if="r6Rec && r6Rec.status === 'local' && r3AiReaction" class="r3-ai r6-local r3-enter">
         <view class="r3-ai-head">
@@ -100,7 +100,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r3AiReaction.conclusion }}</text>
         <text class="r3-ai-basis">依据：{{ r3AiReaction.basis }}</text>
-        <text class="r3-ai-cta" role="button" @click="r3GoSkills">去调整出战技能 →</text>
+        <text class="r3-ai-cta" role="button" @click="r3GoSkills" tabindex="0" @keydown.enter="r3GoSkills">去调整出战技能 →</text>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">
@@ -235,13 +235,13 @@
               <text class="r14-advice-text">换上「{{ r14AdviceOf(r)?.candidateName }}」{{ r14AdviceOf(r)?.expectedReaction ? '可指向 ' + r14AdviceOf(r)?.expectedReaction : '可提升当前构筑（服务端未给出目标反应）' }}</text>
               <text class="r14-advice-basis">依据：{{ r14AdviceOf(r)?.basedOn.join(' · ') }}
  · 服务端五条件裁决（不伪造 id）</text>
-              <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="reactions" @click="r14OpenCompare(r14AdviceOf(r))">一键替换为 {{ r14AdviceOf(r)?.candidateName }} →</text>
+              <text id="r14-advice-action-btn" class="r14-advice-cta" role="button" data-r14-source="reactions" @click="r14OpenCompare(r14AdviceOf(r))" tabindex="0" @keydown.enter="r14OpenCompare(r14AdviceOf(r))">一键替换为 {{ r14AdviceOf(r)?.candidateName }} →</text>
               <text v-if="r14ApplyDone" class="apply-done r14-advice-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。</text>
             </block>
             <view v-else class="r14-advice-empty" data-r14-source="reactions" aria-live="polite" role="status">
               <text class="r14-advice-empty-title">{{ r14AdviceOf(r)?.empty?.headline }}</text>
               <text class="r14-advice-empty-msg">{{ r14AdviceOf(r)?.empty?.message }}</text>
-              <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty(r14AdviceOf(r))">{{ r14AdviceOf(r)?.empty?.cta }}</text>
+              <text class="r14-advice-empty-cta" role="button" @click="r14GoEmpty(r14AdviceOf(r))" tabindex="0" @keydown.enter="r14GoEmpty(r14AdviceOf(r))">{{ r14AdviceOf(r)?.empty?.cta }}</text>
             </view>
           </view>
         </view>
@@ -270,9 +270,9 @@
         <text v-if="r14ApplyError" class="r7-error">{{ r14ApplyError }}</text>
         <text v-if="r14ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r14ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
-          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false">完成</text>
-          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
+          <text class="r7-btn" role="button" @click="r14CompareOpen = false" tabindex="0" @keydown.enter="r14CompareOpen = false">{{ r14ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r14ApplyDone" class="r7-btn primary" role="button" @click="r14CompareOpen = false" tabindex="0" @keydown.enter="r14CompareOpen = false">完成</text>
+          <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r14Applying }" role="button" @click="r14ConfirmApply()" tabindex="0" @keydown.enter="r14ConfirmApply()">{{ r14Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
     </view>
