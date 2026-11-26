@@ -532,3 +532,21 @@ docs/laiyipao/audits/round57-visual-truncation/admin-auth-init.js
 
 docs/laiyipao/audits/round57-postdeploy/data/
 docs/laiyipao/audits/round57-postdeploy/admin-auth-init.js
+
+# R58-B admin视觉走查审计临时真值不入库
+docs/laiyipao/audits/round58-b-admin-recon/data/
+docs/laiyipao/audits/round58-b-admin-recon/admin-auth-init.js
+
+# R59 第三路视觉走查审计临时真值不入库
+docs/laiyipao/audits/round59-visual-recon/data/
+docs/laiyipao/audits/round59-visual-recon/admin-auth-init.js
+
+# R60 无障碍(a11y)真浏览器走查临时真值不入库
+docs/laiyipao/audits/round60-a11y-recon/data/
+docs/laiyipao/audits/round60-a11y-recon/admin-auth-init.js
+
+# R60 键盘可达性修复审计临时真值不入库
+docs/laiyipao/audits/round60-a11y-keyboard/data/
+docs/laiyipao/audits/round60-a11y-keyboard/admin-auth-init.js
+docs/laiyipao/audits/round60-postdeploy/data/
+docs/laiyipao/audits/round60-postdeploy/admin-auth-init.js

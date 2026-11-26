@@ -1,0 +1,4 @@
+(function(){
+  var q=function(s){var e=document.querySelector(s);if(!e)return null;var r=e.getBoundingClientRect();var st=getComputedStyle(e);return {exists:true,txt:(e.innerText||e.textContent||"").trim().slice(0,90),visible:r.width>0&&r.height>0&&st.visibility!=="hidden"&&st.display!=="none",whiteSpace:st.whiteSpace,minWidth:st.minWidth,color:st.color};};
+  return {href:location.href,hash:location.hash,innerW:innerWidth,docW:document.documentElement.scrollWidth,r51Radar:q(".r51-radar"),r51ViewBox:(document.querySelector(".r51-radar")||{}).getAttribute?document.querySelector(".r51-radar").getAttribute("viewBox"):null,r53Concl:q(".ai-conclusion,.r3-ai-conclusion"),r55Cta:q(".r14-advice-empty-cta"),r57Title:q(".ann-title"),r57Date:q(".ann-date"),enemyPh:q(".uni-input-placeholder"),r12Cta:q(".r12-priority-cta"),r48Cta:q(".r12-priority-cta")};
+})()
