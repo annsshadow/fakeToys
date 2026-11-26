@@ -2918,6 +2918,26 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     )))
 }
 
+/// 无配置行时的工作日星期回退：Sakamoto 纯整数算法，返回 0=Mon..6=Sun。
+/// legacy 用 (year-2000)*365+(month-1)*30+day 伪造星期，与真实日历不符；
+/// 这里改为真日历，并保持下游 w >= 5 表示周六/周日的语义不变。
+fn worktime_fallback_weekday(date: &str) -> Option<u8> {
+    if date.len() != 10 || date.chars().nth(4) != Some('-') || date.chars().nth(7) != Some('-') {
+        return None;
+    }
+    let year = date[0..4].parse::<i32>().unwrap_or(2000);
+    let month = date[5..7].parse::<u32>().unwrap_or(1).clamp(1, 12);
+    let day = date[8..10].parse::<u32>().unwrap_or(1);
+    const T: [i32; 12] = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    let mut y = year;
+    if month < 3 {
+        y -= 1;
+    }
+    // 原始 Sakamoto: 0=Sun..6=Sat；+6 转为 0=Mon..6=Sun 以适配 w>=5 判周末。
+    let raw = (y + y / 4 - y / 100 + y / 400 + T[(month - 1) as usize] + day as i32) % 7;
+    Some(((raw + 6) % 7) as u8)
+}
+
 #[allow(non_snake_case)]
 pub async fn worktime_indefinedholiday_date(
     pool: Extension<Pool>,
@@ -2946,18 +2966,7 @@ pub async fn worktime_indefinedholiday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10
-                && date.chars().nth(4) == Some('-')
-                && date.chars().nth(7) == Some('-')
-            {
-                let year = date[0..4].parse::<i32>().unwrap_or(2000);
-                let month = date[5..7].parse::<u32>().unwrap_or(1);
-                let day = date[8..10].parse::<u32>().unwrap_or(1);
-                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
-                Some((total_days % 7) as u8)
-            } else {
-                None
-            };
+            let weekday = worktime_fallback_weekday(&date);
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_holiday = is_weekend;
             let indefined = weekday.is_none();
@@ -2998,18 +3007,7 @@ pub async fn worktime_indefinedworkday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10
-                && date.chars().nth(4) == Some('-')
-                && date.chars().nth(7) == Some('-')
-            {
-                let year = date[0..4].parse::<i32>().unwrap_or(2000);
-                let month = date[5..7].parse::<u32>().unwrap_or(1);
-                let day = date[8..10].parse::<u32>().unwrap_or(1);
-                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
-                Some((total_days % 7) as u8)
-            } else {
-                None
-            };
+            let weekday = worktime_fallback_weekday(&date);
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_workday = !is_weekend;
             let indefined = weekday.is_none();
@@ -3050,18 +3048,7 @@ pub async fn worktime_isholiday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10
-                && date.chars().nth(4) == Some('-')
-                && date.chars().nth(7) == Some('-')
-            {
-                let year = date[0..4].parse::<i32>().unwrap_or(2000);
-                let month = date[5..7].parse::<u32>().unwrap_or(1);
-                let day = date[8..10].parse::<u32>().unwrap_or(1);
-                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
-                Some((total_days % 7) as u8)
-            } else {
-                None
-            };
+            let weekday = worktime_fallback_weekday(&date);
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let indefined = weekday.is_none();
             Ok(Json(Value::Object(serde_json::Map::from_iter([
@@ -3101,18 +3088,7 @@ pub async fn worktime_isworkday_date(
             ]))))
         }
         None => {
-            let weekday = if date.len() == 10
-                && date.chars().nth(4) == Some('-')
-                && date.chars().nth(7) == Some('-')
-            {
-                let year = date[0..4].parse::<i32>().unwrap_or(2000);
-                let month = date[5..7].parse::<u32>().unwrap_or(1);
-                let day = date[8..10].parse::<u32>().unwrap_or(1);
-                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
-                Some((total_days % 7) as u8)
-            } else {
-                None
-            };
+            let weekday = worktime_fallback_weekday(&date);
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let indefined = weekday.is_none();
             Ok(Json(Value::Object(serde_json::Map::from_iter([
