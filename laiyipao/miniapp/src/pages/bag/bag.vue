@@ -406,6 +406,7 @@
             v-model="presetName"
             class="preset-input"
             placeholder="预设名（最多 20 字）"
+            placeholder-class="ph"
             maxlength="20"
             :focus="presetFocus"
           />

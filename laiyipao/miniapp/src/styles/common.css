@@ -1260,6 +1260,7 @@ page {
 .r3-data-grid .list-row,
 .r3-data-grid .r3-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12rpx;
   min-height: 88rpx;
@@ -1735,6 +1736,8 @@ page {
 /* LYP-R14-ADVICE-ACTION-V1 — AI 建议一键执行闭环（战报/图鉴）               */
 /* -------------------------------------------------------------------------- */
 .r14-advice {
+  min-width: 0;
+  max-width: 100%;
   margin: 16rpx 0;
   padding: 20rpx 22rpx;
   background: linear-gradient(135deg, var(--ai-halo), rgba(0,0,0,0) 62%), var(--panel-2);
@@ -1769,10 +1772,10 @@ page {
   font-weight: 600;
 }
 .r14-advice-cta:active { opacity: 0.78; }
-.r14-advice-empty { margin-top: 12rpx; padding: 16rpx; background: var(--panel); border: 1rpx dashed var(--border); border-radius: 10rpx; }
+.r14-advice-empty { margin-top: 12rpx; padding: 16rpx; overflow-wrap: anywhere; background: var(--panel); border: 1rpx dashed var(--border); border-radius: 10rpx; }
 .r14-advice-empty-title { display: block; color: var(--text-2); font-size: 24rpx; font-weight: 600; }
 .r14-advice-empty-msg { display: block; margin-top: 6rpx; color: var(--dim); font-size: 22rpx; line-height: 1.5; }
-.r14-advice-empty-cta { display: inline-block; min-height: 88rpx; line-height: 88rpx; padding: 0 20rpx; margin-top: 10rpx; color: var(--ai-ink); border: 1rpx solid var(--ai-accent); border-radius: 10rpx; font-size: 24rpx; }
+.r14-advice-empty-cta { display: inline-block; min-height: 88rpx; line-height: 88rpx; padding: 0 20rpx; margin-top: 10rpx; white-space: nowrap; max-width: 100%; color: var(--ai-ink); border: 1rpx solid var(--ai-accent); border-radius: 10rpx; font-size: 24rpx; }
 .r14-enter { animation: r14-advice-in 240ms ease-out both; }
 @keyframes r14-advice-in { from { opacity: 0; transform: translateY(10rpx); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
