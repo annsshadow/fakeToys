@@ -175,14 +175,18 @@ pub async fn calendar_list_public(
 #[allow(non_snake_case)]
 pub async fn calendar_list_my(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<MyCalendarResponse>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
             "SELECT id, name, type, target, color, description, source, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE status = 'OPEN' ORDER BY create_time DESC",
-            &[],
+             FROM CAL_CALENDAR \
+             WHERE status = 'OPEN' AND (createor = $1 OR target = $1) \
+             ORDER BY create_time DESC",
+            &[&actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

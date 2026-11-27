@@ -210,34 +210,75 @@ pub async fn calendar_list_public(
 #[allow(non_snake_case)]
 pub async fn calendar_list_my(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let models = cal_calendar::Entity::find()
-        .filter(cal_calendar::Column::Status.eq("OPEN"))
-        .order_by_desc(cal_calendar::Column::CreateTime)
-        .limit(50)
-        .all(&db.0)
+    let actor = require_session(session)?.person_unique;
+    // 复用既有读归属谓词（本人 OR 管理员 OR 公开），占位符从 $2 归一到 $1（本查询仅一个绑定参数）。
+    let predicate = CALENDAR_READ_PREDICATE.replace("$2", "$1");
+    let sql = format!(
+        "SELECT id, name, type AS type_, target, color, description, createor, is_public, status \
+         FROM x_cal_calendar \
+         WHERE status = 'OPEN' AND deleted_at IS NULL AND {predicate} \
+         ORDER BY create_time DESC LIMIT 50"
+    );
+    let rows = db
+        .0
+        .query_all(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![actor.into()],
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut my_calendars = Vec::new();
     let mut unit_calendars = Vec::new();
 
-    for m in models.iter() {
+    for m in rows.iter() {
         let mut map = serde_json::Map::new();
-        map.insert("id".to_string(), Value::String(m.id.clone()));
-        map.insert("name".to_string(), Value::String(m.name.clone()));
-        map.insert("type".to_string(), Value::String(m.type_.clone()));
-        map.insert("target".to_string(), Value::String(m.target.clone()));
-        map.insert("color".to_string(), Value::String(m.color.clone()));
-        if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
+        map.insert(
+            "id".to_string(),
+            Value::String(m.try_get::<String>("", "id").unwrap_or_default()),
+        );
+        map.insert(
+            "name".to_string(),
+            Value::String(m.try_get::<String>("", "name").unwrap_or_default()),
+        );
+        map.insert(
+            "type".to_string(),
+            Value::String(m.try_get::<String>("", "type_").unwrap_or_default()),
+        );
+        map.insert(
+            "target".to_string(),
+            Value::String(m.try_get::<String>("", "target").unwrap_or_default()),
+        );
+        map.insert(
+            "color".to_string(),
+            Value::String(m.try_get::<String>("", "color").unwrap_or_default()),
+        );
+        if let Some(val) = option_to_json(
+            m.try_get::<Option<String>>("", "description")
+                .unwrap_or(None)
+                .map(Value::String),
+        ) {
             map.insert("description".to_string(), val);
         }
-        map.insert("createor".to_string(), Value::String(m.createor.clone()));
-        map.insert("isPublic".to_string(), Value::Bool(m.is_public));
-        map.insert("status".to_string(), Value::String(m.status.clone()));
+        map.insert(
+            "createor".to_string(),
+            Value::String(m.try_get::<String>("", "createor").unwrap_or_default()),
+        );
+        map.insert(
+            "isPublic".to_string(),
+            Value::Bool(m.try_get::<bool>("", "is_public").unwrap_or(false)),
+        );
+        map.insert(
+            "status".to_string(),
+            Value::String(m.try_get::<String>("", "status").unwrap_or_default()),
+        );
         let item = Value::Object(map);
+        let type_ = m.try_get::<String>("", "type_").unwrap_or_default();
 
-        if m.type_.eq_ignore_ascii_case("UNIT") {
+        if type_.eq_ignore_ascii_case("UNIT") {
             unit_calendars.push(item);
         } else {
             my_calendars.push(item);

@@ -14,6 +14,19 @@
 use axum::extract::{Extension, Path};
 use calendar::{calendar_get, calendar_list_my, calendar_list_public};
 use deadpool_postgres::Pool;
+use shared::session::Session;
+
+fn session_for(person: &str) -> Option<Extension<Session>> {
+    // Session 的 NaiveDateTime 字段经 serde 反序列化，避免为本 crate 新增 chrono 依赖。
+    let s: Session = serde_json::from_value(serde_json::json!({
+        "token": "r597a-probe",
+        "person_unique": person,
+        "created_at": "2026-01-01T00:00:00",
+        "expires_at": "2099-01-01T00:00:00"
+    }))
+    .expect("构造测试 Session");
+    Some(Extension(s))
+}
 
 /// 探针专用 scratch 库（每轮重建，跑完 DROP）。
 const SCRATCH_DB: &str = "oa_par_cal_panic";
@@ -70,7 +83,7 @@ async fn null_is_public_row_does_not_panic_read_handlers() {
     c.execute(
         "INSERT INTO cal_calendar \
          (id, name, type, target, color, description, source, createor, is_public, status) \
-         VALUES ('probe-null', 'Probe Null', 'PERSON', '', '', NULL, NULL, 'probe', NULL, 'OPEN')",
+         VALUES ('probe-null', 'Probe Null', 'PERSON', '', '', NULL, NULL, 'probe-alice', NULL, 'OPEN')",
         &[],
     )
     .await
@@ -78,15 +91,23 @@ async fn null_is_public_row_does_not_panic_read_handlers() {
     c.execute(
         "INSERT INTO cal_calendar \
          (id, name, type, target, color, description, source, createor, is_public, status) \
-         VALUES ('probe-public', 'Probe Public', 'UNIT', '', '', NULL, NULL, 'probe', true, 'OPEN')",
+         VALUES ('probe-bob', 'Bob Private', 'PERSON', '', '', NULL, NULL, 'probe-bob', false, 'OPEN')",
+        &[],
+    )
+    .await
+    .expect("seed probe-bob");
+    c.execute(
+        "INSERT INTO cal_calendar \
+         (id, name, type, target, color, description, source, createor, is_public, status) \
+         VALUES ('probe-public', 'Probe Public', 'UNIT', '', '', NULL, NULL, 'probe-bob', true, 'OPEN')",
         &[],
     )
     .await
     .expect("seed probe-public");
     drop(c);
 
-    // list_my：包含 NULL 行，改前在这里 panic。
-    let my = calendar_list_my(Extension(pool.clone()))
+    // list_my：alice 会话只见本人行（含 is_public IS NULL 行），bob 私有行不得泄露。
+    let my = calendar_list_my(Extension(pool.clone()), session_for("probe-alice"))
         .await
         .expect("calendar_list_my 不应失败/panic");
     let data = my.0.data.expect("list_my 缺 data");
@@ -95,11 +116,16 @@ async fn null_is_public_row_does_not_panic_read_handlers() {
         .iter()
         .chain(data.unit_calendars.iter())
         .collect();
-    // 规模下限：两行都必须被读到（person 一支 + unit 一支）。
-    assert!(
-        items.len() >= 2,
-        "list_my 只返回 {} 行，少于种子行数 2",
+    // 归属过滤：alice 只读自己的 NULL 私有行，bob 私有行与 bob 的公开 UNIT 行均不在 alice 的 my 列表。
+    assert_eq!(
+        items.len(),
+        1,
+        "list_my 应按会话归属过滤，alice 只应读到 1 行，实际 {} 行",
         items.len()
+    );
+    assert!(
+        !items.iter().any(|i| i.id == "probe-bob"),
+        "alice 不得读到 bob 的私有日历"
     );
     let null_row = items
         .iter()
