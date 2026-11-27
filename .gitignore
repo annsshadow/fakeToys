@@ -623,3 +623,8 @@ docs/laiyipao/audits/round96-empty-cta-keyboard/data/
 docs/laiyipao/audits/round96-empty-cta-keyboard/admin-auth-init.js
 docs/laiyipao/audits/round96-empty-cta-keyboard-postdeploy/data/
 docs/laiyipao/audits/round96-empty-cta-keyboard-postdeploy/admin-auth-init.js
+# R97 复制失败反馈补漏及部署后真值不入库
+docs/laiyipao/audits/round97-copy-failure-feedback/data/
+docs/laiyipao/audits/round97-copy-failure-feedback/admin-auth-init.js
+docs/laiyipao/audits/round97-copy-failure-feedback-postdeploy/data/
+docs/laiyipao/audits/round97-copy-failure-feedback-postdeploy/admin-auth-init.js
