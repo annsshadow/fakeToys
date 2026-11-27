@@ -116,7 +116,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { formatServerDateTime } from '../utils/date'
+import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -158,7 +158,7 @@ const session = useSession()
 const form = ref({ title: '', content: '', buildingId: '', roomId: '', startTime: '', endTime: '' })
 
 // ── R296 P2 业务视图模型：预订日期 → 未来 7 天日程，按本地日期归组展示 ──
-const bookingDate = ref(new Date().toISOString().slice(0, 10))
+const bookingDate = ref(businessTodayYMD())
 function onBookingDate(e: Event) {
   bookingDate.value = (e.target as HTMLInputElement).value || bookingDate.value
   const day = bookingDate.value
