@@ -16,15 +16,16 @@
         <h2>人员搜索</h2>
         <span class="hint">按姓名、部门或工号查找同事</span>
       </div>
-      <form class="search-form" data-testid="org-search-form" @submit.prevent="loadPersonFilter">
+      <form class="search-form" data-testid="org-search-form" @submit.prevent="onPersonSearch">
         <input
           ref="personSearch"
+          v-model="personQuery"
           type="search"
           class="search-input"
           placeholder="输入姓名、部门或工号"
           aria-label="搜索人员"
           data-testid="org-search-input"
-          @input="lastAction = $event.target.value"
+          @input="unitFilter = ''; lastAction = $event.target.value"
         />
         <button type="submit" class="run-btn" :disabled="busy" data-testid="org-search-button">
           {{ busy ? '查询中…' : '搜索人员' }}
@@ -47,7 +48,7 @@
                   type="button"
                   class="tree-node"
                   data-testid="org-department-node"
-                  @click="$refs.personSearch.value = dept; lastAction = dept"
+                  @click="applyDepartmentFilter(dept)"
                 >
                   {{ dept }}
                 </button>
@@ -93,7 +94,7 @@
         </div>
         <ul class="person-list modern-grid" data-testid="org-person-list">
           <li
-            v-for="(r, i) in rows.filter(row => !($refs.personSearch?.value || '').trim() || JSON.stringify(row).toLowerCase().includes(($refs.personSearch?.value || '').trim().toLowerCase())).slice(0, 20)"
+            v-for="(r, i) in rows"
             :key="i"
             class="person-item modern-card"
           >
@@ -145,6 +146,8 @@ const busy = ref(false)
 const rows = ref<Record<string, unknown>[]>([])
 const loadError = ref('')
 const lastAction = ref('—')
+const personQuery = ref('')
+const unitFilter = ref('')
 // 服务端分页：页码/页大小/总数都由后端 person_list_filter_paging 负责，
 // 前端只按 count 算总页数；不把「本页拿到几行」当成总人数。
 const personPage = ref(1)
@@ -286,10 +289,14 @@ async function loadPersonFilter(): Promise<void> {
   busy.value = true
   loadError.value = ''
   try {
+    const body: Record<string, string> = {}
+    const kw = personQuery.value.trim()
+    if (unitFilter.value) body.unitId = unitFilter.value
+    else if (kw) body.name = kw
     const resp = await withTimeout(
       api.post(
         `/api/organization/assemble/control/person/list/filter/${personPage.value}/size/${personPageSize}`,
-        {},
+        body,
       ),
       PERSON_LOAD_TIMEOUT_MS,
     )
@@ -305,6 +312,18 @@ async function loadPersonFilter(): Promise<void> {
   } finally {
     busy.value = false
   }
+}
+function onPersonSearch(): void {
+  unitFilter.value = ''
+  personPage.value = 1
+  void loadPersonFilter()
+}
+function applyDepartmentFilter(dept: string): void {
+  unitFilter.value = dept
+  personQuery.value = dept
+  personPage.value = 1
+  lastAction.value = dept
+  void loadPersonFilter()
 }
 onMounted(() => {
   void loadPersonFilter()
