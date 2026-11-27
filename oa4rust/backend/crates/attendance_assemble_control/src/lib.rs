@@ -7830,14 +7830,14 @@ pub async fn v2_appeal_start_process(
     // 启动流程后修改状态：0 待处理 → 1 审批中
     let n = client
         .execute(
-            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = $3, update_time = NOW() WHERE id = $1",
-            &[&id, &1i32, &job_id],
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = $3, update_time = NOW() WHERE id = $1 AND status = $4",
+            &[&id, &1i32, &job_id, &0i32],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
-        return Ok(Json(ActionResult::error("appeal not found")));
+        return Ok(Json(ActionResult::error("appeal not in expected state")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -7866,14 +7866,14 @@ pub async fn v2_appeal_reset_status(
     // 还原数据状态，清除流程关联
     let n = client
         .execute(
-            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = NULL, send_status = FALSE, update_time = NOW() WHERE id = $1",
-            &[&id, &0i32],
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = NULL, send_status = FALSE, update_time = NOW() WHERE id = $1 AND status = $3",
+            &[&id, &0i32, &1i32],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
-        return Ok(Json(ActionResult::error("appeal not found")));
+        return Ok(Json(ActionResult::error("appeal not in expected state")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -7910,14 +7910,14 @@ pub async fn v2_appeal_end_process(
 
     let n = client
         .execute(
-            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = COALESCE($3, job_id), update_time = NOW() WHERE id = $1",
-            &[&id, &end_status, &job_id],
+            "UPDATE x_attendance_v2_appeal_info SET status = $2, job_id = COALESCE($3, job_id), update_time = NOW() WHERE id = $1 AND status = $4",
+            &[&id, &end_status, &job_id, &1i32],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
-        return Ok(Json(ActionResult::error("appeal not found")));
+        return Ok(Json(ActionResult::error("appeal not in expected state")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
