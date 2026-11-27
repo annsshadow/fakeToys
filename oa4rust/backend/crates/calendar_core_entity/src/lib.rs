@@ -798,8 +798,31 @@ pub async fn event_remove(
 #[allow(non_snake_case)]
 pub async fn event_list_by_calendar(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(calendar_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+
+    // R602：事件列表此前裸读。先查 x_cal_calendar 归属；私有日历走会话+归属校验
+    // （复用本文件 actor_is_admin / require_owner，同 calendar_get 口径），公开日历保持可读。
+    let cal = db
+        .0
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT createor, is_public FROM x_cal_calendar \
+              WHERE id = $1 AND status = 'OPEN' AND deleted_at IS NULL",
+            vec![calendar_id.clone().into()],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if let Some(row) = cal {
+        let is_public: bool = row.try_get::<bool>("", "is_public").unwrap_or(false);
+        if !is_public {
+            let actor = require_session(session)?.person_unique;
+            let owner: String = row.try_get::<String>("", "createor").unwrap_or_default();
+            require_owner(&db.0, &owner, &actor).await?;
+        }
+    }
+
     let models = cal_event::Entity::find()
         .filter(
             cal_event::Column::CalendarId

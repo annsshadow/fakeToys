@@ -621,9 +621,29 @@ pub async fn event_remove(
 #[allow(non_snake_case)]
 pub async fn event_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(calendar_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Vec<CalendarEvent>>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
+
+    // R602：事件列表此前裸读，任何调用方都能按 calendar_id 读他人私有日历的事件。
+    // 先查 CAL_CALENDAR 的 is_public + createor；私有日历（false 或 NULL）走会话+归属校验
+    // （本人/admin 放行），与同文件 calendar_get 同口径；公开日历与不存在的日历保持可读。
+    let cal = client
+        .query_opt(
+            "SELECT is_public, createor FROM CAL_CALENDAR WHERE id = $1 AND status = 'OPEN'",
+            &[&calendar_id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if let Some(cal) = cal {
+        let is_public: bool = cal.get::<_, Option<bool>>("is_public").unwrap_or(false);
+        if !is_public {
+            let sess = require_session(session)?;
+            let createor: String = cal.get::<_, Option<String>>("createor").unwrap_or_default();
+            shared::middleware::require_owner(&pool, &sess, &createor).await?;
+        }
+    }
 
     let rows = client
         .query(
