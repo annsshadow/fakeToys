@@ -113,6 +113,9 @@
           :key="a.id"
           class="ann-item"
           @click="toggleAnn(a.id)"
+          role="button"
+          tabindex="0"
+          @keydown.enter="toggleAnn(a.id)"
         >
           <view class="ann-head">
             <!-- 第六批 R55：首页公告首条与公告页统一「最新」徽章 -->
@@ -207,6 +210,9 @@
           :key="m.label"
           class="mg-row tap"
           @click="m.hint && go(m.hint)"
+          role="button"
+          tabindex="0"
+          @keydown.enter="m.hint && go(m.hint)"
         >
           <text class="mg-rank">{{ i + 1 }}</text>
           <text class="flex-1">{{ m.label }}<text class="dim">（还差 {{ m.gap }}）</text></text>
@@ -230,7 +236,7 @@
       </view>
 
       <!-- 主行动（v2 hero）：页面唯一的渐变强调块，一眼看到「该点哪里」 -->
-      <view class="action-card card-hero tap" @click="goStage">
+      <view class="action-card card-hero tap" @click="goStage" role="button" tabindex="0" @keydown.enter="goStage">
         <view class="flex-1">
           <text class="action-kicker">当前关卡</text>
           <text class="action-title">第 {{ store.unlockedLevel }} 关</text>
@@ -271,7 +277,7 @@
           <text class="grid-group-count">{{ playMenus.length }}</text>
         </view>
         <view class="grid">
-          <view v-for="m in playMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+          <view v-for="m in playMenus" :key="m.path" class="grid-item tap" @click="go(m.path)" role="button" tabindex="0" @keydown.enter="go(m.path)">
             <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
@@ -284,7 +290,7 @@
           <text class="grid-group-count">{{ codexMenus.length }}</text>
         </view>
         <view class="grid">
-          <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+          <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" @click="go(m.path)" role="button" tabindex="0" @keydown.enter="go(m.path)">
             <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
@@ -301,6 +307,9 @@
             :key="e.key"
             class="elem-chip tap"
             @click="go('/pages/reactions/reactions')"
+            role="button"
+            tabindex="0"
+            @keydown.enter="go('/pages/reactions/reactions')"
           >
             <view class="dot" :style="{ background: e.color }" />
             <text class="elem-name">{{ e.name }}</text>

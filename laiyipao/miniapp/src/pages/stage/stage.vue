@@ -91,6 +91,9 @@
             class="chapter-chip"
             :class="{ active: curChapter === ch.id }"
             @click="switchChapter(ch.id)"
+            role="button"
+            tabindex="0"
+            @keydown.enter="switchChapter(ch.id)"
           >
             {{ ch.name }}
             <!-- 第六批 R7 关卡数：切章前就知道这一章有多少关 -->

@@ -184,6 +184,9 @@
           class="battle-row tap"
           :class="[it.result === 'win' ? 'win' : 'lose', { expanded: expandedId === it.id }]"
           @click="toggleDetail(it)"
+          role="button"
+          tabindex="0"
+          @keydown.enter="toggleDetail(it)"
         >
           <view class="battle-head">
             <!-- R19 胜负做成实心徽章，整行再给淡色底，扫一眼就能分胜败 -->
