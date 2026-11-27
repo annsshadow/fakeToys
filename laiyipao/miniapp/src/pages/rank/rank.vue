@@ -71,7 +71,7 @@
         <text class="r3-empty-slot empty-glyph">🏆</text>
         <text class="r3-empty-title">暂无数据 · 还没有榜单数据</text>
         <text class="r3-empty-reason">{{ noScoreHint }}</text>
-        <view class="r3-empty-action" @click="r4GoRank()">去冲榜关卡 →</view>
+        <view class="r3-empty-action" role="button" @click="r4GoRank()" tabindex="0" @keydown.enter="r4GoRank()">去冲榜关卡 →</view>
       </view>
 
       <view v-else class="card r3-data-grid r4-grid" style="padding: 8rpx 24rpx">

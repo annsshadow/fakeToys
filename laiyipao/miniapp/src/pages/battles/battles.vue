@@ -174,7 +174,7 @@
         <text class="r3-empty-slot empty-glyph">⚔</text>
         <text class="r3-empty-title">还没有战报</text>
         <text class="r3-empty-reason">打一局战斗后，胜负、星级、分数和击杀都会出现在这里。</text>
-        <view class="r3-empty-action" @click="r4GoBattle()">去关卡页挑一关开打 →</view>
+        <view class="r3-empty-action" role="button" @click="r4GoBattle()" tabindex="0" @keydown.enter="r4GoBattle()">去关卡页挑一关开打 →</view>
       </view>
 
       <view v-else class="card r3-data-grid r4-grid" style="padding: 8rpx 24rpx">

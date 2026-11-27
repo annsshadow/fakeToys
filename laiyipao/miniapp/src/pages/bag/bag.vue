@@ -40,7 +40,7 @@
         <text class="r3-empty-slot">AI</text>
         <text class="r3-empty-title">还没有可用技能</text>
         <text class="r3-empty-reason">技能表尚未下发，先去关卡页打一场，配置到位后再回来配装。</text>
-        <view class="r3-empty-action" @click="r4GoBag()">去关卡页 →</view>
+        <view class="r3-empty-action" role="button" @click="r4GoBag()" tabindex="0" @keydown.enter="r4GoBag()">去关卡页 →</view>
       </view>
 
       <!--

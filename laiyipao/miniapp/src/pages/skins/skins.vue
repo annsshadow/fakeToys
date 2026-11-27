@@ -29,7 +29,7 @@
         <text class="r3-empty-slot">AI</text>
         <text class="r3-empty-title">皮肤表还没加载出来</text>
         <text class="r3-empty-reason">被动映射来自服务端 /config；配置未到位时不会推荐流派。</text>
-        <view class="r3-empty-action" @click="loadPage()">重新加载配置</view>
+        <view class="r3-empty-action" role="button" @click="loadPage()" tabindex="0" @keydown.enter="loadPage()">重新加载配置</view>
       </view>
 
       <!-- 皮肤图鉴（服务端下发的权威表） -->

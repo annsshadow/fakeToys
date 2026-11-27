@@ -24,7 +24,7 @@
         <text class="r3-empty-slot">AI</text>
         <text class="r3-empty-title">敌人表还没加载出来</text>
         <text class="r3-empty-reason">抗性数据来自服务端 /config；配置未到位时不会伪造克制结论。</text>
-        <view class="r3-empty-action" @click="loadPage()">重新加载配置</view>
+        <view class="r3-empty-action" role="button" @click="loadPage()" tabindex="0" @keydown.enter="loadPage()">重新加载配置</view>
       </view>
 
       <!-- 敌人图鉴（服务端下发的权威表） -->

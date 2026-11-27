@@ -69,7 +69,7 @@
         <text class="r3-empty-slot">AI</text>
         <text class="r3-empty-title">AI 等待数据</text>
         <text class="r3-empty-reason">服务端评分尚未到达，先去专精页投入几点再回来看诊断。</text>
-        <view class="r3-empty-action" @click="r4GoMe()">去专精页 →</view>
+        <view class="r3-empty-action" role="button" @click="r4GoMe()" tabindex="0" @keydown.enter="r4GoMe()">去专精页 →</view>
       </view>
       <view class="card">
         <view class="row" style="gap: 20rpx">
