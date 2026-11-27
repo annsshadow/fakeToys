@@ -603,3 +603,8 @@ docs/laiyipao/audits/round88-trend-legend/data/
 docs/laiyipao/audits/round88-trend-legend/admin-auth-init.js
 docs/laiyipao/audits/round88-trend-legend-postdeploy/data/
 docs/laiyipao/audits/round88-trend-legend-postdeploy/admin-auth-init.js
+# R93 重算审计页骨架屏一致性及部署后真值不入库
+docs/laiyipao/audits/round93-recompute-skeleton/data/
+docs/laiyipao/audits/round93-recompute-skeleton/admin-auth-init.js
+docs/laiyipao/audits/round93-recompute-skeleton-postdeploy/data/
+docs/laiyipao/audits/round93-recompute-skeleton-postdeploy/admin-auth-init.js

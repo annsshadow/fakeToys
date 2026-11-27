@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -u
+ROOT="$(pwd)"
+OUT="$ROOT/docs/laiyipao/audits/round93-recompute-skeleton/data/review-gates-out.txt"
+: > "$OUT"
+cd "$ROOT/laiyipao/admin"
+echo "=== RV-G1 R93契约 ===" | tee -a "$OUT"
+pnpm exec vitest run tests/R93RecomputeSkeleton.contract.test.ts --reporter=verbose >> "$OUT" 2>&1; echo "RV-G1_RC=$?" | tee -a "$OUT"
+echo "=== RV-G2 PageSkeleton契约 ===" | tee -a "$OUT"
+pnpm exec vitest run tests/PageSkeleton.contract.test.ts --reporter=verbose >> "$OUT" 2>&1; echo "RV-G2_RC=$?" | tee -a "$OUT"
+echo "=== RV-G4 vue-tsc ===" | tee -a "$OUT"
+pnpm run type-check >> "$OUT" 2>&1; echo "RV-G4_RC=$?" | tee -a "$OUT"
+echo "=== RV-G5 build:only ===" | tee -a "$OUT"
+pnpm run build:only >> "$OUT" 2>&1; echo "RV-G5_RC=$?" | tee -a "$OUT"
+echo RV_GATES_DONE | tee -a "$OUT"
