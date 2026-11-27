@@ -217,7 +217,10 @@ pub async fn dict_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -283,7 +286,10 @@ pub async fn dict_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -325,7 +331,10 @@ pub async fn dict_delete(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let model = general_application_dict::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -357,7 +366,10 @@ pub async fn dict_item_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let dict_id = payload
         .get("dictId")
@@ -428,7 +440,10 @@ pub async fn dict_item_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let dict_id = payload
         .get("dictId")
         .and_then(|v| v.as_str())
@@ -477,7 +492,10 @@ pub async fn dict_item_delete(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?;
+    if !is_admin_db(&db.0, &actor.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let model = general_application_dict_item::Entity::find_by_id(&id)
         .one(&db.0)
         .await
