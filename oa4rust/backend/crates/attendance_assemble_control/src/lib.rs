@@ -1994,8 +1994,7 @@ pub async fn attendancedetail_recive(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = payload
@@ -2003,6 +2002,19 @@ pub async fn attendancedetail_recive(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+
+    // R607a：按 id 查目标明细归属人；存在且有归属人时校验本人/管理员（管理员可代操作）。
+    // 记录不存在或 person_id 为空时维持原语义：继续 UPDATE（n==0 → received=0），不泄露存在性。
+    let owner_row = client
+        .query_opt(
+            "SELECT person_id FROM x_attendance_detail WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if let Some(person_id) = owner_row.and_then(|row| row.get::<_, Option<String>>("person_id")) {
+        shared::middleware::require_owner(&pool, &sess, &person_id).await?;
+    }
 
     let result = client
         .execute(
@@ -2026,8 +2038,7 @@ pub async fn attendancedetail_reciveSingle(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = payload
@@ -2035,6 +2046,19 @@ pub async fn attendancedetail_reciveSingle(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+
+    // R607a：按 id 查目标明细归属人；存在且有归属人时校验本人/管理员（管理员可代操作）。
+    // 记录不存在或 person_id 为空时维持原语义：继续 UPDATE（n==0 → received=0），不泄露存在性。
+    let owner_row = client
+        .query_opt(
+            "SELECT person_id FROM x_attendance_detail WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if let Some(person_id) = owner_row.and_then(|row| row.get::<_, Option<String>>("person_id")) {
+        shared::middleware::require_owner(&pool, &sess, &person_id).await?;
+    }
 
     let result = client
         .execute(
