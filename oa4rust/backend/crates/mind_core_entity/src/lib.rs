@@ -386,14 +386,19 @@ pub async fn delete_mind(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let deleted = mind_mind::Entity::delete_by_id(id.clone())
-        .exec(&db.0)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let session = require_session(session)?;
+    let actor = session.person_unique;
 
-    if deleted.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("mind not found")));
+    let sql = format!("DELETE FROM x_mind_base_info WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE})");
+    let stmt =
+        Statement::from_sql_and_values(DbBackend::Postgres, sql, [id.clone().into(), actor.into()]);
+    let deleted =
+        db.0.execute(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    if deleted.rows_affected() == 0 {
+        return Err(ownership_error(&db.0, "x_mind_base_info", &id).await);
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -401,7 +406,7 @@ pub async fn delete_mind(
             ("id".to_string(), Value::String(id)),
             (
                 "rowsAffected".to_string(),
-                Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+                Value::Number(serde_json::Number::from(deleted.rows_affected() as i64)),
             ),
         ]),
     ))))
@@ -545,14 +550,20 @@ pub async fn delete_folder(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let deleted = mind_folder::Entity::delete_by_id(id.clone())
-        .exec(&db.0)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let session = require_session(session)?;
+    let actor = session.person_unique;
 
-    if deleted.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("folder not found")));
+    let sql =
+        format!("DELETE FROM x_mind_folder_info WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE})");
+    let stmt =
+        Statement::from_sql_and_values(DbBackend::Postgres, sql, [id.clone().into(), actor.into()]);
+    let deleted =
+        db.0.execute(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    if deleted.rows_affected() == 0 {
+        return Err(ownership_error(&db.0, "x_mind_folder_info", &id).await);
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -560,7 +571,7 @@ pub async fn delete_folder(
             ("id".to_string(), Value::String(id)),
             (
                 "rowsAffected".to_string(),
-                Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+                Value::Number(serde_json::Number::from(deleted.rows_affected() as i64)),
             ),
         ]),
     ))))
