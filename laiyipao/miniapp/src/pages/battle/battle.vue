@@ -110,10 +110,14 @@
         -->
         <!-- 第六批 R70：首次进战斗给图例按钮一个呼吸提示，读过一次后记住，不再打扰 -->
         <view
+          ref="helpChipRef"
           class="help-chip"
           :class="{ on: helpVisible, 'help-first': !helpSeen }"
           aria-label="战场图例"
+          role="button"
+          tabindex="0"
           @click="openHelp"
+          @keydown.enter="openHelp"
         >
           <text>?</text>
         </view>
@@ -174,11 +178,11 @@
     </view>
 
     <!-- 战场图例（2026-11-17）：解释画布 HUD 的全部视觉语言 -->
-    <view v-if="helpVisible" class="legend-overlay" @click="closeHelp">
+    <view v-if="helpVisible" ref="legendOverlayRef" class="legend-overlay" role="dialog" aria-modal="true" aria-label="战场图例" @click="closeHelp" @keydown.esc="closeHelp" @keydown.tab="trapLegendTab">
       <view class="legend-box" @click.stop>
         <view class="legend-head">
           <text class="legend-title">战场图例</text>
-          <view class="legend-close" @click="closeHelp"><text>×</text></view>
+          <view ref="legendCloseRef" class="legend-close" role="button" tabindex="0" @click="closeHelp" @keydown.enter="closeHelp"><text>×</text></view>
         </view>
         <scroll-view scroll-y class="legend-scroll">
           <!-- 画布底部：热量条 -->
@@ -478,7 +482,7 @@
 import { currencyName } from '@/utils/labels'
 import Icon from '@/components/Icon.vue'
 import { useStatusBarPad } from '@/utils/statusBar'
-import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
+import { ref, computed, getCurrentInstance, triggerRef, nextTick } from 'vue'
 import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -974,6 +978,10 @@ function kindLabel(k: string): string {
 
 // ── 战场图例（2026-11-17，见模板内说明）────────────────────────────
 const helpVisible = ref(false)
+/** R73：图例弹层焦点管理的 DOM ref（H5 端 view ref 取组件实例，$el 为原生节点）。 */
+const helpChipRef = ref<any>(null)
+const legendOverlayRef = ref<any>(null)
+const legendCloseRef = ref<any>(null)
 /** 第六批 R70：是否读过图例（本机记忆）。 */
 const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
 /** R3：图例遮罩挡住整个战场，读说明时由页面代为暂停；关掉时只恢复这类暂停。 */
@@ -996,6 +1004,11 @@ function openHelp() {
     helpSeen.value = true
     uni.setStorageSync('battle_help_seen', '1')
   }
+  nextTick(() => {
+    const el: any = legendCloseRef.value
+    const node = (el && el.$el) || el
+    if (node && typeof node.focus === 'function') node.focus()
+  })
 }
 
 function closeHelp() {
@@ -1003,6 +1016,29 @@ function closeHelp() {
   if (helpPausedByPage) {
     helpPausedByPage = false
     doResume()
+  }
+  const el: any = helpChipRef.value
+  const node = (el && el.$el) || el
+  if (node && typeof node.focus === 'function') node.focus()
+}
+
+/** R73：Tab 焦点陷阱——弹层内首尾可聚焦元素循环，不逃逸到背景。 */
+function trapLegendTab(e: KeyboardEvent) {
+  const overlay: any = legendOverlayRef.value
+  const root = (overlay && overlay.$el) || overlay
+  if (!root || typeof root.querySelectorAll !== 'function') return
+  const nodes = Array.from(root.querySelectorAll('[tabindex="0"], [role="button"]')) as HTMLElement[]
+  const focusables = nodes.filter(n => !n.hasAttribute('disabled'))
+  if (!focusables.length) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = (typeof document !== 'undefined' ? document.activeElement : null) as HTMLElement | null
+  if (e.shiftKey && (active === first || !root.contains(active))) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+    e.preventDefault()
+    first.focus()
   }
 }
 
