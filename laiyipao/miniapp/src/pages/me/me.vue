@@ -8,7 +8,7 @@
         改成 `page-head` 式的独立首行后，头像与昵称独占一整行。
       -->
       <view v-if="canGoBack" class="me-back-row">
-        <text class="back-btn tap" @click="goBack">‹ 返回</text>
+        <text class="back-btn tap" role="button" tabindex="0" @click="goBack" @keydown.enter="goBack">‹ 返回</text>
       </view>
       <!-- R4：眉题 → 指标带 → 数据格 → 智能空态（复用 §1B 组件） -->
       <view class="section-kicker section-kicker--ai r4-section r4-enter">
