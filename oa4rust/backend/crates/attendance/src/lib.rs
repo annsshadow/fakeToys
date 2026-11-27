@@ -412,7 +412,7 @@ pub async fn list_appeal_records(
     // 申诉量大时应走分页版 v2/appeal/list/{page}/size/{size}。
     let rows = client
         .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info ORDER BY create_time DESC LIMIT 20",
+            "SELECT id, person_id, COALESCE(NULLIF(audit_status,''), appeal_status) AS appeal_status, creator, create_time FROM x_attendance_appeal_info ORDER BY create_time DESC LIMIT 20",
             &[],
         )
         .await

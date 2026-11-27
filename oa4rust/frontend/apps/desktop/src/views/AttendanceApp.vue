@@ -186,7 +186,7 @@
         <div v-for="a in appeals" :key="a.id" class="ai">
           <div class="ai-info"><span class="an">{{a.personName}}</span><span class="at">{{a.typeName||a.type}}</span><span class="ad">{{fmtDate(a.startDate)}}~{{fmtDate(a.endDate)}}</span></div>
           <span class="badge" :class="appealClass(a.status)">{{appealStatus(a.status)}}</span>
-          <div v-if="a.status==='pending'" class="aa">
+          <div v-if="a.status==='pending' || a.status==='appealed'" class="aa">
             <button class="ba" @click="audit(a,'approved')">通过</button>
             <button class="br" @click="audit(a,'rejected')">驳回</button>
           </div>
@@ -404,10 +404,10 @@ function statusClass(s?: string) {
   return s === '1' ? 'normal' : s === '2' ? 'late' : ''
 }
 function appealClass(s?: string) {
-  return s === 'approved' ? 'approved' : s === 'rejected' ? 'rejected' : s === 'pending' ? 'pending' : ''
+  return s === 'approved' ? 'approved' : s === 'rejected' ? 'rejected' : s === 'pending' || s === 'appealed' ? 'pending' : ''
 }
 function appealStatus(s?: string) {
-  return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'pending' ? '待审批' : '—'
+  return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'appealed' ? '待审核' : s === 'pending' ? '待审批' : '—'
 }
 const am = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
