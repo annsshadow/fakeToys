@@ -16,6 +16,7 @@
  * 而台账数字看起来可能完全正常。不单独指出来的话，
  * 值班的人会以为防护开着。
  */
+import PageSkeleton from "@/components/PageSkeleton.vue"
 import AiInsightCard from "@/components/AiInsightCard.vue"
 import { buildAdminAiInsight } from '@/utils/adminAiInsight'
 import {computed, onMounted, ref, onActivated} from 'vue'
@@ -356,6 +357,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 
 <template>
   <div class="page">
+    <PageSkeleton v-if="loading" />
     <!--
       重算档位（2026-10-21 P3-3）：此前它**不可读也不可改** ——
       运营知道有「档位」这回事，却看不到当前是哪个档、也切不了。
@@ -613,7 +615,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <span class="muted">共 {{ total }} 条</span>
       </div>
 
-      <el-table class="data-grid" v-loading="loading" :data="rows" size="small" stripe>
+      <el-table class="data-grid" :data="rows" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column label="战报" width="70">
           <!--
