@@ -49,6 +49,11 @@
           <text class="r3-kpi-label">合成技能</text>
         </view>
       </view>
+      <view class="r3-progress-row r3-enter">
+        <text class="r3-progress-label">收集进度</text>
+        <view class="r3-progress"><view class="r3-progress-fill" :style="{ width: r3SkillPct + '%' }" /></view>
+        <text class="r3-progress-num">已解锁 {{ ownedCount }}/{{ skills.length }}</text>
+      </view>
       <view class="r3-filter" aria-label="按元素筛选技能">
         <text class="r3-chip" :class="{ active: r3Element === '' }" @click="r3Element = ''">全部 {{ skills.length }}</text>
         <text v-for="el in ELEMENT_ORDER" :key="'f' + el" class="r3-chip" :class="{ active: r3Element === el }" @click="r3Element = el">
@@ -486,6 +491,7 @@ const skillMatrix = computed(() =>
 const ownedCount = computed(
   () => skills.value.filter((s) => ownedSkillIds.value.has(s.id)).length,
 )
+const r3SkillPct = computed(() => skills.value.length ? Math.round(ownedCount.value / skills.value.length * 100) : 0)
 
 function isOwned(id: number): boolean {
   return ownedSkillIds.value.has(id)
