@@ -594,11 +594,21 @@
             <button class="btn-sm" @click="renderChart()">▶ 渲染</button>
           </div>
           <div class="viz-chart" v-if="vizRendered">
-            <div v-for="(d,di) in vizBars" :key="di" class="viz-bar-wrap">
-              <div class="viz-bar" :style="{height:Math.max(4,d.h)+'px',background:vizColors[di%8]}" :title="d.label+': '+d.value"></div>
-              <div class="viz-bar-label">{{d.label}}</div>
-              <div class="viz-bar-val">{{d.value}}</div>
+            <div v-if="vizType === 'bar'" class="viz-bar-native">
+              <div v-for="(d,di) in vizBars" :key="di" class="viz-bar-wrap">
+                <div class="viz-bar" :style="{height:Math.max(4,d.h)+'px',background:vizColors[di%8]}" :title="d.label+': '+d.value"></div>
+                <div class="viz-bar-label">{{d.label}}</div>
+                <div class="viz-bar-val">{{d.value}}</div>
+              </div>
             </div>
+            <EChartsView
+              v-else
+              :data="vizChartData"
+              :columns="vizChartColumns"
+              :chart-type="vizType"
+              dimension="name"
+              metric="value"
+            />
           </div>
           <div v-else class="viz-empty">{{resultData.length?'选择字段后点击渲染':'请先执行SQL'}}</div>
           <div class="viz-stats" v-if="vizStats">
@@ -891,6 +901,8 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, provide, ref, watch } from 'vue'
 import { ADMIN_HIDE_PAGE_TITLE, AdminFormSection, AdminPageHeader } from '../components/admin/'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import EChartsView from '../components/EChartsView.vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
 import { buildCsv } from '../utils/csv'
@@ -1779,6 +1791,9 @@ const vizRendered = ref(false)
 const vizColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
 const vizBars = ref<Array<{ label: string; value: number; h: number }>>([])
 const vizStats = ref<{ count: number; max: number; min: number; avg: number } | null>(null)
+// R620b: vizType 三形态消费; line/pie 复用 EChartsView, bar 保留原生柱
+const vizChartColumns = ['name', 'value']
+const vizChartData = computed(() => vizBars.value.map((d) => ({ name: d.label, value: d.value })))
 function renderChart() {
   if (!resultData.value.length || !vizXAxis.value || !vizYAxis.value) return
   const map = new Map<string, number>()
