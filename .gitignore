@@ -587,3 +587,9 @@ docs/laiyipao/audits/round72-search-empty-overflow/data/
 docs/laiyipao/audits/round72-search-empty-overflow/admin-auth-init.js
 docs/laiyipao/audits/round72-search-empty-overflow-postdeploy/data/
 docs/laiyipao/audits/round72-search-empty-overflow-postdeploy/admin-auth-init.js
+
+# R73 战场图例弹层焦点管理与键盘闭环及部署后真值不入库
+docs/laiyipao/audits/round73-legend-focus-trap/data/
+docs/laiyipao/audits/round73-legend-focus-trap/admin-auth-init.js
+docs/laiyipao/audits/round73-legend-focus-trap-postdeploy/data/
+docs/laiyipao/audits/round73-legend-focus-trap-postdeploy/admin-auth-init.js
