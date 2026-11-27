@@ -72,7 +72,7 @@
           />
         </svg>
         <view class="trend-legend">
-          <text class="dim">● 分数（蓝）　● 漏怪率（红）　越低越好</text>
+          <text class="dim">━ 分数（蓝·越高越好）　┄ 漏怪率（红虚线·越低越好）　● 绿胜 ● 红负</text>
         </view>
       </view>
 
