@@ -95,7 +95,7 @@
         />
         <text v-if="annKeyword && filteredItems.length === 0" class="muted search-empty-text">
           没有匹配「{{ annKeyword }}」的公告
-          <text class="link" @click="annKeyword = ''">清除搜索</text>
+          <text role="button" class="link" @click="annKeyword = ''" tabindex="0" @keydown.enter="annKeyword = ''">清除搜索</text>
         </text>
         <text v-else-if="filteredItems.length === 0" class="muted">该时间段没有公告。</text>
         <!-- G131 按月份分组归档 -->

@@ -182,7 +182,7 @@
             <text class="dim-value mono">{{ d.value }}</text>
             <!-- 空维补导（100 轮打磨 R14）：0 分的维度此前是一条死灰条，玩家
                  不知道去哪补。每条弱点给出明确入口，把「缺什么」变成「点这里」。 -->
-            <text
+            <text role="button" tabindex="0" @keydown.enter="go(d.hint)"
               v-if="d.pct === 0 && d.hint"
               class="dim-hint link"
               @click="go(d.hint)"

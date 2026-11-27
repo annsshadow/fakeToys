@@ -80,7 +80,7 @@
                  `PUT /me/nickname` 补上改名能力，上限 64 字。 -->
             <view v-if="!editingNickname" class="row" style="gap: 12rpx">
               <text class="nick">{{ store.nickname || '玩家' }}</text>
-              <text class="dim link" @click="startEditNickname">改名</text>
+              <text role="button" class="dim link" @click="startEditNickname" tabindex="0" @keydown.enter="startEditNickname">改名</text>
             </view>
             <view v-else class="nick-edit-row">
               <input
@@ -108,7 +108,7 @@
             <view class="row" style="align-items: center; gap: 12rpx">
               <text class="dim">ID {{ store.userId }}</text>
               <!-- 复制用户 ID（2026-11-01 新一轮第 90 轮）：反馈/社区报问题时用 -->
-              <text class="link" style="font-size: 22rpx" @click="copyUserId">复制</text>
+              <text role="button" class="link" style="font-size: 22rpx" @click="copyUserId" tabindex="0" @keydown.enter="copyUserId">复制</text>
             </view>
             <!-- 账号信息（2026-10-31 实质优化第 34 轮） -->
             <text v-if="store.accountCreatedAt" class="dim" style="display: block">
@@ -445,9 +445,9 @@
                 {{ b.result === 'win' ? '胜利' : '失败' }} · {{ b.stars }} 星 · {{ b.score }} 分
               </text>
               <!-- 从战报进入验真（2026-10-31 实质优化第 35 轮） -->
-              <text class="dim link" @click="goVerify(b)">验真</text>
+              <text role="button" class="dim link" @click="goVerify(b)" tabindex="0" @keydown.enter="goVerify(b)">验真</text>
               <!-- 战报详情（2026-10-31 新一轮第 10 轮） -->
-              <text class="dim link" @click="toggleBattleDetail(b)">详情</text>
+              <text role="button" class="dim link" @click="toggleBattleDetail(b)" tabindex="0" @keydown.enter="toggleBattleDetail(b)">详情</text>
             </view>
             <!-- 展开的单局完整详情 -->
             <view v-if="battleDetail && battleDetail.id === b.id" style="margin-top: 8rpx">

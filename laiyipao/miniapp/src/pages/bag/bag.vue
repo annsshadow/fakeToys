@@ -131,13 +131,13 @@
               缺 {{ missingFor(r).map(skillNameOf).join('、') }}
             </text>
             <text v-else-if="synthesizing === r.output" class="dim">熔炼中…</text>
-            <text v-else class="link" @click="doSynthesize(r)">熔炼</text>
+            <text role="button" v-else class="link" @click="doSynthesize(r)" tabindex="0" @keydown.enter="doSynthesize(r)">熔炼</text>
           </view>
         </view>
         <text v-if="craftableRecipes.length === 0 && !showAllRecipes" class="muted">
           当前没有可熔炼的配方 —— 集齐下面的材料技能后这里会出现入口。
         </text>
-        <text
+        <text role="button" tabindex="0" @keydown.enter="showAllRecipes = !showAllRecipes"
           v-if="recipes.length > craftableRecipes.length"
           class="link"
           style="margin-top: 8rpx"
@@ -208,13 +208,13 @@
                   v-else-if="!canAfford(s.id)"
                   class="dim"
                 >金币不足（{{ upgradeCost(s.id) }}）</text>
-                <text
+                <text role="button" tabindex="0" @keydown.enter="doUpgrade(s.id)"
                   v-else
                   class="link"
                   @click="doUpgrade(s.id)"
                 >升级 {{ upgradeCost(s.id) }} 金币</text>
                 <text v-if="isEquipped(s.id)" class="dim">已装备</text>
-                <text v-else class="link" @click="toggleEquip(s.id)">装备</text>
+                <text role="button" v-else class="link" @click="toggleEquip(s.id)" tabindex="0" @keydown.enter="toggleEquip(s.id)">装备</text>
               </template>
             </view>
           </view>
@@ -348,7 +348,7 @@
           <!-- R51 空态给可点入口：此前只说「去商城买一颗」却不能点 -->
           <view v-if="ownedGems.length === 0" class="row" style="gap: 8rpx">
             <text class="dim">还没有宝石。</text>
-            <text class="link" @click="goShop">去商城买一颗 →</text>
+            <text role="button" class="link" @click="goShop" tabindex="0" @keydown.enter="goShop">去商城买一颗 →</text>
           </view>
           <view
             v-for="g in ownedGems"
@@ -372,17 +372,17 @@
                    洗练在途仍显示可点的「洗练」—— 点了没反应的那类缺陷） -->
               <text v-if="gemBusyId === g.id || washingId === g.id" class="dim">处理中…</text>
               <template v-else>
-                <text
+                <text role="button" tabindex="0" @keydown.enter="doEquipGem(g)"
                   v-if="!g.equipped_slot"
                   class="link gem-equip"
                   @click="doEquipGem(g)"
                 >佩戴</text>
-                <text
+                <text role="button" tabindex="0" @keydown.enter="doUnequipGem(g)"
                   v-else
                   class="link gem-unequip"
                   @click="doUnequipGem(g)"
                 >卸下</text>
-                <text
+                <text role="button" tabindex="0" @keydown.enter="doWash(g)"
                   class="link gem-wash"
                   style="margin-left: 16rpx"
                   @click="doWash(g)"
@@ -414,11 +414,11 @@
             :focus="presetFocus"
           />
           <text v-if="presetSaving" class="dim" role="status" aria-live="polite">{{ SAVING_PRESET_TEXT }}</text>
-          <text v-else class="link" @click="doSavePreset">保存当前构筑</text>
+          <text role="button" v-else class="link" @click="doSavePreset" tabindex="0" @keydown.enter="doSavePreset">保存当前构筑</text>
         </view>
         <!-- R52 空态可直接聚焦输入框，少一次手动寻找 -->
         <view v-if="presets.length === 0" class="dim" style="margin-top: 8rpx">
-          还没有预设，<text class="link" @click="focusPreset">点这里填名字保存一套</text>。
+          还没有预设，<text role="button" class="link" @click="focusPreset" tabindex="0" @keydown.enter="focusPreset">点这里填名字保存一套</text>。
           <text v-if="presetFocus" class="link">已定位到上方输入框</text>
         </view>
         <text v-if="presetSavedName" class="preset-saved-hint">✓ 已保存「{{ presetSavedName }}」</text>
@@ -439,14 +439,14 @@
           <view class="skill-act">
             <text v-if="presetBusyId === p.id" class="dim">处理中…</text>
             <template v-else>
-              <text class="link preset-apply" @click="doApplyPreset(p)">应用</text>
-              <text
+              <text role="button" class="link preset-apply" @click="doApplyPreset(p)" tabindex="0" @keydown.enter="doApplyPreset(p)">应用</text>
+              <text role="button" tabindex="0" @keydown.enter="doSetCurrent(p)"
                 v-if="!p.is_current"
                 class="link preset-current"
                 style="margin-left: 12rpx"
                 @click="doSetCurrent(p)"
               >设为当前</text>
-              <text
+              <text role="button" tabindex="0" @keydown.enter="doDeletePreset(p)"
                 class="link preset-delete"
                 style="margin-left: 12rpx"
                 @click="doDeletePreset(p)"
