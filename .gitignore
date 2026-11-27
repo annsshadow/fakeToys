@@ -644,3 +644,8 @@ docs/laiyipao/audits/round100-clickable-view/data/
 docs/laiyipao/audits/round100-clickable-view/admin-auth-init.js
 docs/laiyipao/audits/round100-clickable-view-postdeploy/data/
 docs/laiyipao/audits/round100-clickable-view-postdeploy/admin-auth-init.js
+# R101 语义可访问性补全及部署后真值不入库
+docs/laiyipao/audits/round101-semantic-a11y/data/
+docs/laiyipao/audits/round101-semantic-a11y/admin-auth-init.js
+docs/laiyipao/audits/round101-semantic-a11y-postdeploy/data/
+docs/laiyipao/audits/round101-semantic-a11y-postdeploy/admin-auth-init.js
