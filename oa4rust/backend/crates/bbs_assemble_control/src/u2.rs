@@ -758,6 +758,18 @@ pub async fn u2_subject_accept_reply(
             // 此前第二写 `let _ =` 吞错且两写非事务，回帖标记失败会留主题悬空指向。
             let mut client = shared::db::acquire(&pool).await?;
             let tx = client.transaction().await?;
+            // R622b：事务内、任何写之前校验回帖属于被采纳主题，杜绝跨主题污染。
+            let belongs = tx
+                .query_opt(
+                    "SELECT 1 FROM x_bbs_reply WHERE id = $1 AND topic_id = $2 AND deleted_at IS NULL",
+                    &[&reply_id, &id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if belongs.is_none() {
+                tx.commit().await?;
+                return Ok(Json(ActionResult::error("reply not found in subject")));
+            }
             let affected = tx
                 .execute(
                     "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
@@ -1341,6 +1353,18 @@ pub async fn u2_user_reply_accept(
             // 同 u2_subject_accept_reply：跨表不变量对原子化。
             let mut client = shared::db::acquire(&pool).await?;
             let tx = client.transaction().await?;
+            // R622b：事务内、任何写之前校验回帖属于被采纳主题，杜绝跨主题污染。
+            let belongs = tx
+                .query_opt(
+                    "SELECT 1 FROM x_bbs_reply WHERE id = $1 AND topic_id = $2 AND deleted_at IS NULL",
+                    &[&reply_id, &subject_id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if belongs.is_none() {
+                tx.commit().await?;
+                return Ok(Json(ActionResult::error("reply not found in subject")));
+            }
             tx.execute(
                 "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
                 &[&reply_id],
