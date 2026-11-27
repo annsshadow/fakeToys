@@ -282,7 +282,21 @@ pub async fn device_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    let allowed = device_read_allowed(&db.0, &id, &sess.person_unique).await?;
+    if !allowed {
+        // 存在性读不参与授权：行存在但无权 → 403，行不存在保留 404。
+        let exists = jpush_device::Entity::find_by_id(&id)
+            .one(&db.0)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return if exists {
+            Err(AppError::Forbidden)
+        } else {
+            Err(AppError::NotFound)
+        };
+    }
     let result = jpush_device::Entity::delete_by_id(&id)
         .exec(&db.0)
         .await
