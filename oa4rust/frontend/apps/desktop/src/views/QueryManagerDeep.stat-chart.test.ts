@@ -17,15 +17,17 @@ describe('QueryManagerDeep 统计分析图表落地', () => {
     expect(source).toContain(':chart-type="statConfig.chartType"')
   })
 
-  it('表格模式仍回退键值列表，无数据不渲染图表', () => {
+  it('表格模式展示后端统计行，无数据不渲染图表', () => {
     expect(source).toContain('statChartData.length')
     expect(source).toContain('<template v-else>')
-    expect(source).toContain('v-for="(v,k) in statResult"')
+    expect(source).toContain('v-for="(row,i) in statResult.data"')
   })
 
   it('statResult 映射转 ECharts 行集（name/value）', () => {
     expect(source).toContain('const statChartData = computed(')
-    expect(source).toContain('Object.entries(statResult.value).map(([name, value]) => ({ name, value }))')
+    expect(source).toContain('mapStatRows(statResult.value)')
+    expect(source).toContain('row.dimension')
+    expect(source).toContain('row.rowCount')
   })
 
   it('EChartsView 用按需模块化 echarts（tree-shakable，避免全量打包）', () => {

@@ -181,7 +181,7 @@
             </div>
             <ListLoadError v-if="statResult && statError" mode="banner" :message="statError" @retry="runStats" />
             <ListLoadError v-else-if="statError" mode="empty" :message="statError" @retry="runStats" />
-            <div v-if="statResult" class="stat-result">
+            <div v-if="statResult && statResult.data?.length" class="stat-result">
               <EChartsView
                 v-if="statConfig.chartType !== 'table' && statChartData.length"
                 :data="statChartData"
@@ -191,8 +191,9 @@
                 metric="value"
               />
               <template v-else>
-                <div v-for="(v,k) in statResult" :key="k" class="sr-item">
-                  <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
+                <div v-for="(row,i) in statResult.data" :key="i" class="sr-item">
+                  <span class="sr-key">{{ row.dimension }}</span>
+                  <span class="sr-val">{{ row.rowCount }}</span><span class="sr-val">{{ row.metricTotal }}</span>
                 </div>
               </template>
             </div>
@@ -481,13 +482,31 @@ const statConfig = ref<{ dimension: string; metric: string; chartType: 'bar' | '
   metric: '',
   chartType: 'bar',
 })
-const statResult = ref<Record<string, number> | null>(null)
+// 后端 stat/do 返回 { id, dimension, metric, data:[{dimension,rowCount,metricTotal}] }；
+// 顶层是元数据，真实统计行在 data[]。主数值取 rowCount（与 EChartsView 的 Number(r[metric]) 一致）。
+interface StatRow {
+  dimension: string
+  rowCount: number
+  metricTotal?: string | null
+}
+interface StatResponse {
+  id: string
+  dimension: string
+  metric: string
+  data: StatRow[]
+}
+function mapStatRows(resp: StatResponse | null): Array<{ name: string; value: number }> {
+  const rows = resp?.data
+  if (!Array.isArray(rows)) return []
+  return rows
+    .filter((row) => row && row.dimension != null)
+    .map((row) => ({ name: String(row.dimension), value: Number(row.rowCount) || 0 }))
+}
+const statResult = ref<StatResponse | null>(null)
 const statError = ref('')
-// 统计结果 { 标签: 数值 } 映射转 ECharts 行集，供柱/饼/折线渲染；表格模式沿用键值列表。
+// 统计行映射为 ECharts 行集 name/value，供柱/饼/折线渲染；表格模式直接展示 data[]。
 const statChartColumns = ['name', 'value']
-const statChartData = computed(() =>
-  statResult.value ? Object.entries(statResult.value).map(([name, value]) => ({ name, value })) : [],
-)
+const statChartData = computed(() => mapStatRows(statResult.value))
 const importConfig = ref({ delimiter: ',' })
 
 const qc = useQueryClient()
@@ -608,7 +627,8 @@ async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
     let lastResp: any
     if (kind === 'query') lastResp = await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
     else if (kind === 'stat') lastResp = await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
-    else if (kind === 'view') lastResp = await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
+    else if (kind === 'view')
+      lastResp = await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
     else if (kind === 'importmodel')
       lastResp = await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
     else if (kind === 'neural')
@@ -656,7 +676,8 @@ async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 
   try {
     let lastResp: any
     if (kind === 'query') lastResp = await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
-    else if (kind === 'statement') lastResp = await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
+    else if (kind === 'statement')
+      lastResp = await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
     else if (kind === 'stat') lastResp = await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
     else if (kind === 'view') lastResp = await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
     else if (kind === 'table') lastResp = await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
@@ -738,7 +759,10 @@ async function qdWrite2(op: string) {
       lastResp = await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
     } else if (op === 'stmtExecute') {
       const flag = prompt('语句 flag:', '') || ''
-      lastResp = await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
+      lastResp = await api.post(
+        `/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`,
+        {},
+      )
     } else if (op === 'neuralUpdate') {
       const f = prompt('模型 flag:', '') || ''
       lastResp = await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
