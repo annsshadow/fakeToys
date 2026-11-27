@@ -2991,16 +2991,13 @@ pub async fn connector_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
+    // R620a: person 身份绑定会话人, body.person 不再自证。
+    let person = sess.person_unique.clone();
     let msg_type = req
         .get("type")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let person = req
-        .get("person")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
@@ -3068,19 +3065,12 @@ pub async fn ws_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
-    let person = req
-        .get("person")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let sender = req
-        .get("sender")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // R620a: ws 查询的 person 与落库 sender 均绑定会话人, body 不再自证。
+    let person = sess.person_unique.clone();
+    let sender = sess.person_unique.clone();
     let body = match req.get("body") {
         Some(v) => v.to_string(),
         None => String::new(),

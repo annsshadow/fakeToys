@@ -130,14 +130,12 @@ pub(crate) fn attr_values_to_insert<'a>(
 
 async fn attr_write_values(
     pool: &Pool,
+    owner: String,
     body: &Value,
     table: &str,
     owner_col: &str,
     append: bool,
 ) -> Result<(), AppError> {
-    let Some(owner) = string_field(body, "person").or_else(|| string_field(body, "unit")) else {
-        return Err(AppError::BadRequest("person/unit is required".into()));
-    };
     let Some(name) = string_field(body, "name") else {
         return Err(AppError::BadRequest("name is required".into()));
     };
@@ -213,6 +211,29 @@ async fn attr_write_values(
     Ok(())
 }
 
+/// R620a：写端点身份绑定门（置于首个 DB 写之前）。body 显式声明的身份
+/// 字段不得自证：须等于会话人，或管理员显式代写；否则 403。未声明则取会话人本人。
+async fn resolve_write_owner(
+    pool: &Pool,
+    sess: &shared::session::Session,
+    body: &Value,
+    id_field: &str,
+    name_field: &str,
+) -> Result<String, AppError> {
+    let actor = sess.person_unique.clone();
+    match string_field(body, id_field).or_else(|| string_field(body, name_field)) {
+        None => Ok(actor),
+        Some(c) if c == actor => Ok(actor),
+        Some(c) => {
+            if shared::middleware::rbac::is_admin(pool, &actor).await {
+                Ok(c)
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 fn wrap_true() -> Value {
     Value::Object(serde_json::Map::from_iter([(
         "value".to_string(),
@@ -227,9 +248,18 @@ pub async fn personattr_set_person_name(
     session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    crate::require_session(session)?;
-    attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", false).await?;
+    // R620a：身份门置于首个 DB 写之前；owner 由会话人绑定，body 身份不得自证。
+    let sess = crate::require_session(session)?;
+    let owner = resolve_write_owner(&pool, &sess, &body, "personId", "person").await?;
+    attr_write_values(
+        &pool,
+        owner,
+        &body,
+        "x_org_person_attribute",
+        "person_id",
+        false,
+    )
+    .await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
@@ -240,9 +270,18 @@ pub async fn personattr_append_person_name(
     session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    crate::require_session(session)?;
-    attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", true).await?;
+    // R620a：身份门置于首个 DB 写之前；owner 由会话人绑定，body 身份不得自证。
+    let sess = crate::require_session(session)?;
+    let owner = resolve_write_owner(&pool, &sess, &body, "personId", "person").await?;
+    attr_write_values(
+        &pool,
+        owner,
+        &body,
+        "x_org_person_attribute",
+        "person_id",
+        true,
+    )
+    .await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
@@ -385,9 +424,18 @@ pub async fn unitattr_set_unit_name(
     session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    crate::require_session(session)?;
-    attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", false).await?;
+    // R620a：身份门置于首个 DB 写之前；owner 由会话人绑定，body 身份不得自证。
+    let sess = crate::require_session(session)?;
+    let owner = resolve_write_owner(&pool, &sess, &body, "unitId", "unit").await?;
+    attr_write_values(
+        &pool,
+        owner,
+        &body,
+        "x_org_unit_attribute",
+        "unit_id",
+        false,
+    )
+    .await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
@@ -397,9 +445,10 @@ pub async fn unitattr_append_unit_name(
     session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    crate::require_session(session)?;
-    attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", true).await?;
+    // R620a：身份门置于首个 DB 写之前；owner 由会话人绑定，body 身份不得自证。
+    let sess = crate::require_session(session)?;
+    let owner = resolve_write_owner(&pool, &sess, &body, "unitId", "unit").await?;
+    attr_write_values(&pool, owner, &body, "x_org_unit_attribute", "unit_id", true).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
@@ -457,8 +506,8 @@ pub async fn empowerlog_create(
     session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401），防匿名授权日志写入；from/to identity 从 body 取（冒名族，另记待修）。
-    crate::require_session(session)?;
+    // R620a：身份门置于首个 DB 写之前；fromIdentity 须会话人本人（admin 可代写）。
+    let sess = crate::require_session(session)?;
     let required = [
         ("application", string_field(&body, "application")),
         ("process", string_field(&body, "process")),
@@ -469,6 +518,12 @@ pub async fn empowerlog_create(
         if value.is_none() {
             return Err(AppError::BadRequest(format!("{field} is empty")));
         }
+    }
+    let from = required[2].1.as_deref().unwrap_or_default();
+    if !shared::middleware::rbac::is_admin(&pool, &sess.person_unique).await
+        && from != sess.person_unique
+    {
+        return Err(AppError::Forbidden);
     }
     let work = string_field(&body, "work");
     const SQL: &str = "INSERT INTO x_org_empower_log \
