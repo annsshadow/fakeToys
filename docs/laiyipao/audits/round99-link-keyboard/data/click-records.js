@@ -1,0 +1,1 @@
+(function(){var els=[].slice.call(document.querySelectorAll("*"));var t=els.filter(function(e){return (e.textContent||"").trim()==="记录"&&e.children.length===0;});if(t.length){t[0].click();return "CLICKED_RECORD:"+t.length;}return "NO_RECORD";})()

@@ -1,0 +1,1 @@
+(function(){var a=document.activeElement;var links=[].slice.call(document.querySelectorAll(".link,[class*=link]"));var isLink=!!a&&links.indexOf(a)>=0;return JSON.stringify({tag:a?a.tagName:null,cls:a?String(a.className):null,txt:a?(a.textContent||"").trim().slice(0,24):null,role:a?a.getAttribute("role"):null,tabIndex:a?a.tabIndex:null,isLink:isLink});})()

@@ -1,0 +1,1 @@
+(function(){var a=document.activeElement;var links=[].slice.call(document.querySelectorAll(".link,[class*=link]"));var i=links.indexOf(a);return i>=0?("CTA_HIT:"+i+":"+(a.textContent||"").trim().slice(0,20)):"CTA_NO";})()

@@ -1,0 +1,1 @@
+(function(){var b=document.body.innerText||"";return JSON.stringify({url:location.href,bodyLen:b.length,hasScore:b.indexOf("构筑评分")>=0,hasDim:b.indexOf("元素覆盖")>=0,hasBattle:b.indexOf("最近战报")>=0,btnCount:document.querySelectorAll("[role=button]").length,linkCount:document.querySelectorAll(".link").length,head:b.slice(0,260)});})()

@@ -1,0 +1,1 @@
+(function(){var a=document.activeElement;if(!a)return JSON.stringify({none:true});var cs=getComputedStyle(a);return JSON.stringify({tag:a.tagName,cls:String(a.className).slice(0,40),outlineStyle:cs.outlineStyle,outlineWidth:cs.outlineWidth,outlineColor:cs.outlineColor});})()
