@@ -593,3 +593,8 @@ docs/laiyipao/audits/round73-legend-focus-trap/data/
 docs/laiyipao/audits/round73-legend-focus-trap/admin-auth-init.js
 docs/laiyipao/audits/round73-legend-focus-trap-postdeploy/data/
 docs/laiyipao/audits/round73-legend-focus-trap-postdeploy/admin-auth-init.js
+# R81 技能图鉴收集进度条一致性美化及部署后真值不入库
+docs/laiyipao/audits/round81-skill-collection-progress/data/
+docs/laiyipao/audits/round81-skill-collection-progress/admin-auth-init.js
+docs/laiyipao/audits/round81-skill-collection-progress-postdeploy/data/
+docs/laiyipao/audits/round81-skill-collection-progress-postdeploy/admin-auth-init.js

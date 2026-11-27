@@ -1,0 +1,63 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > r3SkillPct computed 存在且与 r3EquipPct 同构 6ms
+   → skills 必须定义 r3SkillPct computed: expected undefined to be truthy
+ × src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 模板 r3-progress-row 存在且绑定 r3SkillPct、文案收集进度与已解锁 1ms
+   → skills KPI 区后必须有 r3-progress-row: expected -1 to be greater than -1
+ × src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 插入位置在 KPI 区之后与 r3-filter 之前 1ms
+   → 进度条必须位于 KPI 与筛选行之间: expected -1 to be greater than 2018
+ ✓ src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 不变量：G66 元素×类型覆盖矩阵保留 1ms
+ ✓ src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 不变量：ownedCount / 解锁文案 / 筛选 / 搜索 / 结果计数原样 0ms
+ ✓ src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 令牌三锚点保留、零 r81 令牌、写域边界 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > r3SkillPct computed 存在且与 r3EquipPct 同构
+AssertionError: skills 必须定义 r3SkillPct computed: expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ src/styles/r81SkillCollectionProgress.contract.test.ts:43:56
+     41|   it('r3SkillPct computed 存在且与 r3EquipPct 同构', () => {
+     42|     const pctLine = lines.find(l => l.indexOf('const r3SkillPct') > -1)
+     43|     expect(pctLine, 'skills 必须定义 r3SkillPct computed').toBeTruthy()
+       |                                                        ^
+     44|     expect(pctLine, 'r3SkillPct 必须经 computed 派生').toContain('computed(…
+     45|     expect(pctLine, 'r3SkillPct 分母必须是 skills.value.length').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 模板 r3-progress-row 存在且绑定 r3SkillPct、文案收集进度与已解锁
+AssertionError: skills KPI 区后必须有 r3-progress-row: expected -1 to be greater than -1
+ ❯ src/styles/r81SkillCollectionProgress.contract.test.ts:56:51
+     54|   it('模板 r3-progress-row 存在且绑定 r3SkillPct、文案收集进度与已解锁', () => {
+     55|     const i = lines.findIndex(l => l.indexOf('r3-progress-row') > -1)
+     56|     expect(i, 'skills KPI 区后必须有 r3-progress-row').toBeGreaterThan(-1)
+       |                                                   ^
+     57|     const block = lines.slice(i, i + 5).join(String.fromCharCode(10))
+     58|     expect(block, '进度条须含 r3-progress-fill 填充元素').toContain('r3-progres…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/styles/r81SkillCollectionProgress.contract.test.ts > R81 skills 收集进度条一致性美化契约 > 插入位置在 KPI 区之后与 r3-filter 之前
+AssertionError: 进度条必须位于 KPI 与筛选行之间: expected -1 to be greater than 2018
+ ❯ src/styles/r81SkillCollectionProgress.contract.test.ts:74:47
+     72|     expect(kpiPos, 'KPI 区锚点必须存在').toBeGreaterThan(-1)
+     73|     expect(filterPos, '筛选行锚点必须存在').toBeGreaterThan(-1)
+     74|     expect(progressPos, '进度条必须位于 KPI 与筛选行之间').toBeGreaterThan(kpiPos)
+       |                                               ^
+     75|     expect(progressPos, '进度条必须在筛选行之前').toBeLessThan(filterPos)
+     76|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 3 passed (6)
+   Start at  13:10:47
+   Duration  339ms (transform 30ms, setup 0ms, import 46ms, tests 12ms, environment 0ms)
