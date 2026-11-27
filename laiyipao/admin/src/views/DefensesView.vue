@@ -215,6 +215,15 @@ async function load() {
   }
 }
 
+/** R94：智能空态动作 —— 清空筛选并重载。 */
+function resetFilters() {
+  keyword.value = ''
+  ownerId.value = undefined
+  shieldedFilter.value = undefined
+  page.value = 1
+  load()
+}
+
 /**
  * 删除玩家防线（2026-10-31 实质优化第 26 轮）。
  * 违规防线名（侮辱/广告等）运营此前只能看到、无法处理。
@@ -434,7 +443,7 @@ load()
             <div class="empty-state-glyph" aria-hidden="true">◇</div>
             <div class="empty-state-title">{{ emptyText }}</div>
             <p class="empty-state-reason">当前筛选条件下没有防线；可清空筛选或刷新后重试。</p>
-            <el-button class="empty-state-action" size="small" @click="((page = 1), load())">刷新防线</el-button>
+            <el-button class="empty-state-action" size="small" @click="resetFilters">清空筛选</el-button>
           </div>
         </template>
 </el-table>
