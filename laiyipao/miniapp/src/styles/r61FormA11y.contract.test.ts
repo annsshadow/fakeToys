@@ -68,6 +68,7 @@ const NODES: [string, string, string, string][] = [
   ['pages/signin/signin.vue', '{{ redeemMsg }}', 'state', 'signin redeemMsg'],
   ['pages/me/me.vue', '{{ passwordMsg }}', 'state', 'me passwordMsg'],
   ['pages/bag/bag.vue', 'v-if="presetSaving"', 'state', 'bag presetSaving'],
+  ['pages/me/me.vue', '{{ nicknameMsg }}', 'state', 'me nicknameMsg'],
 ]
 
 describe('R61 表单输入语义与错误播报契约', () => {

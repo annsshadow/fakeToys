@@ -116,6 +116,7 @@
           role="button"
           tabindex="0"
           @keydown.enter="toggleAnn(a.id)"
+          :aria-expanded="String(expanded.has(a.id))"
         >
           <view class="ann-head">
             <!-- 第六批 R55：首页公告首条与公告页统一「最新」徽章 -->

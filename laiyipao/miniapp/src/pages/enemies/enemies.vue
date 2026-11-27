@@ -99,7 +99,7 @@
             <text class="rxn-name tap" @click="toggleEnemy(en.id)">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
             <text v-if="en.is_boss" class="chip hit">Boss</text>
-            <text class="resist-toggle" role="button" tabindex="0" @click="toggleEnemy(en.id)" @keydown.enter="toggleEnemy(en.id)">
+            <text class="resist-toggle" role="button" tabindex="0" @click="toggleEnemy(en.id)" @keydown.enter="toggleEnemy(en.id)" :aria-expanded="String(expandedEnemy === en.id)">
               {{ expandedEnemy === en.id ? '收起抗性图 ▲' : '抗性图 ▼' }}
             </text>
           </view>

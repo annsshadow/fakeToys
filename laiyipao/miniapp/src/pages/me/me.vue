@@ -100,6 +100,8 @@
             <text
               v-if="nicknameMsg"
               class="dim"
+              role="status"
+              aria-live="polite"
               style="display: block; margin-top: 4rpx"
               :style="{ color: nicknameErr ? 'var(--bad)' : 'var(--ok)' }"
             >

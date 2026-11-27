@@ -187,6 +187,7 @@
           role="button"
           tabindex="0"
           @keydown.enter="toggleDetail(it)"
+          :aria-expanded="String(expandedId === it.id)"
         >
           <view class="battle-head">
             <!-- R19 胜负做成实心徽章，整行再给淡色底，扫一眼就能分胜败 -->
