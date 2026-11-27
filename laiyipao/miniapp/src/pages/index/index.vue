@@ -37,7 +37,7 @@
         <text class="dim" style="display: block; margin-top: 12rpx">
           请先启动后端：cd server && go run ./cmd/api
         </text>
-        <view class="btn btn-primary" style="margin-top: 20rpx" @click="retry">重试</view>
+        <view class="btn btn-primary" style="margin-top: 20rpx" role="button" tabindex="0" @click="retry" @keydown.enter="retry">重试</view>
       </view>
     </view>
 
@@ -50,7 +50,7 @@
         R7 真实新玩家实测：首屏第一眼只有 AI 洞察/公告/评分，主行动「开始」要滚动很远才看到。
         这里给 0 通关玩家一条明确目标与下一步，且按钮直达同一套 goStage 导航，不做假入口。
       -->
-      <view v-if="store.maxStage === 0" class="card first-run-guide tap" @click="goStage">
+      <view v-if="store.maxStage === 0" class="card first-run-guide tap" role="button" tabindex="0" @click="goStage" @keydown.enter="goStage">
         <text class="first-run-kicker">新玩家先打第 {{ store.unlockedLevel }} 关</text>
         <text class="first-run-title">守住防线，清完全部波次</text>
         <text class="first-run-sub">打完就能解锁技能、装备与元素反应搭配，先在这里试一手。</text>
@@ -75,7 +75,7 @@
         <text class="ai-conclusion">{{ aiInsight.weak.label }}仅 {{ aiInsight.weak.pct }}%（权重 {{ aiInsight.weak.weightPct }}%）：优先补它，收益 {{ aiInsight.gain }}</text>
         <text class="ai-evidence">依据：五维评分 / 补分边际收益 · 更新于本次进入</text>
         <view class="ai-cta-row">
-          <view class="btn ai-cta" @click="go(aiInsight.hint)">去补强 →</view>
+          <view class="btn ai-cta" role="button" tabindex="0" @click="go(aiInsight.hint)" @keydown.enter="go(aiInsight.hint)">去补强 →</view>
         </view>
       </view>
       <view v-else id="ai-insight" class="card ai-insight-card ai-empty" aria-label="AI 战术洞察">
@@ -89,7 +89,7 @@
         <text class="ai-conclusion">AI 暂时没有足够构筑数据，先打一场战斗吧</text>
         <text class="ai-evidence">依据：五维评分 / 补分边际收益 · 更新于本次进入</text>
         <view class="ai-cta-row">
-          <view class="btn ai-cta" @click="goStage">去战斗 →</view>
+          <view class="btn ai-cta" role="button" tabindex="0" @click="goStage" @keydown.enter="goStage">去战斗 →</view>
         </view>
       </view>
 
@@ -106,7 +106,7 @@
           <text>公告</text>
           <!-- 全部公告入口（2026-11-01 新一轮第 42 轮）：首页只展示最新几条，
                历史公告在首页不可回看，这里提供公告列表页入口。 -->
-          <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
+          <text class="ann-all" role="button" tabindex="0" @click="goAnnouncements" @keydown.enter="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
           v-for="(a, i) in visibleAnnouncements"
