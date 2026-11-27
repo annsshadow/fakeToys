@@ -598,3 +598,8 @@ docs/laiyipao/audits/round81-skill-collection-progress/data/
 docs/laiyipao/audits/round81-skill-collection-progress/admin-auth-init.js
 docs/laiyipao/audits/round81-skill-collection-progress-postdeploy/data/
 docs/laiyipao/audits/round81-skill-collection-progress-postdeploy/admin-auth-init.js
+# R88 战绩趋势图图例修正及部署后真值不入库
+docs/laiyipao/audits/round88-trend-legend/data/
+docs/laiyipao/audits/round88-trend-legend/admin-auth-init.js
+docs/laiyipao/audits/round88-trend-legend-postdeploy/data/
+docs/laiyipao/audits/round88-trend-legend-postdeploy/admin-auth-init.js
