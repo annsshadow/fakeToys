@@ -455,6 +455,12 @@ pub async fn mind_save(
         .map(|s| s.to_string());
     if let Some(eid) = existing {
         if !eid.is_empty() {
+            // R622a: 更新他人脑图前必须验证属主或 admin（身份盲写 IDOR 修复）。
+            // 与兄弟写端点 mind_share/mind_destroy 同门；person 仅来自会话，
+            // 不采信 body 自证，避免任意登录者凭他人 mind id 覆写内容、置公开或污染版本链。
+            if !person_can_manage_mind(&pool, &person, &eid).await? {
+                return Err(AppError::Forbidden);
+            }
             // 更新与版本记录同事务且版本 INSERT 失败必须传播（此前 `let _ =` 吞错：
             // 版本落库失败被静默丢弃，响应仍报 fileVersion=N）。n=0（脑图不存在/已删）
             // 时事务无写提交后落入下方新建分支，保持原语义。
