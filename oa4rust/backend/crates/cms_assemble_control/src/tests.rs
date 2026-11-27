@@ -749,10 +749,7 @@ mod r331_manager_softdelete_tests {
         let client = p.get().await.expect("r331 conn");
         let refs: Vec<&(dyn ToSql + Sync)> =
             params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
-        client
-            .execute(sql, &refs)
-            .await
-            .expect("r331 fixture sql");
+        client.execute(sql, &refs).await.expect("r331 fixture sql");
     }
 
     async fn seed_admin(p: &deadpool_postgres::Pool) {
@@ -813,6 +810,7 @@ mod r331_manager_softdelete_tests {
         let resp = crate::document_filter_paging_manager_u3(
             Extension(p.clone()),
             Extension(shared::testing::test_session(ADMIN)),
+            None,
         )
         .await
         .expect("r331 manager handler must succeed");
@@ -824,10 +822,7 @@ mod r331_manager_softdelete_tests {
             .map(|r| r["id"].as_str().unwrap_or_default().to_string())
             .collect();
 
-        assert!(
-            ids.contains(&keep),
-            "未删除文档必须仍在 manager 列表"
-        );
+        assert!(ids.contains(&keep), "未删除文档必须仍在 manager 列表");
         assert!(
             !ids.contains(&gone),
             "已软删文档不得出现在 manager 列表（修复前会返回该行）"

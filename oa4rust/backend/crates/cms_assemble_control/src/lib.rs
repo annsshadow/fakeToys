@@ -11587,18 +11587,43 @@ pub async fn document_filter_prev_u3(
     .await
 }
 
+// R600：文档筛选列表的 type/keyword 过滤条件构造。
+// 纯函数：只把 body 中的 type 映射到 status 列、keyword 映射到 title ILIKE，
+// 全部值参数化绑定，绝不拼接进 SQL；无 body / 空值退回原有全量口径。
+// 返回 (where 条件, 绑定参数)，保留 deleted_at IS NULL / ORDER BY / LIMIT 200 由调用方追加。
+fn document_filter_where(body: Option<Json<Value>>) -> (String, Vec<String>) {
+    let mut clauses = vec!["deleted_at IS NULL".to_string()];
+    let mut params: Vec<String> = Vec::new();
+    if let Some(Json(value)) = body {
+        if let Some(kw) = value.get("keyword").and_then(|v| v.as_str()) {
+            if !kw.is_empty() {
+                params.push(format!("%{}%", kw));
+                clauses.push(format!("title ILIKE ${}", params.len()));
+            }
+        }
+        if let Some(t) = value.get("type").and_then(|v| v.as_str()) {
+            if !t.is_empty() {
+                params.push(t.to_string());
+                clauses.push(format!("status = ${}", params.len()));
+            }
+        }
+    }
+    let where_clause = format!(
+        "{} ORDER BY create_time DESC LIMIT 200",
+        clauses.join(" AND ")
+    );
+    (where_clause, params)
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn document_filter_paging_u3(
     pool: Extension<Pool>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_legacy(
-        &pool,
-        "x_cms_data_document",
-        "deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
-        &[],
-    )
-    .await
+    let (where_clause, params) = document_filter_where(body);
+    let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|s| s as &(dyn ToSql + Sync)).collect();
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", &where_clause, &refs).await
 }
 
 #[axum::debug_handler]
@@ -11606,15 +11631,12 @@ pub async fn document_filter_paging_u3(
 pub async fn document_filter_paging_manager_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    list_from_table_filtered_legacy(
-        &pool,
-        "x_cms_data_document",
-        "deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
-        &[],
-    )
-    .await
+    let (where_clause, params) = document_filter_where(body);
+    let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|s| s as &(dyn ToSql + Sync)).collect();
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", &where_clause, &refs).await
 }
 
 #[axum::debug_handler]

@@ -6,8 +6,8 @@
     <AdminPageHeader title="文档管理" subtitle="文档发布 / 草稿 / 权限（/api/document/*）" />
     <div class="content-panel glass-card">
       <div class="tabs">
-        <button :class="{active:tab==='published'}" @click="tab='published'">已发布</button>
-        <button :class="{active:tab==='draft'}" @click="tab='draft'">草稿</button>
+        <button :class="{active:tab==='published'}" @click="tab='published'; doSearch()">已发布</button>
+        <button :class="{active:tab==='draft'}" @click="tab='draft'; doSearch()">草稿</button>
       </div>
       <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="reload">
         <template #filters>
@@ -114,7 +114,7 @@ const documentColumns: AdminTableColumn[] = [
 ]
 
 import { api } from '@oa4rust/sdk'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 
 function documentWriteSucceeded(resp:any):boolean {
@@ -230,6 +230,9 @@ async function doSearch() {
     loadError.value = describeListError('文档列表加载失败', e)
   }
 }
+
+// R600：页签切换必须触发带 type 的重新查询，统计取过滤后 items.length。
+watch(tab, () => { void doSearch() })
 
 // 管理视图：GET document/filter/list/{page}/size/{size}/manager —— 管理员口径，
 // 后端 u2_require_admin 门禁，返回全量文档（区别于个人可见范围）。
