@@ -1,0 +1,1 @@
+(()=>{var a=document.activeElement;return JSON.stringify({tag:a&&a.tagName,cls:a&&String(a.className||''),role:a&&a.getAttribute('role'),tab:a&&a.getAttribute('tabindex'),txt:a&&(a.textContent||'').trim().slice(0,30),isBack:!!(a&&a.classList&&a.classList.contains('back-btn'))});})()
