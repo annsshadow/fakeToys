@@ -636,5 +636,11 @@ docs/laiyipao/audits/round98-form-enter-postdeploy/admin-auth-init.js
 # R99 可点link键盘可达补漏及部署后真值不入库
 docs/laiyipao/audits/round99-a-link-keyboard/data/
 docs/laiyipao/audits/round99-a-link-keyboard/admin-auth-init.js
-docs/laiyipao/audits/round99-a-link-keyboard-postdeploy/data/
-docs/laiyipao/audits/round99-a-link-keyboard-postdeploy/admin-auth-init.js
+docs/laiyipao/audits/round99-link-keyboard-postdeploy/data/
+docs/laiyipao/audits/round99-link-keyboard-postdeploy/admin-auth-init.js
+
+# R100 可点击交互行键盘可达补漏及部署后真值不入库
+docs/laiyipao/audits/round100-clickable-view/data/
+docs/laiyipao/audits/round100-clickable-view/admin-auth-init.js
+docs/laiyipao/audits/round100-clickable-view-postdeploy/data/
+docs/laiyipao/audits/round100-clickable-view-postdeploy/admin-auth-init.js
