@@ -271,7 +271,12 @@ pub async fn create_forum(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    // forum 无 creator/owner 列，属全局管理对象；写操作对齐兄弟
+    // bbs_assemble_control 管理面语义：仅管理员可创建。
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -313,7 +318,10 @@ pub async fn update_forum(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -371,7 +379,10 @@ pub async fn delete_forum(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -401,7 +412,11 @@ pub async fn create_section(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    // section 同 forum：无作者列，属管理对象，仅管理员可创建。
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -451,7 +466,10 @@ pub async fn update_section(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -526,7 +544,10 @@ pub async fn delete_section(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -606,7 +627,7 @@ pub async fn update_subject(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -615,6 +636,11 @@ pub async fn update_subject(
     let Some(m) = existing else {
         return Ok(Json(ActionResult::error("subject not found")));
     };
+
+    // subject 有作者归属：仅本人或管理员可改，其他登录人 403。
+    if m.author_id != sess.person_unique && !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
 
     let m_title = m.title.clone();
     let m_author_id = m.author_id.clone();
@@ -688,7 +714,7 @@ pub async fn delete_subject(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -699,6 +725,10 @@ pub async fn delete_subject(
     }
 
     let model = existing.unwrap();
+    // subject 有作者归属：仅本人或管理员可删，其他登录人 403。
+    if model.author_id != sess.person_unique && !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let deleted_id = model.id.clone();
     let active_model: bbs_subject_info::ActiveModel = model.into();
     active_model
