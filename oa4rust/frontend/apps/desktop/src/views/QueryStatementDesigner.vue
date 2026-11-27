@@ -1056,6 +1056,26 @@ function queryStatementWriteSucceeded(resp: any): boolean {
   if (resp.type) return false
   return true
 }
+// R614b：「💾 保存」按钮真绑定——按当前选中语句 id 复用 save 端点覆写，
+// 不经 prompt（区别于「🏷️ 按Flag保存」按钮），经统一 envelope 守卫避免误报成功。
+async function saveStatement() {
+  const item = currentStatement.value
+  if (!item || !item.id) return
+  try {
+    const resp: any = await api.put(`/api/query/assemble/designer/save/${encodeURIComponent(item.id)}`, {
+      ...item,
+      sql: sql.value,
+    })
+    if (!queryStatementWriteSucceeded(resp)) {
+      toast.error(resp?.message || '保存未生效，请刷新后重试')
+      return
+    }
+    toast.success('语句已保存')
+    queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+  } catch (e: any) {
+    toast.error(`保存失败: ${e?.message ?? ''}`)
+  }
+}
 // 十类功能5：按 flag 覆写语句（PUT statement/{flag}，o2 语义=按标识保存）
 async function saveByFlag() {
   const flag = prompt('目标 flag（按该标识覆写保存）:', currentStatement.value?.flag || '') || ''
