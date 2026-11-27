@@ -7,8 +7,8 @@ use axum::{
     Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -27,6 +27,23 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 管理员判定（与 bbs_core_entity::is_admin_db 同一条 SQL）。
+/// 关联表无 creator/owner 列, delete_by_id 属全局关联元数据管理面动作,
+/// 因此采用 admin-only 门; 不用 source_id 当 owner(它是任意对象 id, 非 person_unique)。
+async fn is_admin_db(db: &DatabaseConnection, person_unique: &str) -> bool {
+    let row = db
+        .query_one(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p LEFT JOIN auth_person_role pr ON pr.person_id = p.id LEFT JOIN auth_role r ON r.id = pr.role_id WHERE (p.unique_id = $1 OR p.id = $1) AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").unwrap_or(false),
+        _ => false,
+    }
 }
 
 // 关联实体 - 表示两个对象之间的关系
@@ -201,7 +218,10 @@ pub async fn delete_by_id(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    if !is_admin_db(&db.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let model = correlation::Entity::find_by_id(&id)
         .one(&db.0)
         .await
