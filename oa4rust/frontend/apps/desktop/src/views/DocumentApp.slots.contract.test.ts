@@ -45,7 +45,7 @@ describe("R330 DocumentApp.vue 具名插槽业务入口契约", () => {
   it("AdminToolbar 用组件自带 v-model + @search/@refresh，不再裸放自造搜索 input", () => {
     expect(tpl).toContain('v-model="keyword"');
     expect(tpl).toContain('@search="doSearch"');
-    expect(tpl).toContain('@refresh="reload"');
+    expect(tpl).toContain('@refresh="doSearch"');
     const toolbar = defaultSlotOf(tpl, "AdminToolbar");
     expect(toolbar, "默认插槽不应再裸放搜索 input").not.toContain('class="search-input"');
   });

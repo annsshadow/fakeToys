@@ -9,7 +9,7 @@
         <button :class="{active:tab==='published'}" @click="tab='published'; doSearch()">已发布</button>
         <button :class="{active:tab==='draft'}" @click="tab='draft'; doSearch()">草稿</button>
       </div>
-      <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="reload">
+      <AdminToolbar v-model="keyword" search-placeholder="搜索文档..." @search="doSearch" @refresh="doSearch">
         <template #filters>
           <button class="btn-primary" @click="doSearch">搜索</button>
         </template>
@@ -24,7 +24,7 @@
           <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
         </template>
       </AdminToolbar>
-      <AdminTable :columns="documentColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="reload">
+      <AdminTable :columns="documentColumns" :rows="items as any[]" :loading="loading" :error="loadError" empty-text="" @retry="doSearch">
         <template #cell-title="{ row: item }">
           <span class="col-title">{{ item.title || item.name || '未命名' }}</span>
         </template>
