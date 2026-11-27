@@ -1,0 +1,105 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 错误态重试 retry 补键盘三件套且 @keydown.enter 复用 @click 5ms
+   → 错误态重试 retry 须有 role="button": expected '<view class="btn btn-primary" style="…' to contain 'role="button"'
+ × src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 新手引导卡 first-run-guide 补键盘三件套且 @keydown.enter 复用 @click 1ms
+   → 新手引导卡 first-run-guide 须有 role="button": expected '<view v-if="store.maxStage === 0" cla…' to contain 'role="button"'
+ × src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > AI 洞察去补强 补键盘三件套且 @keydown.enter 复用 @click 1ms
+   → AI 洞察去补强 须有 role="button": expected '<view class="btn ai-cta" @click="go(a…' to contain 'role="button"'
+ × src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > AI 洞察去战斗 补键盘三件套且 @keydown.enter 复用 @click 0ms
+   → AI 洞察去战斗 须有 role="button": expected '<view class="btn ai-cta" @click="goSt…' to contain 'role="button"'
+ × src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 公告全部 ann-all 补键盘三件套且 @keydown.enter 复用 @click 0ms
+   → 公告全部 ann-all 须有 role="button": expected '<text class="ann-all" @click="goAnnou…' to contain 'role="button"'
+ ✓ src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 不变量：R99 空维补导 go(d.hint) 三件套不回退 0ms
+ ✓ src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 不变量：R100/R101 ann-item 三件套与 aria-expanded 不回退 0ms
+ ✓ src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 不变量：四个 @click handler 在 index.vue 保留 0ms
+ ✓ src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 不变量：令牌三锚点不动且业务源码零 --r102- 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 错误态重试 retry 补键盘三件套且 @keydown.enter 复用 @click
+AssertionError: 错误态重试 retry 须有 role="button": expected '<view class="btn btn-primary" style="…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "<view class="btn btn-primary" style="margin-top: 20rpx" @click="retry">"
+
+ ❯ src/styles/r102IndexCtaKeyboard.contract.test.ts:54:49
+     52|       expect(b, '须能定位 ' + c.name + ' 开标签').not.toBeNull()
+     53|       const tag = b || ''
+     54|       expect(tag, c.name + ' 须有 role="button"').toContain('role="butto…
+       |                                                 ^
+     55|       expect(tag, c.name + ' 须有 tabindex="0"').toContain('tabindex="0"…
+     56|       expect(tag, c.name + ' 须保留 @click="' + c.handler + '"').toContai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 新手引导卡 first-run-guide 补键盘三件套且 @keydown.enter 复用 @click
+AssertionError: 新手引导卡 first-run-guide 须有 role="button": expected '<view v-if="store.maxStage === 0" cla…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "<view v-if="store.maxStage === 0" class="card first-run-guide tap" @click="goStage">"
+
+ ❯ src/styles/r102IndexCtaKeyboard.contract.test.ts:54:49
+     52|       expect(b, '须能定位 ' + c.name + ' 开标签').not.toBeNull()
+     53|       const tag = b || ''
+     54|       expect(tag, c.name + ' 须有 role="button"').toContain('role="butto…
+       |                                                 ^
+     55|       expect(tag, c.name + ' 须有 tabindex="0"').toContain('tabindex="0"…
+     56|       expect(tag, c.name + ' 须保留 @click="' + c.handler + '"').toContai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > AI 洞察去补强 补键盘三件套且 @keydown.enter 复用 @click
+AssertionError: AI 洞察去补强 须有 role="button": expected '<view class="btn ai-cta" @click="go(a…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "<view class="btn ai-cta" @click="go(aiInsight.hint)">"
+
+ ❯ src/styles/r102IndexCtaKeyboard.contract.test.ts:54:49
+     52|       expect(b, '须能定位 ' + c.name + ' 开标签').not.toBeNull()
+     53|       const tag = b || ''
+     54|       expect(tag, c.name + ' 须有 role="button"').toContain('role="butto…
+       |                                                 ^
+     55|       expect(tag, c.name + ' 须有 tabindex="0"').toContain('tabindex="0"…
+     56|       expect(tag, c.name + ' 须保留 @click="' + c.handler + '"').toContai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > AI 洞察去战斗 补键盘三件套且 @keydown.enter 复用 @click
+AssertionError: AI 洞察去战斗 须有 role="button": expected '<view class="btn ai-cta" @click="goSt…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "<view class="btn ai-cta" @click="goStage">"
+
+ ❯ src/styles/r102IndexCtaKeyboard.contract.test.ts:54:49
+     52|       expect(b, '须能定位 ' + c.name + ' 开标签').not.toBeNull()
+     53|       const tag = b || ''
+     54|       expect(tag, c.name + ' 须有 role="button"').toContain('role="butto…
+       |                                                 ^
+     55|       expect(tag, c.name + ' 须有 tabindex="0"').toContain('tabindex="0"…
+     56|       expect(tag, c.name + ' 须保留 @click="' + c.handler + '"').toContai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/styles/r102IndexCtaKeyboard.contract.test.ts > R102-B 首页 CTA 键盘可达性契约 > 公告全部 ann-all 补键盘三件套且 @keydown.enter 复用 @click
+AssertionError: 公告全部 ann-all 须有 role="button": expected '<text class="ann-all" @click="goAnnou…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "<text class="ann-all" @click="goAnnouncements">"
+
+ ❯ src/styles/r102IndexCtaKeyboard.contract.test.ts:54:49
+     52|       expect(b, '须能定位 ' + c.name + ' 开标签').not.toBeNull()
+     53|       const tag = b || ''
+     54|       expect(tag, c.name + ' 须有 role="button"').toContain('role="butto…
+       |                                                 ^
+     55|       expect(tag, c.name + ' 须有 tabindex="0"').toContain('tabindex="0"…
+     56|       expect(tag, c.name + ' 须保留 @click="' + c.handler + '"').toContai…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 4 passed (9)
+   Start at  04:35:14
+   Duration  268ms (transform 26ms, setup 0ms, import 39ms, tests 8ms, environment 0ms)
