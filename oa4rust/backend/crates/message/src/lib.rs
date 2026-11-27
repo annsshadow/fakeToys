@@ -116,10 +116,10 @@ pub async fn update_single(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, r#type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
-        .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
+        .query("SELECT xconsumer FROM x_msg_message WHERE xid = $1", &[&id])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -133,11 +133,14 @@ pub async fn update_single(
         ))));
     }
 
+    let owner = rows[0].get::<_, String>("xconsumer");
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
+
     let updated = !rows.is_empty();
     client
         .execute(
-            "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
-            &[&id],
+            "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1 AND xconsumer = $2",
+            &[&id, &owner],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -193,18 +196,20 @@ pub async fn mark_read(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
-        .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
+        .query("SELECT xconsumer FROM x_msg_message WHERE xid = $1", &[&id])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let marked_read = if !rows.is_empty() {
+        let owner = rows[0].get::<_, String>("xconsumer");
+        shared::middleware::require_owner(&pool, &sess, &owner).await?;
         client
             .execute(
-                "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
-                &[&id],
+                "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1 AND xconsumer = $2",
+                &[&id, &owner],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
