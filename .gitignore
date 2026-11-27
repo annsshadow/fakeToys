@@ -618,3 +618,8 @@ docs/laiyipao/audits/round95-back-keyboard/data/
 docs/laiyipao/audits/round95-back-keyboard/admin-auth-init.js
 docs/laiyipao/audits/round95-back-keyboard-postdeploy/data/
 docs/laiyipao/audits/round95-back-keyboard-postdeploy/admin-auth-init.js
+# R96 空态CTA键盘可达补漏及部署后真值不入库
+docs/laiyipao/audits/round96-empty-cta-keyboard/data/
+docs/laiyipao/audits/round96-empty-cta-keyboard/admin-auth-init.js
+docs/laiyipao/audits/round96-empty-cta-keyboard-postdeploy/data/
+docs/laiyipao/audits/round96-empty-cta-keyboard-postdeploy/admin-auth-init.js

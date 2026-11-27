@@ -1,0 +1,4 @@
+=== G6 diff-check ===
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+G6_RC=0
+=== G7 Go门禁 ===
