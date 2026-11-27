@@ -717,6 +717,7 @@ function copyUserId() {
     success: () => {
       uni.showToast({ title: '已复制用户 ID', icon: 'success' })
     },
+    fail: () => { uni.showToast({ title: '复制失败，请手动选择复制', icon: 'none' }) },
   })
 }
 /**
