@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -u
+ROOT="$(pwd)"
+OUT="$ROOT/docs/laiyipao/audits/round94-defense-empty-cta/data/static-out.txt"
+: > "$OUT"
+V="$ROOT/laiyipao/admin/src/views/DefensesView.vue"
+echo "== 令牌三锚点 ==" | tee -a "$OUT"
+grep -nE "lyp-tokens-v1|lyp-tokens-v3-r3|lyp-tokens-r6" "$ROOT/laiyipao/admin/src/styles/tokens.css" | tee -a "$OUT"
+echo "== resetFilters/loadSeq/empty-state/fetchParams ==" | tee -a "$OUT"
+grep -nE "function resetFilters|keyword.value = |ownerId.value = undefined|shieldedFilter.value = undefined|page.value = 1|load\(\)|loadSeq|fetchDefenses\(PAGE_SIZE|empty-state-reason|empty-state-action|清空筛选|data-grid|aria-live|onDeleteDefense" "$V" | tee -a "$OUT"
+echo "== 零--r94-业务 ==" | tee -a "$OUT"
+(grep -rn -- "--r94-" "$ROOT/laiyipao/admin/src" || echo "NO_MATCH") | tee -a "$OUT"
+echo "== 写域 ==" | tee -a "$OUT"
+git -C "$ROOT" diff --name-only HEAD | tee -a "$OUT"
+echo "== HEAD ==" | tee -a "$OUT"
+git -C "$ROOT" rev-parse HEAD | tee -a "$OUT"
+echo STATIC_DONE | tee -a "$OUT"
