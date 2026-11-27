@@ -973,7 +973,7 @@
             <span class="rr-hint">点击切换规则状态</span>
           </div>
           <div class="rr-actions">
-            <button class="bc" @click="resetRules()">重置默认</button>
+            <button class="bc" @click="resetConnectionRules()">重置默认</button>
             <button class="bs" @click="saveRules()">💾 保存规则</button>
           </div>
         </div>
