@@ -208,6 +208,7 @@
             :class="{ 'input-error': !!redeemMsg && !redeemMsg.startsWith('兑换成功') }"
             placeholder="输入兑换码"
             placeholder-class="ph"
+            @confirm="doRedeem"
           />
           <view class="btn" style="width: 160rpx; height: 72rpx" @click="doRedeem">兑换</view>
         </view>

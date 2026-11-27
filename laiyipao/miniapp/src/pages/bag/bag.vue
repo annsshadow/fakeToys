@@ -409,6 +409,7 @@
             class="preset-input"
             placeholder="预设名（最多 20 字）"
             placeholder-class="ph"
+            @confirm="doSavePreset"
             maxlength="20"
             :focus="presetFocus"
           />

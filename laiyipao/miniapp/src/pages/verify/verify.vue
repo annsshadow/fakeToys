@@ -59,6 +59,7 @@
             type="number"
             placeholder="例如 1"
             placeholder-class="ph"
+            @confirm="fetchReplay"
           />
           <!-- 第六批 R38：此前 fetchReplay 是 async 却无任何在途反馈，
                与同页 doReplay 的 spinner 不一致；现在显示「获取中…」并禁用重复点。 -->
