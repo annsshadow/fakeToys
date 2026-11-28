@@ -683,3 +683,7 @@ docs/laiyipao/audits/round107-form-error-a11y-postdeploy/admin-auth-init.js
 docs/laiyipao/audits/round109-a-priority-cta/data/
 docs/laiyipao/audits/round109-priority-cta/data/
 docs/laiyipao/audits/round109-priority-cta-postdeploy/data/
+# R110 搜索空态清除键盘可达
+docs/laiyipao/audits/round110-a-visual-layout/data/
+docs/laiyipao/audits/round110-clear-search-keyboard/data/
+docs/laiyipao/audits/round110-clear-search-keyboard-postdeploy/data/
