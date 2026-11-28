@@ -1,0 +1,68 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：.player-info 块含 min-width:0（允许 flex 收缩） 6ms
+   → .player-info 须声明 min-width:0: expected '{display:flex;flex-direction:column;}' to contain 'min-width:0'
+ × src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：≤900px 媒体块内 .res-row 允许换行（flex-wrap:wrap）解除硬撑 1ms
+   → 须唯一锚点定位 @media (max-width: 900px) 块: expected null not to be null
+ × src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：.topbar 块含 max-width:100% 与 box-sizing:border-box 溢出兜底 1ms
+   → .topbar 须声明 max-width:100%: expected '{position:sticky;top:0;left:0;right:0…' to contain 'max-width:100%'
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：.topbar 保留 display:flex 与 justify-content:space-between 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：.res-row 基础块保留 white-space:nowrap（桌面/手机态不回退） 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：R99/R102 键盘三件套保留（retry / ann-all / go(d.hint)） 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：R100/R101 .ann-item 三件套与 aria-expanded 不回退 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：四货币胶囊插值 coin/gem/energy/keys 原样保留 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：令牌三锚点不动 0ms
+ ✓ src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 不变量：业务源码零 --r105- 视觉令牌 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：.player-info 块含 min-width:0（允许 flex 收缩）
+AssertionError: .player-info 须声明 min-width:0: expected '{display:flex;flex-direction:column;}' to contain 'min-width:0'
+
+Expected: "min-width:0"
+Received: "{display:flex;flex-direction:column;}"
+
+ ❯ src/styles/r105TopbarOverflow.contract.test.ts:80:62
+     78|     const b = cssBlock(indexSrc, '.player-info')
+     79|     expect(b, '须唯一锚点定位 .player-info CSS 块').not.toBeNull()
+     80|     expect(compact(b || ''), '.player-info 须声明 min-width:0').toContain…
+       |                                                              ^
+     81|   })
+     82|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：≤900px 媒体块内 .res-row 允许换行（flex-wrap:wrap）解除硬撑
+AssertionError: 须唯一锚点定位 @media (max-width: 900px) 块: expected null not to be null
+ ❯ src/styles/r105TopbarOverflow.contract.test.ts:85:59
+     83|   it('缺口：≤900px 媒体块内 .res-row 允许换行（flex-wrap:wrap）解除硬撑', () => {
+     84|     const mb = mediaBlock(indexSrc, 900)
+     85|     expect(mb, '须唯一锚点定位 @media (max-width: 900px) 块').not.toBeNull()
+       |                                                           ^
+     86|     const rb = cssBlock(mb || '', '.res-row')
+     87|     expect(rb, '媒体块内须唯一锚点定位 .res-row CSS 块').not.toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/styles/r105TopbarOverflow.contract.test.ts > R105 index 顶栏 768 横溢修复契约 > 缺口：.topbar 块含 max-width:100% 与 box-sizing:border-box 溢出兜底
+AssertionError: .topbar 须声明 max-width:100%: expected '{position:sticky;top:0;left:0;right:0…' to contain 'max-width:100%'
+
+Expected: "max-width:100%"
+Received: "{position:sticky;top:0;left:0;right:0;z-index:10;background:var(--panel-2);border-bottom:1rpxsolidvar(--border);padding:20rpx24rpx;display:flex;flex-direction:row;align-items:center;justify-content:space-between;}"
+
+ ❯ src/styles/r105TopbarOverflow.contract.test.ts:95:45
+     93|     expect(b, '须唯一锚点定位 .topbar CSS 块').not.toBeNull()
+     94|     const c = compact(b || '')
+     95|     expect(c, '.topbar 须声明 max-width:100%').toContain('max-width:100%')
+       |                                             ^
+     96|     expect(c, '.topbar 须声明 box-sizing:border-box').toContain('box-sizi…
+     97|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  13:48:49
+   Duration  319ms (transform 27ms, setup 0ms, import 43ms, tests 11ms, environment 0ms)
