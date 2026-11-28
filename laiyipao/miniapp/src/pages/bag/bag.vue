@@ -33,7 +33,7 @@
         <view class="r3-ai-cta" @click="r4GoBag()">去技能槽 →</view>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
-      <view v-if="loading" class="card">
+      <view v-if="loading" class="card" role="status" aria-busy="true" aria-label="数据加载中">
         <text class="muted">加载中…</text>
       </view>
       <view v-else-if="allSkills.length === 0" class="r3-empty r4-empty" aria-live="polite" role="status">

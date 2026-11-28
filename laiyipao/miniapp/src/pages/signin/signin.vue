@@ -33,7 +33,7 @@
         <text class="r3-ai-cta" role="button" @click="r5GoTask()" tabindex="0" @keydown.enter="r5GoTask()">{{ r5AiSignin.ctaText }}</text>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
-      <view v-if="loading" class="card">
+      <view v-if="loading" class="card" role="status" aria-busy="true" aria-label="数据加载中">
         <text class="muted">加载中…</text>
       </view>
       <view v-else-if="tasks.length === 0" class="card">

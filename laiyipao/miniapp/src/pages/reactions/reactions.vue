@@ -59,7 +59,7 @@
         </view>
         <view class="r19-rdi-honesty">辅助分析非权威结算依据，权威请看 replay_hash</view>
       </view>
-      <view v-if="r6Loading" class="r6-skeleton r6-enter" aria-hidden="true">
+      <view v-if="r6Loading" class="r6-skeleton r6-enter" role="status" aria-busy="true" aria-label="数据加载中">
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 42%" /></view>
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 86%" /></view>
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 58%" /></view>

@@ -161,7 +161,7 @@
         <text>效率数据加载失败，稍后重试</text>
       </view>
 
-      <view v-if="loading" class="card">
+      <view v-if="loading" class="card" role="status" aria-busy="true" aria-label="数据加载中">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
           <view class="skeleton-bar" style="width: 44rpx; height: 44rpx; border-radius: 8rpx" />

@@ -42,7 +42,7 @@
         <text class="r3-empty-action" role="button" @click="load()" tabindex="0" @keydown.enter="load()">重新加载专精</text>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
-      <view v-if="loading" class="card">
+      <view v-if="loading" class="card" role="status" aria-busy="true" aria-label="数据加载中">
         <text class="muted">加载中…</text>
       </view>
       <view class="card">

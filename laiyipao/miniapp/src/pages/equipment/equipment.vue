@@ -42,7 +42,7 @@
           {{ b.label }} {{ b.count }}
         </text>
       </view>
-      <view v-if="r6Loading" class="r6-skeleton r6-enter" aria-hidden="true">
+      <view v-if="r6Loading" class="r6-skeleton r6-enter" role="status" aria-busy="true" aria-label="数据加载中">
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 40%" /></view>
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 84%" /></view>
         <view class="skeleton-row"><view class="skeleton-bar" style="width: 60%" /></view>
