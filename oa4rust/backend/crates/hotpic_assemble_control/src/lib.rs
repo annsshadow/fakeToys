@@ -750,14 +750,22 @@ pub async fn user_hotpic_exists_check(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_filter_list_page_page_count_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
+    let actor = sess.person_unique.clone();
     let client = shared::db::acquire(&pool).await?;
     let (count, offset) = shared::response::page_window(page, count)?;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
-            &[&offset, &count],
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic \
+             WHERE deleted_at IS NULL AND (creator = $3 OR (application = '' AND info_id = '') OR EXISTS(\
+             SELECT 1 FROM auth_person p JOIN auth_person_role pr ON pr.person_id = p.id \
+             JOIN auth_role r ON r.id = pr.role_id WHERE (p.unique_id = $3 OR p.id = $3) \
+             AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)) \
+             ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            &[&offset, &count, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
