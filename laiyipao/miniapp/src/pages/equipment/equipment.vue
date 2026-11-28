@@ -217,7 +217,7 @@
         <!-- R24 搜索无结果：明确区分「表是空的」与「关键词没匹配上」 -->
         <view v-if="keyword && items.length && r3FilteredItems.length === 0" class="search-empty">
           <text class="muted search-empty-text">没有匹配「{{ keyword }}」的装备</text>
-          <text class="clear-search" @click="keyword = ''">清除搜索</text>
+          <text class="clear-search" role="button" tabindex="0" @click="keyword = ''" @keydown.enter="keyword = ''">清除搜索</text>
         </view>
       </view>
     </view>
