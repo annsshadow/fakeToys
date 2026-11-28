@@ -652,8 +652,8 @@ pub async fn folder_update(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 第六十一批：改文件夹收会话存在档（无会话 401）。
-    require_session(session)?;
+    // R628a: 保留会话并做归属校验（本人或 admin），避免冒名改他人文件夹。
+    let sess = require_session(session)?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -669,6 +669,20 @@ pub async fn folder_update(
     validate_length("name", &name, 1, 255).map_err(|e| e.to_app_error())?;
 
     let client = shared::db::acquire(&pool).await?;
+
+    // R628a: 先取归属人再校验（本人或 admin 放行，否则 403）；查不到维持 folder not found。
+    let owner_row = client
+        .query_opt(
+            "SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let owner: String = match owner_row {
+        Some(row) => row.get::<_, Option<String>>("person").unwrap_or_default(),
+        None => return Ok(Json(ActionResult::error("folder not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
 
     let result = client
         .execute(
@@ -713,8 +727,8 @@ pub async fn folder_remove(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 第六十一批：软删文件夹收会话存在档（无会话 401）。
-    require_session(session)?;
+    // R628a: 保留会话并做归属校验（本人或 admin），避免冒名软删他人文件夹。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = body
@@ -722,6 +736,20 @@ pub async fn folder_remove(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+
+    // R628a: 先取归属人再校验（本人或 admin 放行，否则 403）；查不到维持 folder not found。
+    let owner_row = client
+        .query_opt(
+            "SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let owner: String = match owner_row {
+        Some(row) => row.get::<_, Option<String>>("person").unwrap_or_default(),
+        None => return Ok(Json(ActionResult::error("folder not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
 
     let result = client
         .execute(

@@ -2712,12 +2712,29 @@ pub async fn chat_write_completion_extra(
     if id.is_empty() {
         return Err(AppError::BadRequest("id required".to_string()));
     }
-    require_session(session)?;
+    let session = require_session(session)?;
 
     let extra = req.get("extra").cloned().unwrap_or(Value::Null);
     let extra_text = extra.to_string();
 
     let client = shared::db::acquire(&pool).await?;
+
+    // 归属门：extra 只属本人/admin。x_ai_chat 无 user_id 列，须经 conversation 关联取归属。
+    // 查不到归属（无会话/软删/无关联）fail-closed → NotFound，杜绝盲写。
+    let owner: Option<String> = client
+        .query_opt(
+            "SELECT c.user_id FROM x_ai_conversation c JOIN x_ai_chat t ON t.conversation_id = c.id WHERE t.id = $1 AND t.deleted_at IS NULL AND c.deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .map(|row| row.get("user_id"));
+    match owner {
+        Some(user_id) => {
+            shared::middleware::require_owner(&pool, &session, &user_id).await?;
+        }
+        None => return Err(AppError::NotFound),
+    }
     let updated = client
         .execute(
             "UPDATE x_ai_chat SET extra = $2::text::jsonb WHERE id = $1 AND deleted_at IS NULL",
