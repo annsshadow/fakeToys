@@ -486,8 +486,19 @@ pub async fn add_participant(
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // R633: 首个 DB 写前校验会议存在并确认调用者是会议属主（或管理员）。
+    let creator: Option<String> = client
+        .query_opt(
+            "SELECT creator FROM x_meeting WHERE id = $1",
+            &[&meeting_id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .map(|r| r.get::<_, String>("creator"));
+    let creator = creator.ok_or(AppError::NotFound)?;
+    shared::middleware::require_owner(&pool.0, &session, &creator).await?;
     let invitee = payload
         .get("invitee")
         .and_then(|v| v.as_str())
