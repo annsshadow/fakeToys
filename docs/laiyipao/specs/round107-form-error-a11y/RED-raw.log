@@ -1,0 +1,167 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue username 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 login-err） 5ms
+   → pages/login/login.vue username 缺 :aria-invalid 绑定: expected null not to be null
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue password 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 login-err） 1ms
+   → pages/login/login.vue password 缺 :aria-invalid 绑定: expected null not to be null
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/verify/verify.vue battleId 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 verify-battle-err） 1ms
+   → pages/verify/verify.vue battleId 缺 :aria-invalid 绑定: expected null not to be null
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/signin/signin.vue code 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 signin-redeem-err） 1ms
+   → pages/signin/signin.vue code 缺 :aria-invalid 绑定: expected null not to be null
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue 错误播报节点补唯一 id="login-err" 且保留 role="alert" 3ms
+   → pages/login/login.vue 错误节点缺 id="login-err": expected '<text v-if="errMsg" :key="errMsg" cla…' to contain 'id="login-err"'
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/verify/verify.vue 错误播报节点补唯一 id="verify-battle-err" 且保留 role="alert" 1ms
+   → pages/verify/verify.vue 错误节点缺 id="verify-battle-err": expected '<text v-if="errMsg" :key="errMsg" cla…' to contain 'id="verify-battle-err"'
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/signin/signin.vue 错误播报节点补唯一 id="signin-redeem-err" 且保留 aria-live="polite" 1ms
+   → pages/signin/signin.vue 错误节点缺 id="signin-redeem-err": expected '<text v-if="redeemMsg" :key="redeemMs…' to contain 'id="signin-redeem-err"'
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：main.ts applyAriaNative 桥接 aria-invalid 到原生 input 2ms
+   → 桥接未把 aria-invalid setAttribute 到原生 input: expected false to be true // Object.is equality
+ × src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：main.ts applyAriaNative 桥接 aria-describedby 到原生 input 1ms
+   → 桥接未把 aria-describedby setAttribute 到原生 input: expected false to be true // Object.is equality
+ ✓ src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 不变量：R61 原生 input aria-label 桥接保留且 4 个目标 input 仍有 aria-label + v-aria-native 1ms
+ ✓ src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 不变量：R60 键盘三件套（me back-btn）未被误改 1ms
+ ✓ src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 不变量：R101 aria-expanded 与 R104 aria-busy 未被误改 1ms
+ ✓ src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 不变量：令牌三锚点不动且 3 页 + main.ts 零 --r107- 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue username 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 login-err）
+AssertionError: pages/login/login.vue username 缺 :aria-invalid 绑定: expected null not to be null
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:86:67
+     84|       expect(block, rel + ' v-model=' + vm + ' 未找到 input 开标签').not.toB…
+     85|       const invalid = attrValue(block!, ':aria-invalid')
+     86|       expect(invalid, rel + ' ' + vm + ' 缺 :aria-invalid 绑定').not.toBe…
+       |                                                                   ^
+     87|       expect(invalid!, rel + ' ' + vm + ' 的 :aria-invalid 未绑定 ' + cond…
+     88|       expect(invalid!, rel + ' ' + vm + ' 不应静态写死 true').not.toBe('true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue password 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 login-err）
+AssertionError: pages/login/login.vue password 缺 :aria-invalid 绑定: expected null not to be null
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:86:67
+     84|       expect(block, rel + ' v-model=' + vm + ' 未找到 input 开标签').not.toB…
+     85|       const invalid = attrValue(block!, ':aria-invalid')
+     86|       expect(invalid, rel + ' ' + vm + ' 缺 :aria-invalid 绑定').not.toBe…
+       |                                                                   ^
+     87|       expect(invalid!, rel + ' ' + vm + ' 的 :aria-invalid 未绑定 ' + cond…
+     88|       expect(invalid!, rel + ' ' + vm + ' 不应静态写死 true').not.toBe('true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/verify/verify.vue battleId 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 verify-battle-err）
+AssertionError: pages/verify/verify.vue battleId 缺 :aria-invalid 绑定: expected null not to be null
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:86:67
+     84|       expect(block, rel + ' v-model=' + vm + ' 未找到 input 开标签').not.toB…
+     85|       const invalid = attrValue(block!, ':aria-invalid')
+     86|       expect(invalid, rel + ' ' + vm + ' 缺 :aria-invalid 绑定').not.toBe…
+       |                                                                   ^
+     87|       expect(invalid!, rel + ' ' + vm + ' 的 :aria-invalid 未绑定 ' + cond…
+     88|       expect(invalid!, rel + ' ' + vm + ' 不应静态写死 true').not.toBe('true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/signin/signin.vue code 错误态语义（:aria-invalid 绑定失败态 + describedby 指向 signin-redeem-err）
+AssertionError: pages/signin/signin.vue code 缺 :aria-invalid 绑定: expected null not to be null
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:86:67
+     84|       expect(block, rel + ' v-model=' + vm + ' 未找到 input 开标签').not.toB…
+     85|       const invalid = attrValue(block!, ':aria-invalid')
+     86|       expect(invalid, rel + ' ' + vm + ' 缺 :aria-invalid 绑定').not.toBe…
+       |                                                                   ^
+     87|       expect(invalid!, rel + ' ' + vm + ' 的 :aria-invalid 未绑定 ' + cond…
+     88|       expect(invalid!, rel + ' ' + vm + ' 不应静态写死 true').not.toBe('true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/login/login.vue 错误播报节点补唯一 id="login-err" 且保留 role="alert"
+AssertionError: pages/login/login.vue 错误节点缺 id="login-err": expected '<text v-if="errMsg" :key="errMsg" cla…' to contain 'id="login-err"'
+
+Expected: "id="login-err""
+Received: "<text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">"
+
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:99:52
+     97|       const tag = tagBefore(src(rel), needle)
+     98|       expect(tag, rel + ' 未找到 ' + needle + ' 的开标签').not.toBeNull()
+     99|       expect(tag!, rel + ' 错误节点缺 id="' + id + '"').toContain('id="' + …
+       |                                                    ^
+    100|       expect(tag!, rel + ' 错误节点丢失既有 ' + roleAnchor).toContain(roleAnch…
+    101|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/verify/verify.vue 错误播报节点补唯一 id="verify-battle-err" 且保留 role="alert"
+AssertionError: pages/verify/verify.vue 错误节点缺 id="verify-battle-err": expected '<text v-if="errMsg" :key="errMsg" cla…' to contain 'id="verify-battle-err"'
+
+Expected: "id="verify-battle-err""
+Received: "<text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">"
+
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:99:52
+     97|       const tag = tagBefore(src(rel), needle)
+     98|       expect(tag, rel + ' 未找到 ' + needle + ' 的开标签').not.toBeNull()
+     99|       expect(tag!, rel + ' 错误节点缺 id="' + id + '"').toContain('id="' + …
+       |                                                    ^
+    100|       expect(tag!, rel + ' 错误节点丢失既有 ' + roleAnchor).toContain(roleAnch…
+    101|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：pages/signin/signin.vue 错误播报节点补唯一 id="signin-redeem-err" 且保留 aria-live="polite"
+AssertionError: pages/signin/signin.vue 错误节点缺 id="signin-redeem-err": expected '<text v-if="redeemMsg" :key="redeemMs…' to contain 'id="signin-redeem-err"'
+
+Expected: "id="signin-redeem-err""
+Received: "<text v-if="redeemMsg" :key="redeemMsg" class="muted shake" style="display: block; margin-top: 12rpx" role="status" aria-live="polite">"
+
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:99:52
+     97|       const tag = tagBefore(src(rel), needle)
+     98|       expect(tag, rel + ' 未找到 ' + needle + ' 的开标签').not.toBeNull()
+     99|       expect(tag!, rel + ' 错误节点缺 id="' + id + '"').toContain('id="' + …
+       |                                                    ^
+    100|       expect(tag!, rel + ' 错误节点丢失既有 ' + roleAnchor).toContain(roleAnch…
+    101|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：main.ts applyAriaNative 桥接 aria-invalid 到原生 input
+AssertionError: 桥接未把 aria-invalid setAttribute 到原生 input: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:108:65
+    106|     expect(s, 'main.ts 缺 applyAriaNative').toContain('function applyAr…
+    107|     const bridged = s.split('\n').some((l) => l.includes('aria-invalid…
+    108|     expect(bridged, '桥接未把 aria-invalid setAttribute 到原生 input').toBe(t…
+       |                                                                 ^
+    109|   })
+    110|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/styles/r107FormErrorA11y.contract.test.ts > R107 表单校验错误 a11y 语义契约 > 缺口：main.ts applyAriaNative 桥接 aria-describedby 到原生 input
+AssertionError: 桥接未把 aria-describedby setAttribute 到原生 input: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/styles/r107FormErrorA11y.contract.test.ts:114:69
+    112|     const s = src(MAIN)
+    113|     const bridged = s.split('\n').some((l) => l.includes('aria-describ…
+    114|     expect(bridged, '桥接未把 aria-describedby setAttribute 到原生 input').to…
+       |                                                                     ^
+    115|   })
+    116|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 4 passed (13)
+   Start at  16:03:45
+   Duration  431ms (transform 27ms, setup 0ms, import 42ms, tests 21ms, environment 0ms)
