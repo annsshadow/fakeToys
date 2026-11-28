@@ -4232,9 +4232,13 @@ pub async fn file_id_upload(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401）。
-    // x_cms_file 的 creator 列本 upsert 不写，行属主不可判，暂按仅会话存在档收口。
-    require_session(session)?;
+    // 写面：收有效会话门（无会话 401）+ x_cms_file 属主门（跨人 403）。
+    let sess = require_session(session)?;
+    match u2_check_owner(&pool, "x_cms_file", "creator", &id, &sess.person_unique).await? {
+        U2Gate::NotFound => {}
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content_base64 = body
@@ -4248,8 +4252,8 @@ pub async fn file_id_upload(
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let row = client
         .query_one(
-            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5 RETURNING *",
-            &[&id, &name, &content_base64, &content_type, &size],
+            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size, creator) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5 RETURNING *",
+            &[&id, &name, &content_base64, &content_type, &size, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
