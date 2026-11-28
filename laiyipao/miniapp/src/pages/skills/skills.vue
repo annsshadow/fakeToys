@@ -261,7 +261,7 @@
     </view>
 
     <!-- R7 两步 CTA 的第二步：只有这里能确认写入；失败保留原配置 -->
-    <view v-if="r7CompareOpen" class="r7-compare-mask" @click="r7CompareOpen = false">
+    <view v-if="r7CompareOpen" class="r7-compare-mask" role="dialog" aria-modal="true" aria-label="当前 vs 推荐·确认替换" ref="r7CompareRef" @keydown.esc="closeR7Compare" @keydown.tab="trapR7CompareTab" @click="closeR7Compare">
       <view class="r7-compare r7-enter" @click.stop>
         <text class="r7-compare-title">当前 vs 推荐 · 确认替换</text>
         <view v-if="r7Impact" class="r7-vs-row">
@@ -280,8 +280,8 @@
         <text v-if="r7ApplyError" class="r7-error">{{ r7ApplyError }}</text>
         <text v-if="r7ApplyDone" class="apply-done" role="status" aria-live="polite">已替换为「{{ r7ApplyDone }}」，出战配置已更新。可点「完成」关闭。</text>
         <view class="r7-actions">
-          <text class="r7-btn" role="button" @click="r7CompareOpen = false" tabindex="0" @keydown.enter="r7CompareOpen = false">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
-          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="r7CompareOpen = false" tabindex="0" @keydown.enter="r7CompareOpen = false">完成</text>
+          <text class="r7-btn" role="button" @click="closeR7Compare()" tabindex="0" @keydown.enter="closeR7Compare()">{{ r7ApplyDone ? '关闭' : '取消' }}</text>
+          <text v-if="r7ApplyDone" class="r7-btn primary" role="button" @click="closeR7Compare()" tabindex="0" @keydown.enter="closeR7Compare()">完成</text>
           <text v-else class="r7-btn primary" :class="{ 'btn-disabled': r7Applying }" role="button" @click="r7ConfirmApply()" tabindex="0" @keydown.enter="r7ConfirmApply()">{{ r7Applying ? '写入中…' : '确认替换' }}</text>
         </view>
       </view>
@@ -291,7 +291,7 @@
 
 <script setup lang="ts">
 import { computeGrowthPriority, resolveR12Cta } from '@/pages/_shared/r12GrowthPriority'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, ELEMENT_ORDER, ELEMENT_COLOR, REACTIONS, REACTION_ORDER, type Element, type ReactionKey } from '@/game/elements'
@@ -537,6 +537,9 @@ const r7Impact = ref<R7ImpactView | null>(null)
 const r7Error = ref('')
 const r7Causal = ref<BattleCausalView>(normalizeBattleCausal(null))
 const r7CompareOpen = ref(false)
+/** R112：对比弹层 DOM ref 与触发源（H5 端 view ref 取组件实例，$el 为原生节点）。 */
+const r7CompareRef = ref<any>(null)
+const r7TriggerEl = ref<any>(null)
 const r7Applying = ref(false)
 const r7ApplyError = ref('')
 const r7ApplyDone = ref('')
@@ -634,7 +637,42 @@ function r7OpenCompare() {
     r7Error.value = '收益数据不可用：请先等待真实收益预估返回'
     return
   }
+  r7TriggerEl.value = typeof document !== 'undefined' ? document.activeElement : null
   r7CompareOpen.value = true
+  nextTick(() => {
+    const el: any = r7CompareRef.value
+    const node = (el && el.$el) || el
+    if (node && typeof node.focus === 'function') node.focus()
+  })
+}
+
+/** R112：关闭对比弹层并把焦点归还触发 CTA（UNI-TEXT 落 BODY 属环境限制，QA 如实披露）。 */
+function closeR7Compare() {
+  r7CompareOpen.value = false
+  const t: any = r7TriggerEl.value
+  const node = (t && t.$el) || t
+  if (node && typeof node.focus === 'function') node.focus()
+  r7TriggerEl.value = null
+}
+
+/** R112：Tab 焦点陷阱——弹层内首尾可聚焦元素循环，不逃逸到背景。 */
+function trapR7CompareTab(e: KeyboardEvent) {
+  const overlay: any = r7CompareRef.value
+  const root = (overlay && overlay.$el) || overlay
+  if (!root || typeof root.querySelectorAll !== 'function') return
+  const nodes = Array.from(root.querySelectorAll('[tabindex="0"], [role="button"]')) as HTMLElement[]
+  const focusables = nodes.filter(n => !n.hasAttribute('disabled'))
+  if (!focusables.length) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = (typeof document !== 'undefined' ? document.activeElement : null) as HTMLElement | null
+  if (e.shiftKey && (active === first || !root.contains(active))) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+    e.preventDefault()
+    first.focus()
+  }
 }
 
 async function r7ConfirmApply() {
