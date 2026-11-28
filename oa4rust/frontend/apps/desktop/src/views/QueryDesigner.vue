@@ -193,13 +193,13 @@
             <button class="btn-sm" @click="renderChart()">▶ 渲染</button>
           </div>
           <div class="chart-area" v-if="chartRendered">
-            <div class="chart-bars">
-              <div v-for="(d,di) in chartData" :key="di" class="chart-bar-wrap">
-                <div class="chart-bar" :style="{height:Math.max(4,d.h)+'px',background:chartColors[di%8]}" :title="d.label+': '+d.value"></div>
-                <div class="chart-bar-label">{{d.label}}</div>
-                <div class="chart-bar-val">{{d.value}}</div>
-              </div>
-            </div>
+            <EChartsView
+              :data="chartEchartsData"
+              :columns="chartEchartsColumns"
+              :chart-type="chartTypeResolved"
+              dimension="name"
+              metric="value"
+            />
             <div v-if="!chartData.length" class="chart-empty">选择字段后点击渲染</div>
           </div>
           <div v-else class="chart-empty">{{queries.length?'请先选择查询并执行':'暂无数据'}}</div>
@@ -273,6 +273,8 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import EChartsView from '../components/EChartsView.vue'
 import { businessTodayYMD } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
@@ -724,6 +726,10 @@ const chartRendered = ref(false)
 const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
 const chartData = ref<Array<{ label: string; value: number; h: number }>>([])
 const chartStats = ref<{ count: number; max: number; min: number; avg: number } | null>(null)
+const chartEchartsColumns = ['name', 'value']
+const chartEchartsData = computed(() => chartData.value.map((d) => ({ name: d.label, value: d.value })))
+// area 形态复用 EChartsView 的 line 分支（该分支已带 areaStyle 面积填充）
+const chartTypeResolved = computed(() => (chartType.value === 'area' ? 'line' : chartType.value))
 function renderChart() {
   if (!resultData.value.length || !chartX.value || !chartY.value) return
   const map = new Map<string, number>()
