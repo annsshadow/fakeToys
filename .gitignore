@@ -679,3 +679,7 @@ docs/laiyipao/audits/round107-form-error-a11y/data/
 docs/laiyipao/audits/round107-form-error-a11y/admin-auth-init.js
 docs/laiyipao/audits/round107-form-error-a11y-postdeploy/data/
 docs/laiyipao/audits/round107-form-error-a11y-postdeploy/admin-auth-init.js
+# R109 AI引导CTA键盘可达
+docs/laiyipao/audits/round109-a-priority-cta/data/
+docs/laiyipao/audits/round109-priority-cta/data/
+docs/laiyipao/audits/round109-priority-cta-postdeploy/data/
