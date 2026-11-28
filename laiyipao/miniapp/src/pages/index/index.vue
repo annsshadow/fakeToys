@@ -754,6 +754,8 @@ onShareAppMessage(() => indexShare())
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .player {
@@ -779,6 +781,7 @@ onShareAppMessage(() => indexShare())
 .player-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .nick {
@@ -792,6 +795,13 @@ onShareAppMessage(() => indexShare())
   gap: 12rpx;
   white-space: nowrap;
 }
+
+@media (max-width: 900px) {
+  .res-row {
+    flex-wrap: wrap;
+  }
+}
+
 .res-row :deep(.res-pill svg) {
   color: var(--fire);
 }
