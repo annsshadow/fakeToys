@@ -654,3 +654,8 @@ docs/laiyipao/audits/round102-b-index-cta/data/
 docs/laiyipao/audits/round102-b-index-cta/admin-auth-init.js
 docs/laiyipao/audits/round102-b-index-cta-postdeploy/data/
 docs/laiyipao/audits/round102-b-index-cta-postdeploy/admin-auth-init.js
+# R103 反应时间线键盘闭环及部署后真值不入库
+docs/laiyipao/audits/round103-timeline-keyboard/data/
+docs/laiyipao/audits/round103-timeline-keyboard/admin-auth-init.js
+docs/laiyipao/audits/round103-timeline-keyboard-postdeploy/data/
+docs/laiyipao/audits/round103-timeline-keyboard-postdeploy/admin-auth-init.js
