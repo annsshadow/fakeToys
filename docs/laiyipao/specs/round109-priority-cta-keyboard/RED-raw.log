@@ -1,0 +1,197 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/gems/gems.vue r12-priority-cta r12Go() 三件套齐全 6ms
+   → pages/gems/gems.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/skills/skills.vue r12-priority-cta r12Go() 三件套齐全 2ms
+   → pages/skills/skills.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/equipment/equipment.vue r12-priority-cta r12Go() 三件套齐全 1ms
+   → pages/equipment/equipment.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/bag/bag.vue r12-priority-cta r12Go() 三件套齐全 1ms
+   → pages/bag/bag.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/me/me.vue r3-ai-cta r4GoMe() 三件套齐全 2ms
+   → pages/me/me.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/bag/bag.vue r3-ai-cta r4GoBag() 三件套齐全 1ms
+   → pages/bag/bag.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/battles/battles.vue r3-ai-cta r4GoBattle() 三件套齐全 1ms
+   → pages/battles/battles.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/enemies/enemies.vue r3-ai-cta r4FocusEnemy() 三件套齐全 1ms
+   → pages/enemies/enemies.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/rank/rank.vue r3-ai-cta r4GoRank() 三件套齐全 1ms
+   → pages/rank/rank.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ × src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/skins/skins.vue r3-ai-cta r4FocusSkin() 三件套齐全 1ms
+   → pages/skins/skins.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量1：10 处 @click handler 签名未变（自指防护与导航参数不动） 6ms
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量2：r12Cta 自指防护逻辑仍在（R48） 1ms
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量3：同类 text 版 r3-ai-cta 三件套仍在（9 页） 4ms
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量4：令牌三锚点未漂移 + 10 页零 --r109- 4ms
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量5：R60/R96/R99/R100/R102/R104 既有三件套抽查仍在 2ms
+ ✓ src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 不变量6：10 个目标 vue 均可定位且无解析歧义 8ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/gems/gems.vue r12-priority-cta r12Go() 三件套齐全
+AssertionError: pages/gems/gems.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/skills/skills.vue r12-priority-cta r12Go() 三件套齐全
+AssertionError: pages/skills/skills.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/equipment/equipment.vue r12-priority-cta r12Go() 三件套齐全
+AssertionError: pages/equipment/equipment.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/bag/bag.vue r12-priority-cta r12Go() 三件套齐全
+AssertionError: pages/bag/bag.vue 须 role=button: expected '        <view class="r12-priority-cta…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/me/me.vue r3-ai-cta r4GoMe() 三件套齐全
+AssertionError: pages/me/me.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4GoMe()">{{ r4AiMe.cta }} →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/bag/bag.vue r3-ai-cta r4GoBag() 三件套齐全
+AssertionError: pages/bag/bag.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4GoBag()">去技能槽 →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/battles/battles.vue r3-ai-cta r4GoBattle() 三件套齐全
+AssertionError: pages/battles/battles.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4GoBattle()">看战报详情 →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/enemies/enemies.vue r3-ai-cta r4FocusEnemy() 三件套齐全
+AssertionError: pages/enemies/enemies.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4FocusEnemy()">切换对应元素 →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/rank/rank.vue r3-ai-cta r4GoRank() 三件套齐全
+AssertionError: pages/rank/rank.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4GoRank()">去冲榜关卡 →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/styles/r109PriorityCtaKeyboard.contract.test.ts > R109 跨页 AI 优先级引导 CTA 键盘可达契约 > 缺口 pages/skins/skins.vue r3-ai-cta r4FocusSkin() 三件套齐全
+AssertionError: pages/skins/skins.vue 须 role=button: expected '        <view class="r3-ai-cta" @clic…' to contain 'role="button"'
+
+Expected: "role="button""
+Received: "        <view class="r3-ai-cta" @click="r4FocusSkin()">查看同流派皮肤 →</view>"
+
+ ❯ src/styles/r109PriorityCtaKeyboard.contract.test.ts:47:46
+     45|     it('缺口 ' + c.rel + ' ' + c.cls + ' ' + c.handler + ' 三件套齐全', () =>…
+     46|       const line = ctaLine(c)
+     47|       expect(line, c.rel + ' 须 role=button').toContain('role="button"')
+       |                                              ^
+     48|       expect(line, c.rel + ' 须 tabindex=0').toContain('tabindex="0"')
+     49|       expect(line, c.rel + ' 须 @keydown.enter 复用同 handler').toContain(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 6 passed (16)
+   Start at  17:30:12
+   Duration  310ms (transform 26ms, setup 0ms, import 40ms, tests 44ms, environment 0ms)
