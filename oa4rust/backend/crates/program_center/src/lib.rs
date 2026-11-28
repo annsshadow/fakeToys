@@ -3839,7 +3839,11 @@ pub async fn config_ternary_management(
 }
 
 #[allow(non_snake_case)]
-pub async fn config_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_token(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
