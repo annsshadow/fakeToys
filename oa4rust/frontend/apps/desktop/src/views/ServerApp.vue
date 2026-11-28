@@ -215,8 +215,9 @@ async function executeCommand() {
   execOutput.value = ''
   execError.value = ''
   try {
-    // 后端 server/execute 仅注册 GET（命令以 query 传递）。
-    const r = await api.get(`/api/server/execute?command=${encodeURIComponent(command.value)}`)
+    // 接入 console/command/execute 真契约（process::Command 真执行且仅 admin）；对齐 serverConsoleOps(cmdExecute) 分支，显式校验失败信封。
+    const r: any = await api.post('/api/console/command/execute', { command: command.value })
+    if (!consoleWriteSucceeded(r)) { execError.value = r?.message || '操作未生效，请刷新后重试'; return }
     execOutput.value = JSON.stringify(r.data, null, 2)
   } catch (e: any) {
     execError.value = e?.message ?? '命令执行失败'
