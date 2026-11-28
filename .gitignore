@@ -659,3 +659,8 @@ docs/laiyipao/audits/round103-timeline-keyboard/data/
 docs/laiyipao/audits/round103-timeline-keyboard/admin-auth-init.js
 docs/laiyipao/audits/round103-timeline-keyboard-postdeploy/data/
 docs/laiyipao/audits/round103-timeline-keyboard-postdeploy/admin-auth-init.js
+# R104 骨架屏加载态a11y语义及部署后真值不入库
+docs/laiyipao/audits/round104-loading-a11y/data/
+docs/laiyipao/audits/round104-loading-a11y/admin-auth-init.js
+docs/laiyipao/audits/round104-loading-a11y-postdeploy/data/
+docs/laiyipao/audits/round104-loading-a11y-postdeploy/admin-auth-init.js
