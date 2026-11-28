@@ -1,0 +1,152 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G1 mask 补 dialog 语义 + ref + ESC/Tab 守卫 6ms
+   → 须有 role=dialog: expected '<view v-if="r7CompareOpen" class="r7-…' to contain 'role="dialog"'
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G2 setup 增 r7CompareRef/r7TriggerEl 两 ref 2ms
+   → r7CompareRef 须以 ref(null) 声明: expected false to be true // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G3 open 记录触发源 + nextTick 移入焦点到弹层根 view 2ms
+   → 须记录 document.activeElement 触发源: expected '{\n  r7ApplyError.value = \'\'\n  r7A…' to contain 'document.activeElement'
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G4 新增 closeR7Compare 关弹层后 focus 归还触发源 0ms
+   → closeR7Compare 必须存在: expected '' not to be '' // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G5 三处内联关闭统一改调 closeR7Compare 1ms
+   → 模板不得残留内联关闭: expected 5 to be +0 // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G6 新增 trapR7CompareTab 复刻 R103 首尾循环 0ms
+   → trapR7CompareTab 必须存在: expected '' not to be '' // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G1 mask 补 dialog 语义 + ref + ESC/Tab 守卫 1ms
+   → 须有 role=dialog: expected '<view v-if="r7CompareOpen" class="r7-…' to contain 'role="dialog"'
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G2 setup 增 r7CompareRef/r7TriggerEl 两 ref 0ms
+   → r7CompareRef 须以 ref(null) 声明: expected false to be true // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G3 open 记录触发源 + nextTick 移入焦点到弹层根 view 1ms
+   → 须记录 document.activeElement 触发源: expected '{\n  r7ApplyError.value = \'\'\n  r7A…' to contain 'document.activeElement'
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G4 新增 closeR7Compare 关弹层后 focus 归还触发源 1ms
+   → closeR7Compare 必须存在: expected '' not to be '' // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G5 三处内联关闭统一改调 closeR7Compare 0ms
+   → 模板不得残留内联关闭: expected 5 to be +0 // Object.is equality
+ × src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G6 新增 trapR7CompareTab 复刻 R103 首尾循环 0ms
+   → trapR7CompareTab 必须存在: expected '' not to be '' // Object.is equality
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I1 不变量：两步确认（open 只预览、confirm 才写入） 1ms
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I2 不变量：写入失败保留原配置 + 请重试 1ms
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I3 不变量：令牌三锚点 + 零 --r112- 1ms
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I4 不变量：R73 图例 / R103 时间线闭环不动 0ms
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I5 不变量：r7ImpactApply 假守卫保留记录，语义检查由本契约补齐 0ms
+ ✓ src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > I6 不变量：mask v-if 与内层 @click.stop 保留 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G1 mask 补 dialog 语义 + ref + ESC/Tab 守卫
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G1 mask 补 dialog 语义 + ref + ESC/Tab 守卫
+AssertionError: 须有 role=dialog: expected '<view v-if="r7CompareOpen" class="r7-…' to contain 'role="dialog"'
+
+Expected: "role="dialog""
+Received: "<view v-if="r7CompareOpen" class="r7-compare-mask" @click="r7CompareOpen = false">"
+
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:67:37
+     65|       const tag = mask()
+     66|       expect(tag, '须定位 r7-compare-mask 开标签').not.toBe('')
+     67|       expect(tag, '须有 role=dialog').toContain('role="dialog"')
+       |                                     ^
+     68|       expect(tag, '须有 aria-modal=true').toContain('aria-modal="true"')
+     69|       expect(tag, '须有 aria-label 当前 vs 推荐·确认替换').toContain('aria-label…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G2 setup 增 r7CompareRef/r7TriggerEl 两 ref
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G2 setup 增 r7CompareRef/r7TriggerEl 两 ref
+AssertionError: r7CompareRef 须以 ref(null) 声明: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:77:56
+     75|     it(pg.name + ' G2 setup 增 r7CompareRef/r7TriggerEl 两 ref', () => {
+     76|       for (const n of ['r7CompareRef', 'r7TriggerEl']) {
+     77|         expect(hasRef(src, n), n + ' 须以 ref(null) 声明').toBe(true)
+       |                                                        ^
+     78|       }
+     79|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G3 open 记录触发源 + nextTick 移入焦点到弹层根 view
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G3 open 记录触发源 + nextTick 移入焦点到弹层根 view
+AssertionError: 须记录 document.activeElement 触发源: expected '{\n  r7ApplyError.value = \'\'\n  r7A…' to contain 'document.activeElement'
+
+- Expected
++ Received
+
+- document.activeElement
++ {
++   r7ApplyError.value = ''
++   r7ApplyDone.value = ''
++   if (!r7Impact.value) {
++     r7Error.value = '收益数据不可用：请先等待真实收益预估返回'
++     return
++   }
++   r7CompareOpen.value = true
++ }
+
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:84:54
+     82|       const body = openBody()
+     83|       expect(body, 'r7OpenCompare 必须存在').not.toBe('')
+     84|       expect(body, '须记录 document.activeElement 触发源').toContain('docume…
+       |                                                      ^
+     85|       expect(body, '须存入 r7TriggerEl').toContain('r7TriggerEl.value')
+     86|       expect(body, '须用 nextTick').toContain('nextTick')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G4 新增 closeR7Compare 关弹层后 focus 归还触发源
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G4 新增 closeR7Compare 关弹层后 focus 归还触发源
+AssertionError: closeR7Compare 必须存在: expected '' not to be '' // Object.is equality
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:93:47
+     91|     it(pg.name + ' G4 新增 closeR7Compare 关弹层后 focus 归还触发源', () => {
+     92|       const body = closeBody()
+     93|       expect(body, 'closeR7Compare 必须存在').not.toBe('')
+       |                                               ^
+     94|       expect(body, '须关闭弹层').toContain('r7CompareOpen.value = false')
+     95|       expect(body, '须从 r7TriggerEl 取回触发源').toContain('r7TriggerEl.valu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G5 三处内联关闭统一改调 closeR7Compare
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G5 三处内联关闭统一改调 closeR7Compare
+AssertionError: 模板不得残留内联关闭: expected 5 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 5
+
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:100:75
+     98|
+     99|     it(pg.name + ' G5 三处内联关闭统一改调 closeR7Compare', () => {
+    100|       expect(tpl.split('r7CompareOpen = false').length - 1, '模板不得残留内联关…
+       |                                                                           ^
+    101|       expect(tpl.split('closeR7Compare').length - 1, '遮罩/取消/完成至少 3 处引用…
+    102|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > skills G6 新增 trapR7CompareTab 复刻 R103 首尾循环
+ FAIL  src/styles/r112R7CompareKeyboard.contract.test.ts > R112 R7 对比弹层键盘闭环契约 > equipment G6 新增 trapR7CompareTab 复刻 R103 首尾循环
+AssertionError: trapR7CompareTab 必须存在: expected '' not to be '' // Object.is equality
+ ❯ src/styles/r112R7CompareKeyboard.contract.test.ts:106:49
+    104|     it(pg.name + ' G6 新增 trapR7CompareTab 复刻 R103 首尾循环', () => {
+    105|       const body = trapBody()
+    106|       expect(body, 'trapR7CompareTab 必须存在').not.toBe('')
+       |                                                 ^
+    107|       expect(body, '须以 r7CompareRef.value 取根节点').toContain('r7CompareR…
+    108|       expect(body, '须查询可聚焦节点').toContain('querySelectorAll')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 6 passed (18)
+   Start at  20:46:17
+   Duration  327ms (transform 29ms, setup 0ms, import 44ms, tests 19ms, environment 0ms)
