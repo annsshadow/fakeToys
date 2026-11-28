@@ -34,6 +34,8 @@
           v-model="username"
           v-aria-native="'用户名'"
           aria-label="用户名"
+          :aria-invalid="!!errMsg"
+          :aria-describedby="'login-err'"
           class="inp"
           :class="{ 'input-error': !!errMsg }"
           type="text"
@@ -46,6 +48,8 @@
             v-model="password"
             v-aria-native="'口令'"
             aria-label="口令"
+            :aria-invalid="!!errMsg"
+            :aria-describedby="'login-err'"
             class="inp flex-1"
             :class="{ 'input-error': !!errMsg }"
             type="text"
@@ -86,7 +90,7 @@
           <view v-if="submitting" class="spinner" />
           {{ submitting ? '登录中…' : '登录' }}
         </view>
-        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
+        <text v-if="errMsg" :key="errMsg" id="login-err" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
           {{ errMsg }}
         </text>
         <text class="dim" style="display: block; margin-top: 12rpx">

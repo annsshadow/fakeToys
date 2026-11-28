@@ -12,7 +12,15 @@ function applyAriaNative(el: HTMLElement, label: string) {
     el.tagName === 'INPUT' && el.classList.contains('uni-input-input')
       ? el
       : el.querySelector('input.uni-input-input')
-  if (native && name) native.setAttribute('aria-label', name)
+  if (native) {
+    if (name) native.setAttribute('aria-label', name)
+    const invalid = el.getAttribute('aria-invalid')
+    if (invalid !== null) native.setAttribute('aria-invalid', invalid)
+    else native.removeAttribute('aria-invalid')
+    const desc = el.getAttribute('aria-describedby')
+    if (desc !== null) native.setAttribute('aria-describedby', desc)
+    else native.removeAttribute('aria-describedby')
+  }
 }
 
 const ariaNative: Directive<HTMLElement, string> = {

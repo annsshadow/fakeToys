@@ -54,6 +54,8 @@
             v-model="battleId"
             v-aria-native="'battle_id'"
             aria-label="battle_id"
+            :aria-invalid="!!errMsg"
+            :aria-describedby="'verify-battle-err'"
             class="inp"
             :class="{ 'input-error': !!errMsg }"
             type="number"
@@ -72,7 +74,7 @@
             {{ fetching ? '获取中…' : '取复现信息' }}
           </view>
         </view>
-        <text v-if="errMsg" :key="errMsg" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
+        <text v-if="errMsg" :key="errMsg" id="verify-battle-err" class="muted shake" style="display: block; margin-top: 12rpx; color: var(--bad)" role="alert">
           {{ errMsg }}
         </text>
       </view>
