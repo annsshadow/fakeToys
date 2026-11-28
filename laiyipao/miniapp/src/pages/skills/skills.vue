@@ -14,7 +14,7 @@
         </view>
         <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
         <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
-        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>
+        <view class="r12-priority-cta" @click="r12Go()" role="button" tabindex="0" @keydown.enter="r12Go()">{{ r12Cta.label }} →</view>
       </view>
       <!-- R23 备战态构筑反应覆盖诊断：纯客户端派生，只读不写构筑 -->
       <view class="r23-coverage-card">

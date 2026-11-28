@@ -14,7 +14,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiEnemy.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiEnemy.basis }}</text>
-        <view class="r3-ai-cta" @click="r4FocusEnemy()">切换对应元素 →</view>
+        <view class="r3-ai-cta" @click="r4FocusEnemy()" role="button" tabindex="0" @keydown.enter="r4FocusEnemy()">切换对应元素 →</view>
       </view>
       <!-- 加载中 / 空态（与反应图鉴同款，2026-10-21 P6-1）-->
       <view v-if="store.configLoading" class="card">

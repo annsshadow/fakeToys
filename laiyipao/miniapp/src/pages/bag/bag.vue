@@ -9,7 +9,7 @@
         </view>
         <text class="r12-priority-text">{{ r12Priority.label }} {{ r12Priority.value }}（{{ r12Priority.pct }}%，权重 {{ r12Priority.weightPct }}%）：补满可涨约 {{ r12Priority.gain }} 分，优先补它</text>
         <text class="r12-priority-basis">{{ r12Priority.basis }}</text>
-        <view class="r12-priority-cta" @click="r12Go()">{{ r12Cta.label }} →</view>
+        <view class="r12-priority-cta" @click="r12Go()" role="button" tabindex="0" @keydown.enter="r12Go()">{{ r12Cta.label }} →</view>
       </view>
 
       <!-- R4：指标带 → 筛选 → 数据格 → 智能空态（复用 §1B 组件） -->
@@ -30,7 +30,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiBag.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiBag.basis }}</text>
-        <view class="r3-ai-cta" @click="r4GoBag()">去技能槽 →</view>
+        <view class="r3-ai-cta" @click="r4GoBag()" role="button" tabindex="0" @keydown.enter="r4GoBag()">去技能槽 →</view>
       </view>
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
       <view v-if="loading" class="card" role="status" aria-busy="true" aria-label="数据加载中">

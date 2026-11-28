@@ -58,7 +58,7 @@
           </svg>
           <text class="r51-radar-honesty">非权威战斗数据；权威以 replay_hash 为准</text>
         </view>
-        <view class="r3-ai-cta" @click="r4GoMe()">{{ r4AiMe.cta }} →</view>
+        <view class="r3-ai-cta" @click="r4GoMe()" role="button" tabindex="0" @keydown.enter="r4GoMe()">{{ r4AiMe.cta }} →</view>
       </view>
       <view v-if="r4AiMe" class="r3-data-grid r4-grid">
         <view class="list-row"><view class="r3-row-main"><text class="r3-row-label">当前关卡</text><text class="r3-row-meta">服务端权威进度</text></view><text class="r3-row-value">第 {{ r4AiMe.level }} 关</text></view>

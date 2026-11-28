@@ -19,7 +19,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiSkin.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiSkin.basis }}</text>
-        <view class="r3-ai-cta" @click="r4FocusSkin()">查看同流派皮肤 →</view>
+        <view class="r3-ai-cta" @click="r4FocusSkin()" role="button" tabindex="0" @keydown.enter="r4FocusSkin()">查看同流派皮肤 →</view>
       </view>
       <!-- 加载中 / 空态（与其它图鉴同款）-->
       <view v-if="store.configLoading" class="card">

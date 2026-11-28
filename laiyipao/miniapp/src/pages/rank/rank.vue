@@ -18,7 +18,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiRank.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiRank.basis }}</text>
-        <view class="r3-ai-cta" @click="r4GoRank()">去冲榜关卡 →</view>
+        <view class="r3-ai-cta" @click="r4GoRank()" role="button" tabindex="0" @keydown.enter="r4GoRank()">去冲榜关卡 →</view>
       </view>
       <view class="tabs r3-filter r4-filter">
         <view

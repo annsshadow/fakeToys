@@ -18,7 +18,7 @@
         </view>
         <text class="r3-ai-conclusion">{{ r4AiBattle.conclusion }}</text>
         <text class="r3-ai-basis">{{ r4AiBattle.basis }}</text>
-        <view class="r3-ai-cta" @click="r4GoBattle()">看战报详情 →</view>
+        <view class="r3-ai-cta" @click="r4GoBattle()" role="button" tabindex="0" @keydown.enter="r4GoBattle()">看战报详情 →</view>
       </view>
       <text class="muted" style="display: block; margin-bottom: 16rpx">
         最近战斗的记录。点开一行可以回顾单局掉落与元素/反应/地形使用。
