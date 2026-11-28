@@ -825,7 +825,7 @@ onShareAppMessage(() => indexShare())
 .ms-item { display: block; font-size: 24rpx; color: var(--text-2); margin: 8rpx 0; }
 
 /* G127 补分边际收益 */
-.mg-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 10rpx 0; border-bottom: 1rpx solid var(--border-soft); }
+.mg-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; padding: 10rpx 0; border-bottom: 1rpx solid var(--border-soft); min-height: 88rpx; }
 .mg-rank { width: 44rpx; height: 44rpx; line-height: 44rpx; text-align: center; border-radius: 50%; background: var(--fire-soft); color: var(--fire); font-weight: 700; }
 .mg-gain { color: var(--warn); font-weight: 600; font-size: 24rpx; }
 
@@ -934,7 +934,7 @@ onShareAppMessage(() => indexShare())
 .dim-hint {
   font-size: 22rpx;
   padding: 0;
-  min-height: auto;
+  min-height: 88rpx;
 }
 
 /* 无补导的空维文案 */
@@ -1149,6 +1149,7 @@ onShareAppMessage(() => indexShare())
   flex-direction: row;
   align-items: center;
   gap: 8rpx;
+  min-height: 88rpx;
 }
 
 .dot {
@@ -1220,6 +1221,7 @@ onShareAppMessage(() => indexShare())
   font-size: 22rpx;
   color: var(--fire);
   padding: 4rpx 0 4rpx 16rpx;
+  min-height: 88rpx;
 }
 
 .ann-body {
