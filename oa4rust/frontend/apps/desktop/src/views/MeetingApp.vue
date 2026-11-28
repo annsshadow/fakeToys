@@ -115,7 +115,7 @@
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { businessTodayYMD, formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -188,7 +188,7 @@ const { data: bData } = useQuery({
   queryFn: () => api.get('/api/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
   staleTime: 120000,
 })
-buildings.value = bData.value ?? []
+watch(bData, (v) => { buildings.value = v ?? [] }, { immediate: true })
 // 代际令牌：快速切换楼栋时，旧楼栋晚到的响应不得覆盖新楼栋的会议室选项。
 const formRoomGeneration = createGeneration()
 async function loadRooms() {
