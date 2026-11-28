@@ -7,8 +7,8 @@ use axum::{
     Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::Value;
 use shared::{
@@ -226,9 +226,24 @@ pub async fn category_create(
 #[allow(non_snake_case)]
 pub async fn article_list(
     db: Extension<DatabaseConnection>,
+    pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let person = session.as_ref().map(|s| s.0.person_unique.clone());
+    let admin = match session.as_ref() {
+        Some(s) => shared::middleware::is_admin(&pool.0, &s.0.person_unique).await,
+        None => false,
+    };
+    let mut scope = Condition::any().add(cms_article::Column::Status.eq("published"));
+    if let Some(p) = person.as_deref() {
+        scope = scope.add(cms_article::Column::AuthorId.eq(p));
+    }
+    if admin {
+        scope = scope.add(cms_article::Column::Id.is_not_null());
+    }
     let models = cms_article::Entity::find()
         .filter(cms_article::Column::DeletedAt.is_null())
+        .filter(scope)
         .order_by_desc(cms_article::Column::CreateTime)
         .limit(20)
         .all(&db.0)
@@ -386,6 +401,8 @@ pub async fn article_create(
 async fn list_cms_entity_table(
     pool: &deadpool_postgres::Pool,
     table: &str,
+    actor: Option<&str>,
+    admin: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(pool).await?;
     let sql = match table {
@@ -407,7 +424,8 @@ async fn list_cms_entity_table(
         "x_cms_note" => {
             "SELECT id, title, content, person_id AS personId, \
              status, create_time::text AS createTime, update_time::text AS updateTime \
-             FROM x_cms_note WHERE deleted_at IS NULL ORDER BY create_time DESC, id"
+             FROM x_cms_note WHERE deleted_at IS NULL AND (person_id = $1 OR $2::boolean) \
+             ORDER BY create_time DESC, id"
         }
         _ => {
             "SELECT id, column_id AS columnId, person_id AS personId, role, \
@@ -415,10 +433,17 @@ async fn list_cms_entity_table(
              FROM x_cms_column_manager WHERE deleted_at IS NULL ORDER BY id"
         }
     };
-    let rows = client
-        .query(sql, &[])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let rows = if table == "x_cms_note" {
+        client
+            .query(sql, &[&actor.unwrap_or_default(), &admin])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+    } else {
+        client
+            .query(sql, &[])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+    };
     let data: Vec<Value> = rows.iter().map(shared::response::row_to_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -433,7 +458,7 @@ async fn list_cms_entity_table(
 pub async fn cms_entity_column_list(
     pool: Extension<deadpool_postgres::Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_cms_entity_table(&pool, "x_cms_column").await
+    list_cms_entity_table(&pool, "x_cms_column", None, false).await
 }
 
 #[axum::debug_handler]
@@ -441,7 +466,7 @@ pub async fn cms_entity_column_list(
 pub async fn cms_entity_column_manager_list(
     pool: Extension<deadpool_postgres::Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_cms_entity_table(&pool, "x_cms_column_manager").await
+    list_cms_entity_table(&pool, "x_cms_column_manager", None, false).await
 }
 
 #[axum::debug_handler]
@@ -449,7 +474,7 @@ pub async fn cms_entity_column_manager_list(
 pub async fn cms_entity_index_list(
     pool: Extension<deadpool_postgres::Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_cms_entity_table(&pool, "x_cms_index").await
+    list_cms_entity_table(&pool, "x_cms_index", None, false).await
 }
 
 #[axum::debug_handler]
@@ -457,15 +482,19 @@ pub async fn cms_entity_index_list(
 pub async fn cms_entity_module_list(
     pool: Extension<deadpool_postgres::Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_cms_entity_table(&pool, "x_cms_module").await
+    list_cms_entity_table(&pool, "x_cms_module", None, false).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn cms_entity_note_list(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_cms_entity_table(&pool, "x_cms_note").await
+    let session = session.ok_or(AppError::Unauthorized)?;
+    let actor = session.0.person_unique.clone();
+    let admin = shared::middleware::is_admin(&pool.0, &actor).await;
+    list_cms_entity_table(&pool.0, "x_cms_note", Some(&actor), admin).await
 }
 
 // ── cms/core/entity/* 的 create/save/delete（参数化写操作，表 093）──
