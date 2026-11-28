@@ -664,3 +664,8 @@ docs/laiyipao/audits/round104-loading-a11y/data/
 docs/laiyipao/audits/round104-loading-a11y/admin-auth-init.js
 docs/laiyipao/audits/round104-loading-a11y-postdeploy/data/
 docs/laiyipao/audits/round104-loading-a11y-postdeploy/admin-auth-init.js
+# R105 index topbar 768 横溢修复
+docs/laiyipao/audits/round105-a-number-unit/data/
+docs/laiyipao/audits/round105-c-topbar/data/
+docs/laiyipao/audits/round105-topbar-overflow/data/
+docs/laiyipao/audits/round105-topbar-overflow-postdeploy/data/
