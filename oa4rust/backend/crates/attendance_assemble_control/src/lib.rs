@@ -6588,6 +6588,7 @@ pub async fn v2_record_list_page_size(
 /// POST /api/attendance/assemble/control/v2/detail/list/{page}/size/{size}
 pub async fn v2_detail_list_page_size(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((page, size)): Path<(i64, i64)>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -6595,15 +6596,20 @@ pub async fn v2_detail_list_page_size(
     let client = shared::db::acquire(&pool).await?;
 
     let empty = String::new();
-    let filter_person = body
-        .as_ref()
-        .map(|Json(b)| {
-            b.get("personId")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string()
-        })
-        .unwrap_or(empty.clone());
+    // 非 admin 只能查看本人考勤明细（IDOR 读过滤）
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let filter_person = if admin {
+        body.as_ref()
+            .map(|Json(b)| {
+                b.get("personId")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            })
+            .unwrap_or_default()
+    } else {
+        session.person_unique.clone()
+    };
     let filter_status = body
         .as_ref()
         .map(|Json(b)| {
@@ -8118,10 +8124,16 @@ async fn detail_statistic_aggregate(
 /// POST /api/attendance/assemble/control/v2/detail/statistic/filter
 pub async fn v2_detail_statistic_filter(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let empty = String::new();
-    let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+    let (mut filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+    // 非 admin 只能聚合本人考勤明细（IDOR 读过滤）
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    if !admin {
+        filter_person = session.person_unique.clone();
+    }
 
     let data =
         detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
@@ -8137,10 +8149,16 @@ pub async fn v2_detail_statistic_filter(
 /// POST /api/attendance/assemble/control/v2/detail/statistic/export/filter
 pub async fn v2_detail_statistic_export_filter(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let empty = String::new();
-    let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+    let (mut filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
+    // 非 admin 只能导出本人考勤明细（IDOR 读过滤）
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    if !admin {
+        filter_person = session.person_unique.clone();
+    }
 
     let data =
         detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
