@@ -74,7 +74,7 @@
           <text class="r28-feed-ai-conclusion">{{ r28Ai.conclusion }}</text>
           <text class="r28-feed-ai-basis">依据：R15 reactionTimeline 逐次事件（wave/enemy_uid/reaction/damage）按事件发射顺序配对；截断或不匹配如实标注归因不可用</text>
           <text class="r28-feed-ai-honesty">辅助归因非权威判据，权威以 replay_hash 为准</text>
-          <text class="r28-feed-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</text>
+          <text class="r28-feed-cta" role="button" tabindex="0" @click.stop="openReactionTimeline" @keydown.enter="openReactionTimeline">查看完整反应时间线 →</text>
         </view>
       </view>
       <!-- R24 实时元素层与反应触发预判：只读快照派生，纯展示不拦截点击 -->
@@ -258,11 +258,11 @@
     </view>
 
     <!-- R29：完整反应时间线抽屉（R28 CTA 打开；只读派生，不改引擎权威） -->
-    <view v-if="reactionTimelineVisible" class="r29-timeline-overlay" @click="closeReactionTimeline">
+    <view v-if="reactionTimelineVisible" ref="timelineOverlayRef" class="r29-timeline-overlay" role="dialog" aria-modal="true" aria-label="完整反应时间线" @click="closeReactionTimeline" @keydown.esc="closeReactionTimeline" @keydown.tab="trapTimelineTab">
       <view class="r29-timeline-box" @click.stop>
         <view class="r29-timeline-head">
           <text class="r29-timeline-title">AI · 完整反应时间线</text>
-          <view class="r29-timeline-close" @click="closeReactionTimeline"><text>×</text></view>
+          <view ref="timelineCloseRef" class="r29-timeline-close" role="button" tabindex="0" @click="closeReactionTimeline" @keydown.enter="closeReactionTimeline"><text>×</text></view>
         </view>
         <text v-if="r29Timeline.empty" class="r29-timeline-empty">本局暂无逐次反应记录</text>
         <block v-else>
@@ -446,7 +446,7 @@
       <text v-if="settleFailed" class="hash-note">本地回放哈希 {{ settleResult.replay_hash }}（未入账，仅供排障）</text>
       <text v-else class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
       <!-- t227：结算 sheet 遮挡战斗态 R28 feed CTA，结果页提供真实可见可点的时间线入口 -->
-      <view class="r29-result-timeline-cta" @click.stop="openReactionTimeline">查看完整反应时间线 →</view>
+      <view class="r29-result-timeline-cta" @click.stop="openReactionTimeline" role="button" tabindex="0" @keydown.enter="openReactionTimeline">查看完整反应时间线 →</view>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
            跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
       <view
@@ -982,6 +982,10 @@ const helpVisible = ref(false)
 const helpChipRef = ref<any>(null)
 const legendOverlayRef = ref<any>(null)
 const legendCloseRef = ref<any>(null)
+/** R103：时间线抽屉键盘闭环 DOM ref（H5 端 view ref 取组件实例，$el 为原生节点）。 */
+const timelineOverlayRef = ref<any>(null)
+const timelineCloseRef = ref<any>(null)
+const timelineTriggerRef = ref<any>(null)
 /** 第六批 R70：是否读过图例（本机记忆）。 */
 const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
 /** R3：图例遮罩挡住整个战场，读说明时由页面代为暂停；关掉时只恢复这类暂停。 */
@@ -1049,7 +1053,8 @@ function trapLegendTab(e: KeyboardEvent) {
  * 再从引擎只读旁路 + 服务端反应名构建展示快照；仅当当前未暂停且未结算时
  * 才代为暂停，并只记「由本抽屉暂停」，绝不碰图例/倍速的记账。
  */
-function openReactionTimeline() {
+function openReactionTimeline(e?: Event) {
+  if (e && e.currentTarget) timelineTriggerRef.value = e.currentTarget
   closeHelp()
   if (reactionTimelineVisible.value) {
     closeReactionTimeline()
@@ -1069,6 +1074,11 @@ function openReactionTimeline() {
     doPause()
     timelinePausedByDrawer = true
   }
+  nextTick(() => {
+    const el: any = timelineCloseRef.value
+    const node = (el && el.$el) || el
+    if (node && typeof node.focus === 'function') node.focus()
+  })
 }
 
 /** R29：关闭抽屉；只恢复本抽屉造成的暂停，不覆盖玩家原有暂停/图例/倍速。 */
@@ -1077,6 +1087,30 @@ function closeReactionTimeline() {
   if (timelinePausedByDrawer) {
     timelinePausedByDrawer = false
     doResume()
+  }
+  const t: any = timelineTriggerRef.value
+  const node = (t && t.$el) || t
+  if (node && typeof node.focus === 'function') node.focus()
+  timelineTriggerRef.value = null
+}
+
+/** R103：Tab 焦点陷阱——时间线抽屉内首尾可聚焦元素循环，不逃逸到背景。 */
+function trapTimelineTab(e: KeyboardEvent) {
+  const overlay: any = timelineOverlayRef.value
+  const root = (overlay && overlay.$el) || overlay
+  if (!root || typeof root.querySelectorAll !== 'function') return
+  const nodes = Array.from(root.querySelectorAll('[tabindex="0"], [role="button"]')) as HTMLElement[]
+  const focusables = nodes.filter(n => !n.hasAttribute('disabled'))
+  if (!focusables.length) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = (typeof document !== 'undefined' ? document.activeElement : null) as HTMLElement | null
+  if (e.shiftKey && (active === first || !root.contains(active))) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+    e.preventDefault()
+    first.focus()
   }
 }
 
