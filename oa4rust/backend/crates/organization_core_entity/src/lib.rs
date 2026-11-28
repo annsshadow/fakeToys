@@ -94,6 +94,31 @@ async fn actor_is_admin(db: &DatabaseConnection, actor: &str) -> Result<bool, Ap
     }
 }
 
+/// R632: x_org_custom 四端点归属经 x_org_identity.creator 反查推导。
+/// 复用同文件 CREATOR_OWNER_PREDICATE(本人 creator=actor 或 admin); 不存在 404,
+/// 存在但不属本人且非 admin 403。custom_list 首个读之前、三写端点首个写之前调用。
+async fn ensure_identity_owner(
+    db: &DatabaseConnection,
+    actor: &str,
+    identity_id: &str,
+) -> Result<(), AppError> {
+    let sql = format!(
+        "SELECT EXISTS(SELECT 1 FROM x_org_identity WHERE {CREATOR_OWNER_PREDICATE}) AS ok"
+    );
+    let allowed = db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![identity_id.into(), actor.into()],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    match allowed {
+        Some(row) if row.try_get::<bool>("", "ok").unwrap_or(false) => Ok(()),
+        _ => Err(ownership_error(db, "x_org_identity", identity_id).await),
+    }
+}
+
 // ── Request structs ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -336,8 +361,11 @@ pub async fn person_list(
 #[allow(non_snake_case)]
 pub async fn custom_list(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(identity_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
+    ensure_identity_owner(&db.0, &actor, &identity_id).await?;
     let models = org_custom::Entity::find()
         .filter(
             org_custom::Column::IdentityId
@@ -860,7 +888,7 @@ pub async fn custom_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<CustomCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     if req.identity_id.trim().is_empty()
         || req.field_name.trim().is_empty()
         || req.field_value.trim().is_empty()
@@ -870,6 +898,7 @@ pub async fn custom_create(
         )));
     }
 
+    ensure_identity_owner(&db.0, &actor, &req.identity_id).await?;
     let active = org_custom::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
         identity_id: Set(req.identity_id),
@@ -905,12 +934,13 @@ pub async fn custom_update(
     Path(id): Path<String>,
     Json(req): Json<CustomUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let model = org_custom::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
+    ensure_identity_owner(&db.0, &actor, &model.identity_id).await?;
 
     let mut active: org_custom::ActiveModel = model.into();
     if let Some(field_name) = req.field_name {
@@ -947,12 +977,13 @@ pub async fn custom_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let model = org_custom::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
+    ensure_identity_owner(&db.0, &actor, &model.identity_id).await?;
 
     let id = model.id.clone();
     let mut active: org_custom::ActiveModel = model.into();
