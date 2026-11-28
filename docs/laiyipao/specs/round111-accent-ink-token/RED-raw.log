@@ -1,0 +1,157 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > G1 tokens.css :root 色段必须真实定义 --accent-ink: #ff8659 5ms
+   → :root 内必须定义 --accent-ink: #ff8659: expected '\n  --lyp-token-version: lyp-tokens-v…' to match /--accent-ink\s*:\s*#ff8659\s*;/i
+ × src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > G2 --accent-ink 必须与 --fire-ink 同值（双端同值口径） 1ms
+   → --accent-ink 必须先定义: expected null not to be null
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 守卫 现有 r3 契约只查 var(--accent-ink) 字样不查定义，本契约补定义检查 0ms
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 不变量① common.css 三消费点 var(--accent-ink) 仍在 0ms
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 不变量② tokens.css 令牌三锚点不变 0ms
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 不变量③ --fire-ink: #ff8659 原定义不变且唯一 0ms
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 不变量④ admin --el-fire-ink: #ff8659 不被改 0ms
+ ✓ src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > 不变量⑤ 业务样式零 --r111- 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > G1 tokens.css :root 色段必须真实定义 --accent-ink: #ff8659
+AssertionError: :root 内必须定义 --accent-ink: #ff8659: expected '\n  --lyp-token-version: lyp-tokens-v…' to match /--accent-ink\s*:\s*#ff8659\s*;/i
+
+- Expected:
+/--accent-ink\s*:\s*#ff8659\s*;/i
+
++ Received:
+"
+  --lyp-token-version: lyp-tokens-v1;
+  --lyp-r3-version: lyp-tokens-v3-r3;
+  --lyp-r6-version: lyp-tokens-r6;
+
+  /* 表面：页面底最深 → 卡片 → 浮起元素；层次靠明度差 + 阴影 */
+  --bg: #070a10;
+  --panel: #121826;
+  --panel-2: #1a2233;
+  --panel-3: #222c3d;
+  --border: #2a3547;
+  --border-soft: rgba(42, 53, 71, 0.55);
+  --shadow-1: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14rpx 36rpx rgba(0, 0, 0, 0.5);
+
+  /* 文本四阶：弱化/更弱文字承载正文，对四种表面均 ≥4.5:1（AA 1.4.3） */
+  --text: #e6edf3;
+  --text-2: #c2ccd6;
+  --muted: #9aa5b2;
+  --dim: #96a0ad;
+
+  /* 品牌与语义色：主行动走 accent，错误统一走 bad */
+  --accent: #ff6b35;
+  --accent-2: #ff3d71;
+  --accent-grad: linear-gradient(135deg, #ff6b35, #ff3d71);
+  --ok: #7ee787;
+  --warn: #ffd33d;
+  --bad: #ff7b72;
+
+  /* 五元素主色：双端同值，不得单边改色 */
+  --fire: #ff6b35;
+  --ice: #58a6ff;
+  --lightning: #ffd33d;
+  --corrosion: #7ee787;
+  --kinetic: #c9a7ff;
+
+  /* 18% soft 只叠 panel / panel-2，禁止叠 panel-3 承载元素色文字 */
+  --fire-soft: rgba(255, 107, 53, 0.18);
+  --ice-soft: rgba(88, 166, 255, 0.18);
+  --lightning-soft: rgba(255, 211, 61, 0.18);
+  --corrosion-soft: rgba(126, 231, 135, 0.18);
+  --kinetic-soft: rgba(201, 167, 255, 0.18);
+  --neutral-soft: rgba(139, 148, 158, 0.16);
+
+  /* R3 FilterBar 活动态专用 soft：语义色，不借用元素 fire-soft；文字用 --accent-ink */
+  --accent-soft: rgba(255, 107, 53, 0.18);
+
+  /* 元素 ink：文字叠自身 18% soft + panel-3 时替代主色，仍 ≥4.5:1 */
+  --fire-ink: #ff8659;
+  --ice-ink: #6fb2ff;
+  --lightning-ink: #ffd33d;
+  --corrosion-ink: #7ee787;
+  --kinetic-ink: #c9a7ff;
+
+  /* 玻璃浮层：底固定 panel 基色，绝不使用 panel-3；文字用已提亮的 glass 色阶 */
+  --glass-bg: rgba(18, 24, 38, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(16px) saturate(1.2);
+  --glass-text-muted: #9faab6;
+  --glass-text-dim: #a1aab5;
+
+  /* 榜单名次与稀有度 */
+  --rank-gold: #ffd700;
+  --rank-silver: #c9ced6;
+  --rank-bronze: #cd7f32;
+  --rare: #58a6ff;
+  --epic: #c9a7ff;
+  --legendary: #ffd700;
+  --rare-soft: rgba(88, 166, 255, 0.18);
+  --epic-soft: rgba(201, 167, 255, 0.18);
+  --legendary-soft: rgba(255, 215, 0, 0.16);
+
+  /* 字阶 / 间距 / 圆角（rpx） */
+  --fs-xs: 22rpx;
+  --fs-sm: 24rpx;
+  --fs-base: 26rpx;
+  --fs-md: 28rpx;
+  --fs-lg: 32rpx;
+  --fs-xl: 38rpx;
+  --sp-1: 8rpx;
+  --sp-2: 12rpx;
+  --sp-3: 16rpx;
+  --sp-4: 24rpx;
+  --radius-sm: 10rpx;
+  --radius: 16rpx;
+  --radius-lg: 18rpx;
+
+  /* AI 感元素（规范 §1A）：动能紫是唯一 AI 标识色；ink 用于 soft 底上的文字 */
+  --ai-accent: #c9a7ff;
+  --ai-ink: #d7bfff;
+  --ai-halo: rgba(201, 167, 255, 0.14);
+  --ai-glow: 0 0 24rpx rgba(201, 167, 255, 0.28);
+
+  /* R3 ProgressTree 轨道：只作底纹，状态必须由相邻数字文本承载 */
+  --progress-track: #39465a;
+
+  /* 动效与层级：双端同值，便于跨端一致的微交互 */
+  --motion-fast: 120ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+  --motion-ease: cubic-bezier(0.2, 0.85, 0.3, 1.15);
+  --z-raised: 10;
+  --z-popover: 100;
+  --z-command: 1000;
+  --z-toast: 2000;
+"
+
+ ❯ src/styles/r111AccentInkToken.contract.test.ts:36:53
+     34|     const rb = rootBlock(tokens)
+     35|     expect(rb, ':root 块必须可解析').not.toBe('')
+     36|     expect(rb, ':root 内必须定义 --accent-ink: #ff8659').toMatch(/--accent-…
+       |                                                     ^
+     37|   })
+     38|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/styles/r111AccentInkToken.contract.test.ts > R111 --accent-ink 令牌真源缺失契约 > G2 --accent-ink 必须与 --fire-ink 同值（双端同值口径）
+AssertionError: --accent-ink 必须先定义: expected null not to be null
+ ❯ src/styles/r111AccentInkToken.contract.test.ts:44:43
+     42|     const ink = tokenValue(rb, '--accent-ink')
+     43|     expect(fireInk, '--fire-ink 原定义必须为 #ff8659').toBe('#ff8659')
+     44|     expect(ink, '--accent-ink 必须先定义').not.toBeNull()
+       |                                           ^
+     45|     expect(ink, '--accent-ink 必须与 --fire-ink 同值').toBe(fireInk)
+     46|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 6 passed (8)
+   Start at  19:51:33
+   Duration  292ms (transform 33ms, setup 0ms, import 48ms, tests 9ms, environment 0ms)
