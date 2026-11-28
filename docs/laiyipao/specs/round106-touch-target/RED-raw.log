@@ -1,0 +1,107 @@
+
+ RUN  v4.1.12 D:/WORKSPACE/fakeToys/.agents/worktrees/dsh-d0bc4721-3248/laiyipao/miniapp
+
+ × src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.mg-row CSS 块含 min-height:88rpx 6ms
+   → .mg-row 须声明 min-height:88rpx: expected '{display:flex;flex-direction:row;alig…' to contain 'min-height:88rpx'
+ × src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.elem-chip CSS 块含 min-height:88rpx 1ms
+   → .elem-chip 须声明 min-height:88rpx: expected '{display:flex;flex-direction:row;alig…' to contain 'min-height:88rpx'
+ × src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.ann-all CSS 块含 min-height:88rpx 1ms
+   → .ann-all 须声明 min-height:88rpx: expected '{font-size:22rpx;color:var(--fire);pa…' to contain 'min-height:88rpx'
+ × src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.dim-hint CSS 块含 min-height:88rpx 0ms
+   → .dim-hint 须声明 min-height:88rpx: expected '{font-size:22rpx;padding:0;min-height…' to contain 'min-height:88rpx'
+ × src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.dim-hint 原 min-height:auto 须被替换（非仅追加导致被覆盖） 1ms
+   → .dim-hint 不得保留 min-height:auto: expected '{font-size:22rpx;padding:0;min-height…' not to contain 'min-height:auto'
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：四类模板键盘三件套齐备且 @click/@keydown.enter 同 handler 1ms
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：common.css 两层 :focus-visible 焦点环兜底保留（outline 3rpx + offset 2rpx） 0ms
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：令牌三锚点原样（tokens.css:14-16） 0ms
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：业务 index.vue 零 --r106- 0ms
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：surgical —— .mg-row/.elem-chip 保留 display:flex 与既有 padding/gap 0ms
+ ✓ src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 不变量：surgical —— .ann-all/.dim-hint 保留 font-size:22rpx 与既有 padding 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.mg-row CSS 块含 min-height:88rpx
+AssertionError: .mg-row 须声明 min-height:88rpx: expected '{display:flex;flex-direction:row;alig…' to contain 'min-height:88rpx'
+
+Expected: "min-height:88rpx"
+Received: "{display:flex;flex-direction:row;align-items:center;gap:12rpx;padding:10rpx0;border-bottom:1rpxsolidvar(--border-soft);}"
+
+ ❯ src/styles/r106TouchTarget.contract.test.ts:76:66
+     74|       const b = cssBlock(indexSrc, t.selector)
+     75|       expect(b, '须唯一锚点定位 ' + t.name + ' CSS 块').not.toBeNull()
+     76|       expect(compact(b || ''), t.name + ' 须声明 min-height:88rpx').toCon…
+       |                                                                  ^
+     77|     })
+     78|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.elem-chip CSS 块含 min-height:88rpx
+AssertionError: .elem-chip 须声明 min-height:88rpx: expected '{display:flex;flex-direction:row;alig…' to contain 'min-height:88rpx'
+
+Expected: "min-height:88rpx"
+Received: "{display:flex;flex-direction:row;align-items:center;gap:8rpx;}"
+
+ ❯ src/styles/r106TouchTarget.contract.test.ts:76:66
+     74|       const b = cssBlock(indexSrc, t.selector)
+     75|       expect(b, '须唯一锚点定位 ' + t.name + ' CSS 块').not.toBeNull()
+     76|       expect(compact(b || ''), t.name + ' 须声明 min-height:88rpx').toCon…
+       |                                                                  ^
+     77|     })
+     78|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.ann-all CSS 块含 min-height:88rpx
+AssertionError: .ann-all 须声明 min-height:88rpx: expected '{font-size:22rpx;color:var(--fire);pa…' to contain 'min-height:88rpx'
+
+Expected: "min-height:88rpx"
+Received: "{font-size:22rpx;color:var(--fire);padding:4rpx04rpx16rpx;}"
+
+ ❯ src/styles/r106TouchTarget.contract.test.ts:76:66
+     74|       const b = cssBlock(indexSrc, t.selector)
+     75|       expect(b, '须唯一锚点定位 ' + t.name + ' CSS 块').not.toBeNull()
+     76|       expect(compact(b || ''), t.name + ' 须声明 min-height:88rpx').toCon…
+       |                                                                  ^
+     77|     })
+     78|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.dim-hint CSS 块含 min-height:88rpx
+AssertionError: .dim-hint 须声明 min-height:88rpx: expected '{font-size:22rpx;padding:0;min-height…' to contain 'min-height:88rpx'
+
+Expected: "min-height:88rpx"
+Received: "{font-size:22rpx;padding:0;min-height:auto;}"
+
+ ❯ src/styles/r106TouchTarget.contract.test.ts:76:66
+     74|       const b = cssBlock(indexSrc, t.selector)
+     75|       expect(b, '须唯一锚点定位 ' + t.name + ' CSS 块').not.toBeNull()
+     76|       expect(compact(b || ''), t.name + ' 须声明 min-height:88rpx').toCon…
+       |                                                                  ^
+     77|     })
+     78|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/styles/r106TouchTarget.contract.test.ts > R106 次级可点击控件触摸目标契约 > 缺口：.dim-hint 原 min-height:auto 须被替换（非仅追加导致被覆盖）
+AssertionError: .dim-hint 不得保留 min-height:auto: expected '{font-size:22rpx;padding:0;min-height…' not to contain 'min-height:auto'
+
+Expected: "min-height:auto"
+Received: "{font-size:22rpx;padding:0;min-height:auto;}"
+
+ ❯ src/styles/r106TouchTarget.contract.test.ts:82:53
+     80|     const c = compact(cssBlock(indexSrc, '.dim-hint') || '')
+     81|     expect(c, '.dim-hint 块须存在').not.toBe('')
+     82|     expect(c, '.dim-hint 不得保留 min-height:auto').not.toContain('min-hei…
+       |                                                     ^
+     83|   })
+     84|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 6 passed (11)
+   Start at  14:56:11
+   Duration  256ms (transform 25ms, setup 0ms, import 38ms, tests 11ms, environment 0ms)
