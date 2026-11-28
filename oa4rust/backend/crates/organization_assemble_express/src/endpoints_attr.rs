@@ -33,9 +33,11 @@ pub async fn personattr_list_name_person(
 /// (o2server ActionListAttributeWithPersonWithName，Wi{person, name})：属性值列表。
 pub async fn personattr_list_attribute_person_name(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let (Some(person), Some(name)) = (string_field(&body, "person"), string_field(&body, "name"))
+    let sess = crate::require_session(session)?;
+    let (Some(_person), Some(name)) = (string_field(&body, "person"), string_field(&body, "name"))
     else {
         return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
@@ -50,9 +52,10 @@ pub async fn personattr_list_attribute_person_name(
          JOIN x_org_person p ON p.id = a.person_id AND p.deleted_at IS NULL \
          WHERE a.deleted_at IS NULL AND (p.id = $1 OR p.name = $1) \
          AND a.attribute_key = $2 ORDER BY a.id";
+    let owner = resolve_write_owner(&pool, &sess, &body, "personId", "person").await?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
-        .query(SQL, &[&person, &name])
+        .query(SQL, &[&owner, &name])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let values: Vec<String> = rows
@@ -74,13 +77,16 @@ pub async fn personattr_list_attribute_person_name(
 /// 人员属性对象（按 person+key 分组，valueList 聚合）。
 pub async fn personattr_list_person_object(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
+    let flags = resolve_read_list_owner(&pool, &sess, &flags).await?;
     const SQL: &str = "SELECT a.id, a.person_id, a.attribute_key, a.attribute_value \
          FROM x_org_person_attribute a \
          WHERE a.deleted_at IS NULL AND (a.person_id = ANY($1) OR a.person_id IN (\
@@ -234,6 +240,22 @@ async fn resolve_write_owner(
     }
 }
 
+/// R630b：列表式读端点归属门，非 admin 仅允许查询自身身份，否则 403。
+async fn resolve_read_list_owner(
+    pool: &Pool,
+    sess: &shared::session::Session,
+    flags: &[String],
+) -> Result<Vec<String>, AppError> {
+    let actor = &sess.person_unique;
+    if flags.iter().all(|f| f == actor) {
+        return Ok(flags.to_vec());
+    }
+    if shared::middleware::rbac::is_admin(pool, actor).await {
+        return Ok(flags.to_vec());
+    }
+    Err(AppError::Forbidden)
+}
+
 fn wrap_true() -> Value {
     Value::Object(serde_json::Map::from_iter([(
         "value".to_string(),
@@ -378,8 +400,14 @@ pub async fn unitattr_list_attribute_unit_name(
 /// POST /api/unitattribute/list/unit/object (o2server ActionListWithUnitObject)。
 pub async fn unitattr_list_unit_object(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
+    // R630b：x_org_unit_attribute 无 person 归属列, 参照 R616b 先例采用 admin-only 门。
+    if !shared::middleware::rbac::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
@@ -460,8 +488,14 @@ pub async fn unitattr_append_unit_name(
 /// 不做过滤（如实返回身份命中的授权行）。
 pub async fn empower_list_identity_object(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
+    // R630b：x_empower 授权表无 person 归属列, 参照 R616b 先例采用 admin-only 门。
+    if !shared::middleware::rbac::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
