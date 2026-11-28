@@ -71,32 +71,53 @@ pub struct HotPic {
 /// 从数据库查询 x_hotpic 表
 pub async fn list(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let models = hotpic::Entity::find()
-        .order_by_desc(hotpic::Column::CreateTime)
-        .limit(20)
-        .all(&db.0)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    let data: Vec<Value> = models
+    let session = require_session(session)?;
+    let actor = session.person_unique.clone();
+    // R626b: 真父 list 身份盲读全表, 任意视图可读他人热图 base64。
+    // 可见范围收敛为: 本人创建 OR 全局行(application 与 info_id 皆空) OR admin。
+    // admin 判定与 HOTPIC_OWNER_PREDICATE 同口径(auth_person/role, fail-closed)。
+    let sql = r#"SELECT id, application, info_id, title, base64 FROM x_hotpic
+        WHERE deleted_at IS NULL AND (
+          creator = $1
+          OR (application = '' AND info_id = '')
+          OR EXISTS(
+            SELECT 1 FROM auth_person p
+              JOIN auth_person_role pr ON pr.person_id = p.id
+              JOIN auth_role r ON r.id = pr.role_id
+             WHERE (p.unique_id = $1 OR p.id = $1)
+               AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false
+          )
+        ) ORDER BY create_time DESC LIMIT 20"#;
+    let stmt = Statement::from_sql_and_values(DbBackend::Postgres, sql, [actor.into()]);
+    let rows =
+        db.0.query_all(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let data: Vec<Value> = rows
         .iter()
-        .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
+        .map(|r| -> Result<Value, AppError> {
+            let get = |col: &str| {
+                r.try_get::<String>("", col)
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+            };
+            let base64 = r
+                .try_get::<Option<String>>("", "base64")
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .unwrap_or_default();
+            Ok(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(get("id")?)),
                 (
                     "application".to_string(),
-                    Value::String(m.application.clone()),
+                    Value::String(get("application")?),
                 ),
-                ("infoId".to_string(), Value::String(m.info_id.clone())),
-                ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "base64".to_string(),
-                    Value::String(m.base64.clone().unwrap_or_default()),
-                ),
-            ]))
+                ("infoId".to_string(), Value::String(get("info_id")?)),
+                ("title".to_string(), Value::String(get("title")?)),
+                ("base64".to_string(), Value::String(base64)),
+            ])))
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
