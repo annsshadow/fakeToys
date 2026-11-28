@@ -63,6 +63,7 @@ page,
   --lightning-ink: #ffd33d;
   --corrosion-ink: #7ee787;
   --kinetic-ink: #c9a7ff;
+  --accent-ink: #ff8659; /* = --fire-ink 同值，活动态/CTA 文字专用 */
 
   /* 玻璃浮层：底固定 panel 基色，绝不使用 panel-3；文字用已提亮的 glass 色阶 */
   --glass-bg: rgba(18, 24, 38, 0.82);
