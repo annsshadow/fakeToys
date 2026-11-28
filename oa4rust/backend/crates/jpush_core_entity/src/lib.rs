@@ -36,6 +36,15 @@ const DEVICE_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(user_id), '') = $2 \
                  WHERE (p.unique_id = $2 OR p.id = $2) \
                    AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
 
+/// 列表归属谓词（R626a）：单参数 $1 = 会话 person_unique，口径同 DEVICE_READ_OWNER_PREDICATE。
+/// device_list 用此谓词限定本人/admin 可见设备，非 admin 不得读他人 token。
+const DEVICE_LIST_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(user_id), '') = $1 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $1 OR p.id = $1) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 /// 授权读：谓词进 `SELECT EXISTS(...)`，行不存在或无权都返回 false。
 async fn device_read_allowed(
     db: &DatabaseConnection,
@@ -81,22 +90,45 @@ pub struct PushTemplate {
 /// 从数据库查询 x_jpush_device 表
 pub async fn device_list(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let models = jpush_device::Entity::find()
-        .order_by_desc(jpush_device::Column::CreateTime)
-        .limit(20)
-        .all(&db.0)
+    // R626a：列表按 user_id 校归属（本人或管理员），无会话 401 先于读库。
+    let sess = require_session(session)?;
+    let sql = format!(
+        "SELECT id, user_id, platform, token FROM x_jpush_device \
+         WHERE {DEVICE_LIST_OWNER_PREDICATE} \
+         ORDER BY create_time DESC LIMIT 20"
+    );
+    let values: Vec<SeaValue> = vec![sess.person_unique.clone().into()];
+    let rows =
+        db.0.query_all(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            values,
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let data: Vec<Value> = models
+    let data: Vec<Value> = rows
         .iter()
-        .map(|m| {
+        .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("userId".to_string(), Value::String(m.user_id.clone())),
-                ("platform".to_string(), Value::String(m.platform.clone())),
-                ("token".to_string(), Value::String(m.token.clone())),
+                (
+                    "id".to_string(),
+                    Value::String(r.try_get::<String>("", "id").unwrap_or_default()),
+                ),
+                (
+                    "userId".to_string(),
+                    Value::String(r.try_get::<String>("", "user_id").unwrap_or_default()),
+                ),
+                (
+                    "platform".to_string(),
+                    Value::String(r.try_get::<String>("", "platform").unwrap_or_default()),
+                ),
+                (
+                    "token".to_string(),
+                    Value::String(r.try_get::<String>("", "token").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
