@@ -673,3 +673,9 @@ docs/laiyipao/audits/round105-topbar-overflow-postdeploy/data/
 docs/laiyipao/audits/round106-a-responsive-overflow/data/
 docs/laiyipao/audits/round106-touch-target/data/
 docs/laiyipao/audits/round106-touch-target-postdeploy/data/
+# R107 表单校验错误 a11y 语义及部署后真值不入库
+docs/laiyipao/audits/round107-a-form-error-a11y/data/
+docs/laiyipao/audits/round107-form-error-a11y/data/
+docs/laiyipao/audits/round107-form-error-a11y/admin-auth-init.js
+docs/laiyipao/audits/round107-form-error-a11y-postdeploy/data/
+docs/laiyipao/audits/round107-form-error-a11y-postdeploy/admin-auth-init.js
